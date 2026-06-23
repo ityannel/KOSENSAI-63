@@ -1,0 +1,130 @@
+/* ======================================
+   函館高専祭 Festival Site
+   ====================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  background-color: #F9FFEF;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Container */
+.festival-container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #F9FFEF;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+/* ======================================
+   PC Layout (>= 768px)
+   ====================================== */
+.pc-layout {
+  display: block;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.sp-layout {
+  display: none;
+}
+
+.pc-content {
+  position: relative;
+  width: 100%;
+  padding: 25px 35px 30px;
+}
+
+.pc-instagram-banner {
+  margin-bottom: 8px;
+}
+
+.pc-instagram-img {
+  height: 38px;
+  width: auto;
+  display: block;
+}
+
+.pc-main-visual {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pc-svg {
+  width: 100%;
+  height: auto;
+}
+
+/* ======================================
+   SP Layout (< 768px)
+   ====================================== */
+@media screen and (max-width: 767px) {
+  .festival-container {
+    padding: 10px;
+    align-items: flex-start;
+  }
+
+  .pc-layout {
+    display: none;
+  }
+
+  .sp-layout {
+    display: block;
+    width: 100%;
+  }
+
+  .sp-content {
+    width: 100%;
+    padding: 12px;
+    min-height: calc(100vh - 20px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sp-instagram-banner {
+    align-self: flex-end;
+    margin-bottom: 5px;
+  }
+
+  .sp-instagram-img {
+    width: 32px;
+    height: 32px;
+    display: block;
+  }
+
+  .sp-main-visual {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+  }
+
+  .sp-svg {
+    width: 78%;
+    max-width: 260px;
+    height: auto;
+  }
+}
