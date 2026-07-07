@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>🎛️ 高専祭コントロールポータル（ローカル専用）</title>
+    <style>
+        body { font-family:sans-serif; padding:20px; background:#2c3e50; color:white; }
+        .panel { background:#34495e; padding:20px; margin-bottom:20px; border-radius:8px; }
+        button { padding:10px 15px; margin:5px; font-weight:bold; cursor:pointer; }
+    </style>
+</head>
+<body>
+    <h1>🎛️ 運営コントロールポータル（ローカル専用）</h1>
+
+    <div class="panel">
+        <h2>🎮 ゲリラクイズ一斉制御</h2>
+        <p>問題番号: <input type="number" id="q-num" value="1" style="width:50px; text-align:center;"></p>
+        <p>問題文: <input type="text" id="q-text" style="width:80%;" value="函館高専の学内Wi-Fiの名称は？"></p>
+        <p>選択肢（カンマ区切り）: <input type="text" id="q-opts" style="width:80%;" value="HINET, eduroam, FREE-Wi-Fi, さくらWi-Fi"></p>
+        <hr>
+        <button style="background:orange;" onclick="setupQuiz()">1. 次の問題をセットする</button>
+        <button style="background:red; color:white;" onclick="toggleQuiz(true)">2. クイズ開始（全画面ジャック発動）</button>
+        <button style="background:green; color:white;" onclick="showAnswer(true)">3. 正解・解説を全スマホに表示</button>
+        <button style="background:grey; color:white;" onclick="toggleQuiz(false)">4. クイズ終了（通常画面に戻す）</button>
+    </div>
+
+    <div class="panel">
+        <h2>🏆 現在の問題の最速正解者モニター</h2>
+        <div id="winner-display" style="font-size:24px; color:yellow; font-weight:bold;">まだ正解者はいません</div>
+    </div>
+
+    <script type="module">
+        import { db } from "./firebase-config.js";
+        import { doc, updateDoc, collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-firestore.js";
+
+        window.setupQuiz = async function() {
+            const num = parseInt(document.getElementById("q-num").value);
+            const text = document.getElementById("q-text").value;
+            const opts = document.getElementById("q-opts").value.split(",").map(s => s.trim());
+            await updateDoc(doc(db, "quiz_control", "current"), {
+                question_num: num, question_text: text, options: opts,
+                is_active: false, show_answer: false
+            });
+            alert(`第 ${num} 問を仕込みました。`);
+            listenForWinner(num);
+        }
+
+        window.toggleQuiz = async function(status) {
+            await updateDoc(doc(db, "quiz_control", "current"), { is_active: status });
+        }
+
+        window.showAnswer = async function(status) {
+            await updateDoc(doc(db, "quiz_control", "current"), { show_answer: status });
+        }
+
+        let winnerListener = null;
+        function listenForWinner(qNum) {
+            if(winnerListener) winnerListener();
+            const q = query(
+                collection(db, "quiz_answers"),
+                where("question_num", "==", qNum),
+                orderBy("submitted_at", "asc"),
+                limit(1)
+            );
+            winnerListener = onSnapshot(q, (snapshot) => {
+                const display = document.getElementById("winner-display");
+                if(snapshot.empty) { display.innerText = "回答を待っています..."; return; }
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    display.innerHTML = `
+                        🎉 【最速正解者確定】 🎉<br>
+                        名前: ${data.user_name} (${data.class_name})<br>
+                        選択肢番号: ${data.chosen_option + 1}番を選択<br>
+                        IDコード: ${doc.id}
+                    `;
+                });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>🏆 クーポン引き換え確認（運営用）</title>
+    <style>
+        body { font-family:sans-serif; padding:20px; text-align:center; }
+        .card { border:2px solid #333; padding:20px; border-radius:10px; display:inline-block; text-align:left; background:#fff; }
+        .claim-btn { background:green; color:white; font-size:18px; padding:15px; width:100%; border:none; margin-top:20px; cursor:pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🎟️ 当選者プロフィール確認</h2>
+        <hr>
+        <p><strong>名前：</strong> <span id="p-name">読み込み中...</span></p>
+        <p><strong>年齢：</strong> <span id="p-age">-</span> 歳</p>
+        <p><strong>クラス：</strong> <span id="p-class">-</span></p>
+        <p><strong>クイズ番号：</strong> 第 <span id="p-qnum">-</span> 問</p>
+        <hr>
+        <div id="status-area"></div>
+        <button id="btn-done" class="claim-btn" style="display:none;" onclick="processClaim()">確認OK：500円クーポンを渡す</button>
+    </div>
+
+    <script type="module">
+        import { db } from "./firebase-config.js";
+        import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-firestore.js";
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const answerId = urlParams.get('id');
+        const docRef = doc(db, "quiz_answers", answerId);
+
+        window.onload = async function() {
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById("p-name").innerText = data.user_name;
+                document.getElementById("p-age").innerText = data.age || data.user_age;
+                document.getElementById("p-class").innerText = data.class_name;
+                document.getElementById("p-qnum").innerText = data.question_num;
+                const statusArea = document.getElementById("status-area");
+                if (data.is_claimed) {
+                    statusArea.innerHTML = "<h3 style='color:red;'>⚠️ 警告：すでに引き換え済みのQRコードです！</h3>";
+                } else {
+                    statusArea.innerHTML = "<h3 style='color:green;'>✅ 未引き換え：本人確認をしてください。</h3>";
+                    document.getElementById("btn-done").style.display = "block";
+                }
+            } else {
+                alert("無効なIDです。データが存在しません。");
+            }
+        }
+
+        window.processClaim = async function() {
+            if(confirm("500円クーポンを渡しましたか？お釣りが出ない旨を再度確認してください。")) {
+                await updateDoc(docRef, { is_claimed: true });
+                alert("引き換え処理を完了しました。");
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

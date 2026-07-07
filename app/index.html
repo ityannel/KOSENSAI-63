@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高専祭 GAC Event</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
+        .screen { display: none; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tab-btn { padding: 10px 20px; margin-right: 5px; cursor: pointer; }
+        .shop-item { padding: 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; }
+        .status-normal { color: green; font-weight: bold; }
+        .status-10min { color: orange; font-weight: bold; }
+        .status-20min { color: darkorange; font-weight: bold; }
+        .status-soldout { color: red; font-weight: bold; text-decoration: line-through; }
+        #quiz-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); color:white; z-index:9999; padding:20px; box-sizing:border-box; text-align:center; }
+        .quiz-btn { display:block; width:100%; padding:15px; margin:10px 0; font-size:18px; cursor:pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-profile" class="screen">
+        <h2>プロフィール登録</h2>
+        <p>名前（ニックネーム可）：<input type="text" id="user-name" placeholder="例：函館太郎"></p>
+        <p>年齢：<input type="number" id="user-age" min="0" max="100"></p>
+        <p><label><input type="checkbox" id="is-kosen" onchange="toggleKosenField()"> 高専生ですか？</label></p>
+        <p id="kosen-field" style="display:none;">クラス：
+            <select id="user-class">
+                <option value="1年">1年</option><option value="2年">2年</option>
+                <option value="3J">3年情報(3J)</option><option value="4J">4年情報(4J)</option><option value="5J">5年情報(5J)</option>
+            </select>
+        </p>
+        <hr>
+        <p style="font-size: 11px; color:#666;">※ゲームを開始すると[プライバシーポリシー]に同意したとみなされます。データは高専祭終了後に消去されます。</p>
+        <button onclick="saveProfile()" style="width:100%; padding:10px;">ゲームを開始する</button>
+    </div>
+
+    <div id="screen-main" class="screen">
+        <h3 id="welcome-msg">ようこそ！</h3>
+        <nav>
+            <button class="tab-btn" onclick="switchTab('stamp')">スタンプラリー</button>
+            <button class="tab-btn" onclick="switchTab('shop')">模擬店速報</button>
+        </nav>
+        <hr>
+        <div id="tab-stamp">
+            <h4>🗺️ 学内スタンプラリー</h4>
+            <p>ここに学内マップやスタンプの進捗を表示</p>
+        </div>
+        <div id="tab-shop">
+            <h4>🏪 模擬店 待ち時間・売り切れ速報</h4>
+            <div id="shop-list">読み込み中...</div>
+        </div>
+    </div>
+
+    <div id="quiz-overlay">
+        <h2 style="color: yellow;">🚨 ゲリラクイズ大会開催中！ 🚨</h2>
+        <h3 id="quiz-question">問題読み込み中...</h3>
+        <div id="quiz-options"></div>
+        <div id="quiz-result"></div>
+    </div>
+
+    <script type="module">
+        import { db } from "./firebase-config.js";
+        import { doc, collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-firestore.js";
+
+        window.toggleKosenField = function() {
+            document.getElementById("kosen-field").style.display = document.getElementById("is-kosen").checked ? "block" : "none";
+        }
+
+        window.saveProfile = function() {
+            const name = document.getElementById("user-name").value;
+            const age = document.getElementById("user-age").value;
+            if(!name || !age) return alert("名前と年齢を入力してください");
+            const userInfo = { name, age, class: document.getElementById("is-kosen").checked ? document.getElementById("user-class").value : "一般" };
+            localStorage.setItem("gac_user", JSON.stringify(userInfo));
+            initApp();
+        }
+
+        window.switchTab = function(tabName) {
+            document.getElementById("tab-stamp").style.display = tabName === 'stamp' ? 'block' : 'none';
+            document.getElementById("tab-shop").style.display = tabName === 'shop' ? 'block' : 'none';
+        }
+
+        function initApp() {
+            const user = localStorage.getItem("gac_user");
+            if (!user) {
+                document.getElementById("screen-profile").style.display = "block";
+                document.getElementById("screen-main").style.display = "none";
+            } else {
+                document.getElementById("screen-profile").style.display = "none";
+                document.getElementById("screen-main").style.display = "block";
+                document.getElementById("welcome-msg").innerText = `プレイヤー: ${JSON.parse(user).name} さん`;
+                switchTab('stamp');
+                startListeners();
+            }
+        }
+
+        let currentQuestionNum = 0;
+        let hasAnswered = false;
+
+        function startListeners() {
+            onSnapshot(collection(db, "shops"), (snapshot) => {
+                const shopList = document.getElementById("shop-list");
+                shopList.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const shop = doc.data();
+                    let statusText = "スムーズ", statusClass = "status-normal";
+                    if(shop.status === "10min") { statusText = "10分待ち"; statusClass = "status-10min"; }
+                    if(shop.status === "20min") { statusText = "20分以上待ち"; statusClass = "status-20min"; }
+                    if(shop.status === "soldout") { statusText = "完売御礼"; statusClass = "status-soldout"; }
+                    shopList.innerHTML += `<div class="shop-item"><span>${shop.name}</span><span class="${statusClass}">${statusText}</span></div>`;
+                });
+            });
+
+            onSnapshot(doc(db, "quiz_control", "current"), (docSnap) => {
+                const quiz = docSnap.data();
+                const overlay = document.getElementById("quiz-overlay");
+                if (quiz && quiz.is_active) {
+                    overlay.style.display = "block";
+                    document.getElementById("quiz-question").innerText = quiz.question_text;
+                    if(currentQuestionNum !== quiz.question_num) {
+                        currentQuestionNum = quiz.question_num;
+                        hasAnswered = false;
+                        document.getElementById("quiz-result").innerHTML = "";
+                    }
+                    const optionsDiv = document.getElementById("quiz-options");
+                    optionsDiv.innerHTML = "";
+                    quiz.options.forEach((opt, idx) => {
+                        optionsDiv.innerHTML += `<button class="quiz-btn" onclick="submitAnswer(${idx})" ${hasAnswered ? 'disabled' : ''}>${opt}</button>`;
+                    });
+                } else {
+                    overlay.style.display = "none";
+                }
+            });
+        }
+
+        window.submitAnswer = async function(chosenIdx) {
+            hasAnswered = true;
+            document.querySelectorAll(".quiz-btn").forEach(b => b.disabled = true);
+            const user = JSON.parse(localStorage.getItem("gac_user"));
+            const docRef = await addDoc(collection(db, "quiz_answers"), {
+                user_name: user.name,
+                age: user.age,
+                class_name: user.class,
+                question_num: currentQuestionNum,
+                chosen_option: chosenIdx,
+                submitted_at: serverTimestamp(),
+                is_claimed: false
+            });
+            document.getElementById("quiz-result").innerHTML = `
+                <p>送信完了！本部の集計をお待ちください...</p>
+                <div id="qrcode-area" style="background:white; padding:10px; display:inline-block; margin-top:10px;"></div>
+            `;
+            new QRCode(document.getElementById("qrcode-area"), {
+                text: `https://hakodate-ct.ac.jp/gac_event/app/claim.html?id=${docRef.id}`,
+                width: 128, height: 128
+            });
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>

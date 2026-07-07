@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模擬店ステータス管理</title>
+    <style>
+        body { font-family:sans-serif; text-align:center; padding:30px; background:#fafafa; }
+        .box { background:white; padding:20px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); display:inline-block; max-width:400px; width:100%; }
+        .btn { width:100%; padding:15px; margin:10px 0; font-size:16px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div id="login-section">
+            <h2>🏪 模擬店ログイン</h2>
+            <p>配られた4桁のパスワードを入力してください</p>
+            <input type="password" id="shop-pass" style="font-size:20px; text-align:center; width:80%; padding:5px;"><br><br>
+            <button onclick="loginShop()" style="padding:10px 20px;">ログイン</button>
+        </div>
+        <div id="manager-section" style="display:none;">
+            <h2 id="target-shop-name">店舗名</h2>
+            <p>現在の状況に合わせてボタンを押してください</p>
+            <button class="btn" style="background:green; color:white;" onclick="updateStatus('normal')">🍏 空いている（すぐ買える）</button>
+            <button class="btn" style="background:orange; color:white;" onclick="updateStatus('10min')">🍋 10分待ち</button>
+            <button class="btn" style="background:darkorange; color:white;" onclick="updateStatus('20min')">🍊 20分以上待ち</button>
+            <button class="btn" style="background:red; color:white;" onclick="updateStatus('soldout')">🚨 完売御礼（終了）</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from "./firebase-config.js";
+        import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-firestore.js";
+
+        let currentShopDocId = "";
+
+        window.loginShop = async function() {
+            const inputPass = document.getElementById("shop-pass").value;
+            const querySnapshot = await getDocs(collection(db, "shops"));
+            let matchFound = false;
+            querySnapshot.forEach((doc) => {
+                if(doc.data().pass === inputPass) {
+                    currentShopDocId = doc.id;
+                    document.getElementById("target-shop-name").innerText = doc.data().name;
+                    document.getElementById("login-section").style.display = "none";
+                    document.getElementById("manager-section").style.display = "block";
+                    matchFound = true;
+                }
+            });
+            if(!matchFound) alert("パスワードが違います。");
+        }
+
+        window.updateStatus = async function(newStatus) {
+            if(!currentShopDocId) return;
+            const docRef = doc(db, "shops", currentShopDocId);
+            await updateDoc(docRef, { status: newStatus });
+            alert("状況を更新しました！");
+        }
+    </script>
+</body>
+</html>
