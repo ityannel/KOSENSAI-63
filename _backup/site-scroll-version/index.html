@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第63回 函館高専祭「縁」</title>
+  <meta name="description" content="第63回 函館高専祭 テーマ「縁」 2026年10月24日(土)・25日(日) 開催">
+  <meta property="og:title" content="第63回 函館高専祭「縁」">
+  <meta property="og:description" content="2026年10月24日(土)・25日(日) 開催">
+  <meta name="theme-color" content="#9BD7D0">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-phase="before">
+
+  <!-- ポスターを通り過ぎると出てくるナビ（スマホでは常に表示） -->
+  <nav class="topnav" aria-label="ページ内リンク">
+    <a class="topnav-logo" href="#top">第63回 函館高専祭「縁」</a>
+    <div class="topnav-links" id="topnav-links"></div>
+  </nav>
+
+  <!-- ===== トップ：ポスターの中にページがある ===== -->
+  <header class="stage-wrap" id="top">
+    <div class="stage-blur" aria-hidden="true"></div>
+    <div class="stage" id="stage">
+      <img class="stage-poster" id="stage-poster" width="1057" height="1488"
+        alt="第63回 高専祭「縁」ポスター。夕焼けの空の下、電線の張る坂道を5人の学生が駆けていく。10月24日 12:00〜17:00、10月25日 10:00〜17:00">
+      <div class="sky" id="sky" aria-hidden="true"><div class="stars"></div></div>
+      <h1 class="visually-hidden">第63回 函館高専祭「縁」</h1>
+
+      <!-- 電線に吊るした短冊 = ナビゲーション -->
+      <nav class="tanzaku-nav" id="tanzaku-nav" aria-label="メニュー"></nav>
+
+      <!-- 空に浮かぶ表示（開催前・中・後で入れ替わる） -->
+      <div class="slot">
+        <div class="phase-before">
+          <p class="slot-label">開催まであと</p>
+          <div class="countdown" id="countdown" role="timer" aria-live="off">
+            <span class="cd-unit"><b data-cd="d">--</b><small>日</small></span>
+            <span class="cd-unit"><b data-cd="h">--</b><small>時間</small></span>
+            <span class="cd-unit"><b data-cd="m">--</b><small>分</small></span>
+            <span class="cd-unit"><b data-cd="s">--</b><small>秒</small></span>
+            <span class="cd-unit cd-micro"><b data-cd="us">------</b><small>マイクロ秒</small></span>
+          </div>
+        </div>
+        <div class="phase-during">
+          <p class="slot-label"><span class="dot"></span>ただいま開催中</p>
+          <div id="now-events" class="now-events"></div>
+        </div>
+        <div class="phase-after">
+          <p class="slot-label">第63回 函館高専祭は終了しました</p>
+          <p class="thanks">ご来場ありがとうございました</p>
+        </div>
+      </div>
+
+      <p class="sky-caption" id="sky-caption"></p>
+      <p class="notice-bar" id="notice-bar" hidden></p>
+    </div>
+  </header>
+
+  <!-- 開催中：生配信（抽選会の時間になると自動で出る） -->
+  <section class="section live-section" id="live" hidden>
+    <div id="live-stream" class="live-stream"></div>
+  </section>
+
+  <main>
+    <section class="section" id="crowd">
+      <h2 class="section-title"><span>CROWD</span>会場の混雑状況</h2>
+      <div class="crowd-grid" id="crowd-list"></div>
+      <p class="crowd-note">本部がリアルタイムで更新しています。</p>
+    </section>
+
+    <section class="section" id="rally">
+      <h2 class="section-title"><span>STAMP RALLY</span>模擬店スタンプラリー</h2>
+      <p class="rally-lead">模擬店のQRを読むか、お店で聞いた<b>合言葉</b>を入れるとスタンプが押されます。<b id="rally-goal-text"></b>集めたら景品と交換！</p>
+      <div class="rally-progress" id="rally-progress"></div>
+      <ul class="rally-card" id="rally-card"></ul>
+      <form class="rally-form" id="rally-form">
+        <label class="visually-hidden" for="rally-code">合言葉</label>
+        <input id="rally-code" type="text" autocomplete="off" enterkeyhint="done" placeholder="合言葉を入力">
+        <button class="btn" type="submit">スタンプを押す</button>
+      </form>
+      <p class="rally-msg" id="rally-msg" role="status"></p>
+      <div id="rally-goal" hidden></div>
+    </section>
+
+    <!-- 開催中・開催後のみ: 食レポ・写真 -->
+    <section class="section phase-live-only" id="report">
+      <h2 class="section-title"><span>REPORT</span>いちゃの食レポ</h2>
+      <div id="food-reports" class="report-list"></div>
+    </section>
+
+    <section class="section phase-live-only" id="photos">
+      <h2 class="section-title"><span>PHOTOS</span>会場の様子</h2>
+      <div id="photo-grid" class="photo-grid"></div>
+    </section>
+
+    <section class="section" id="about">
+      <h2 class="section-title"><span>ABOUT</span>高専祭について</h2>
+      <div class="about-grid">
+        <div id="about-body" class="prose"></div>
+        <figure class="message" id="message"></figure>
+      </div>
+      <div class="date-block">
+        <p class="date-main">10月24日<small>(土)</small> 〜 25日<small>(日)</small></p>
+        <p class="date-time" id="date-time"></p>
+        <p class="date-place">函館工業高等専門学校</p>
+      </div>
+    </section>
+
+    <section class="section" id="map">
+      <h2 class="section-title"><span>MAP</span>校内マップ</h2>
+      <div class="map-frame">
+        <div class="map-placeholder">校内マップ（画像が届き次第ここに差し替え）</div>
+      </div>
+      <ul class="venue-list" id="venue-list"></ul>
+    </section>
+
+    <section class="section" id="guide">
+      <h2 class="section-title"><span>GUIDE</span>企画案内</h2>
+      <div class="guide-grid" id="guide-grid"></div>
+    </section>
+
+    <section class="section" id="pickup">
+      <h2 class="section-title"><span>PICK UP</span>注目の模擬店・イベント</h2>
+      <h3 class="sub-title">模擬店</h3>
+      <div class="card-row" id="pickup-shops"></div>
+      <h3 class="sub-title">イベント</h3>
+      <div class="card-row" id="pickup-events"></div>
+    </section>
+
+    <section class="section" id="info">
+      <h2 class="section-title"><span>INFO</span>ご来場の皆さまへ</h2>
+      <ul class="notice-list" id="notice-list"></ul>
+      <h3 class="sub-title">ごみの捨て方</h3>
+      <div class="garbage-grid" id="garbage-grid"></div>
+    </section>
+
+    <section class="section" id="sponsors">
+      <h2 class="section-title"><span>SPONSORS</span>協賛</h2>
+      <p class="sponsor-lead" id="sponsor-lead"></p>
+      <ul class="sponsor-list" id="sponsor-list"></ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <a class="insta" id="insta-link" href="#" target="_blank" rel="noopener noreferrer">
+      <img src="assets/img/PC-instagram.png" alt="Instagram @KOSEN_GAKUSEIKAI" width="205" height="28">
+    </a>
+    <p>© 函館工業高等専門学校 学生会</p>
+  </footer>
+
+  <div class="stamp-toast" id="stamp-toast" hidden></div>
+
+  <script type="module" src="assets/main.js"></script>
+</body>
+</html>
