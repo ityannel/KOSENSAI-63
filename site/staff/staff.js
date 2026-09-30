@@ -658,6 +658,13 @@ async function buildShopSet(shops, withStaff) {
 // 1段目＝お店の名前、2段目＝サイトの QR、3段目＝スタンプラリーのおさそい
 // 縦書きの中の「QR」や数字は、横に寝かせずに1文字ぶんに立てる（縦中横）
 const tcy = (t) => esc(t).replace(/QR|\d{1,2}/g, (m) => `<span class="tcy">${m}</span>`);
+// 縦書きの数は漢数字で（3 → 三、12 → 十二）
+const kanjiNum = (n) => {
+  const d = "〇一二三四五六七八九";
+  if (n < 10) return d[n];
+  const tens = Math.floor(n / 10), ones = n % 10;
+  return `${tens > 1 ? d[tens] : ""}十${ones ? d[ones] : ""}`;
+};
 function buildTents(shops) {
   return shops.map((s) => {
     const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
@@ -680,7 +687,7 @@ function buildTents(shops) {
         <div class="pt-panel pt-rally"><div class="pt-face">
           <div class="pt-v pt-rally-text">
             <h3>スタンプラリー、<br>はじめました。</h3>
-            <p class="pt-rally-lead">スタンプ<b>${tcy(`${RALLY.goal}個`)}</b>で、景品と交換！</p>
+            <p class="pt-rally-lead">スタンプ<b>${kanjiNum(RALLY.goal)}個</b>で、景品と交換！</p>
           </div>
           <figure class="pt-rally-qr"><img src="${rallyQr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>
         </div></div>
