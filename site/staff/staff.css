@@ -313,6 +313,10 @@ body.is-printing { overflow: hidden; }
 .pr-bar-text h2 { margin: 2px 0; font-family: var(--head); font-weight: 900; font-size: 1.6rem; line-height: 1.2; }
 .pr-bar-text p { margin: 0; color: var(--sub); font-size: .85rem; }
 .pr-bar-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.pr-format span { display: grid; text-align: center; line-height: 1.2; }
+.pr-format small { font-size: .7rem; font-weight: 400; color: var(--sub); }
+.tag-info { margin-left: 8px; background: rgba(94, 211, 195, .16); color: #8FE9DD; vertical-align: 3px; }
+.tag-ex { margin-left: 8px; background: rgba(245, 196, 81, .16); color: #F5C451; vertical-align: 3px; }
 .pr-bar-actions .btn { min-height: 48px; padding: 0 22px; font-size: 1rem; }
 .pr-stage { overflow: auto; padding: 24px; }
 .print-area .sheet { zoom: .55; margin: 0 auto 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
@@ -409,6 +413,16 @@ body.is-printing { overflow: hidden; }
 .pt-rally-qr img { width: 52mm; height: 52mm; image-rendering: pixelated; }
 .pt-rally-qr figcaption { margin-top: 2mm; font-size: 4.4mm; }
 .pt-glue { display: grid; place-items: center; font-size: 3.2mm; letter-spacing: .4em; color: #666; }
+/* 貼り紙（壁に貼る A4 たて）：三角POP と同じ中身を上から順に。名前は横書き、スタンプラリーは縦書きの文と QR */
+.sheet.pw { display: grid; grid-template-rows: auto auto 1fr auto; gap: 8mm; padding: 14mm 14mm 10mm; }
+.pw-name { display: flex; align-items: center; gap: 7mm; padding-bottom: 6mm; border-bottom: .6mm solid var(--ink); }
+.pw-logo { flex: none; width: 30mm; height: auto; filter: grayscale(1) brightness(.35); }
+.pw-shop { margin: 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 17mm; line-height: 1.1; word-break: auto-phrase; }
+.pw-group { margin: 3mm 0 0; font-size: 7mm; }
+.pw-links { display: flex; justify-content: center; gap: 24mm; }
+.pw-rally { position: relative; display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; gap: 18mm; padding: 6mm 10mm; border: 1.2mm solid var(--ink); border-radius: 6mm; }
+.pw-rally .pt-rally-text { height: 96mm; }
+.pw-foot { margin: 0; font-size: 3.6mm; text-align: center; color: #555; }
 
 @page { size: A4; margin: 0; }
 @media print {

@@ -1457,7 +1457,7 @@ function renderSheet() {
     }).join("")}</ul>` : ""}
     ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` ${statusPill(w)}` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${x.note ? `<p>${esc(x.note)}</p>` : ""}</li>`).join("")}</ul>` : ""}
     ${p.zone ? `<p class="sh-hint">この階の教室（${esc(p.codes.join("・"))}）のどれかです。どの教室かは、当日は教室の入口の看板を見てください。</p>` : ""}
-    ${shops.length ? `<h3 class="sh-h">スタンプラリーのお店</h3><ul class="sh-events">${shops.map((x) => `<li><span class="mini-hanko${s.stamps?.includes(x.id) ? " on" : ""}">${s.stamps?.includes(x.id) ? "縁" : ""}</span>${esc(x.name)}</li>`).join("")}</ul>` : ""}
+    ${shops.length ? `<h3 class="sh-h">スタンプラリー</h3><ul class="sh-events">${shops.map((x) => `<li><span class="mini-hanko${s.stamps?.includes(x.id) ? " on" : ""}">${s.stamps?.includes(x.id) ? "縁" : ""}</span>${esc(x.name)}</li>`).join("")}</ul>` : ""}
     ${picks.length ? `<h3 class="sh-h">みどころ</h3><ul class="sh-events">${picks.map((x) => `<li>${esc(x.name)}${x.note ? `<small>　${esc(x.note)}</small>` : ""}</li>`).join("")}</ul>` : ""}
     ${voiceSection(p, s)}`;
   if (body._html === html) return; // 変わっていなければ描き直さない（読んでいる所・押している所がそのまま）
@@ -2303,7 +2303,7 @@ function buildIndex() {
   const shopPlace = (sid) => [...places.values()].find((p) => p.shops?.includes(sid));
   for (const x of RALLY.shops) {
     const p = shopPlace(x.id);
-    if (p) addItem({ p, kind: "shop", label: x.name, sub: `スタンプラリー・${titleOf(p)}`, rank: 0.5 }, x.name, titleOf(p), "お店 模擬店 スタンプラリー");
+    if (p) addItem({ p, kind: "shop", label: x.name, sub: `スタンプラリー・${titleOf(p)}`, rank: 0.5 }, x.name, titleOf(p), p.kind === "shop" || p.fest ? "お店 模擬店 スタンプラリー" : "スタンプラリー");
   }
   for (const x of PICKUP_SHOPS) {
     const p = place(x.venue);
@@ -2737,7 +2737,7 @@ function openLegend() {
       [ic('<g class="ic-now"><rect class="bg" x="-16" y="-8" width="32" height="16" rx="8"/><text>NOW</text></g>'), "いま企画をやっている"],
       [ic('<g class="ic-wait w10"><rect class="bg" x="-17" y="-8" width="34" height="16" rx="8"/><text>10分</text></g>'), "模擬店の待ち時間（赤は20分以上・灰色は売り切れ）"],
       [ic('<g class="ic-voice"><circle class="bg" r="8"/><text>2</text></g>'), "Enistagram の投稿の数"],
-      [ic('<g class="ic-stamp"><circle class="bg" r="8"/><text>縁</text></g>'), "スタンプラリーのお店（押したら「縁」）"],
+      [ic('<g class="ic-stamp"><circle class="bg" r="8"/><text>縁</text></g>'), "スタンプラリーの場所（押したら「縁」）"],
       ...CROWD.levels.map((lv) => [`<svg viewBox="0 0 28 18" aria-hidden="true"><rect x="1" y="1" width="26" height="16" rx="3" style="fill:color-mix(in srgb, ${lv.color} 35%, #fff);stroke:${lv.color};stroke-width:2.5"/></svg>`, `会場の混みぐあい：${esc(lv.label)}`]),
       [ic('<g class="mk-here"><circle class="dot" r="6"/></g>'), "いまここ（「いまここ」QR を読んだ場所）"],
       [ic('<g class="mk-pin"><path d="M0 8C-2 3-7 0-7-5a7 7 0 0 1 14 0c0 5-5 8-7 13z"/><circle cy="-5" r="2.5"/></g>'), "選んだ場所・目的地"],

@@ -132,7 +132,7 @@ async function stamp(code, shopId) {
     return message("スタンプは開催日（" + FESTIVAL.days.map((d) => d.label).join("・") + "）に押せます。", "warn");
   }
   const shop = await findShop(code, shopId);
-  if (!shop) return message("この QR ではスタンプを押せませんでした。お店の人に聞いてみてください。", "warn");
+  if (!shop) return message("この QR ではスタンプを押せませんでした。近くのスタッフに聞いてみてください。", "warn");
   if (state.stamps[shop.id]) return message(`「${shop.name}」のスタンプはもう押してあります。`, "info");
   state.stamps[shop.id] = nowMs();
   save();
@@ -196,7 +196,7 @@ function render() {
       <span class="rc-face rc-front">
         <span class="rc-head">
           <img class="rc-logo" src="assets/img/logo.webp" width="673" height="657" alt="">
-          <span class="rc-name"><b>模擬店スタンプラリー</b><small>第${esc(FESTIVAL.edition)}回 函館高専祭「縁」</small></span>
+          <span class="rc-name"><b>スタンプラリー</b><small>第${esc(FESTIVAL.edition)}回 函館高専祭「縁」</small></span>
           <span class="rc-no">No.<b>${cardNo()}</b></span>
         </span>
         <ol class="rc-slots">${slotsHtml()}</ol>
@@ -209,12 +209,12 @@ function render() {
       <span class="rc-face rc-back">
         <b class="rc-back-title">あそびかた</b>
         <ol class="rc-rules">
-          <li>対象の模擬店で、お店の QR を読む</li>
+          <li>模擬店・学科展示に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
           <li>スタンプが<em>${RALLY.goal}個</em>たまったら達成</li>
           <li>${esc(RALLY.claimPlace)}で、この画面を見せて景品と交換</li>
         </ol>
         <small class="rc-prize">${esc(RALLY.prize)}</small>
-        <small class="rc-shops">${list.length ? `対象のお店：${list.map((s) => esc(s.name)).join("・")}` : "対象のお店は、決まりしだいここに出ます"}</small>
+        <small class="rc-shops">${list.length ? `対象：${list.map((s) => esc(s.name)).join("・")}` : "対象の場所は、決まりしだいここに出ます"}</small>
       </span>
     </button>`;
   justStamped = null;
@@ -294,10 +294,10 @@ export function initRallyPage(getNow = () => Date.now()) {
   });
   // お店の QR を読む（ページの中のカメラ）。読めたら、その QR の鍵でスタンプを押す
   $("#rally-scan").addEventListener("click", () => openQrScanner({
-    title: "お店の QR を読む",
-    hint: "模擬店に置いてある QR を枠に入れてください",
+    title: "QR を読む",
+    hint: "模擬店・学科展示に置いてある QR を枠に入れてください",
     wrong: "スタンプラリーの QR ではないようです",
-    noCamera: "スマホのカメラアプリでお店の QR を読んでも、スタンプは押せます",
+    noCamera: "スマホのカメラアプリで QR を読んでも、スタンプは押せます",
     accept: (text) => {
       try {
         const q = new URL(text, location.href).searchParams;
@@ -326,7 +326,7 @@ export function renderMini(el) {
   el.innerHTML = `
     <a class="rc-mini" href="rally.html">
       <img class="rc-logo" src="assets/img/logo.webp" width="673" height="657" alt="">
-      <span class="rc-mini-txt"><b>スタンプカード</b><small>模擬店スタンプラリー</small></span>
+      <span class="rc-mini-txt"><b>スタンプカード</b><small>スタンプラリー</small></span>
       <span class="rc-mini-dots" aria-label="${count} / ${RALLY.goal}">${Array.from({ length: n }, (_, i) => `<i${i < count ? ' class="on"' : ""}>${i < count ? "縁" : ""}</i>`).join("")}</span>
     </a>`;
 }

@@ -183,13 +183,13 @@
             <article class="card desk">
               <header class="card-head"><h2>受付</h2><span class="pill" id="desk-progress">受付済み 0 / 0店</span></header>
               <ol class="desk-steps">
-                <li><b>探す</b>来たお店の名前・団体・クラスを入れる</li>
-                <li><b>印刷する</b>三角POP とお店の人用の紙（2枚）が出る。名前を確かめて刷る</li>
+                <li><b>探す</b>来たお店・展示の名前、団体、クラスを入れる</li>
+                <li><b>印刷する</b>名前を確かめ、三角POP か貼り紙を選んで刷る（模擬店はお店の人用の紙も）</li>
                 <li><b>渡した</b>紙を渡したら押す。「まだ」の一覧から消える</li>
               </ol>
               <label class="desk-search">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-                <input id="shop-q" type="search" placeholder="例：たこ焼き・5SE・野球部" autocomplete="off" enterkeyhint="search" aria-label="お店を探す">
+                <input id="shop-q" type="search" placeholder="例：たこ焼き・5SE・野球部・情報" autocomplete="off" enterkeyhint="search" aria-label="お店を探す">
               </label>
               <div class="row row-wrap desk-filter">
                 <div class="tabs" role="tablist" id="shop-filter" aria-label="表示するお店">
@@ -206,9 +206,9 @@
           <aside class="shops-side">
             <article class="card">
               <header class="card-head"><h2>スタンプラリー</h2><span class="pill" id="rally-state"></span></header>
-              <p class="muted small" style="margin-top:0">すべてのお店が対象です。お店の QR（2日とも同じ）は、印刷するときに自動で用意されます。景品と引き換えるには、下の「引き換えの番号」が要ります。</p>
+              <p class="muted small" style="margin-top:0">模擬店・学科展示・インフォメーション（本部。はじめの1個を、使い方を教えながら押してもらう）のすべてが対象です。QR（2日とも同じ）は、印刷するときに自動で用意されます。景品と引き換えるには、下の「引き換えの番号」が要ります。</p>
               <div class="row row-wrap">
-                <button class="btn btn-ghost btn-sm" type="button" id="rally-all">全部のお店の QR を用意する</button>
+                <button class="btn btn-ghost btn-sm" type="button" id="rally-all">全部の場所の QR を用意する</button>
                 <button class="btn btn-ghost btn-sm" type="button" id="rally-pin-make">引き換えの番号を作る</button>
                 <button class="btn btn-ghost btn-sm" type="button" id="rally-pin-show">番号を見る</button>
               </div>
@@ -217,16 +217,16 @@
 
             <article class="card">
               <header class="card-head"><h2>まとめて印刷</h2></header>
-              <p class="muted small" style="margin-top:0">受付の前に用意しておくときや、予備に。まとめて刷っても「受付済み」にはなりません。</p>
+              <p class="muted small" style="margin-top:0">受付の前に用意しておくときや、予備に。まとめて刷っても「受付済み」にはなりません。三角POP か貼り紙かは、確かめる画面で選べます。</p>
               <div class="stack">
                 <div class="seg seg-col" role="radiogroup" aria-label="印刷するもの">
-                  <label><input type="radio" name="pr-kind" value="shopset" checked><span>模擬店セット<small>三角POP（スタンプの QR つき）とお店の人用の紙</small></span></label>
+                  <label><input type="radio" name="pr-kind" value="shopset" checked><span>店頭の紙<small>三角POP か貼り紙（スタンプの QR つき）。模擬店はお店の人用の紙も</small></span></label>
                   <label><input type="radio" name="pr-kind" value="stamps"><span>スタンプの QR だけ（予備）<small>お店ごとのカード。6枚で A4 1枚</small></span></label>
                   <label><input type="radio" name="pr-kind" value="flyer"><span>来場者向けの案内チラシ<small>日程と、サイト・地図・Enistagram・スタンプの QR</small></span></label>
                 </div>
                 <div class="seg seg-col" role="radiogroup" aria-label="どのお店の分" id="pr-target-box">
-                  <label><input type="radio" name="pr-target" value="todo" checked><span>まだ渡していないお店<small id="pr-target-todo"></small></span></label>
-                  <label><input type="radio" name="pr-target" value="all"><span>すべてのお店<small id="pr-target-all"></small></span></label>
+                  <label><input type="radio" name="pr-target" value="todo" checked><span>まだ渡していない場所<small id="pr-target-todo"></small></span></label>
+                  <label><input type="radio" name="pr-target" value="all"><span>すべての場所<small id="pr-target-all"></small></span></label>
                 </div>
                 <label class="switch" id="pr-staff-box"><input type="checkbox" id="pr-staff" checked><span class="switch-ui" aria-hidden="true"></span><span>お店の人用の紙も入れる<small>待ち時間を変える QR。店頭には貼らない</small></span></label>
                 <div class="field" id="pr-size-box" hidden><span>大きさ</span>
@@ -364,6 +364,10 @@
   <div class="pr-overlay" id="print-overlay" role="dialog" aria-modal="true" aria-labelledby="pr-title" hidden>
     <header class="pr-bar">
       <div class="pr-bar-text"><small id="pr-kind-label"></small><h2 id="pr-title"></h2><p id="pr-note"></p></div>
+      <div class="seg pr-format" id="pr-format-box" role="radiogroup" aria-label="店頭の紙の形">
+        <label><input type="radio" name="pr-format" value="tent"><span>三角POP<small>机に立てる</small></span></label>
+        <label><input type="radio" name="pr-format" value="wall"><span>貼り紙<small>壁に貼る</small></span></label>
+      </div>
       <div class="pr-bar-actions">
         <button class="btn btn-ghost" type="button" id="pr-close">閉じる</button>
         <button class="btn btn-primary" type="button" id="pr-print">印刷する</button>

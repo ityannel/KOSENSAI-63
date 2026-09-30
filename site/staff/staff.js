@@ -378,18 +378,33 @@ const placeName = (id) => MAP.places.find((p) => p.id === id)?.name ?? id;
 const CATALOG = SHOPS.map((sh) => {
   const room = sh.room ?? HOMEROOMS[sh.cls] ?? null;
   const where = sh.place ? placeName(sh.place) : [sh.bldg && `${sh.bldg}棟${sh.floor ? sh.floor.replace("F", "階") : ""}`, room].filter(Boolean).join("・");
-  return { id: shopSlug(sh.cls ?? sh.room ?? sh.place), name: sh.name, group: sh.group, map: sh.cls ?? sh.room ?? sh.name,
+  return { id: shopSlug(sh.cls ?? sh.room ?? sh.place), kind: "shop", name: sh.name, group: sh.group, map: sh.cls ?? sh.room ?? sh.name,
     ...(room ? { room } : {}), ...(sh.place ? { place: sh.place } : {}), where, catalog: true };
 });
-function allShops() {
+// スタンプラリーの場所は、模擬店のほかに、インフォメーション（本部。はじめの1個をここで、使い方を教えながら押してもらう）と学科展示。
+// 社会基盤の5つの展示は、それだけで何個も集まらないように1か所にまとめる（QR は C113 に置く想定）
+const SPOTS = [{ id: "hq", kind: "info", name: "インフォメーション", group: "本部", place: "hq", where: "玄関ホール" }];
+for (const p of MAP.places.filter((x) => x.kind === "exhibit")) {
+  if (p.dept === "社会基盤") {
+    if (!SPOTS.some((x) => x.id === "ex-civ")) SPOTS.push({ id: "ex-civ", kind: "exhibit", name: "社会基盤の展示", group: "社会基盤工学科の学科展示", place: p.id, where: "C111〜C118（5つの展示）" });
+    continue;
+  }
+  const rooms = [p.room ?? []].flat();
+  SPOTS.push({ id: p.id, kind: "exhibit", name: p.name, group: p.sub, place: p.id, where: rooms.length > 1 ? `${rooms[0]} ほか` : rooms[0] ?? "" });
+}
+CATALOG.unshift(...SPOTS.map((x) => ({ ...x, map: x.id, catalog: true })));
+const KIND_TAG = { info: '<i class="tag tag-info">インフォ</i>', exhibit: '<i class="tag tag-ex">学科展示</i>' };
+// スタンプの場所すべて（受付・スタンプラリー・印刷）
+function allSpots() {
   const docs = new Map(state.shops.map((d) => [d.id, d]));
   const list = CATALOG.map((c) => ({ ...c, ...(docs.get(c.id) ?? {}), name: c.name, map: c.map, exists: docs.has(c.id) }));
   const extra = state.shops.filter((d) => !CATALOG.some((c) => c.id === d.id))
-    .map((d) => ({ ...d, where: d.map ?? "", exists: true }))
+    .map((d) => ({ ...d, kind: "shop", where: d.map ?? "", exists: true }))
     .sort((x, y) => String(x.name).localeCompare(String(y.name), "ja"));
   return [...list, ...extra];
 }
-const findShop = (id) => allShops().find((s) => s.id === id);
+const allShops = () => allSpots().filter((s) => s.kind === "shop"); // 模擬店だけ（待ち時間・完売の数）
+const findShop = (id) => allSpots().find((s) => s.id === id);
 // お店の文書がまだなければ作る（shop.html はこれがないと使えない）
 function shopDocWrite(shop, fields) {
   const ref = fs.doc(db, "shops", shop.id);
@@ -404,23 +419,23 @@ const kana = (t) => String(t ?? "").normalize("NFKC").toLowerCase().replace(/\s+
 const shopHay = (s) => kana([s.name, s.group, s.id, s.map, s.where, s.room].filter(Boolean).join(" "));
 function visibleShops() {
   const q = kana($("#shop-q").value);
-  const shops = allShops();
+  const shops = allSpots();
   if (q) return shops.filter((s) => shopHay(s).includes(q));
   if (shopFilter === "todo") return shops.filter((s) => !handedAt(s));
   if (shopFilter === "done") return shops.filter((s) => handedAt(s)).sort((x, y) => handedAt(y) - handedAt(x));
   return shops;
 }
 function renderShops() {
-  const shops = allShops();
+  const shops = allSpots();
   const done = shops.filter((s) => handedAt(s)).length;
   $("#count-todo").textContent = shops.length - done;
   $("#count-done").textContent = done;
   $("#count-all").textContent = shops.length;
   const prog = $("#desk-progress");
-  prog.textContent = `受付済み ${done} / ${shops.length}店`;
+  prog.textContent = `受付済み ${done} / ${shops.length}`;
   prog.classList.toggle("is-on", done === shops.length && shops.length > 0);
-  $("#pr-target-todo").textContent = `${shops.length - done}店`;
-  $("#pr-target-all").textContent = `${shops.length}店`;
+  $("#pr-target-todo").textContent = `${shops.length - done}か所`;
+  $("#pr-target-all").textContent = `${shops.length}か所`;
   const q = $("#shop-q").value.trim();
   const list = visibleShops();
   $("#shop-hint").textContent = q ? `すべてのお店から「${q}」を探しています（${list.length}件）` : "";
@@ -430,14 +445,14 @@ function renderShops() {
     const h = handedAt(s);
     return `
       <article class="shop${h ? " is-done" : ""}">
-        <div class="shop-name"><h3>${esc(s.name)}</h3><small>${[s.group, s.where].filter(Boolean).map(esc).join("・")}</small></div>
+        <div class="shop-name"><h3>${esc(s.name)}${KIND_TAG[s.kind] ?? ""}</h3><small>${[s.group, s.where].filter(Boolean).map(esc).join("・")}</small></div>
         <div class="shop-desk">
           ${h ? `<span class="tag tag-ok">✓ ${hhmm(h)} に渡した</span>
             <button class="btn btn-ghost btn-sm" type="button" data-print-one="${esc(s.id)}">もう一度印刷</button>
             <button class="btn btn-ghost btn-sm" type="button" data-undo="${esc(s.id)}">取り消す</button>`
           : `<button class="btn btn-primary" type="button" data-print-one="${esc(s.id)}">印刷する</button>`}
         </div>
-        <details class="shop-more" data-more="${esc(s.id)}"${openMore.has(s.id) ? " open" : ""}>
+        ${s.kind !== "shop" ? "" : `<details class="shop-more" data-more="${esc(s.id)}"${openMore.has(s.id) ? " open" : ""}>
           <summary>当日の操作<span>待ち時間：${esc(wait(s.status) ?? "まだ出していない")}${s.updated_at ? `（${hhmm(toMs(s.updated_at))}）` : ""}・コード ${codes.length}</span></summary>
           <div class="shop-status">${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-shop="${esc(s.id)}" data-status="${v}" style="--c:${c}" aria-pressed="${s.status === v}">${label}</button>`).join("")}</div>
           <div class="shop-codes">
@@ -446,7 +461,7 @@ function renderShops() {
             <button class="btn btn-ghost btn-sm" data-issue="${esc(s.id)}">＋ 新しいコード</button>
             ${s.catalog ? "" : `<button class="btn btn-danger btn-sm" data-remove="${esc(s.id)}" style="margin-left:auto">お店を消す</button>`}
           </div>
-        </details>
+        </details>`}
       </article>`;
   }).join("") : `<p class="empty">${q ? `「${esc(q)}」に合うお店はありません。` : shopFilter === "todo" ? "全部のお店に渡しました 🎉" : "まだありません。"}</p>`;
   $$("[data-qr-box]").forEach((box) => {
@@ -536,7 +551,7 @@ $("#shop-add").addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = $("#shop-id").value.trim();
   const name = $("#shop-name").value.trim();
-  if (allShops().some((s) => s.id === id)) return toast("その ID はもう使われています", true);
+  if (allSpots().some((s) => s.id === id)) return toast("その ID はもう使われています", true);
   const room = $("#shop-room").value.trim();
   if (await write(`${name}を足しました`, () => fs.setDoc(fs.doc(db, "shops", id), { name, ...(room ? { map: room } : {}) }))) {
     e.target.reset();
@@ -559,13 +574,13 @@ const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 // すべてのお店がスタンプラリーの対象。足りない鍵を作り、rally/current をお店全部にそろえる（足りなければ何もしない）
 function rallyMissing() {
   const ids = new Set(rallyShopIds());
-  return allShops().filter((s) => !ids.has(s.id) || !keysOf(s.id)[FEST]);
+  return allSpots().filter((s) => !ids.has(s.id) || !keysOf(s.id)[FEST]);
 }
 async function ensureRally() {
   if (!rallyMissing().length) return false;
   const batch = fs.writeBatch(db);
   const shops = [];
-  for (const shop of allShops()) {
+  for (const shop of allSpots()) {
     const keys = { ...keysOf(shop.id) };
     if (!keys[FEST]) {
       keys[FEST] = randomKey();
@@ -583,7 +598,7 @@ async function ensureRally() {
   return true;
 }
 function renderRally() {
-  const total = allShops().length;
+  const total = allSpots().length;
   const missing = rallyMissing().length;
   const pin = !!state.rally?.staffPin;
   const st = $("#rally-state");
@@ -593,7 +608,7 @@ function renderRally() {
   $("#rally-all").disabled = !missing;
   $("#rally-all").textContent = missing ? `残り${missing}店の QR を用意する` : "全部のお店の QR を用意済み";
 }
-$("#rally-all").addEventListener("click", () => write("全部のお店のスタンプの QR を用意しました", ensureRally));
+$("#rally-all").addEventListener("click", () => write("全部の場所のスタンプの QR を用意しました", ensureRally));
 $("#rally-pin-make").addEventListener("click", async () => {
   if (state.rally?.staffPin && !confirm("番号を作り直すと、前の番号では引き換えられなくなります。よろしいですか？")) return;
   const pin = String(crypto.getRandomValues(new Uint32Array(1))[0] % 100000000).padStart(8, "0");
@@ -658,11 +673,12 @@ async function ensureShopCode(shopId) {
   return code;
 }
 
-async function buildShopSet(shops, withStaff) {
+// 店頭の紙（三角POP か 貼り紙）と、模擬店ならお店の人用の紙
+async function buildShopSet(shops, withStaff, format = printFormat()) {
   const pages = [];
   for (const s of shops) {
-    pages.push(buildTents([s])); // 店頭の札は三角POP（A4 を3つ折りにして縦に立てる）
-    if (withStaff) {
+    pages.push(format === "wall" ? buildWall(s) : buildTents([s]));
+    if (withStaff && s.kind === "shop") {
       const code = await ensureShopCode(s.id);
       const url = shopUrl(code, s.id);
       pages.push(`
@@ -705,9 +721,32 @@ function rallyBody(s) {
   return `
           <div class="pt-v pt-rally-text">
             <h3>スタンプラリー、<br>はじめました。</h3>
-            <p class="pt-rally-lead">スタンプ<b>${kanjiNum(RALLY.goal)}個</b>で、景品と交換！</p>
+            ${s.kind === "info"
+              ? `<p class="pt-rally-lead">まずはここで<b>一個目</b>！<br>スタンプ${kanjiNum(RALLY.goal)}個で、景品と交換！</p>`
+              : `<p class="pt-rally-lead">スタンプ<b>${kanjiNum(RALLY.goal)}個</b>で、景品と交換！</p>`}
           </div>
           <figure class="pt-rally-qr"><img src="${qr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>`;
+}
+// 2段目の QR：Enistagram と、公式サイト（模擬店は待ち時間、学科展示は展示の一覧、インフォは校内マップ）
+const SITE_LINK = { shop: ["#ennichi", "で待ち時間をチェック"], exhibit: ["map.html?list=exhibit", "で学科展示を見る"], info: ["map.html", "で校内マップを見る"] };
+function linksHtml(s) {
+  const [path, text] = SITE_LINK[s.kind] ?? SITE_LINK.shop;
+  return `
+          <figure class="pt-link"><figcaption><img class="pt-enista" src="../assets/img/enistagram.webp" alt="Enistagram"><span>に投稿</span></figcaption><img class="pt-link-qr" src="${qrDataUrl(siteUrl("map.html?tab=feed"))}" alt=""></figure>
+          <figure class="pt-link"><figcaption><b>公式サイト</b><span>${text}</span></figcaption><img class="pt-link-qr" src="${qrDataUrl(siteUrl(path))}" alt=""></figure>`;
+}
+// 貼り紙（壁に貼る A4 たて）：三角POP と同じ中身を、上から「名前」「サイトの QR」「スタンプラリー」の順に
+function buildWall(s) {
+  return `
+      <section class="sheet pw">
+        <div class="pw-name">
+          <img class="pw-logo" src="${LOGO}" alt="">
+          <div><h2 class="pw-shop">${esc(s.name)}</h2>${s.group ? `<p class="pw-group">${esc(s.group)}</p>` : ""}</div>
+        </div>
+        <div class="pw-links">${linksHtml(s)}</div>
+        <div class="pw-rally">${rallyBody(s)}</div>
+        <p class="pw-foot">第${FESTIVAL.edition}回 函館高専祭「${esc(FESTIVAL.theme)}」</p>
+      </section>`;
 }
 function buildTents(shops) {
   return shops.map((s) => {
@@ -720,9 +759,7 @@ function buildTents(shops) {
             ${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}
           </div>
         </div></div>
-        <div class="pt-panel"><div class="pt-face pt-links">
-          <figure class="pt-link"><figcaption><img class="pt-enista" src="../assets/img/enistagram.webp" alt="Enistagram"><span>に投稿</span></figcaption><img class="pt-link-qr" src="${qrDataUrl(siteUrl("map.html?tab=feed"))}" alt=""></figure>
-          <figure class="pt-link"><figcaption><b>公式サイト</b><span>で待ち時間をチェック</span></figcaption><img class="pt-link-qr" src="${qrDataUrl(siteUrl("#ennichi"))}" alt=""></figure>
+        <div class="pt-panel"><div class="pt-face pt-links">${linksHtml(s)}
         </div></div>
         <div class="pt-panel pt-rally"><div class="pt-face">
 ${rallyBody(s)}
@@ -762,36 +799,57 @@ const VISIT_NOTES = () => {
   return cards.slice(0, 6).map((c) => String(c.title).replace("{close}", close).replace("{voteEnd}", "締め切り"));
 };
 
-// 印刷の確かめ（上に重ねる画面）。受付の1店のときは、刷ったあと「渡した」を押す
+// 印刷の確かめ（上に重ねる画面）。受付の1か所のときは、刷ったあと「渡した」を押す。
+// 店頭の紙の形（三角POP・貼り紙）はここで選ぶ。選んだ形は、このパソコンで覚えておく
+const FORMAT_KEY = "kosen63-print-format";
+const FORMAT_LABEL = { tent: "三角POP", wall: "貼り紙" };
+function printFormat() {
+  const v = $('[name="pr-format"]:checked')?.value;
+  if (v) return v;
+  try { return localStorage.getItem(FORMAT_KEY) === "wall" ? "wall" : "tent"; } catch { return "tent"; }
+}
+$$('[name="pr-format"]').forEach((r) => { r.checked = r.value === printFormat(); });
+let current = null; // { kindLabel, title, sub, build, shop, set }
 let deskShop = null;
-function openPrint({ kindLabel, title, note, html, shop = null }) {
-  deskShop = shop;
-  $("#pr-kind-label").textContent = kindLabel;
-  $("#pr-title").textContent = title;
-  $("#pr-note").textContent = note;
-  $("#print-area").innerHTML = html;
+async function showPrint() {
+  const c = current;
+  deskShop = c.shop ?? null;
+  $("#pr-kind-label").textContent = c.kindLabel;
+  $("#pr-title").textContent = c.title;
+  $("#pr-format-box").hidden = !c.set;
+  $("#print-area").innerHTML = await c.build();
   loadPrintFont($("#print-area").textContent);
+  const n = $$("#print-area .sheet").length;
+  const staff = $$("#print-area .ps-staff").length;
+  $("#pr-note").textContent = [c.sub, c.set ? `${FORMAT_LABEL[printFormat()]}${staff ? "・お店の人用の紙" : ""}` : "", `${n}枚`].filter(Boolean).join("　");
   $("#pr-given").hidden = true;
   $("#pr-print").className = "btn btn-primary";
   $("#print-overlay").hidden = false;
   document.body.classList.add("is-printing");
   $("#pr-print").focus();
 }
+$$('[name="pr-format"]').forEach((r) => r.addEventListener("change", async () => {
+  try { localStorage.setItem(FORMAT_KEY, r.value); } catch { /* 覚えられないブラウザ */ }
+  if (current && !$("#print-overlay").hidden) await showPrint();
+}));
 function closePrint() {
   $("#print-overlay").hidden = true;
   document.body.classList.remove("is-printing");
   $("#print-area").innerHTML = "";
+  current = null;
   deskShop = null;
 }
 $("#pr-close").addEventListener("click", closePrint);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#print-overlay").hidden) closePrint(); });
-// 受付の「印刷する」：スタンプの QR を用意してから、そのお店のセット（三角POP＋お店の人用）を作る
+const KIND_NAME = { shop: "模擬店", exhibit: "学科展示", info: "インフォメーション" };
+// 受付の「印刷する」：スタンプの QR を用意してから、その場所の紙（店頭の紙＋模擬店ならお店の人用）を作る
 async function printForDesk(shop) {
-  toast(`${shop.name}のセットを作っています…`);
+  toast(`${shop.name}の紙を作っています…`);
   try {
     await ensureRally();
-    const html = await buildShopSet([shop], true);
-    openPrint({ kindLabel: "受付：模擬店セット（2枚）", title: shop.name, note: `${[shop.group, shop.where].filter(Boolean).join("・")}　三角POP・お店の人用の紙`, html, shop });
+    current = { kindLabel: `受付：${KIND_NAME[shop.kind] ?? "模擬店"}`, title: shop.name, sub: [shop.group, shop.where].filter(Boolean).join("・"),
+      build: () => buildShopSet([shop], true), shop, set: true };
+    await showPrint();
   } catch (err) {
     console.warn(err);
     toast(`作れませんでした（${err.message}）`, true);
@@ -803,7 +861,7 @@ $("#pr-print").addEventListener("click", async () => {
   if (deskShop) { // 刷ったら、次は「渡した」
     $("#pr-given").hidden = false;
     $("#pr-print").className = "btn btn-ghost";
-    $("#pr-note").textContent = "刷れたら、お店に渡して「渡した」を押してください。";
+    $("#pr-note").textContent = "刷れたら、渡して「渡した」を押してください。";
     $("#pr-given").focus();
   }
 });
@@ -812,7 +870,7 @@ $("#pr-given").addEventListener("click", async () => {
   if (!shop) return;
   if (await write(`${shop.name}に渡しました`, () => shopDocWrite(shop, { handed_at: fs.serverTimestamp() }))) {
     closePrint();
-    $("#shop-q").value = ""; // 次のお店をすぐ探せるように
+    $("#shop-q").value = ""; // 次をすぐ探せるように
     renderShops();
     $("#shop-q").focus();
   }
@@ -821,18 +879,21 @@ $("#pr-given").addEventListener("click", async () => {
 $("#pr-make").addEventListener("click", async () => {
   const kind = printKind();
   const target = $('[name="pr-target"]:checked').value;
-  const shops = allShops().filter((s) => target === "all" || !handedAt(s));
-  if (kind !== "flyer" && !shops.length) return toast("刷るお店がありません", true);
+  const shops = allSpots().filter((s) => target === "all" || !handedAt(s));
+  if (kind !== "flyer" && !shops.length) return toast("刷る場所がありません", true);
+  const staff = $("#pr-staff").checked;
   $("#pr-make").disabled = true;
   try {
     if (kind !== "flyer") await ensureRally();
-    const html = kind === "shopset" ? await buildShopSet(shops, $("#pr-staff").checked)
-      : kind === "stamps" ? buildStamps(shops)
-      : buildFlyer($('[name="pr-size"]:checked').value);
-    const label = { shopset: "まとめて：模擬店セット", stamps: "まとめて：スタンプの QR（予備）", flyer: "来場者向けの案内チラシ" }[kind];
-    const who = kind === "flyer" ? "" : `${target === "all" ? "すべてのお店" : "まだ渡していないお店"}（${shops.length}店）`;
-    openPrint({ kindLabel: label, title: who || "案内チラシ", note: `${$$("#print-area .sheet").length || ""}`, html });
-    $("#pr-note").textContent = `${$$("#print-area .sheet").length}枚。まとめて刷っても「受付済み」にはなりません。`;
+    const size = $('[name="pr-size"]:checked').value;
+    current = {
+      kindLabel: { shopset: "まとめて：店頭の紙", stamps: "まとめて：スタンプの QR（予備）", flyer: "来場者向けの案内チラシ" }[kind],
+      title: kind === "flyer" ? "案内チラシ" : `${target === "all" ? "すべての場所" : "まだ渡していない場所"}（${shops.length}か所）`,
+      sub: kind === "flyer" ? "" : "まとめて刷っても「受付済み」にはなりません",
+      build: kind === "shopset" ? () => buildShopSet(shops, staff) : kind === "stamps" ? async () => buildStamps(shops) : async () => buildFlyer(size),
+      set: kind === "shopset",
+    };
+    await showPrint();
   } catch (err) {
     toast(`作れませんでした（${err.message}）`, true);
   } finally {
