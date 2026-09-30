@@ -1330,6 +1330,11 @@ body:not(.awake) .spot.is-person::before { animation: none; }
    絵の下のセクション（前はパネルだったもの。ふつうに並べてスクロールで読む）
    ===================================================== */
 html { scroll-behavior: smooth; }
+/* Lenis（なめらかなスクロール）が動いている間は、ブラウザのなめらかスクロールと重ならないように */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 .sections { padding-bottom: calc(var(--tabs-h) + 24px); color: var(--text); }
 .sec { position: relative; width: min(100%, 640px); margin: 0 auto; padding: 40px 20px 12px; scroll-margin-top: 8px; }

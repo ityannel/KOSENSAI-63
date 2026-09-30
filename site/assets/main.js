@@ -576,6 +576,20 @@ if (params.has("fireworks") || (nowMs() >= OPEN && nowMs() < OPEN + 90000)) {
   dock();
 }
 
+// ---------- なめらかなスクロール（Lenis） ----------
+// PC のマウスホイール・トラックパッドで、ぬるっと慣性がついて止まる。スマホの指のスクロールは、もともとなめらかなのでそのまま。
+// パネルやシートの中（中だけでスクロールする所）は、ふつうにスクロールする。パネルを開いている間は止める。動きを減らす設定のときは使わない
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches && !params.has("preview")) {
+  import("https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs").then(({ default: Lenis }) => {
+    const lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 1, allowNestedScroll: true, anchors: false,
+      prevent: (node) => !!node.closest?.(".panel, .detail, .ask, [data-lenis-prevent]") });
+    const loop = (t) => { lenis.raf(t); requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+    const sync = () => (document.body.classList.contains("panel-open") ? lenis.stop() : lenis.start());
+    new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  }).catch(() => { /* 読めなければ、いつものスクロール */ });
+}
+
 // ---------- テスト用パネル（?test=1 のときだけ） ----------
 // 本部コンソールのプレビュー（?preview=1 で iframe の中に開いたとき）からも、同じことができる
 if (params.has("test") || params.has("preview")) {
