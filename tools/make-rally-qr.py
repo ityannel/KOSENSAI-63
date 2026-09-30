@@ -10,6 +10,7 @@
     python tools/make-rally-qr.py                              # site.config.json の default（ふつうは本番）
     python tools/make-rally-qr.py --env preview                # 確認用のサイトで試すとき
     python tools/make-rally-qr.py --new                        # 鍵とスタッフ番号を全部作り直す
+    python tools/make-rally-qr.py --test-today                 # 今日（日本時間）も押せる QR を足す（本番前の確認用）
 
 2回目からは rally-secret.json の鍵を使い回す（お店を足したときは、そのお店の分だけ新しく作る）。
 """
@@ -31,8 +32,9 @@ CONFIG = ROOT / "site" / "assets" / "config.js"
 SECRET = TOOLS / "rally-secret.json"
 PIN_ITERATIONS = 300_000
 
-ENV, BASE, _ = pick([a for a in sys.argv[1:] if a != "--new"])
+ENV, BASE, _ = pick([a for a in sys.argv[1:] if a not in ("--new", "--test-today")])
 renew = "--new" in sys.argv
+test_today = "--test-today" in sys.argv
 
 shops_file = TOOLS / "rally-shops.json"
 if not shops_file.exists():
@@ -44,6 +46,11 @@ for s in shops:
 
 config = CONFIG.read_text(encoding="utf-8")
 dates = re.findall(r'open: "(\d{4}-\d{2}-\d{2})T', config.split("export const FESTIVAL")[1].split("\n};")[0])
+if test_today:
+    from datetime import datetime, timedelta, timezone
+    today = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d")
+    if today not in dates:
+        dates.insert(0, today)
 
 secret = {} if renew or not SECRET.exists() else json.loads(SECRET.read_text(encoding="utf-8"))
 keys = secret.setdefault("keys", {})
@@ -91,7 +98,7 @@ def qr_data_uri(text):
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
-day_label = {d: f"{int(d[5:7])}/{int(d[8:10])}" for d in dates}
+day_label = {d: f"{int(d[5:7])}/{int(d[8:10])}" + ("（テスト用）" if test_today and d == dates[0] else "") for d in dates}
 cards = []
 for d in dates:
     for s in shops:
