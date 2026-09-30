@@ -1345,7 +1345,8 @@ function shopDocFor(sh, list) {
 function waitOf(sh, s) {
   const d = shopDocFor(sh, s.shops);
   const w = WAIT[d?.status];
-  return w ? { ...w, ago: d.updated_at ? s.agoText(d.updated_at) : "" } : null;
+  if (!w || !w.rank) return null; // 待ちなし（すぐ買える）は、何も出さない（情報がないときと同じ見た目）
+  return { ...w, ago: d.updated_at ? s.agoText(d.updated_at) : "" };
 }
 // 待ち時間・混雑の札：「待ちなし」の横に、いつの情報か（細い字）。会場の混雑も同じ形（ラベルは混みぐあい）
 const statusPill = (x) => x ? `<span class="wait ${x.cls}${x.stale ? " is-stale" : ""}">${esc(x.label)}${x.ago ? `<small>${esc(x.ago)}</small>` : ""}</span>` : "";

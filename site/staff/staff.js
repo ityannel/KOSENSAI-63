@@ -538,7 +538,7 @@ $("#shop-add").addEventListener("submit", async (e) => {
   const name = $("#shop-name").value.trim();
   if (allShops().some((s) => s.id === id)) return toast("その ID はもう使われています", true);
   const room = $("#shop-room").value.trim();
-  if (await write(`${name}を足しました`, () => fs.setDoc(fs.doc(db, "shops", id), { name, status: "normal", ...(room ? { map: room } : {}), updated_at: fs.serverTimestamp() }))) {
+  if (await write(`${name}を足しました`, () => fs.setDoc(fs.doc(db, "shops", id), { name, ...(room ? { map: room } : {}) }))) {
     e.target.reset();
   }
 });
