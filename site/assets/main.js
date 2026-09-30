@@ -576,6 +576,18 @@ if (params.has("fireworks") || (nowMs() >= OPEN && nowMs() < OPEN + 90000)) {
   dock();
 }
 
+// ---------- PC：いま見ているセクションの色を、まわりににじませる（style.css の :root[data-sec]） ----------
+if (matchMedia("(min-width: 600px)").matches && "IntersectionObserver" in window) {
+  const secs = ["days", "crowd-now", "pickup", "ennichi", "info", "sponsors"].map((id) => document.getElementById(id)).filter(Boolean);
+  const seen = new Map();
+  const io = new IntersectionObserver((es) => {
+    for (const e of es) seen.set(e.target.id, e.isIntersecting);
+    const cur = secs.find((s) => seen.get(s.id) && !s.hidden);
+    if (cur) document.documentElement.dataset.sec = cur.id; else delete document.documentElement.dataset.sec;
+  }, { rootMargin: "-45% 0px -45% 0px" }); // 画面のまん中の線にかかっているセクション
+  secs.forEach((s) => io.observe(s));
+}
+
 // ---------- なめらかなスクロール（Lenis） ----------
 // PC のマウスホイール・トラックパッドで、ぬるっと慣性がついて止まる。スマホの指のスクロールは、もともとなめらかなのでそのまま。
 // パネルやシートの中（中だけでスクロールする所）は、ふつうにスクロールする。パネルを開いている間は止める。動きを減らす設定のときは使わない

@@ -1512,6 +1512,9 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
   .stamp-toast, body.lightning::after { left: var(--app-x); right: var(--app-x); }
 }
 
+/* まわりの色（--pc-glow）を、なめらかに移り変わらせるために、色として登録する */
+@property --pc-glow { syntax: "<color>"; inherits: true; initial-value: rgba(0, 0, 0, 0); }
+
 /* =====================================================
    PC の左右（side.js）：うしろは今の空の絵とゆれる短冊。左にロゴと日付、右にタブとメニュー（幅 1000px 以上）
    ===================================================== */
@@ -1522,6 +1525,19 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
     background: #0e0f11 center 30% / cover no-repeat; transition: background-image 2s;
   }
   .pc-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 12, 22, 0.15), rgba(10, 12, 22, 0.55)); }
+  /* 真ん中でいま見ているセクションの色が、まわりにじんわりにじむ（main.js が :root の data-sec を切りかえる） */
+  .pc-bg { --pc-glow: rgba(0, 0, 0, 0); transition: background-image 2s, --pc-glow 1.8s ease; }
+  .pc-bg::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 60% 75% at 50% 50%, var(--pc-glow), transparent 80%), linear-gradient(var(--pc-glow), var(--pc-glow));
+    opacity: 0.9;
+  }
+  :root[data-sec="days"] .pc-bg { --pc-glow: rgba(216, 69, 127, 0.42); }
+  :root[data-sec="crowd-now"] .pc-bg { --pc-glow: rgba(134, 100, 138, 0.45); }
+  :root[data-sec="pickup"] .pc-bg { --pc-glow: rgba(226, 132, 40, 0.42); }
+  :root[data-sec="ennichi"] .pc-bg { --pc-glow: rgba(224, 170, 70, 0.42); }
+  :root[data-sec="info"] .pc-bg { --pc-glow: rgba(82, 168, 150, 0.42); }
+  :root[data-sec="sponsors"] .pc-bg { --pc-glow: rgba(52, 66, 100, 0.55); }
   :root[data-tint="dawn"] .pc-bg { background-image: url("img/sky-dawn.webp"); }
   :root[data-tint="day"] .pc-bg { background-image: url("img/sky-day.webp"); }
   :root[data-tint="sunset"] .pc-bg { background-image: url("img/sky-sunset.webp"); }
