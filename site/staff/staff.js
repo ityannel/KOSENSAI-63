@@ -493,7 +493,8 @@ $("#shop-add").addEventListener("submit", async (e) => {
 // ---------- スタンプラリー（QR の鍵とスタッフ番号） ----------
 // 鍵そのものは rally_keys/{お店の id}（本部だけ）に、サイトが確かめるための暗号化した値は rally/current（だれでも読める）に置く。
 // 暗号化のしかたは tools/make-rally-qr.py と同じ（sha256("kosen63:お店:日付:鍵")、スタッフ番号は PBKDF2-SHA256 30万回）
-const RALLY_DATES = FESTIVAL.days.map((d) => d.open.slice(0, 10));
+// QR は2日とも同じもの（鍵の名前は "fest"＝開催日ならどの日でも使える）
+const FEST = "fest";
 const PIN_ITERATIONS = 300000;
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 const sha256 = async (text) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
@@ -511,9 +512,9 @@ async function setRallyShops(ids, label) {
       const shop = findShop(id);
       const keys = { ...keysOf(id) };
       let added = false;
-      for (const d of RALLY_DATES) if (!keys[d]) { keys[d] = randomKey(); added = true; }
+      if (!keys[FEST]) { keys[FEST] = randomKey(); added = true; }
       if (added) batch.set(fs.doc(db, "rally_keys", id), { keys });
-      const codes = Object.fromEntries(await Promise.all(RALLY_DATES.map(async (d) => [d, await sha256(`kosen63:${id}:${d}:${keys[d]}`)])));
+      const codes = { [FEST]: await sha256(`kosen63:${id}:${FEST}:${keys[FEST]}`) };
       const room = shop.catalog ? shop.room : shop.map;
       shops.push({ id, name: shop.name, ...(room ? { room } : {}), ...(shop.place ? { place: shop.place } : {}), codes });
     }
@@ -528,7 +529,7 @@ function renderRally() {
   st.className = `pill ${n && pin ? "is-on" : ""}`;
   st.textContent = `${n}店が対象・引き換えの番号${pin ? "あり" : "なし"}`;
   $("#rally-pin-make").textContent = pin ? "引き換えの番号を作り直す" : "引き換えの番号を作る";
-  $("#rally-all").disabled = allShops().every((s) => isRallyShop(s.id));
+  $("#rally-all").disabled = allShops().every((s) => isRallyShop(s.id) && keysOf(s.id)[FEST]);
 }
 $("#rally-all").addEventListener("click", () => {
   const shops = allShops();
@@ -568,8 +569,6 @@ function qrDataUrl(text, size = 480) {
   new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.M });
   return box.querySelector("canvas").toDataURL("image/png");
 }
-const md = (iso) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
-const dayLabel = (iso) => FESTIVAL.days.find((d) => d.open.startsWith(iso))?.label ?? md(iso);
 const printKind = () => $('[name="pr-kind"]:checked').value;
 function renderPrintShops() {
   const picked = new Set($$("#pr-shops input:checked").map((x) => x.value));
@@ -592,12 +591,12 @@ $("#pr-none").addEventListener("click", () => $$("#pr-shops input").forEach((x) 
 const LOGO = "../assets/img/logo.webp";
 const head = (sub) => `<header class="ps-head"><img src="${LOGO}" alt=""><div><b>第${FESTIVAL.edition}回 函館高専祭「${esc(FESTIVAL.theme)}」</b><small>${esc(sub)}</small></div></header>`;
 const qrTile = (url, title, note = "") => `<figure class="ps-qr"><img src="${qrDataUrl(url)}" alt=""><figcaption><b>${esc(title)}</b>${note ? `<small>${esc(note)}</small>` : ""}</figcaption></figure>`;
-const stampCard = (shop, date) => `
+const stampCard = (shop) => `
   <div class="ps-stamp">
     <p class="ps-stamp-top">スタンプラリー</p>
-    <img src="${qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(shop.id)}&c=${encodeURIComponent(keysOf(shop.id)[date])}`))}" alt="">
+    <img src="${qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(shop.id)}&c=${encodeURIComponent(keysOf(shop.id)[FEST])}`))}" alt="">
     <p class="ps-stamp-name">${esc(shop.name)}</p>
-    <p class="ps-stamp-day">${esc(dayLabel(date))} だけ使える QR</p>
+    <p class="ps-stamp-day">${esc(FESTIVAL.days.map((d) => d.label).join("・"))} 両日使える QR</p>
     <p class="ps-stamp-hint">スマホのカメラで読むと、スタンプが押されます</p>
   </div>`;
 
@@ -628,8 +627,8 @@ async function buildShopSet(shops, withStaff) {
           ${qrTile(siteUrl("map.html?tab=feed"), "Enistagram で感想を投稿しよう", "写真やレビューを公式サイトに")}
           ${qrTile(siteUrl("#ennichi"), "待ち時間・ほかのお店", "公式サイトの「縁日」")}
         </div>
-        ${rally ? `<p class="ps-cut">✂ きりとり（スタンプラリーの QR：その日の分だけを店頭に貼ってください）</p>
-        <div class="ps-stamps">${RALLY_DATES.map((d) => stampCard(s, d)).join("")}</div>` : ""}
+        ${rally ? `<p class="ps-cut">✂ きりとり（スタンプラリーの QR：店頭に貼ってください。2日とも同じ QR です）</p>
+        <div class="ps-stamps">${stampCard(s)}</div>` : ""}
       </section>`);
     if (withStaff) {
       const code = await ensureShopCode(s.id);
@@ -656,7 +655,7 @@ async function buildShopSet(shops, withStaff) {
   return pages.join("");
 }
 function buildStamps(shops) {
-  const cards = shops.flatMap((s) => RALLY_DATES.map((d) => stampCard(s, d)));
+  const cards = shops.map((s) => stampCard(s));
   const pages = [];
   for (let i = 0; i < cards.length; i += 6) pages.push(`<section class="sheet ps-grid">${cards.slice(i, i + 6).join("")}</section>`);
   return pages.join("");
@@ -690,7 +689,7 @@ $("#pr-make").addEventListener("click", async () => {
   const kind = printKind();
   const shops = allShops().filter((s) => $$("#pr-shops input:checked").some((x) => x.value === s.id));
   if (kind !== "flyer" && !shops.length) return toast("お店を選んでください", true);
-  const noKeys = kind !== "flyer" ? shops.filter((s) => isRallyShop(s.id) && RALLY_DATES.some((d) => !keysOf(s.id)[d])) : [];
+  const noKeys = kind !== "flyer" ? shops.filter((s) => isRallyShop(s.id) && !keysOf(s.id)[FEST]) : [];
   if (noKeys.length) return toast("スタンプの鍵が見つからないお店があります。「模擬店」で対象にし直してください", true);
   if (kind === "stamps" && !shops.some((s) => isRallyShop(s.id))) return toast("選んだお店にスタンプの対象がありません。「模擬店」で対象にしてください", true);
   $("#pr-make").disabled = true;
