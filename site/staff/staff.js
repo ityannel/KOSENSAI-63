@@ -654,6 +654,37 @@ async function buildShopSet(shops, withStaff) {
   }
   return pages.join("");
 }
+// 三角POP（A4 を3つに折って、下ののりしろで貼る卓上の札）。1段目＝お店の名前、2段目＝サイトの QR、3段目＝スタンプラリーのおさそい
+function buildTents(shops) {
+  return shops.map((s) => {
+    const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
+    const rallyQr = rally
+      ? qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
+      : qrDataUrl(siteUrl("rally.html"));
+    return `
+      <section class="sheet pt">
+        <div class="pt-panel pt-name">
+          ${head("縁日（模擬店）")}
+          <h2 class="ps-name">${esc(s.name)}</h2>
+          <p class="ps-room">${esc([s.group, s.where].filter(Boolean).join("・"))}</p>
+        </div>
+        <div class="pt-panel pt-links">
+          ${qrTile(siteUrl("map.html?tab=feed"), "Enistagram で感想を投稿しよう", "写真やレビューを公式サイトに")}
+          ${qrTile(siteUrl("#ennichi"), "待ち時間・ほかのお店", "公式サイトの「縁日」")}
+        </div>
+        <div class="pt-panel pt-rally">
+          <div class="pt-rally-text">
+            <p class="pt-rally-kicker">STAMP RALLY</p>
+            <h3>スタンプラリー<br>開催中！</h3>
+            <p class="pt-rally-lead">模擬店の QR を <b>${RALLY.goal}個</b> 集めると、<br>${esc(RALLY.claimPlace)}で景品と交換！</p>
+            <ol class="pt-steps"><li>スマホのカメラで QR を読む</li><li>スタンプが押される（アプリ不要）</li><li>${RALLY.goal}個たまったら本部へ</li></ol>
+          </div>
+          <figure class="pt-rally-qr"><img src="${rallyQr}" alt=""><figcaption>${rally ? "このお店のスタンプ" : "スタンプカードを見る"}</figcaption></figure>
+        </div>
+        <div class="pt-glue">の り し ろ</div>
+      </section>`;
+  }).join("");
+}
 function buildStamps(shops) {
   const cards = shops.map((s) => stampCard(s));
   const pages = [];
@@ -695,6 +726,7 @@ $("#pr-make").addEventListener("click", async () => {
   $("#pr-make").disabled = true;
   try {
     const html = kind === "shopset" ? await buildShopSet(shops, $("#pr-staff").checked)
+      : kind === "tent" ? buildTents(shops)
       : kind === "stamps" ? buildStamps(shops.filter((s) => isRallyShop(s.id)))
       : buildFlyer($('[name="pr-size"]:checked').value);
     $("#print-area").innerHTML = html;

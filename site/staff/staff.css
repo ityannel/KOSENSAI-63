@@ -347,6 +347,24 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .pf-notes { margin: 7mm 0 0; padding: 4mm 4mm 4mm 10mm; border: .5mm solid var(--ink); border-radius: 4mm; font-size: 4.2mm; line-height: 1.7; }
 .pf-foot { margin: auto 0 0; padding-top: 4mm; font-size: 4mm; text-align: center; opacity: .75; }
 
+/* 三角POP：A4 を 3 段（点線で山折り）＋下ののりしろ */
+.sheet.pt { display: grid; grid-template-rows: repeat(3, 1fr) 11mm; padding: 0; }
+.pt-panel { box-sizing: border-box; overflow: hidden; padding: 8mm 12mm; border-bottom: .4mm dashed #b07a4a; }
+.pt-name { display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.pt-name .ps-head { justify-content: center; border: 0; padding: 0; }
+.pt-name .ps-name { font-size: 15mm; margin: 4mm 0 2mm; }
+.pt-links { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; align-items: center; }
+.pt-rally { display: grid; grid-template-columns: 1fr 58mm; gap: 6mm; align-items: center; background: var(--cream); }
+.pt-rally-kicker { margin: 0; font-family: "Roboto Mono", monospace; font-size: 3.6mm; letter-spacing: .3em; color: var(--red); }
+.pt-rally h3 { margin: 1mm 0 3mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 12mm; line-height: 1.05; color: var(--red); }
+.pt-rally-lead { margin: 0 0 3mm; font-size: 4.6mm; line-height: 1.5; }
+.pt-rally-lead b { font-size: 6mm; color: var(--red); }
+.pt-steps { margin: 0; padding-left: 5mm; font-size: 3.8mm; line-height: 1.6; }
+.pt-rally-qr { margin: 0; padding: 3mm; border: .6mm solid var(--ink); border-radius: 5mm; background: #fff; text-align: center; }
+.pt-rally-qr img { width: 50mm; height: 50mm; image-rendering: pixelated; }
+.pt-rally-qr figcaption { font-size: 4mm; }
+.pt-glue { display: grid; place-items: center; font-size: 3.2mm; letter-spacing: .4em; opacity: .6; }
+
 @page { size: A4; margin: 0; }
 @media print {
   body { background: #fff !important; }
