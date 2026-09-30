@@ -91,6 +91,12 @@ await t("anonymous cannot change shop without code", assertFails(setStatus(anon)
 await t("wrong shop code rejected", assertFails(setDoc(doc(anon, "shop_members/anon1"), { shop: "takoyaki", code: "WRONG", at: serverTimestamp() })));
 await t("shop code joins shop", assertSucceeds(setDoc(doc(anon, "shop_members/anon1"), { shop: "takoyaki", code: "CODE123456789", at: serverTimestamp() })));
 await t("shop member changes own status", assertSucceeds(setStatus(anon)));
+await t("shop member can set closed", assertSucceeds(updateDoc(doc(anon, "shops/takoyaki"), { status: "closed", updated_at: serverTimestamp() })));
+await t("shop member can post a message", assertSucceeds(updateDoc(doc(anon, "shops/takoyaki"), { message: "焼きたてあります！", message_at: serverTimestamp() })));
+await t("message over 40 chars rejected", assertFails(updateDoc(doc(anon, "shops/takoyaki"), { message: "あ".repeat(41), message_at: serverTimestamp() })));
+await t("message with other fields rejected", assertFails(updateDoc(doc(anon, "shops/takoyaki"), { message: "x", message_at: serverTimestamp(), name: "y" })));
+await t("unknown status rejected", assertFails(updateDoc(doc(anon, "shops/takoyaki"), { status: "party", updated_at: serverTimestamp() })));
+await t("staff can post a message for a shop", assertSucceeds(updateDoc(doc(staff, "shops/takoyaki"), { message: "本部より", message_at: serverTimestamp() })));
 await t("shop member cannot rename shop", assertFails(updateDoc(doc(anon, "shops/takoyaki"), { name: "x", updated_at: serverTimestamp() })));
 await t("visitors cannot list shop codes", assertFails(getDoc(doc(anon, "shop_codes/CODE123456789"))));
 await t("staff can manage shop codes", assertSucceeds(setDoc(doc(staff, "shop_codes/NEWCODE"), { shop: "takoyaki" })));

@@ -1648,6 +1648,16 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 /* 画面の外の欄は、見えるまで配置の計算を省く（トップを開いたときに、長いページ全体を計算しない） */
 #pickup, #ennichi, #info, #sponsors { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 
+/* 縁日のお店のシート：いまの様子（待ち時間・休業中）と、お店のひとこと */
+.dt-live:empty { display: none; }
+.dt-status { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 2px; padding: 3px 12px; border-radius: 999px; background: var(--c); color: #fff; font-weight: 800; font-size: 0.82rem; }
+.dt-status i { width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: wait-blink 1.4s ease-in-out infinite; }
+.dt-status small { font-weight: 400; font-size: 0.72rem; opacity: 0.92; }
+@keyframes wait-blink { 50% { opacity: 0.15; } }
+.dt-msg { margin: 10px 0 4px; padding: 10px 14px; border-radius: 12px; border-left: 4px solid #634A2E; background: rgba(99, 74, 46, 0.08); font-weight: 700; line-height: 1.6; }
+.dt-msg b { display: block; font-size: 0.72rem; letter-spacing: 0.08em; opacity: 0.7; }
+.dt-msg small { margin-left: 6px; font-size: 0.72rem; font-weight: 400; opacity: 0.7; }
+
 /* ページの切りかえ（サイト⇔地図⇔Enistagram）：白くちらつかずに、すっと入れかわる。下のタブはその場に残る */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.18s; }

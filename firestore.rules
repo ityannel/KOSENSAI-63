@@ -94,13 +94,17 @@ service cloud.firestore {
     // ---------- 模擬店の待ち時間 ----------
     // shops/{id} = { name, status, map, updated_at }。前の app/ の pass（4けたのパスワード）は、だれでも読めてしまうので置かない
     function shopStatusOk() {
-      return data().status in ['normal', '10min', '20min', 'soldout'] && data().updated_at == request.time;
+      return data().status in ['normal', '10min', '20min', 'soldout', 'closed'] && data().updated_at == request.time;
+    }
+    // お店のひとこと（トップページの縁日・地図に出る）。40字まで。消すときは空の文字
+    function shopMessageOk() {
+      return data().message is string && data().message.size() <= 40 && data().message_at == request.time;
     }
     match /shops/{id} {
       allow read: if true;
       allow create, delete: if isStaff();
-      allow update: if (isStaff() && !('pass' in data()))
-        || (isVisitor() && onlyChanges(['status', 'updated_at']) && shopStatusOk()
+      allow update: if (isStaff() && !('pass' in data()) && (!('message' in data()) || (data().message is string && data().message.size() <= 40)))
+        || (isVisitor() && ((onlyChanges(['status', 'updated_at']) && shopStatusOk()) || (onlyChanges(['message', 'message_at']) && shopMessageOk()))
             && get(/databases/$(database)/documents/shop_members/$(request.auth.uid)).data.shop == id);
     }
     // お店のコード（管理画面が作る長いランダムな文字列。だれも一覧を読めない）

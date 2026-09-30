@@ -368,6 +368,7 @@ $("#official-form").addEventListener("submit", async (e) => {
 // ---------- 模擬店 ----------
 const SHOP_STATUS = [
   ["normal", "すぐ買える", "#45D483"], ["10min", "10分待ち", "#F5C451"], ["20min", "20分以上", "#F2A96A"], ["soldout", "完売", "#FF6B7A"],
+  ["closed", "休業中", "#8B93C9"], // 混みぐあいとは別（休けい中など）
 ];
 const shopUrl = (code, shop) => new URL(`../shop.html?shop=${encodeURIComponent(shop)}&code=${encodeURIComponent(code)}`, location.href).href;
 const openCodes = new Set();
@@ -426,7 +427,10 @@ function visibleShops() {
   return shops;
 }
 // 混雑・実況：模擬店ごとの待ち時間（「すぐ買える」「10分」「20分以上」「完売」）
+let cshopsHold = false; // ひとことを書いている間は、一覧を作り直さない（書きかけが消えないように）
 function renderCrowdShops() {
+  if ($("#cshops").contains(document.activeElement) && document.activeElement.matches("input")) { cshopsHold = true; return; }
+  cshopsHold = false;
   const shops = allShops();
   const busy = shops.filter((s) => s.status && s.status !== "normal").length;
   $("#cshops-sum").textContent = `　待ちあり・完売 ${busy}店 / ${shops.length}店`;
@@ -436,9 +440,23 @@ function renderCrowdShops() {
     <div class="cshop">
       <div class="cshop-name"><b>${esc(s.name)}</b><small>${[s.group, s.where, s.updated_at ? `${hhmm(toMs(s.updated_at))} 更新` : "まだ出していない"].filter(Boolean).map(esc).join("・")}</small></div>
       <div class="shop-status">${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-shop="${esc(s.id)}" data-status="${v}" style="--c:${c}" aria-pressed="${s.status === v}">${label}</button>`).join("")}</div>
+      <form class="cshop-msg" data-msg-shop="${esc(s.id)}">
+        <input maxlength="40" value="${esc(s.message ?? "")}" placeholder="お店のひとこと（トップの縁日・地図に出る。40字まで）" aria-label="${esc(s.name)}のひとこと">
+        <button class="btn btn-ghost btn-sm" type="submit">のせる</button>
+      </form>
     </div>`).join("") : '<p class="muted small">見つかりません</p>';
 }
 $("#cshops-q").addEventListener("input", renderCrowdShops);
+$("#cshops").addEventListener("focusout", () => setTimeout(() => { if (cshopsHold) renderCrowdShops(); }, 0));
+$("#cshops").addEventListener("submit", (e) => {
+  const f = e.target.closest("[data-msg-shop]");
+  if (!f) return;
+  e.preventDefault();
+  const shop = findShop(f.dataset.msgShop);
+  const text = f.querySelector("input").value.trim().slice(0, 40);
+  f.querySelector("input").blur();
+  write(text ? `${shop.name}のひとことをのせました` : `${shop.name}のひとことを消しました`, () => shopDocWrite(shop, { message: text, message_at: fs.serverTimestamp() }));
+});
 $("#cshops").addEventListener("click", (e) => {
   const st = e.target.closest("[data-status]");
   if (!st) return;

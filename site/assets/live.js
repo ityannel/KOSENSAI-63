@@ -138,7 +138,8 @@ export async function subscribeShops(callback) {
         const list = [];
         snap.forEach((d) => {
           const v = d.data();
-          list.push({ id: d.id, name: String(v.name ?? ""), status: v.status ? String(v.status) : null, map: v.map ? String(v.map) : null, updated_at: v.updated_at?.toMillis?.() ?? null });
+          list.push({ id: d.id, name: String(v.name ?? ""), status: v.status ? String(v.status) : null, map: v.map ? String(v.map) : null, updated_at: v.updated_at?.toMillis?.() ?? null,
+            message: typeof v.message === "string" ? v.message.slice(0, 40) : "", message_at: v.message_at?.toMillis?.() ?? null });
         });
         callback(list);
       },

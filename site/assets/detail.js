@@ -85,6 +85,30 @@ function voteUrl(s, now) {
   if (!e?.form || now < Date.parse(e.opens) || now >= Date.parse(e.closes)) return null;
   return e.prefill ? e.prefill.replace("{shop}", encodeURIComponent(s.name)) : e.form;
 }
+// お店のいまの様子（待ち時間・休業中）と、お店のひとこと。シートを開いたときに Firestore から読む（トップを開いただけでは読まない）
+const STATUS = { "10min": ["10分待ち", "#e8a317"], "20min": ["20分以上待ち", "#d93025"], soldout: ["売り切れ", "#6b6b6b"], closed: ["休業中", "#4b5a8a"] };
+let liveList = null, liveP = null;
+function liveShops() {
+  liveP ??= import("./live.js").then(({ subscribeShops }) => subscribeShops((list) => {
+    liveList = list;
+    document.querySelectorAll("[data-live-shop]").forEach(fillLive);
+  })).catch(() => {});
+  return liveP;
+}
+const norm = (t) => String(t ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase();
+// 地図（map.js の shopDocFor）と同じ見分け方：map（クラス・部屋番号・名前）か、名前
+function docFor(s) {
+  const room = s.room ?? HOMEROOMS[s.cls];
+  return liveList?.find((d) => (d.map ? [s.name, s.cls, room].filter(Boolean).some((v) => norm(v) === norm(d.map)) : norm(d.name) === norm(s.name))) ?? null;
+}
+const ago = (ms) => { const m = Math.floor((Date.now() - ms) / 60000); return m < 1 ? "たった今" : m < 60 ? `${m}分前` : `${Math.floor(m / 60)}時間前`; };
+function fillLive(el) {
+  const s = SHOPS[+el.dataset.liveShop];
+  const d = s && docFor(s);
+  const st = d && STATUS[d.status];
+  el.innerHTML = `${st ? `<p class="dt-status" style="--c:${st[1]}"><i></i>${esc(st[0])}${d.updated_at ? `<small>${esc(ago(d.updated_at))}</small>` : ""}</p>` : ""}
+    ${d?.message ? `<p class="dt-msg"><b>お店から</b>${esc(d.message)}${d.message_at ? `<small>${esc(ago(d.message_at))}</small>` : ""}</p>` : ""}`;
+}
 export function openShop(s, now = Date.now()) {
   const genres = s.food ? s.genre ?? [] : ["あそび・体験"];
   const color = (g) => GENRES.find((x) => x.id === g)?.color ?? "#4f7fa8";
@@ -93,6 +117,7 @@ export function openShop(s, now = Date.now()) {
     ${s.flyer ? `<a class="dt-flyer" href="${esc(s.flyer)}" target="_blank" rel="noopener"><img src="${esc(s.flyer)}" alt="${esc(s.name)}のチラシ"></a><p class="dt-small">チラシを押すと、大きく開きます（指で拡大できます）</p>` : ""}
     <p class="dt-tags">${genres.map((g) => `<span style="--g:${color(g)}">${esc(g)}</span>`).join("")}</p>
     <h2 class="dt-title" id="dt-title">${esc(s.name)}</h2>
+    <div class="dt-live" data-live-shop="${SHOPS.indexOf(s)}"></div>
     ${s.note ? `<p class="dt-copy">${esc(s.note)}</p>` : ""}
     <dl class="dt-facts">
       <div><dt>団体</dt><dd>${esc(s.group ?? "")}</dd></div>
@@ -100,6 +125,8 @@ export function openShop(s, now = Date.now()) {
     </dl>
     ${vote ? `<a class="mido-more dt-go dt-vote" href="${esc(vote)}" target="_blank" rel="noopener"><span>模擬店総選挙で、このお店に投票</span></a>` : ""}
     ${mapLinks(shopMapId(s))}`);
+  const live = document.querySelector("[data-live-shop]");
+  if (live) { if (liveList) fillLive(live); liveShops(); }
 }
 
 // ほかの場所（ご来場の皆さまへの札など）からも、同じシートを使う

@@ -259,6 +259,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .cshop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); }
 .cshop-name b { display: block; }
 .cshop-name small { color: var(--sub); font-size: .78rem; }
+.cshop-msg { flex-basis: 100%; display: flex; gap: 8px; }
+.cshop-msg input { flex: 1; min-width: 0; height: 34px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--panel); color: var(--ink); font: inherit; font-size: .85rem; }
 .side-details summary h2 { display: inline; margin: 0; font-family: var(--head); font-weight: 900; font-size: 1.1rem; }
 .side-details[open] summary { margin-bottom: 12px; }
 .code-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 6px 4px 12px; border: 1px solid var(--line-2); border-radius: 999px; font-family: var(--mono); font-size: .85rem; }

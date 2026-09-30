@@ -147,11 +147,18 @@ body.mapapp {
 #map-svg .ic-wait.w10 .bg { fill: #e8a317; }
 #map-svg .ic-wait.w20 .bg { fill: #d93025; }
 #map-svg .ic-wait.sold .bg { fill: #6b6b6b; }
+#map-svg .ic-wait.closed .bg { fill: #4b5a8a; }
 .wait { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; color: #fff; vertical-align: 1px; }
 .wait.w0 { background: #1e8e3e; }
 .wait.w10 { background: #e8a317; }
 .wait.w20 { background: #d93025; }
 .wait.sold { background: #6b6b6b; }
+.wait.closed { background: #4b5a8a; } /* 休業中：混みぐあいとは別（紺） */
+/* お店のひとこと（お店の人が shop.html から書く） */
+.sh-msg { position: relative; margin: 10px 0 4px; padding: 9px 12px 9px 14px; border-radius: 12px; background: color-mix(in srgb, var(--m-panel-2, #f3ead6) 80%, #fff); font-size: .9rem; line-height: 1.55; }
+.sh-msg b { display: block; margin-bottom: 1px; font-size: .7rem; letter-spacing: .08em; color: var(--m-ink-2); }
+.sh-msg small { margin-left: 6px; font-size: .7rem; color: var(--m-ink-2); font-weight: 400; }
+.sh-shops .sh-msg { margin: 6px 0 2px; padding: 6px 10px; font-size: .82rem; }
 .wait small { margin-left: 5px; font-size: .68rem; font-weight: 400; opacity: .92; } /* いつの情報か（「待ちなし」より細い字） */
 .wait.is-stale { opacity: .55; }
 /* 左の●：いまの情報（リアルタイム）の印。ゆっくり点滅。古い情報は点滅しない */

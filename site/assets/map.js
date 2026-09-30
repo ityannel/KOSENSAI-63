@@ -1344,6 +1344,7 @@ const WAIT = {
   "10min": { label: "10分待ち", short: "10分", cls: "w10", rank: 1 },
   "20min": { label: "20分以上待ち", short: "20分+", cls: "w20", rank: 2 },
   soldout: { label: "売り切れ", short: "売切", cls: "sold", rank: 3 },
+  closed: { label: "休業中", short: "休業", cls: "closed", rank: 3 },
 };
 // shops の1件が、地図のどのお店（SHOPS）のことか。map があればそれ（お店の名前・クラス・部屋番号）、なければ名前で
 function shopDocFor(sh, list) {
@@ -1359,6 +1360,12 @@ function waitOf(sh, s) {
   const w = WAIT[d?.status];
   if (!w || !w.rank) return null; // 待ちなし（すぐ買える）は、何も出さない（情報がないときと同じ見た目）
   return { ...w, ago: d.updated_at ? s.agoText(d.updated_at) : "" };
+}
+// お店のひとこと（お店の人が書いたもの）
+function msgHtml(sh, s) {
+  const d = sh && shopDocFor(sh, s.shops);
+  if (!d?.message) return "";
+  return `<p class="sh-msg"><b>お店から</b>${esc(d.message)}${d.message_at ? `<small>${esc(s.agoText(d.message_at))}</small>` : ""}</p>`;
 }
 // 待ち時間・混雑の札：「待ちなし」の横に、いつの情報か（細い字）。会場の混雑も同じ形（ラベルは混みぐあい）
 const statusPill = (x) => x ? `<span class="wait ${x.cls}${x.stale ? " is-stale" : ""}">${esc(x.label)}${x.ago ? `<small>${esc(x.ago)}</small>` : ""}</span>` : "";
@@ -1446,7 +1453,7 @@ function renderSheet() {
     ${p.tentative || p.roomGuess ? `<p class="sh-kind">${p.tentative ? "【場所は仮】" : "【教室は仮】"}</p>` : ""}
     <h2 class="sh-title">${esc(titleOf(p))}${statusPill(oneWait)}${statusPill(crowd)}</h2>
     <p class="sh-sub">${esc(subOf(p))}</p>
-    ${one ? `<p class="sh-sub">${esc([one.group, one.food ? "食べもの" : ""].filter(Boolean).join("・"))}${genreTags(one)}</p>` : ""}
+    ${one ? `<p class="sh-sub">${esc([one.group, one.food ? "食べもの" : ""].filter(Boolean).join("・"))}${genreTags(one)}</p>${msgHtml(one, s)}` : ""}
     <div class="sh-row">
       ${isHere ? `<span class="sh-badge is-here">${I.pin}いまここ</span>` : ""}
       ${now ? `<span class="sh-badge is-now">NOW ${esc(now.title)}</span>` : ""}
@@ -1467,7 +1474,7 @@ function renderSheet() {
       const past = Date.parse(e.end) <= s.now;
       return `<li class="${past ? "is-past" : ""}"><time>${md(e.start)} ${hhmm(e.start)}</time>${esc(e.title)}${e.internal ? "（学内のみ）" : ""}${on ? "<em>NOW</em>" : ""}</li>`;
     }).join("")}</ul>` : ""}
-    ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` ${statusPill(w)}` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${x.note ? `<p>${esc(x.note)}</p>` : ""}</li>`).join("")}</ul>` : ""}
+    ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` ${statusPill(w)}` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${msgHtml(x, s)}${x.note ? `<p>${esc(x.note)}</p>` : ""}</li>`).join("")}</ul>` : ""}
     ${p.zone ? `<p class="sh-hint">この階の教室（${esc(p.codes.join("・"))}）のどれかです。どの教室かは、当日は教室の入口の看板を見てください。</p>` : ""}
     ${shops.length ? `<h3 class="sh-h">スタンプラリー</h3><ul class="sh-events">${shops.map((x) => `<li><span class="mini-hanko${s.stamps?.includes(x.id) ? " on" : ""}">${s.stamps?.includes(x.id) ? "縁" : ""}</span>${esc(x.name)}</li>`).join("")}</ul>` : ""}
     ${picks.length ? `<h3 class="sh-h">みどころ</h3><ul class="sh-events">${picks.map((x) => `<li>${esc(x.name)}${x.note ? `<small>　${esc(x.note)}</small>` : ""}</li>`).join("")}</ul>` : ""}
@@ -1846,7 +1853,7 @@ function renderNowSheet(body, s) {
   body.innerHTML = `<p class="sh-kind">開催状況（リアルタイム）</p><h2 class="sh-title">開催中</h2>
     ${s.running?.length ? `<ul class="m-list">${s.running.map((e) => venueItem(e, e.end ? `〜${hhmm(e.end)}` : "", true)).join("")}</ul>` : '<p class="sh-hint">いまやっている企画はありません。</p>'}
     ${soon.length ? `<h3 class="sh-h">このあと1時間</h3><ul class="m-list">${soon.map((e) => venueItem(e, `${hhmm(e.start)}〜`, false)).join("")}</ul>` : ""}
-    ${busy.length ? `<h3 class="sh-h">混んでいる・売り切れのお店</h3><ul class="m-list">${busy.map(({ p, w }) => itemHtml({ p, sub: `${w.label}・${p.shopList.map((x) => x.name).join("・")}` })).join("")}</ul>` : ""}`;
+    ${busy.length ? `<h3 class="sh-h">混んでいる・売り切れ・休業中のお店</h3><ul class="m-list">${busy.map(({ p, w }) => itemHtml({ p, sub: `${w.label}・${p.shopList.map((x) => x.name).join("・")}` })).join("")}</ul>` : ""}`;
 }
 // スタンプ：スタンプラリーのお店と、押したかどうか
 function renderStampSheet(body, s) {

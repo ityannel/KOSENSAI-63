@@ -54,6 +54,20 @@
     .btns button[aria-pressed="true"]::after { content: "いまこれ"; flex: none; margin-left: auto; padding: 3px 10px; border-radius: 999px; background: rgba(255, 251, 242, .92); color: var(--c); font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 900; font-size: .8rem; }
     .btns button:disabled { opacity: .6; }
     .msg { min-height: 1.6em; margin: 16px 0 0; text-align: center; }
+    .btns-h { margin: 18px 0 8px; font-size: .8rem; opacity: .7; }
+    /* お店のひとこと */
+    .note-box { margin-top: 22px; padding: 16px 18px; border-radius: 18px; background: var(--grain), var(--card); box-shadow: -5px 4px 0 rgba(48, 44, 41, .22); }
+    .note-box h2 { margin: 0; font-family: var(--wdxl); font-weight: 400; font-size: 1.5rem; }
+    .note-hint { margin: 2px 0 10px; font-size: .8rem; opacity: .75; }
+    .note-box textarea { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 2px solid rgba(99, 74, 46, .35); border-radius: 12px; background: #fff; color: var(--ink); font: inherit; font-size: 1.05rem; line-height: 1.5; resize: none; }
+    .note-box textarea:focus { outline: none; border-color: var(--ink); }
+    .note-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .note-row span { margin-right: auto; font-size: .8rem; opacity: .7; }
+    .note-row button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; font: inherit; font-weight: 900; cursor: pointer; }
+    .note-clear { background: rgba(99, 74, 46, .12); color: var(--ink); }
+    .note-save { background: var(--ink); color: #FFFBF2; }
+    .note-row button:disabled { opacity: .5; }
+    .note-state { min-height: 1.4em; margin: 8px 0 0; font-size: .85rem; }
     .note { margin-top: 26px; font-size: .8rem; opacity: .72; line-height: 1.7; }
     [hidden] { display: none !important; }
   </style>
@@ -73,7 +87,24 @@
         <button type="button" data-status="20min" style="--c:#d93025">20分以上待つ</button>
         <button type="button" data-status="soldout" style="--c:#6b6b6b">完売しました</button>
       </div>
+      <p class="btns-h">混みぐあいとは別に（休けい中など）</p>
+      <div class="btns">
+        <button type="button" data-status="closed" style="--c:#4b5a8a">休業中</button>
+      </div>
       <p class="msg" id="msg" role="status"></p>
+
+      <!-- お店のひとこと：トップページの縁日（お店を押すと出る）と、校内マップに出る -->
+      <form class="note-box" id="note-form">
+        <h2>お店のひとこと</h2>
+        <p class="note-hint">トップページの「縁日」と校内マップに出ます（40字まで）</p>
+        <textarea id="note-text" maxlength="40" rows="2" placeholder="例：焼きたてあります！ 15時からタイムセール"></textarea>
+        <div class="note-row">
+          <span id="note-count">0 / 40</span>
+          <button type="button" class="note-clear" id="note-clear">消す</button>
+          <button type="submit" class="note-save">のせる</button>
+        </div>
+        <p class="note-state" id="note-state" role="status"></p>
+      </form>
     </section>
 
     <section id="need-code" hidden>
@@ -95,8 +126,8 @@
     const db = fs.getFirestore(app);
     connectEmulators({ fs, db, auth, a });
     const $ = (s) => document.querySelector(s);
-    const LABEL = { normal: "すぐ買える", "10min": "10分くらい待つ", "20min": "20分以上待つ", soldout: "完売" };
-    const COLOR = { normal: "#1e8e3e", "10min": "#e8a317", "20min": "#d93025", soldout: "#6b6b6b" };
+    const LABEL = { normal: "すぐ買える", "10min": "10分くらい待つ", "20min": "20分以上待つ", soldout: "完売", closed: "休業中" };
+    const COLOR = { normal: "#1e8e3e", "10min": "#e8a317", "20min": "#d93025", soldout: "#6b6b6b", closed: "#4b5a8a" };
     // WDXL は全部だと重いので、画面に出る字だけを読みこむ（お店の名前がわかったら、その字も足す）
     const fontChars = new Set();
     function loadFont(text) {
@@ -142,11 +173,34 @@
         const t = s.updated_at?.toDate?.();
         $("#updated").textContent = t ? `${t.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })} に更新` : "";
         document.querySelectorAll("[data-status]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.status === s.status)));
+        // ひとこと：いま出ているもの（書いている途中は上書きしない）
+        const cur = typeof s.message === "string" ? s.message : "";
+        if (document.activeElement !== $("#note-text") && !noteDirty) { $("#note-text").value = cur; countNote(); }
+        const at = s.message_at?.toDate?.();
+        $("#note-state").textContent = cur ? `いま出ています${at ? `（${at.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}）` : ""}` : "いまは何も出ていません";
       });
-      $("#btns").addEventListener("click", async (e) => {
-        const b = e.target.closest("[data-status]");
+      let noteDirty = false;
+      const countNote = () => { $("#note-count").textContent = `${[...$("#note-text").value].length} / 40`; };
+      $("#note-text").addEventListener("input", () => { noteDirty = true; countNote(); });
+      const saveNote = async (text) => {
+        const bs = document.querySelectorAll("#note-form button");
+        bs.forEach((x) => (x.disabled = true));
+        try {
+          await fs.updateDoc(fs.doc(db, "shops", shopId), { message: text, message_at: fs.serverTimestamp() });
+          noteDirty = false;
+          $("#msg").textContent = text ? "ひとことをのせました" : "ひとことを消しました";
+        } catch {
+          $("#msg").textContent = "のせられませんでした。コードが取り消されたかもしれません。本部に聞いてください。";
+        } finally {
+          bs.forEach((x) => (x.disabled = false));
+        }
+      };
+      $("#note-form").addEventListener("submit", (e) => { e.preventDefault(); saveNote($("#note-text").value.trim().slice(0, 40)); });
+      $("#note-clear").addEventListener("click", () => { if (confirm("ひとことを消しますか？")) { $("#note-text").value = ""; countNote(); saveNote(""); } });
+      $("#panel").addEventListener("click", async (e) => {
+        const b = e.target.closest("button[data-status]");
         if (!b) return;
-        const buttons = document.querySelectorAll("#btns button");
+        const buttons = document.querySelectorAll("button[data-status]");
         buttons.forEach((x) => (x.disabled = true));
         try {
           await fs.updateDoc(fs.doc(db, "shops", shopId), { status: b.dataset.status, updated_at: fs.serverTimestamp() });
