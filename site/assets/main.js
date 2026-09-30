@@ -586,6 +586,33 @@ if (matchMedia("(min-width: 600px)").matches && "IntersectionObserver" in window
     if (cur) document.documentElement.dataset.sec = cur.id; else delete document.documentElement.dataset.sec;
   }, { rootMargin: "-45% 0px -45% 0px" }); // 画面のまん中の線にかかっているセクション
   secs.forEach((s) => io.observe(s));
+
+  // 本体の影の色：スクロールに合わせて、セクションの色（まん中でその色）のあいだを少しずつ移る
+  const SHADE = { scene: [0, 0, 0, 0.45], days: [92, 20, 52, 0.5], "crowd-now": [58, 38, 66, 0.5], pickup: [110, 56, 12, 0.5],
+    ennichi: [110, 76, 20, 0.48], info: [24, 78, 70, 0.5], sponsors: [16, 22, 44, 0.55] };
+  const parts = [document.querySelector("main.scene"), ...secs].filter(Boolean);
+  let queued = false;
+  const shade = () => {
+    queued = false;
+    const mid = innerHeight / 2;
+    const stops = parts.filter((el) => !el.hidden && el.offsetHeight).map((el) => {
+      const r = el.getBoundingClientRect();
+      // 最初の絵（縦に長い）は、絵の終わりの1画面ぶん手前までは黒のまま
+      return { y: el.matches("main.scene") ? r.bottom - innerHeight / 2 : r.top + r.height / 2, c: SHADE[el.id] ?? SHADE.scene };
+    });
+    if (!stops.length) return;
+    let c = stops[0].c;
+    if (mid >= stops.at(-1).y) c = stops.at(-1).c;
+    else for (let i = 0; i < stops.length - 1; i++) {
+      const a = stops[i], z = stops[i + 1];
+      if (mid >= a.y && mid < z.y) { const t = (mid - a.y) / (z.y - a.y); c = a.c.map((v, k) => v + (z.c[k] - v) * t); break; }
+    }
+    document.body.style.setProperty("--pc-shade", `rgba(${Math.round(c[0])}, ${Math.round(c[1])}, ${Math.round(c[2])}, ${c[3].toFixed(3)})`);
+  };
+  const ask = () => { if (!queued) { queued = true; requestAnimationFrame(shade); } };
+  addEventListener("scroll", ask, { passive: true });
+  addEventListener("resize", ask);
+  shade();
 }
 
 // ---------- なめらかなスクロール（Lenis） ----------
