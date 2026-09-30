@@ -204,7 +204,7 @@ body:not(.awake) .spot.is-person::before { opacity: 0; }
 .bubble::after {
   content: ""; position: absolute; top: 100%; left: var(--tail);
   width: 11px; height: 11px; margin: -6px 0 0 -7px;
-  background: var(--paper); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+  background: var(--grain, none), var(--paper); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); /* 本体と同じ紙（ざらざら） */
   border-bottom-right-radius: 3px;
   transform: rotate(45deg) skew(8deg, 8deg);
 }
@@ -1508,12 +1508,25 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
   html { background: #0e0f11; scrollbar-width: none; }
   html::-webkit-scrollbar { display: none; }
   :root[data-theme="light"] { background: #dcd6cb; }
-  body:not(.mapapp) { width: var(--app-w); min-height: 100dvh; margin: 0 auto; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 60px rgba(0, 0, 0, 0.45); }
+  body:not(.mapapp) {
+    width: var(--app-w); min-height: 100dvh; margin: 0 auto;
+    /* 影は、いま見ているセクションの色を暗くしたもの（目立ちすぎないように、うすく広く）。まわりの色と同じく、じんわり変わる */
+    --pc-shade: rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 60px var(--pc-shade);
+    transition: --pc-shade 1.8s ease;
+  }
+  :root[data-sec="days"] body:not(.mapapp) { --pc-shade: rgba(92, 20, 52, 0.5); }
+  :root[data-sec="crowd-now"] body:not(.mapapp) { --pc-shade: rgba(58, 38, 66, 0.5); }
+  :root[data-sec="pickup"] body:not(.mapapp) { --pc-shade: rgba(110, 56, 12, 0.5); }
+  :root[data-sec="ennichi"] body:not(.mapapp) { --pc-shade: rgba(110, 76, 20, 0.48); }
+  :root[data-sec="info"] body:not(.mapapp) { --pc-shade: rgba(24, 78, 70, 0.5); }
+  :root[data-sec="sponsors"] body:not(.mapapp) { --pc-shade: rgba(16, 22, 44, 0.55); }
   .stamp-toast, body.lightning::after { left: var(--app-x); right: var(--app-x); }
 }
 
 /* まわりの色（--pc-glow）を、なめらかに移り変わらせるために、色として登録する */
 @property --pc-glow { syntax: "<color>"; inherits: true; initial-value: rgba(0, 0, 0, 0); }
+@property --pc-shade { syntax: "<color>"; inherits: false; initial-value: rgba(0, 0, 0, 0.45); }
 
 /* =====================================================
    PC の左右（side.js）：うしろは今の空の絵とゆれる短冊。左にロゴと日付、右にタブとメニュー（幅 1000px 以上）
