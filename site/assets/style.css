@@ -1724,28 +1724,71 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 /* Enistagram の本部の公式の投稿の札（地図の .ig-official と同じ色） */
 .eh-official { display: inline-block; margin-left: 5px; padding: 0 6px; border-radius: 999px; background: linear-gradient(90deg, #3E6BD6, #C8323A); color: #fff; font-style: normal; font-size: .62rem; font-weight: 800; line-height: 1.6; vertical-align: 1px; }
 
-/* ===== いまの混雑（本部が更新したときだけ出る）：夜の掲示板のような濃い紺に、度合いの色がともる ===== */
+/* ===== いまの混雑（本部が更新したときだけ出る）：会場ごとのクリーム色の札。入口の前に人のシルエットが並ぶ =====
+   背景はポスターの夕方の空の紫。上のはしに、学生主事よりの札の青緑が少し残る（ほかのセクションと同じつなぎ方）。
+   3つの会場を「ご来場の皆さまへ」と同じ紙1枚にまとめて、1行ずつ。人はポスターのシルエットと同じ色で、ゆっくり足ぶみ */
 .crowdnow {
   container-type: inline-size; --u: calc(100cqi / 402);
-  position: relative; margin-top: -1px; color: #F7FFF4; scroll-margin-top: 8px;
-  background: var(--grain), linear-gradient(170deg, #2f3953, #263047 60%, #222a3d);
+  position: relative; margin-top: -1px; color: #F7FFF4; scroll-margin-top: 8px; isolation: isolate;
+  background: var(--grain),
+    linear-gradient(rgba(111, 146, 160, .55), rgba(111, 146, 160, 0) calc(60 * var(--u))),
+    linear-gradient(170deg, #86648a, #6f5378 55%, #5d4668);
 }
-.crowdnow-in { padding: calc(26 * var(--u)) calc(22 * var(--u)) calc(28 * var(--u)) calc(26 * var(--u)); }
-.crowdnow-title { display: flex; align-items: center; gap: calc(10 * var(--u)); margin: 0 0 calc(16 * var(--u)); font-family: var(--hud-font); font-size: calc(28 * var(--u)); font-weight: 400; line-height: 1; }
-.crowdnow-title small { font-family: var(--text-font); font-weight: 700; font-size: calc(11.5 * var(--u)); opacity: .75; }
-.crowdnow-title .live-dot { width: calc(10 * var(--u)); height: calc(10 * var(--u)); border-radius: 50%; background: #FF5A5F; box-shadow: 0 0 0 calc(4 * var(--u)) rgba(255, 90, 95, .25); animation: notice-blink 1.6s ease-in-out infinite; }
-.crowdnow-list { display: grid; gap: calc(10 * var(--u)); margin: 0; padding: 0; list-style: none; }
+.crowdnow::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(115deg, #d8457f, #e2622e 35%, #e3a43a 65%, #dfc27a); opacity: .16; }
+.crowdnow-in { padding: calc(24 * var(--u)) calc(22 * var(--u)) calc(22 * var(--u)) calc(26 * var(--u)); }
+.crowdnow-title { display: flex; align-items: center; flex-wrap: wrap; gap: calc(6 * var(--u)) calc(10 * var(--u)); margin: 0 0 calc(14 * var(--u)); font-family: var(--hud-font); font-size: calc(32 * var(--u)); font-weight: 400; line-height: 1; }
+.crowdnow-title small { font-family: var(--text-font); font-weight: 700; font-size: calc(11.5 * var(--u)); opacity: .8; }
+/* 3つの会場を1枚の紙に。行のあいだは、ちぎれそうな切り取り線（大きめの点線と、両はしの半円の切れこみ）。
+   行ごとに紙を切って、切れこみの半分ずつを上と下のはしに開ける（となりの行とあわせて半円になる）。影は全体に */
+.crowdnow-list { display: grid; margin: 0; padding: 0; list-style: none; filter: drop-shadow(calc(-5 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, 0.5)); }
+.cn-item {
+  --r: calc(8 * var(--u)); --rt: var(--r); --rb: var(--r); position: relative; padding: 0 calc(14 * var(--u)); background: var(--grain), #FFFBF2;
+  -webkit-mask: radial-gradient(circle var(--rt) at 0 0, #0000 97%, #000), radial-gradient(circle var(--rt) at 100% 0, #0000 97%, #000),
+                radial-gradient(circle var(--rb) at 0 100%, #0000 97%, #000), radial-gradient(circle var(--rb) at 100% 100%, #0000 97%, #000);
+  -webkit-mask-composite: source-in;
+  mask: radial-gradient(circle var(--rt) at 0 0, #0000 97%, #000), radial-gradient(circle var(--rt) at 100% 0, #0000 97%, #000),
+        radial-gradient(circle var(--rb) at 0 100%, #0000 97%, #000), radial-gradient(circle var(--rb) at 100% 100%, #0000 97%, #000);
+  mask-composite: intersect;
+}
+.cn-item:first-child { --rt: 0.01px; border-radius: calc(8 * var(--u)) calc(8 * var(--u)) 0 0; }
+.cn-item:last-child { --rb: 0.01px; border-radius: 0 0 calc(8 * var(--u)) calc(8 * var(--u)); }
+.cn-item:only-child { border-radius: calc(8 * var(--u)); }
+/* 切り取り線：大きめの点線（切れこみのあいだ） */
+.cn-item + .cn-item::before {
+  content: ""; position: absolute; top: calc(-1.25 * var(--u)); left: calc(var(--r) + 5 * var(--u)); right: calc(var(--r) + 5 * var(--u)); height: calc(2.5 * var(--u));
+  background: repeating-linear-gradient(90deg, rgba(99, 74, 46, .42) 0 calc(8 * var(--u)), transparent calc(8 * var(--u)) calc(14 * var(--u)));
+}
 .cn-item a {
-  display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name level" "meter time"; align-items: center; gap: calc(6 * var(--u)) calc(10 * var(--u));
-  padding: calc(12 * var(--u)) calc(14 * var(--u)); border-radius: calc(12 * var(--u)); color: inherit; text-decoration: none;
-  background: rgba(255, 255, 255, .06); box-shadow: inset calc(5 * var(--u)) 0 0 var(--lv);
+  /* 1行：左に会場名、その下に度合いと何分前。右に入口と行列 */
+  display: grid; grid-template-columns: auto 1fr calc(128 * var(--u)); grid-template-areas: "name name scene" "level time scene"; align-items: center; justify-items: start; gap: calc(3 * var(--u)) calc(8 * var(--u));
+  padding: calc(8 * var(--u)) 0 calc(7 * var(--u)); color: #634A2E; text-decoration: none; -webkit-tap-highlight-color: transparent;
 }
-.cn-name { grid-area: name; font-family: var(--text-font); font-weight: 700; font-size: calc(14 * var(--u)); }
-.cn-level { grid-area: level; padding: calc(2 * var(--u)) calc(10 * var(--u)); border-radius: 999px; background: var(--lv); color: #1D1A16; font-family: var(--hud-font); font-weight: 400; font-size: calc(15 * var(--u)); }
-.cn-meter { grid-area: meter; display: flex; gap: calc(4 * var(--u)); }
-.cn-meter i { width: calc(22 * var(--u)); height: calc(6 * var(--u)); border-radius: 999px; background: rgba(255, 255, 255, .15); }
-.cn-meter i.on { background: var(--lv); }
-.cn-time { grid-area: time; font-size: calc(10.5 * var(--u)); opacity: .7; }
+.cn-item a:active { opacity: 1; }
+/* 押したら、切り取り線からちぎれる：少し引っぱられてから、右下へ回りながら落ちる */
+.cn-item.is-torn { z-index: 1; transform-origin: 100% 0; animation: cn-tear 0.52s cubic-bezier(0.5, 0, 0.75, 0.3) forwards; }
+@keyframes cn-tear {
+  0% { transform: none; }
+  25% { transform: translate(calc(-2 * var(--u)), calc(3 * var(--u))) rotate(-2deg); }
+  45% { transform: translate(calc(-1 * var(--u)), calc(5 * var(--u))) rotate(-4deg); }
+  100% { transform: translate(calc(18 * var(--u)), calc(120 * var(--u))) rotate(-16deg); opacity: 0; }
+}
+.cn-name { grid-area: name; color: var(--lvd, #634A2E); font-family: var(--hud-font); font-weight: 400; font-size: calc(15 * var(--u)); line-height: 1.2; }
+/* 度合い：ボタンに見えないよう、塗った札にしない。色の点＋同じ色の字（会場名も同じ濃い色） */
+.cn-level { grid-area: level; display: inline-flex; align-items: center; gap: calc(5 * var(--u)); color: var(--lvd, #634A2E); font-family: var(--text-font); font-weight: 700; font-size: calc(12 * var(--u)); line-height: 1.3; white-space: nowrap; }
+.cn-level::before { content: ""; flex: none; width: calc(8 * var(--u)); aspect-ratio: 1; border-radius: 50%; background: var(--lvd, #634A2E); box-shadow: 0 0 0 calc(3 * var(--u)) color-mix(in srgb, var(--lvd, #634A2E) 22%, transparent); animation: notice-blink 1.6s ease-in-out infinite; } /* いまの様子だとわかるよう、丸が点滅 */
+/* 入口と行列 */
+.cn-scene { grid-area: scene; display: block; width: 100%; height: auto; overflow: visible; align-self: end; }
+.cn-ground { fill: none; stroke: rgba(99, 74, 46, .35); stroke-width: 1.5; stroke-dasharray: 4 5; stroke-linecap: round; }
+.cn-door path { fill: none; stroke: #634A2E; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.cn-door path:nth-child(2) { fill: color-mix(in srgb, var(--lv) 45%, #FFFBF2); }
+.cn-p { fill: #3E3A3F; }
+.cn-p > * { animation: cn-step 1.1s ease-in-out infinite alternate; animation-delay: var(--d); transform-box: fill-box; }
+@keyframes cn-step { to { translate: 0 -1.6px; } }
+.cn-rope path { fill: none; stroke: #634A2E; stroke-width: 2.6; stroke-linecap: round; }
+.cn-rope .cn-rope-line { stroke: #C8323A; stroke-width: 2.4; }
+.cn-rope circle { fill: #634A2E; }
+.cn-time { grid-area: time; font-family: var(--text-font); font-weight: 700; font-size: calc(10 * var(--u)); opacity: .65; }
+.cn-num { font-size: 1.3em; font-weight: 900; } /* 「2分前」の数字は一回り大きく */
 .cn-item.is-stale a { opacity: .6; }
-.crowdnow-map { display: inline-block; margin-top: calc(14 * var(--u)); color: #9BD7D0; font-family: var(--text-font); font-weight: 700; font-size: calc(13 * var(--u)); }
-@media (prefers-reduced-motion: reduce) { .crowdnow-title .live-dot { animation: none; } }
+.crowdnow-map { display: inline-block; margin-top: calc(12 * var(--u)); color: #FFF1A8; font-family: var(--text-font); font-weight: 700; font-size: calc(13 * var(--u)); }
+@media (prefers-reduced-motion: reduce) { .cn-level::before, .cn-p > * { animation: none; } .cn-item.is-torn { animation: none; } }

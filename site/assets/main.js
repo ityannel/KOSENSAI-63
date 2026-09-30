@@ -346,6 +346,42 @@ function agoText(ms) {
   if (min < 60) return `${min}分前`;
   return `${Math.floor(min / 60)}時間前`;
 }
+// 会場名と度合いの札の色：度合いの色を濃くしたもの（ご来場の皆さまへの札の絵の色と同じ）。黒い字にしない
+const CN_DEEP = ["#3E9A86", "#C9A11E", "#D9892B", "#C8323A"];
+// 入口の前の行列（シルエット）。空いています 1人・ふつう 2人・混雑 4人・入場制限中 6人とロープ
+const QUEUE = [1, 2, 4, 6];
+// 人の形（足もと y=0 の上に立つ。頭・肩・胴・足）。背や荷物をすこしずつ変えて、列がそろいすぎないように
+const PERSON = [
+  '<circle cx="0" cy="-29" r="5"/><path d="M-6-22h12l1.5 11h-3l.5 11h-3.5l-1.5-8-1.5 8h-3.5l.5-11h-3z"/>',
+  '<circle cx="0" cy="-27" r="4.6"/><path d="M-5.5-20.5h11l2 10.5h-3l.5 10h-3.5l-1.5-7.5-1.5 7.5h-3.5l.5-10h-3z"/><rect x="5" y="-17" width="4.5" height="6" rx="1"/>',
+  '<circle cx="0" cy="-31" r="5.2"/><path d="M-6.5-24h13l1.5 12h-3l.5 12h-3.5l-1.5-8.5-1.5 8.5h-3.5l.5-12h-3z"/>',
+  '<circle cx="0" cy="-24" r="4.3"/><path d="M-5-18h10l1.5 9h-2.5l.5 9h-3l-1.5-6.5-1.5 6.5h-3l.5-9h-2.5z"/>',
+];
+function queueSvg(level) {
+  const n = QUEUE[level] ?? 0;
+  const people = Array.from({ length: n }, (_, i) => {
+    const x = (level >= 3 ? 208 : 222) - i * 27; // 入口（右）から左へ並ぶ。入場制限中はロープの手前で止まる
+    return `<g class="cn-p" style="--d:${(i * 0.17).toFixed(2)}s" transform="translate(${x} 64)">${PERSON[(i + level) % PERSON.length]}</g>`;
+  }).join("");
+  const rope = level >= 3 ? '<g class="cn-rope"><path d="M226 64V41M252 64V41"/><path class="cn-rope-line" d="M226 45q13 10 26 0"/><circle cx="226" cy="40" r="2.6"/><circle cx="252" cy="40" r="2.6"/></g>' : "";
+  return `<svg class="cn-scene" viewBox="60 16 240 52" aria-hidden="true">
+    <path class="cn-ground" d="M4 64.5H296"/>
+    <g class="cn-door"><path d="M244 64V26a4 4 0 0 1 4-4h40a4 4 0 0 1 4 4v38"/><path d="M256 64V36h20v28"/><path d="M240 22h56"/></g>
+    ${people}${rope}
+  </svg>`;
+}
+// いまの混雑の行を押したら：切り取り線からちぎれて落ちてから、地図のその会場を開く（動きを減らす設定なら、すぐ開く）
+document.getElementById("crowdnow-list")?.addEventListener("click", (e) => {
+  const a = e.target.closest(".cn-item a");
+  if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  e.preventDefault();
+  const li = a.closest(".cn-item");
+  if (li.classList.contains("is-torn")) return;
+  li.classList.add("is-torn");
+  setTimeout(() => location.assign(a.href), 520);
+});
+addEventListener("pageshow", () => document.querySelectorAll(".cn-item.is-torn").forEach((x) => x.classList.remove("is-torn"))); // 戻ってきたら元どおり
 function renderCrowd() {
   $("#crowd-list").innerHTML = CROWD.venues.map((id) => {
     const c = crowd?.[id];
@@ -361,7 +397,8 @@ function renderCrowd() {
       </article>`;
   }).join("");
 
-  // トップの「いまの混雑」：会場ごとの札（4つの丸のメーター・度合い・何分前）。1つも更新されていなければ出さない
+  // トップの「いまの混雑」：会場ごとの札。入口の前に、人のシルエットが並ぶ（混んでいるほど列が長い。入場制限中はロープ）。
+  // 度合い・何分前に更新したか。1つも更新されていなければ出さない
   const known = CROWD.venues.filter((id) => CROWD.levels[crowd?.[id]?.level]);
   $("#crowd-now").hidden = !known.length;
   $("#crowdnow-list").innerHTML = known.map((id) => {
@@ -369,12 +406,12 @@ function renderCrowd() {
     const level = CROWD.levels[c.level];
     const stale = c.updated_at && nowMs() - c.updated_at > CROWD.staleMinutes * 60000;
     return `
-      <li class="cn-item${stale ? " is-stale" : ""}" style="--lv:${esc(level.color)}">
+      <li class="cn-item${stale ? " is-stale" : ""}" style="--lv:${esc(level.color)}; --lvd:${CN_DEEP[c.level] ?? "#634A2E"}">
         <a href="map.html#${esc(id)}">
           <span class="cn-name">${esc(venueName(id))}</span>
           <b class="cn-level">${esc(level.label)}</b>
-          <span class="cn-meter" aria-hidden="true">${CROWD.levels.map((_, i) => `<i${i <= c.level ? ' class="on"' : ""}></i>`).join("")}</span>
-          <small class="cn-time">${c.updated_at ? `${agoText(c.updated_at)}に更新${stale ? "・古いかも" : ""}` : ""}</small>
+          ${queueSvg(c.level)}
+          <small class="cn-time">${c.updated_at ? `${esc(agoText(c.updated_at)).replace(/\d+/g, '<b class="cn-num">$&</b>')}${stale ? "・古いかも" : ""}` : ""}</small>
         </a>
       </li>`;
   }).join("");
@@ -486,7 +523,12 @@ initAsk({
 renderCrowd();
 renderSchedule();
 setInterval(() => { renderCrowd(); renderSchedule(); }, 30000); // 「○分前に更新」やNOWの印を進める
-subscribeCrowd((data) => {
+const crowdDemo = ["localhost", "127.0.0.1"].includes(location.hostname) && params.get("crowddemo");
+if (crowdDemo) { // 手元だけ：?crowddemo=0,2,3 で、会場の順に度合いを入れて見た目をたしかめる
+  const lv = crowdDemo.split(",").map(Number);
+  crowd = Object.fromEntries(CROWD.venues.map((id, i) => [id, { level: lv[i] ?? 0, updated_at: nowMs() - (i * 4 + 2) * 60000 }]));
+  renderCrowd();
+} else subscribeCrowd((data) => {
   crowd = data;
   renderCrowd();
 });
