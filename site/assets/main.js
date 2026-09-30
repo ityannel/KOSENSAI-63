@@ -1,3 +1,4 @@
+import { onSiteTextChange } from "./site-text.js"; // 本部が変えた文章・書体（ほかより先に読む）
 import {
   FESTIVAL, NAV, MESSAGE, ABOUT, VENUES, CROWD, GUIDES, EVENTS, STAGE,
   NOTICES, GARBAGE, SPONSORS, FX, SECRETS,
@@ -47,7 +48,7 @@ function currentPhase(t = nowMs()) {
 
 // ---------- 静的セクション ----------
 function renderStatic() {
-  // 絵のすぐ下の日付：10.24 SAT ／ 12:00 ~ 17:00
+  // 絵のすぐ下の日付：10.24 SAT ／ 12:00 ~ 16:00
   const md = (iso) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric" }).format(new Date(iso)).replace("/", ".");
   const wd = (iso) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", weekday: "short" }).format(new Date(iso)).toUpperCase();
   $("#k-days").innerHTML = FESTIVAL.days.map((d) => `
@@ -172,18 +173,25 @@ function renderDuring() {
   top.textContent = inHours ? "開催中！" : beforeOpen ? "まもなく開場" : "本日は終了";
   top.classList.toggle("is-closed", !inHours);
 
-  // 生配信：Firestore で stream_active、または live:true のイベント中なら自動でトップに出す
-  const liveEvent = EVENTS.some((e) => e.live && Date.parse(e.start) <= t && t < Date.parse(e.end));
+}
+
+// ---------- 生配信 ----------
+// 本部の管理画面で「配信中にする」（stream_active）か、config.js で live: true の企画の時間なら、トップに出す。
+// 公開時間が終わったあとの配信（総選挙の結果発表など）もあるので、開催中かどうかにかかわらず見る
+function renderStream() {
+  const t = nowMs();
+  const liveEvent = NOW_LIST.find((e) => e.live && Date.parse(e.start) <= t && t < Date.parse(e.end));
   const url = live?.stream_url && (live.stream_active || liveEvent) ? toEmbedUrl(live.stream_url) : null;
-  if (url !== currentStream) {
-    currentStream = url;
-    const box = $("#live-stream");
-    $("#live").hidden = !url;
-    document.body.classList.toggle("streaming", !!url); // 配信中は「縁」のロゴと入れ替わる
-    box.innerHTML = url
-      ? `<p class="stream-title"><i class="live-dot" aria-hidden="true"></i>抽選会 生配信中</p><div class="stream-frame"><iframe src="${esc(url)}" title="抽選会 生配信" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`
-      : "";
-  }
+  const title = live?.stream_title || (liveEvent ? `${liveEvent.title} 生配信中` : "生配信中");
+  const key = url && `${url}|${title}`;
+  if (key === currentStream) return;
+  currentStream = key;
+  const box = $("#live-stream");
+  $("#live").hidden = !url;
+  document.body.classList.toggle("streaming", !!url); // 配信中は「縁」のロゴと入れ替わる
+  box.innerHTML = url
+    ? `<p class="stream-title"><i class="live-dot" aria-hidden="true"></i>${esc(title)}</p><div class="stream-frame"><iframe src="${esc(url)}" title="${esc(title)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`
+    : "";
 }
 
 // ---------- 食レポ・写真・お知らせ（Firestore） ----------
@@ -202,9 +210,12 @@ function renderLiveContent() {
     ? photos.map((p) => `<figure><img src="${esc(p.url)}" alt="${esc(p.caption ?? "")}" loading="lazy">${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>`).join("")
     : `<p class="empty">写真は当日随時アップします。</p>`;
 
+  // お知らせ：本部の管理画面から。notice_level が "urgent" なら赤い帯（緊急）
   const bar = $("#notice-bar");
   bar.hidden = !live?.notice;
   bar.textContent = live?.notice ?? "";
+  bar.classList.toggle("is-urgent", live?.notice_level === "urgent");
+  bar.setAttribute("role", live?.notice_level === "urgent" ? "alert" : "status");
 }
 
 // ---------- 電線の短冊（ナビ） ----------
@@ -407,11 +418,16 @@ function update() {
     document.body.dataset.phase = p;
   }
   if (p === "during") renderDuring();
+  renderStream();
   updateSky();
   checkFireworksTime();
 }
 
 renderStatic();
+onSiteTextChange(() => {
+  renderStatic();
+  renderMini($("#rally-mini"));
+});
 renderLiveContent();
 update();
 setInterval(update, 1000);

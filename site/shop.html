@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#634A2E">
+  <title>模擬店：待ち時間を変える｜第63回 函館高専祭「縁」</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    /* 模擬店の人が、自分のお店の待ち時間だけを変えるページ。本部コンソールでもらった QR から開く。
+       サイトと同じクリーム色の紙・こげ茶の字で、大きなボタンを4つ */
+    :root { --paper: #FEEBC4; --ink: #634A2E; --card: #FFFBF2; color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 20px 16px calc(24px + env(safe-area-inset-bottom)); background: var(--paper); color: var(--ink); font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif; font-weight: 700; }
+    main { max-width: 460px; margin: 0 auto; }
+    header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    header img { width: 52px; height: auto; }
+    header p { margin: 0; font-size: .8rem; opacity: .75; }
+    h1 { margin: 0; font-size: 1.5rem; font-weight: 900; line-height: 1.25; }
+    .now { margin: 0 0 16px; padding: 14px 16px; border-radius: 16px; background: var(--card); box-shadow: -5px 4px 0 rgba(48, 44, 41, .25); }
+    .now b { font-size: 1.3rem; }
+    .now small { display: block; opacity: .7; }
+    .btns { display: grid; gap: 12px; }
+    .btns button {
+      display: flex; align-items: center; gap: 14px; width: 100%; min-height: 76px; padding: 0 20px; border: 0; border-radius: 18px;
+      background: var(--c); color: #2A1B0C; font: inherit; font-weight: 900; font-size: 1.3rem; text-align: left; cursor: pointer;
+      box-shadow: -5px 4px 0 rgba(48, 44, 41, .35); transition: translate .12s, box-shadow .12s, outline .12s;
+    }
+    .btns button:active { translate: -5px 4px; box-shadow: 0 0 0 rgba(48, 44, 41, 0); }
+    .btns button[aria-pressed="true"] { outline: 4px solid var(--ink); outline-offset: 3px; }
+    .btns button:disabled { opacity: .6; }
+    .btns i { font-style: normal; font-size: 1.6rem; }
+    .msg { min-height: 1.6em; margin: 14px 0 0; text-align: center; }
+    .note { margin-top: 26px; font-size: .8rem; opacity: .7; line-height: 1.7; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <img src="assets/img/logo.webp" width="673" height="657" alt="">
+      <div><p>第63回 函館高専祭「縁」 模擬店用</p><h1 id="shop-name">読みこみ中…</h1></div>
+    </header>
+
+    <section id="panel" hidden>
+      <p class="now">いまサイトに出ている待ち時間：<b id="now">—</b><small id="updated"></small></p>
+      <div class="btns" id="btns">
+        <button type="button" data-status="normal" style="--c:#9BE3B2"><i>🍏</i>すぐ買える</button>
+        <button type="button" data-status="10min" style="--c:#FFE08A"><i>🍋</i>10分くらい待つ</button>
+        <button type="button" data-status="20min" style="--c:#FFC08A"><i>🍊</i>20分以上待つ</button>
+        <button type="button" data-status="soldout" style="--c:#FF9FA8"><i>🚨</i>完売しました</button>
+      </div>
+      <p class="msg" id="msg" role="status"></p>
+    </section>
+
+    <section id="need-code" hidden>
+      <p class="now">このページは、本部からもらった<b>お店の QR</b>を読んで開いてください。1回読めば、このスマホではずっと使えます。</p>
+    </section>
+
+    <p class="note">押すと、公式サイトと校内マップの「縁日」にすぐ出ます。このページのリンクはお店の人だけで使ってください。</p>
+  </main>
+
+  <script type="module">
+    import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "./assets/live.js";
+
+    const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
+    const [appMod, auth, fs] = await Promise.all([
+      import(`${base}/firebase-app.js`), import(`${base}/firebase-auth.js`), import(`${base}/firebase-firestore.js`),
+    ]);
+    const app = appMod.getApps().find((x) => x.name === "[DEFAULT]") ?? appMod.initializeApp(firebaseConfig);
+    const a = auth.getAuth(app);
+    const db = fs.getFirestore(app);
+    connectEmulators({ fs, db, auth, a });
+    const $ = (s) => document.querySelector(s);
+    const LABEL = { normal: "すぐ買える", "10min": "10分くらい待つ", "20min": "20分以上待つ", soldout: "完売" };
+
+    await a.authStateReady();
+    if (!a.currentUser) await auth.signInAnonymously(a);
+    const uid = a.currentUser.uid;
+
+    // QR から来たとき：コードで、このスマホをお店にひもづける。コードは URL から消す（画面を見られても残らないように）
+    const params = new URLSearchParams(location.search);
+    if (params.get("code") && params.get("shop")) {
+      try {
+        await fs.setDoc(fs.doc(db, "shop_members", uid), { shop: params.get("shop"), code: params.get("code"), at: fs.serverTimestamp() });
+      } catch {
+        $("#msg").textContent = "この QR は使えません（取り消されたかもしれません）。本部に聞いてください。";
+      }
+      history.replaceState(null, "", location.pathname);
+    }
+
+    let shopId = null;
+    try {
+      const me = await fs.getDoc(fs.doc(db, "shop_members", uid));
+      shopId = me.exists() ? me.data().shop : null;
+    } catch { /* まだひもづいていない */ }
+
+    if (!shopId) {
+      $("#shop-name").textContent = "お店の QR を読んでください";
+      $("#need-code").hidden = false;
+    } else {
+      $("#panel").hidden = false;
+      fs.onSnapshot(fs.doc(db, "shops", shopId), (snap) => {
+        const s = snap.data() ?? {};
+        $("#shop-name").textContent = s.name ?? shopId;
+        $("#now").textContent = LABEL[s.status] ?? "—";
+        const t = s.updated_at?.toDate?.();
+        $("#updated").textContent = t ? `${t.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })} に更新` : "";
+        document.querySelectorAll("[data-status]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.status === s.status)));
+      });
+      $("#btns").addEventListener("click", async (e) => {
+        const b = e.target.closest("[data-status]");
+        if (!b) return;
+        const buttons = document.querySelectorAll("#btns button");
+        buttons.forEach((x) => (x.disabled = true));
+        try {
+          await fs.updateDoc(fs.doc(db, "shops", shopId), { status: b.dataset.status, updated_at: fs.serverTimestamp() });
+          $("#msg").textContent = `「${LABEL[b.dataset.status]}」にしました`;
+        } catch {
+          $("#msg").textContent = "変えられませんでした。コードが取り消されたかもしれません。本部に聞いてください。";
+        } finally {
+          buttons.forEach((x) => (x.disabled = false));
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 // みどころのページ（mido.html）：タイムテーブルの代わり。時間の決まった企画を、トップページと同じチケットの形で全部並べる（学内のみのものも札つきで）。
 // 上の札で「日にち」「種類」をしぼれる。いまやっているものには NOW、終わったものは「終了」でうすく。30秒ごとに印を進める
 // 時刻は ?now=2026-10-24T13:00 で確かめられる（トップページと同じ）
+import "./site-text.js"; // 本部が変えた書体（ほかより先に読む）
 import { FESTIVAL } from "./config.js";
 import { ALL_TICKETS as TICKETS, ticketHtml, rowHtml, isOn, isPast, dayOf, esc, venueName } from "./tickets.js";
 import { drawThread, watchThread } from "./thread.js";

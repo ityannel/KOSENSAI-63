@@ -1,0 +1,9 @@
+{
+  "_説明": "サイトを置く場所（URL）。ローカル・確認用・本番でちがうので、ここだけ書きかえる。QR やリンクを貼ったときの画像（OGP）は、選んだ場所の URL で作られる。",
+  "default": "production",
+  "environments": {
+    "local": { "baseUrl": "http://localhost:5173/" },
+    "preview": { "baseUrl": "https://enishi-7f43f--preview-53vzkjwt.web.app/" },
+    "production": { "baseUrl": "https://www.hakodate-ct.ac.jp/gac_event/" }
+  }
+}

@@ -29,3 +29,9 @@ dist-ssr
 __pycache__/
 # スタンプラリーの合言葉を作るツール（自分のPCで開くだけ。公開しない）
 tools/rally-admin.html
+# スタンプラリーの鍵・スタッフ番号・印刷用 QR（tools/make-rally-qr.py が作る。公開しない）
+tools/rally-shops.json
+tools/rally-secret.json
+tools/rally-qr.html
+# 平面図をなぞる道具の確認用の画像（tools/trace-floors.py が作る）
+tools/trace-debug-*.png

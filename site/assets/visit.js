@@ -1,5 +1,6 @@
 // トップページの「ご来場の皆さまへ」：駅の案内板のように、絵とひとことの札を並べる。押すと、札がくるっと裏返って、裏にくわしい説明（もう一度押すと表へ）。
 // 文は config.js の VISIT。公開時間・総選挙の締め切りは FESTIVAL・ELECTION から入れる
+import { onSiteTextChange } from "./site-text.js"; // 本部が変えた文（ほかより先に読む）
 import { VISIT, FESTIVAL, ELECTION } from "./config.js";
 
 const grid = document.getElementById("visit-grid");
@@ -47,12 +48,17 @@ const COLORS = [
   ["#D3EFE6", "#3E9A86"], // 禁煙：ミント
 ];
 
-if (grid) {
+function renderVisit() {
   grid.innerHTML = VISIT.map((v, i) => `
     <li style="--tilt:${TILTS[i % TILTS.length]}deg; --paper:${COLORS[i % COLORS.length][0]}; --mark:${COLORS[i % COLORS.length][1]}"><button type="button" class="vi-card" data-vi="${i}" aria-pressed="false">
       <span class="vi-face vi-front"><span class="vi-ic">${icon(v.icon)}</span>${fx(v.icon)}<b class="vi-title">${bigNum(fill(v.title))}</b></span>
       <span class="vi-face vi-back"><b class="vi-back-title">${bigNum(fill(v.title))}</b><span class="vi-text">${logo(fill(v.detail))}</span></span>
     </button></li>`).join("");
+}
+
+if (grid) {
+  renderVisit();
+  onSiteTextChange(renderVisit);
   grid.addEventListener("click", (e) => {
     const b = e.target.closest("[data-vi]");
     if (!b) return;

@@ -231,11 +231,12 @@ body.is-searching .m-chips { display: none; }
 .m-mappick { display: block; width: 100%; max-width: 560px; margin: 8px auto 4px; padding: 12px; border: 1.5px solid var(--m-route); border-radius: 12px; background: var(--m-panel); color: var(--m-route); font: 700 0.95rem var(--font); cursor: pointer; }
 /* 本部からのお知らせ：地図をふさがないように1行。押すと全部、× で閉じる */
 .m-notice {
-  display: flex; align-items: center; gap: 6px; max-width: 560px; margin: 0 auto; padding: 4px 4px 4px 14px; border-radius: 999px; background: #d93025; color: #fff;
+  display: flex; align-items: center; gap: 6px; max-width: 560px; margin: 0 auto; padding: 4px 4px 4px 14px; border-radius: 999px; background: #2F3440; color: #fff;
   font-size: 0.82rem; font-weight: 700; box-shadow: var(--m-shadow); cursor: pointer;
 }
 .m-notice span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .m-notice.is-open { border-radius: 14px; align-items: flex-start; }
+.m-notice.is-urgent { background: #C8102E; color: #fff; box-shadow: 0 4px 16px rgba(200, 16, 46, .4); }
 .m-notice.is-open span { white-space: normal; padding: 4px 0; }
 .m-notice button { flex: none; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.2); cursor: pointer; }
 .m-notice svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; }
@@ -986,7 +987,7 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > :is(.m-heading, .m-compa
    Enistagram のロゴ・名前の字（DynaPuff）・ポストのボタンのグラデーションは、ロゴの色のまま
    ===================================================== */
 body.mapapp {
-  --font: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  --font: var(--text-font);
   --paper: #FFFBF2; --paper-2: #FEEBC4; --ink: #634A2E;
   --press: rgba(48, 44, 41, 0.45);
   --iro: linear-gradient(115deg, rgba(216, 69, 127, .2), rgba(226, 98, 46, .15) 35%, rgba(227, 164, 58, .15) 65%, rgba(223, 194, 122, .2));
@@ -1148,3 +1149,7 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 .mapapp .m-feed .f-body { padding-bottom: calc(var(--m-tabs-h) + 80px); }
 .mapapp .m-feed .f-compose { bottom: 0; padding-bottom: calc(var(--m-tabs-h) + 24px); }
 .mapapp .m-results { padding-bottom: calc(var(--m-tabs-h) + 16px); }
+
+/* 本部の公式の投稿の印と、写真の確認中の札（書いた人にだけ見える） */
+.ig-official { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: linear-gradient(90deg, #3E6BD6, #C8323A); color: #fff; font-style: normal; font-size: .7rem; font-weight: 800; line-height: 1.6; vertical-align: 1px; }
+.ig-pending { position: absolute; left: 10px; bottom: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(20, 22, 28, .78); color: #fff; font-size: .72rem; font-weight: 700; }

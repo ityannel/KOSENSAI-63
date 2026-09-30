@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0B0E14">
+  <title>本部コンソール｜第63回 函館高専祭「縁」</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Zen+Kaku+Gothic+New:wght@700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="staff.css">
+</head>
+<body>
+  <!-- ログイン -->
+  <section class="gate" id="gate" hidden>
+    <div class="gate-card">
+      <img class="gate-logo" src="../assets/img/logo.webp" width="673" height="657" alt="">
+      <p class="eyebrow">KOSENSAI 63 — HQ CONSOLE</p>
+      <h1>本部コンソール</h1>
+      <p class="gate-lead">本部の名簿にのっているアカウントでログインしてください。</p>
+      <form id="login-form" class="stack">
+        <label class="field"><span>メールアドレス</span><input id="email" type="email" autocomplete="username" required></label>
+        <label class="field"><span>パスワード</span><input id="password" type="password" autocomplete="current-password" required></label>
+        <button class="btn btn-primary btn-block" type="submit">ログイン</button>
+      </form>
+      <p class="gate-msg" id="login-msg" role="status"></p>
+    </div>
+  </section>
+
+  <!-- 本体 -->
+  <div class="shell" id="shell" hidden>
+    <aside class="rail" aria-label="メニュー">
+      <a class="brand" href="#overview">
+        <img src="../assets/img/logo.webp" width="673" height="657" alt="">
+        <span><b>本部コンソール</b><small>第63回 函館高専祭「縁」</small></span>
+      </a>
+      <nav class="nav" id="nav">
+        <a href="#overview" data-nav="overview"><svg viewBox="0 0 24 24"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 4v4h6V4z"/></svg><span data-short="ホーム">ダッシュボード</span></a>
+        <a href="#broadcast" data-nav="broadcast"><svg viewBox="0 0 24 24"><path d="M4 9v6h3l5 4V5L7 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg><span data-short="配信">お知らせ・配信</span></a>
+        <a href="#crowd" data-nav="crowd"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.5M17.5 19a5.5 5.5 0 0 0-2.5-4.6"/></svg><span data-short="混雑">混雑・実況</span></a>
+        <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
+        <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店</span></a>
+        <a href="#texts" data-nav="texts"><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg><span data-short="文章">文章と書体</span></a>
+      </nav>
+      <div class="me">
+        <span class="me-dot" aria-hidden="true"></span>
+        <span class="me-who" id="who"></span>
+        <button class="btn btn-ghost btn-sm" type="button" id="logout">ログアウト</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="page-eyebrow">OVERVIEW</p>
+          <h1 id="page-title">ダッシュボード</h1>
+        </div>
+        <div class="topbar-right">
+          <span class="clock" id="clock"></span>
+          <a class="btn btn-ghost btn-sm" href="../" target="_blank" rel="noopener">サイトを開く ↗</a>
+          <button class="btn btn-ghost btn-sm only-sp" type="button" id="logout-top">ログアウト</button>
+        </div>
+      </header>
+
+      <!-- ===== ダッシュボード ===== -->
+      <section class="view" id="view-overview" data-title="ダッシュボード" data-eyebrow="OVERVIEW">
+        <div class="kpis" id="kpis"></div>
+        <div class="grid-2">
+          <article class="card">
+            <header class="card-head"><h2>いまサイトに出ているもの</h2></header>
+            <dl class="status-list" id="status-list"></dl>
+          </article>
+          <article class="card">
+            <header class="card-head"><h2>すぐやる</h2></header>
+            <div class="quick">
+              <a class="quick-btn" href="#broadcast"><b>緊急のお知らせを出す</b><small>全員の画面の上に赤い帯</small></a>
+              <a class="quick-btn" href="#posts"><b>写真を確認する</b><small id="quick-photos">確認待ちの写真</small></a>
+              <a class="quick-btn" href="#crowd"><b>混雑を変える</b><small>体育館・玄関・講義室</small></a>
+              <a class="quick-btn" href="#broadcast"><b>配信をはじめる</b><small>YouTube の URL を入れる</small></a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ===== お知らせ・配信 ===== -->
+      <section class="view" id="view-broadcast" data-title="お知らせ・配信" data-eyebrow="BROADCAST" hidden>
+        <div class="grid-2">
+          <article class="card">
+            <header class="card-head"><h2>お知らせ</h2><span class="pill" id="notice-state"></span></header>
+            <form id="notice-form" class="stack">
+              <div class="seg" role="radiogroup" aria-label="お知らせの種類">
+                <label><input type="radio" name="notice-level" value="info" checked><span>ふつう</span></label>
+                <label class="seg-danger"><input type="radio" name="notice-level" value="urgent"><span>緊急</span></label>
+              </div>
+              <label class="field"><span>文（トップと地図のいちばん上に出る）</span>
+                <textarea id="notice-text" rows="3" maxlength="200" placeholder="例：14:00から体育館で抽選会の整理券を配ります"></textarea></label>
+              <div class="preview-bar" id="notice-preview" hidden></div>
+              <div class="row">
+                <button class="btn btn-primary" type="submit">出す</button>
+                <button class="btn btn-ghost" type="button" id="notice-clear">消す</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="card">
+            <header class="card-head"><h2>生配信（YouTube）</h2><span class="pill" id="stream-state"></span></header>
+            <form id="stream-form" class="stack">
+              <label class="field"><span>YouTube の URL（ライブの URL・youtu.be どちらでも）</span>
+                <input id="stream-url" type="url" inputmode="url" placeholder="https://www.youtube.com/live/…"></label>
+              <label class="field"><span>見出し（空なら「〇〇 生配信中」）</span>
+                <input id="stream-title" maxlength="40" placeholder="例：模擬店総選挙 結果発表 生配信中"></label>
+              <label class="switch"><input type="checkbox" id="stream-active"><span class="switch-ui" aria-hidden="true"></span><span>いますぐトップに出す<small>切っていても、config.js で live の企画の時間は自動で出る</small></span></label>
+              <div class="embed" id="stream-preview" hidden></div>
+              <div class="row">
+                <button class="btn btn-primary" type="submit">保存</button>
+                <button class="btn btn-ghost" type="button" id="stream-stop">配信を止める</button>
+              </div>
+            </form>
+          </article>
+        </div>
+
+        <article class="card">
+          <header class="card-head"><h2>表示の切りかえ</h2></header>
+          <form id="phase-form" class="stack">
+            <div class="seg" role="radiogroup" aria-label="開催前・中・後">
+              <label><input type="radio" name="phase" value="" checked><span>自動（時刻で）</span></label>
+              <label><input type="radio" name="phase" value="before"><span>開催前</span></label>
+              <label><input type="radio" name="phase" value="during"><span>開催中</span></label>
+              <label><input type="radio" name="phase" value="after"><span>終了後</span></label>
+            </div>
+            <label class="switch"><input type="checkbox" id="presence-off"><span class="switch-ui" aria-hidden="true"></span><span>電線の灯り（見ている人の数）を止める<small>Firestore の無料枠が危ないとき</small></span></label>
+            <div class="row"><button class="btn btn-primary" type="submit">保存</button></div>
+          </form>
+        </article>
+      </section>
+
+      <!-- ===== 混雑・実況 ===== -->
+      <section class="view" id="view-crowd" data-title="混雑・実況" data-eyebrow="CROWD" hidden>
+        <div class="crowd-grid" id="venues"></div>
+        <article class="card">
+          <header class="card-head"><h2>5人の実況</h2><small class="muted">空にすると、いつものセリフに戻る</small></header>
+          <form id="chatter-form" class="chatter">
+            <label class="field"><span>白いシャツの人（企画案内）</span><input id="c-p1" maxlength="40"></label>
+            <label class="field"><span>パーカーの人（模擬店）</span><input id="c-p2" maxlength="40"></label>
+            <label class="field"><span>走っている人（スタンプラリー）</span><input id="c-p3" maxlength="40"></label>
+            <label class="field"><span>手を伸ばしている人（イベント）</span><input id="c-p4" maxlength="40" placeholder="例：いま体育館、めっちゃ盛り上がってる！"></label>
+            <label class="field"><span>黒い服の人（来場案内）</span><input id="c-p5" maxlength="40"></label>
+            <div class="row">
+              <button class="btn btn-primary" type="submit">公開する</button>
+              <button class="btn btn-ghost" type="button" id="chatter-clear">全部消す</button>
+            </div>
+          </form>
+        </article>
+      </section>
+
+      <!-- ===== 投稿 ===== -->
+      <section class="view" id="view-posts" data-title="投稿の管理" data-eyebrow="ENISTAGRAM" hidden>
+        <article class="card">
+          <header class="card-head"><h2>本部として投稿する</h2><span class="pill pill-brand">公式</span></header>
+          <form id="official-form" class="stack">
+            <label class="field"><span>Enistagram に「本部（公式）」の名前で出る</span>
+              <textarea id="official-text" rows="3" maxlength="400" placeholder="例：ステージ第2部、まもなく始まります！"></textarea></label>
+            <div class="row"><button class="btn btn-primary" type="submit">投稿する</button><small class="muted" id="official-count">0 / 400</small></div>
+          </form>
+        </article>
+        <div class="tabs" role="tablist" id="post-tabs">
+          <button role="tab" data-f="pending" aria-selected="true">写真の確認待ち <b id="count-pending">0</b></button>
+          <button role="tab" data-f="reported" aria-selected="false">報告あり <b id="count-reported">0</b></button>
+          <button role="tab" data-f="hidden" aria-selected="false">非表示 <b id="count-hidden">0</b></button>
+          <button role="tab" data-f="all" aria-selected="false">すべて</button>
+        </div>
+        <div class="post-grid" id="post-list"></div>
+      </section>
+
+      <!-- ===== 模擬店 ===== -->
+      <section class="view" id="view-shops" data-title="模擬店" data-eyebrow="SHOPS" hidden>
+        <article class="card">
+          <header class="card-head"><h2>お店を足す</h2></header>
+          <form id="shop-add" class="row row-wrap">
+            <label class="field grow"><span>お店の名前</span><input id="shop-name" maxlength="40" required placeholder="例：5SE たこ焼き"></label>
+            <label class="field"><span>ID（半角英数字）</span><input id="shop-id" maxlength="30" pattern="[a-z0-9_\-]+" required placeholder="takoyaki"></label>
+            <button class="btn btn-primary" type="submit">足す</button>
+          </form>
+          <p class="muted small">お店の人には「コード」を渡します。コードの QR を読むと、そのお店の待ち時間だけを変えられるページ（shop.html）が開きます。</p>
+        </article>
+        <div class="shop-list" id="shop-list"></div>
+      </section>
+
+      <!-- ===== 文章と書体 ===== -->
+      <section class="view" id="view-texts" data-title="文章と書体" data-eyebrow="CONTENT" hidden>
+        <form id="texts-form">
+          <article class="card">
+            <header class="card-head"><h2>書体</h2><small class="muted">保存すると、開いている人の画面もすぐ変わる</small></header>
+            <div class="font-grid" id="font-grid"></div>
+          </article>
+          <div id="text-fields"></div>
+          <div class="savebar">
+            <span class="muted" id="texts-state">変更なし</span>
+            <button class="btn btn-ghost" type="button" id="texts-reset">すべていつもの文に戻す</button>
+            <button class="btn btn-primary" type="submit">保存して公開</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+  <script type="module" src="staff.js"></script>
+</body>
+</html>

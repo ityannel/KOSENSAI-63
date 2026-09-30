@@ -72,7 +72,7 @@ const ANSWERS = {
     return {
       line,
       html: `<div class="answer-rally">${Array.from({ length: g }, (_, i) => `<span class="mini-hanko${i < n ? " on" : ""}">${i < n ? "縁" : ""}</span>`).join("")}
-        <b>${n} / ${g}</b></div><p>${n >= g ? esc(RALLY.prize) : "お店のQRを読むか、お店で聞いた合言葉を入れてね。"}</p>`,
+        <b>${n} / ${g}</b></div><p>${n >= g ? esc(RALLY.prize) : "対象の模擬店で、お店の QR を読んでね。"}</p>`,
       actions: [link("#rally", n >= g ? "引き換え画面" : "スタンプカード")],
     };
   },

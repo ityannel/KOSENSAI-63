@@ -28,6 +28,7 @@ export const firebaseConfig = {
 // ?demo=1 で当日の見た目を確認するためのサンプル
 const DEMO = {
   notice: "【デモ】14:00から体育館で抽選会の整理券を配布します",
+  notice_level: new URLSearchParams(location.search).has("urgent") ? "urgent" : "info",
   stream_url: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
   stream_active: true,
   food_reports: [
@@ -38,6 +39,21 @@ const DEMO = {
 };
 
 const params = new URLSearchParams(location.search);
+
+// 手元で試すとき（localhost で ?emulator=1）：本物の Firebase ではなく、自分の PC の Firebase エミュレーターにつなぐ
+//   npx firebase-tools emulators:start --only firestore,auth --project enishi-7f43f（リポジトリのいちばん上で）
+export const USE_EMULATOR = ["localhost", "127.0.0.1"].includes(location.hostname) && params.has("emulator");
+export function connectEmulators({ fs: firestore, db, auth, a } = {}) {
+  if (!USE_EMULATOR) return;
+  if (firestore && db && !db.__kosenEmulator) {
+    firestore.connectFirestoreEmulator(db, "127.0.0.1", 8089);
+    db.__kosenEmulator = true;
+  }
+  if (auth && a && !a.__kosenEmulator) {
+    auth.connectAuthEmulator(a, "http://127.0.0.1:9099", { disableWarnings: true });
+    a.__kosenEmulator = true;
+  }
+}
 
 // ?demo=1 のときの混雑サンプル（?now= があればその時刻を基準にする）
 const demoNow = params.get("now") ? Date.parse(params.get("now") + (params.get("now").includes("+") ? "" : "+09:00")) : Date.now();
@@ -59,7 +75,9 @@ function getDb() {
     ]);
     fs = firestore;
     // みんなの声（posts.js）が先に立ち上げていればそれを使う
-    return firestore.getFirestore(getApps().find((a) => a.name === "[DEFAULT]") ?? initializeApp(firebaseConfig));
+    const db = firestore.getFirestore(getApps().find((a) => a.name === "[DEFAULT]") ?? initializeApp(firebaseConfig));
+    connectEmulators({ fs: firestore, db });
+    return db;
   })();
   return dbPromise;
 }
@@ -131,6 +149,20 @@ export async function subscribeShops(callback) {
 }
 
 // chatter/current = { p1〜p5: string, updated_at }  本部が書く、5人のセリフの実況
+// 本部の管理画面で変えた文章と書体（site-text.js が使う）
+export async function subscribeSiteText(callback) {
+  try {
+    const db = await getDb();
+    fs.onSnapshot(
+      fs.doc(db, "site_text", "current"),
+      (snap) => callback(snap.exists() ? snap.data() : null),
+      (err) => console.warn("[site_text] Firestore を読めませんでした:", err.code),
+    );
+  } catch (err) {
+    console.warn("[site_text] Firebase を読み込めませんでした:", err);
+  }
+}
+
 export async function subscribeChatter(callback) {
   if (params.has("demo")) return callback({ p4: "【デモ】いま体育館、めっちゃ盛り上がってる！" });
   try {

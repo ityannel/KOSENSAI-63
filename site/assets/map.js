@@ -1530,14 +1530,14 @@ function postHtml(x, s, { withPlace = false, reply = false } = {}) {
   // 写真、なければ文字のカード（ロゴの色のグラデーション）
   const shopTag = x.kind === "review" && x.shop && titleOf(place(x.place)) !== x.shop ? `<b class="ig-shop">${esc(x.shop)}</b>` : "";
   const media = x.has_photo
-    ? `<div class="ig-media" data-dbl="${esc(x.id)}"><img class="v-photo" data-photo="${esc(x.id)}" alt="投稿の写真"${cachedPhoto(x.id) ? ` src="${cachedPhoto(x.id)}"` : ""}><span class="ig-burst" aria-hidden="true">${I.heart}</span></div>`
+    ? `<div class="ig-media" data-dbl="${esc(x.id)}"><img class="v-photo" data-photo="${esc(x.id)}" alt="投稿の写真"${cachedPhoto(x.id) ? ` src="${cachedPhoto(x.id)}"` : ""}><span class="ig-burst" aria-hidden="true">${I.heart}</span>${x.photo_pending ? '<span class="ig-pending">本部で確認中（あなたにだけ見えています）</span>' : ""}</div>`
     : `<div class="tw-body">${x.kind === "review" && x.stars ? `<p class="tw-review">${stars(x.stars)}${shopTag}</p>` : ""}<p class="tw-text${len <= 25 ? " is-short" : ""}">${esc(x.text ?? "")}</p></div>`;
   const shown = openCmts.has(x.id) ? reps : reps.slice(-2);
   // キャプション：写真のときは★と本文。文字のカードのときは本文がカードにあるので、店名だけ（なければ出さない）
   const cap = x.has_photo ? `${review}${esc(x.text ?? "")}` : ""; // 文字だけの投稿は本文が上にあるので、キャプションは出さない
   return `<li class="v-post ig-post${x.has_photo ? "" : " is-text"}" data-post="${esc(x.id)}">
     <header class="ig-head">${avatar(who)}
-      <div class="ig-who"><b>${esc(who)}</b>${p ? `<button type="button" class="ig-loc" data-go="${esc(p.id)}">${esc(titleOf(p))}</button>` : ""}</div>
+      <div class="ig-who"><b>${esc(who)}</b>${x.official ? '<i class="ig-official">公式</i>' : ""}${p ? `<button type="button" class="ig-loc" data-go="${esc(p.id)}">${esc(titleOf(p))}</button>` : ""}</div>
       <button type="button" class="ig-more" data-report="${esc(x.id)}" aria-label="この投稿を本部に報告"${reported(x.id) ? " disabled" : ""}>${I.more}</button>
     </header>
     ${media}
@@ -2684,12 +2684,16 @@ export async function initMap(opts) {
 // 地図をふさがないように1行で出し、押すと全部、× で閉じる（同じお知らせは閉じたまま）
 const NOTICE_KEY = "kosen63-notice-closed";
 let noticeText = null;
-export function setNotice(text) {
+// level が "urgent"（緊急）のときは赤くして、閉じたことがあっても出す
+export function setNotice(text, level = null) {
   noticeText = text ?? null;
   let closed = null;
   try { closed = sessionStorage.getItem(NOTICE_KEY); } catch { /* 保存できないブラウザ */ }
   const n = $("#m-notice");
-  n.hidden = !text || closed === text;
+  const urgent = level === "urgent";
+  n.classList.toggle("is-urgent", urgent);
+  n.setAttribute("role", urgent ? "alert" : "status");
+  n.hidden = !text || (!urgent && closed === text);
   n.querySelector("span").textContent = text ?? "";
   document.body.classList.toggle("has-notice", !n.hidden);
 }

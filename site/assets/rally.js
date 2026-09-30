@@ -1,6 +1,7 @@
 // スタンプラリー
-// ・模擬店に貼った QR（rally.html?s=店ID&c=合言葉）を、スマホのカメラかページの「お店の QR を読む」で読むとスタンプが押される
-// ・合言葉は日ごとに変えられる（config.js の codes に日付ごとの暗号化した値を入れる）
+// ・模擬店に貼った QR（rally.html?s=店ID&c=QRの鍵）を、スマホのカメラかページの「お店の QR を読む」で読むとスタンプが押される。
+//   入力欄はない（QR を読むだけ）
+// ・QR の鍵は日ごとに変わる推測できない長い文字列。config.js にはその暗号化した値だけを置く（tools/make-rally-qr.py で作る）
 // ・スタンプはこのスマホの中だけに保存する（名前などの個人情報は集めない）
 // ・goal 個たまると達成画面。本部のスタッフが番号を入れると「引き換え済み」になる
 import { RALLY, FESTIVAL } from "./config.js";
@@ -10,10 +11,16 @@ const STORE_KEY = "kosen63-rally";
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-// 表記ゆれを吸収：全角半角・大文字小文字・カタカナ→ひらがな・空白
-export function normalize(s) {
-  return String(s).normalize("NFKC").trim().toLowerCase().replace(/\s+/g, "")
-    .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+// スタッフ番号の表記ゆれ（全角数字・空白）をそろえる
+const normalizePin = (s) => String(s).normalize("NFKC").replace(/\s+/g, "");
+
+// スタッフ番号を PBKDF2（SHA-256・何十万回）で混ぜる。ページのソースから番号を総当たりで割り出しにくくするため
+async function pinHash(pin, { salt, iterations }) {
+  if (!globalThis.crypto?.subtle) throw new Error("https で開いてください");
+  const hex = (h) => new Uint8Array(h.match(/../g).map((b) => parseInt(b, 16)));
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(normalizePin(pin)), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: hex(salt), iterations }, key, 256);
+  return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export async function sha256(text) {
@@ -104,19 +111,17 @@ export const stampIds = () => Object.keys(state.stamps);
 let nowMs = () => Date.now();
 const tokyoDate = () => new Date(nowMs()).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" }); // YYYY-MM-DD
 
-// 合言葉が今日のどの店のものかを調べる。店IDが分かっていればその店だけ
+// QR の鍵が今日のそのお店のものかを調べる
 async function findShop(code, shopId) {
   const today = tokyoDate();
-  const candidates = shopId ? RALLY.shops.filter((s) => s.id === shopId) : RALLY.shops;
-  for (const shop of candidates) {
-    const expected = shop.codes[today];
-    if (expected && expected === await sha256(`kosen63:${shop.id}:${today}:${normalize(code)}`)) return shop;
-  }
+  const shop = RALLY.shops.find((s) => s.id === shopId);
+  const expected = shop?.codes?.[today];
+  if (expected && expected === await sha256(`kosen63:${shop.id}:${today}:${String(code).trim()}`)) return shop;
   return null;
 }
 
 async function stamp(code, shopId) {
-  if (!RALLY.shops.some((s) => s.codes[tokyoDate()])) {
+  if (!RALLY.shops.some((s) => s.codes?.[tokyoDate()])) {
     return message("スタンプは開催日（" + FESTIVAL.days.map((d) => d.label).join("・") + "）に押せます。", "warn");
   }
   const shop = await findShop(code, shopId);
@@ -227,7 +232,7 @@ function render() {
       <p class="goal-clock" id="goal-clock" aria-live="off"></p>
       <form class="claim-form" id="claim-form">
         <label for="claim-pin">スタッフ用</label>
-        <input id="claim-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="番号">
+        <input id="claim-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="番号">
         <button type="submit">引き換える</button>
       </form>
       <p class="claim-msg" id="claim-msg" role="status"></p>
@@ -236,7 +241,23 @@ function render() {
   $("#claim-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const pin = $("#claim-pin").value;
-    if (await sha256(`kosen63:staff:${normalize(pin)}`) !== RALLY.staffPinHash) {
+    if (!RALLY.staffPin) {
+      $("#claim-msg").textContent = "引き換えの番号がまだ設定されていません（本部に知らせてください）";
+      return;
+    }
+    const button = e.submitter;
+    if (button) button.disabled = true;
+    $("#claim-msg").textContent = "確かめています…";
+    let ok = false;
+    try {
+      ok = await pinHash(pin, RALLY.staffPin) === RALLY.staffPin.hash;
+    } catch (err) {
+      $("#claim-msg").textContent = `確かめられませんでした（${err.message}）`;
+      if (button) button.disabled = false;
+      return;
+    }
+    if (button) button.disabled = false;
+    if (!ok) {
       $("#claim-msg").textContent = "番号が違います（スタッフが入力します）";
       return;
     }
@@ -263,7 +284,7 @@ export function initRallyPage(getNow = () => Date.now()) {
     const b = e.target.closest(".rc");
     if (b) b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
   });
-  // お店の QR を読む（ページの中のカメラ）。読めたら、その QR の合言葉でスタンプを押す
+  // お店の QR を読む（ページの中のカメラ）。読めたら、その QR の鍵でスタンプを押す
   $("#rally-scan").addEventListener("click", () => openQrScanner({
     title: "お店の QR を読む",
     hint: "模擬店に置いてある QR を枠に入れてください",
@@ -278,7 +299,7 @@ export function initRallyPage(getNow = () => Date.now()) {
     onRead: ({ s, c }) => stamp(c, s),
   }));
 
-  // QR から来たとき（?s=店ID&c=合言葉）。押したらURLから消して、再読み込みで二重に出ないようにする
+  // QR から来たとき（?s=店ID&c=QRの鍵）。押したらURLから消して、再読み込みで二重に出ないようにする
   const params = new URLSearchParams(location.search);
   if (params.has("s") && params.has("c")) {
     const [s, c] = [params.get("s"), params.get("c")];

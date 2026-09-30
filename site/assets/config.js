@@ -8,10 +8,10 @@ export const FESTIVAL = {
   edition: 63,
   theme: "縁",
   themeReading: "えにし",
-  // 各日の公開時間（日本時間）。ポスターの表記に合わせている
+  // 各日の公開時間（日本時間）。要項のとおり両日とも 16:00 まで（ポスターの 17:00 ではない）
   days: [
-    { label: "10月24日(土)", open: "2026-10-24T12:00:00+09:00", close: "2026-10-24T17:00:00+09:00" },
-    { label: "10月25日(日)", open: "2026-10-25T10:00:00+09:00", close: "2026-10-25T17:00:00+09:00" },
+    { label: "10月24日(土)", open: "2026-10-24T12:00:00+09:00", close: "2026-10-24T16:00:00+09:00" },
+    { label: "10月25日(日)", open: "2026-10-25T10:00:00+09:00", close: "2026-10-25T16:00:00+09:00" },
   ],
   instagram: "https://www.instagram.com/kosen_gakuseikai/",
   instagramId: "@KOSEN_GAKUSEIKAI",
@@ -316,18 +316,21 @@ export const SPONSORS = {
 };
 
 // スタンプラリー【仮】条件は未確定
-// 合言葉はそのまま置くとページのソースから読めてしまうので、
-// tools/rally-admin.html で作った「暗号化した値」だけをここに貼る。
+// スタンプはお店に貼った QR を読むだけで押せる（合言葉を入力する欄はない）。
+// QR の中身は推測できない長いランダムな文字列で、ここにはその「暗号化した値」だけを置く。
+// shops と staffPin は python tools/make-rally-qr.py で作って貼る（印刷用の QR のページも一緒にできる）。
 export const RALLY = {
   goal: 3, // 何個で達成か
   prize: "【仮】本部で景品と交換できます",
   claimPlace: "玄関ホールの本部",
-  // 対象のお店（決まったら tools/rally-admin.html で合言葉を作って入れる。空のあいだはスタンプを押せない）
-  // place（会場の id）か room（部屋番号）を書くと、校内マップにそのお店の場所が出る。例：{ id: "takoyaki", name: "たこ焼き", room: "L103", codes: {...} }
+  // 対象のお店。空のあいだはスタンプを押せない。
+  // place（会場の id）か room（部屋番号）を書くと、校内マップにそのお店の場所が出る。
+  // 例：{ id: "takoyaki", name: "たこ焼き", room: "L103", codes: { "2026-10-24": "…", "2026-10-25": "…" } }
+  // @rally-generated-start（tools/make-rally-qr.py が書きかえる。手で直さない）
   shops: [],
-
-  // 引き換えのときにスタッフが入れる番号（これも暗号化した値）
-  staffPinHash: "724aef65382516dab0c90b1d87e0f382b64cd61a626e9c611be52ab256457e01",
+  // 引き換えのときにスタッフが入れる番号（PBKDF2 で何十万回も混ぜた値。番号そのものはここに載らない）
+  staffPin: null,
+  // @rally-generated-end
 };
 
 // ---------- 演出 ----------

@@ -1,6 +1,7 @@
 // テスト用の操作パネル。URL に ?test=1 を付けたときだけ読み込まれる（来場者には出ない）。
 // 時刻・空・天気・デモデータは URL の値を変えて読み込み直す。花火やメニューなどはその場で動かす。
 import { RALLY, FESTIVAL } from "./config.js";
+import { FONTS, previewFonts, currentSiteText } from "./site-text.js";
 
 const params = new URLSearchParams(location.search);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -14,13 +15,20 @@ const TIMES = [
   ["1日目の夜", "2026-10-24T18:00"],
   ["2日目の朝（開場前）", "2026-10-25T08:30"],
   ["抽選会（配信）", "2026-10-25T15:20"],
-  ["閉会式", "2026-10-25T16:40"],
+  ["1日目の公開終了（16:00）直前", "2026-10-24T15:59:50"],
+  ["公開終了後（結果発表の配信）", "2026-10-25T16:05"],
   ["終了後", "2026-10-26T10:00"],
 ];
 const SKIES = [["自動", ""], ["明け方", "dawn"], ["昼", "day"], ["夕焼け", "sunset"], ["日暮れ", "dusk"], ["夜", "night"]];
 const WEATHERS = [["本物", ""], ["晴れ", "clear"], ["くもり", "cloudy"], ["霧", "fog"], ["雨", "rain"], ["雪", "snow"], ["雷", "thunder"]];
-const PANELS = [["高専祭について", "about"], ["タイムテーブル", "schedule"], ["混雑状況", "crowd"], ["スタンプラリー", "rally"],
-  ["企画案内", "guide"], ["注目の模擬店", "pickup"], ["食レポ・写真", "report"], ["来場案内", "info"], ["協賛", "sponsors"], ["隠し縁のごほうび", "secret"]];
+// トップページの場所（スクロールで出るもの）と、押すと開くパネル
+const PANELS = [["日程・入口", "days"], ["みどころ", "pickup"], ["縁日（模擬店）", "ennichi"], ["ご来場の皆さまへ", "info"], ["協賛", "sponsors"],
+  ["（パネル）高専祭について", "about"], ["（パネル）タイムテーブル", "schedule"], ["（パネル）Enistagram", "enistagram"], ["（パネル）混雑状況", "crowd"],
+  ["（パネル）企画案内", "guide"], ["（パネル）食レポ・写真", "report"], ["（パネル）隠し縁のごほうび", "secret"]];
+// ほかのページ（今の設定のまま開く）
+const PAGES = [["校内マップ", "map.html"], ["Enistagram", "map.html?tab=feed"], ["みどころ", "mido.html"], ["スタンプカード", "rally.html"],
+  ["模擬店用のページ", "shop.html"], ["本部コンソール", "staff/"]];
+const local = ["localhost", "127.0.0.1"].includes(location.hostname);
 
 // URL の値を変えて読み込み直す（test=1 は残す）
 function reloadWith(changes) {
@@ -72,7 +80,14 @@ export function initTest(hooks) {
       </section>
       <section>
         <h4>データ</h4>
-        <label><input type="checkbox" id="tw-demo"${params.has("demo") ? " checked" : ""}> デモ（お知らせ・配信・食レポ・混雑・実況・灯り）</label>
+        <label><input type="checkbox" id="tw-demo"${params.has("demo") ? " checked" : ""}> デモ（お知らせ・配信・食レポ・混雑・実況・灯り・仮のお店）</label>
+        <label><input type="checkbox" id="tw-urgent"${params.has("urgent") ? " checked" : ""}${params.has("demo") ? "" : " disabled"}> デモのお知らせを「緊急」にする</label>
+        ${local ? `<label><input type="checkbox" id="tw-emu"${params.has("emulator") ? " checked" : ""}> Firebase エミュレーターにつなぐ（手元だけ）</label>` : ""}
+      </section>
+      <section>
+        <h4>書体（このページで試すだけ。保存は本部コンソール）</h4>
+        ${Object.entries({ display: "見出し・数字", text: "文", body: "ふつう" }).map(([role, label]) => `
+          <label class="tw-row">${label} <select data-tw-font="${role}">${FONTS[role].map((f) => `<option value="${esc(f.id)}"${(currentSiteText()?.fonts?.[role] ?? FONTS[role][0].id) === f.id ? " selected" : ""}>${esc(f.label)}</option>`).join("")}</select></label>`).join("")}
       </section>
       <section>
         <h4>演出</h4>
@@ -93,13 +108,17 @@ export function initTest(hooks) {
           <button type="button" id="tw-stamp0">スタンプ全部消す</button>
           <button type="button" id="tw-secret">隠し縁リセット</button>
         </div>
-        <p class="tw-note">合言葉の仮の値：くれーぷ／そーす／さくさく／たこ／れもん、スタッフ番号 6363</p>
+        <p class="tw-note">スタンプは QR だけで押す。QR と引き換えのスタッフ番号は python tools/make-rally-qr.py で作る（番号の控えは tools/rally-secret.json）</p>
       </section>
       <section>
-        <h4>パネルを開く</h4>
+        <h4>移動</h4>
         <div class="tw-row">
           <select id="tw-panel">${opt(PANELS, "")}</select>
-          <button type="button" id="tw-open">開く</button>
+          <button type="button" id="tw-open">移動</button>
+        </div>
+        <div class="tw-row">
+          <select id="tw-page">${opt(PAGES, "")}</select>
+          <button type="button" id="tw-go">開く</button>
         </div>
       </section>
       <section>
@@ -134,7 +153,14 @@ export function initTest(hooks) {
   $("#tw-rain").addEventListener("click", () => reloadWith({ weather: $("#tw-weather").value || "clear", wind: $("#tw-wind").value }));
 
   // データ
-  $("#tw-demo").addEventListener("change", (e) => reloadWith({ demo: e.target.checked }));
+  $("#tw-demo").addEventListener("change", (e) => reloadWith({ demo: e.target.checked, urgent: e.target.checked && $("#tw-urgent").checked }));
+  $("#tw-urgent").addEventListener("change", (e) => reloadWith({ urgent: e.target.checked }));
+  $("#tw-emu")?.addEventListener("change", (e) => reloadWith({ emulator: e.target.checked }));
+
+  // 書体（保存しない。このページだけ）
+  box.querySelectorAll("[data-tw-font]").forEach((sel) => sel.addEventListener("change", () => {
+    previewFonts(Object.fromEntries([...box.querySelectorAll("[data-tw-font]")].map((x) => [x.dataset.twFont, x.value])));
+  }));
 
   // 演出
   $("#tw-fire").addEventListener("click", () => hooks.playOpening());
@@ -159,7 +185,18 @@ export function initTest(hooks) {
   $("#tw-secret").addEventListener("click", () => { store((ls) => ls.removeItem("kosen63-secrets")); location.reload(); });
 
   // パネル
-  $("#tw-open").addEventListener("click", () => { location.hash = $("#tw-panel").value; });
+  $("#tw-open").addEventListener("click", () => {
+    const id = $("#tw-panel").value;
+    const el = document.getElementById(id);
+    if (el && !el.hidden) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    else location.hash = id;
+  });
+  // ほかのページへ。時刻・空・天気・デモなどの設定はそのまま持っていく
+  $("#tw-go").addEventListener("click", () => {
+    const target = new URL($("#tw-page").value, location.href);
+    new URLSearchParams(location.search).forEach((v, k) => { if (!target.searchParams.has(k)) target.searchParams.set(k, v); });
+    location.href = target.href;
+  });
 
   $("#tw-reset").addEventListener("click", () => { location.href = location.pathname; });
 

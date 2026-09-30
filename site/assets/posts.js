@@ -1,7 +1,10 @@
-// みんなの声（レビュー・投稿）。書くとすぐ出る。良くない言葉ははじき、報告が3件たまると自動で隠し、本部が staff/posts.html で消せる。
+// みんなの声（レビュー・投稿）。文だけの投稿は書くとすぐ出る。写真つきは本部が確かめてから出る（それまでは書いた人にだけ「確認中」で見える）。
+// 良くない言葉ははじき、報告が3件たまると自動で隠し、本部が管理画面（staff/）で消せる。本部は「本部」の印つきで投稿もできる。
 //
 // Firestore：
-//   posts/{id}              = { kind: "review" | "post", place, shop, stars, text, has_photo, uid, created_at, reports, hidden, reply_to }
+//   posts/{id}              = { kind: "review" | "post", place, shop, stars, text, has_photo, photo_status, uid, created_at, reports, hidden, reply_to, official }
+//                             photo_status：写真なし "none"／本部の確認待ち "pending"／公開 "approved"／出さない "rejected"
+//                             official：本部の投稿（管理画面からだけ書ける）
 //                             place は "" なら場所なし。reply_to は返信先の投稿の id（返信でなければ null）。likes はいいねの数
 //   post_photos/{id}        = { data: "data:image/jpeg;base64,…", uid }   写真（スマホの中で小さくしてから入れる。Storage は使わない）
 //   post_reports/{id}_{uid} = { post, uid, at }                          報告（1人1回）
@@ -9,7 +12,7 @@
 //   users_meta/{uid}        = { last_post }                              続けて投稿できないようにする（60秒）
 // 書くには匿名ログインが要る（Firebase コンソール → Authentication → ログイン方法 → 匿名 を有効にする）。
 // 読み書きのルールは KOSENSAI-63/firestore.rules。
-import { FIREBASE_VERSION, firebaseConfig } from "./live.js";
+import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "./live.js";
 
 export const MAX_TEXT = 140;       // 文字数
 // 投稿した人の名前（ログインの印 uid から作る。本当の名前は集めないので、同じ人は同じ名前になるだけ）
@@ -44,7 +47,9 @@ function kit() {
     const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
     const [appMod, fs, auth] = await Promise.all([import(`${base}/firebase-app.js`), import(`${base}/firebase-firestore.js`), import(`${base}/firebase-auth.js`)]);
     const app = appMod.getApps().find((a) => a.name === "[DEFAULT]") ?? appMod.initializeApp(firebaseConfig);
-    return { fs, auth, db: fs.getFirestore(app), a: auth.getAuth(app) };
+    const k = { fs, auth, db: fs.getFirestore(app), a: auth.getAuth(app) };
+    connectEmulators(k);
+    return k;
   })();
   return kitP;
 }
@@ -63,7 +68,21 @@ const DEMO = [
   { id: "demo4", uid: "demo-b", kind: "post", place: "H107", shop: null, stars: null, text: "【デモ】わかる！また行きたい", has_photo: false, created_at: Date.now() - 3 * 60000, reports: 0, hidden: false, likes: 2, reply_to: "demo1" },
 ];
 
-// 新しい順に150件。隠したもの・報告が多いものは visible:false
+// このスマホで書いた投稿（写真の確認中は、書いた人にだけ見せる）
+const MINE_KEY = "kosen63-my-posts";
+const myPosts = () => { try { return JSON.parse(localStorage.getItem(MINE_KEY) ?? "[]"); } catch { return []; } };
+const rememberMine = (id) => { try { localStorage.setItem(MINE_KEY, JSON.stringify([...myPosts(), id].slice(-100))); } catch { /* 保存できないブラウザ */ } };
+
+// 写真を出してよいか。確認中の写真は、書いた人にだけ（「確認中」の印つき）
+function photoState(v, mine) {
+  if (!v.has_photo) return { has_photo: false, pending: false };
+  const status = v.photo_status ?? "pending";
+  if (status === "approved") return { has_photo: true, pending: false };
+  if (status === "pending" && mine) return { has_photo: true, pending: true };
+  return { has_photo: false, pending: status === "pending" };
+}
+
+// 新しい順に150件。隠したもの・報告が多いもの・写真の確認中（ほかの人の）は visible:false
 export async function subscribePosts(callback) {
   if (params.has("demo")) return callback(DEMO.map((p) => ({ reply_to: null, ...p, author: handleOf(p.uid), visible: true })));
   try {
@@ -72,12 +91,19 @@ export async function subscribePosts(callback) {
       fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(150)),
       (snap) => {
         const list = [];
+        const mine = new Set(myPosts());
         snap.forEach((d) => {
           const v = d.data();
           const reports = Number(v.reports ?? 0);
-          list.push({ id: d.id, kind: v.kind, place: v.place, shop: v.shop ?? null, stars: v.stars ?? null, text: String(v.text ?? ""),
-            has_photo: !!v.has_photo, created_at: v.created_at?.toMillis?.() ?? Date.now(), reports, hidden: !!v.hidden, likes: Number(v.likes ?? 0), reply_to: v.reply_to ?? null, author: handleOf(v.uid),
-            visible: !v.hidden && reports < REPORT_HIDE });
+          const photo = photoState(v, mine.has(d.id));
+          const text = String(v.text ?? "");
+          // 写真だけの投稿で、写真を出せないもの（確認中・出さない）は、書いた人以外には見せない
+          const empty = !photo.has_photo && !text.trim();
+          list.push({ id: d.id, kind: v.kind, place: v.place, shop: v.shop ?? null, stars: v.stars ?? null, text,
+            has_photo: photo.has_photo, photo_pending: photo.pending && mine.has(d.id), official: !!v.official,
+            created_at: v.created_at?.toMillis?.() ?? Date.now(), reports, hidden: !!v.hidden, likes: Number(v.likes ?? 0), reply_to: v.reply_to ?? null,
+            author: v.official ? "本部（公式）" : handleOf(v.uid),
+            visible: !v.hidden && reports < REPORT_HIDE && !empty });
         });
         callback(list);
       },
@@ -94,7 +120,8 @@ const photoCache = new Map();
 export const cachedPhoto = (id) => photoCache.get(id) ?? null;
 export async function loadPhoto(id) {
   if (photoCache.has(id)) return photoCache.get(id);
-  const { fs, db } = await kit();
+  const { fs, db, a } = await kit();
+  await a.authStateReady?.(); // 確認中の自分の写真は、ログインの印がもどってからでないと読めない
   const snap = await fs.getDoc(fs.doc(db, "post_photos", id));
   const data = snap.exists() ? snap.data().data : null;
   photoCache.set(id, data);
@@ -141,6 +168,7 @@ export async function submitPost({ kind, place = "", shop = null, stars = null, 
   const ref = fs.doc(fs.collection(db, "posts"));
   const b = fs.writeBatch(db);
   b.set(ref, { kind, place: place ?? "", shop: kind === "review" ? shop : null, stars: kind === "review" ? stars : null, text, has_photo: !!photo, uid,
+    photo_status: photo ? "pending" : "none",
     created_at: fs.serverTimestamp(), reports: 0, hidden: false, reply_to: replyTo ?? null });
   if (photo) b.set(fs.doc(db, "post_photos", ref.id), { data: photo, uid });
   b.set(fs.doc(db, "users_meta", uid), { last_post: fs.serverTimestamp() });
@@ -152,6 +180,7 @@ export async function submitPost({ kind, place = "", shop = null, stars = null, 
   }
   try { localStorage.setItem(COOL_KEY, String(Date.now())); } catch { /* 保存できないブラウザ */ }
   if (photo) photoCache.set(ref.id, photo);
+  rememberMine(ref.id);
   return ref.id;
 }
 

@@ -4,8 +4,9 @@ QR を読むと map.html?here=ID が開き、地図にその場所が「いま�
 場所は site/assets/config.js の MAP.spots（入口・廊下の角）と MAP.places（会場）。
 部屋番号でもよいので、ほかの場所に貼りたいときは下の EXTRA に部屋番号を足す（例 "C203"）。
 
-    python tools/make-here-qr.py                       # 学校のサーバー用
-    python tools/make-here-qr.py http://192.168.1.14:5173/   # 手元で試すとき
+    python tools/make-here-qr.py                       # site.config.json の default（ふつうは本番）
+    python tools/make-here-qr.py --env preview         # 確認用のサイト
+    python tools/make-here-qr.py http://192.168.1.14:5173/   # 手元で試すとき（URL を直接書いてもよい）
 
 できた tools/here-qr.html をブラウザで開いて印刷する。
 """
@@ -17,10 +18,9 @@ from pathlib import Path
 
 import qrcode
 
-ROOT = Path(__file__).resolve().parent.parent
-BASE = sys.argv[1] if len(sys.argv) > 1 else "https://www.hakodate-ct.ac.jp/gac_event/"
-if not BASE.endswith("/"):
-    BASE += "/"
+from site_env import ROOT, pick
+
+_, BASE, _ = pick()
 
 EXTRA = []  # 例：[("C203", "C203 講義室", "2F")]
 

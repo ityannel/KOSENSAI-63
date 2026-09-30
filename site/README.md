@@ -1,29 +1,47 @@
 # 公式サイト（site/）
 
-`https://www.hakodate-ct.ac.jp/gac_event/` に置く静的サイト。ビルド不要で、このフォルダの中身をそのままアップロードする。
+第63回 函館高専祭「縁」の公式サイト。ビルド不要の静的サイトで、Firebase Hosting（`firebase.json` の `public: site`）で公開する。
+学校のサーバーに置くときも、このフォルダの中身をそのままアップロードすればよい。
 
-ページはスクロールしない。画面にあるのは絵1枚と、その下の「5人への質問ボタン」（いま何してる？／混んでる？／スタンプ／地図／ごはん／その他）。
-ボタンか絵の中の人を押すと、担当の人が吹き出しで答えて、絵の下に答えのカードが出る。カードの「くわしく」で各パネルが開く。
-「縁」のロゴは「高専祭について」、道路の日付は「タイムテーブル」、電柱の看板は「混んでる？」。絵が大きく出せる画面では、電線の短冊もメニューになる。
-パネルは URL の `#about` `#schedule` `#map` `#crowd` `#rally` `#guide` `#pickup` `#report` `#info` `#sponsors` で直接開ける。
+公開時間は**両日とも 16:00 まで**（要項のとおり。ポスターの 17:00 ではない）。`assets/config.js` の `FESTIVAL.days`。
+
+## サイトを置く場所（ローカル・確認用・本番）
+
+URL は環境ごとにちがうので、リポジトリのいちばん上の **`site.config.json`** にまとめてある。ここだけ書きかえる。
+
+```json
+"environments": {
+  "local":      { "baseUrl": "http://localhost:5173/" },
+  "preview":    { "baseUrl": "https://enishi-7f43f--preview-….web.app/" },
+  "production": { "baseUrl": "https://www.hakodate-ct.ac.jp/gac_event/" }
+}
+```
+
+- サイトの中のリンクや本部コンソールが作る QR は、開いているページの場所から作るので、どの環境でもそのまま動く
+- 印刷する QR（`tools/make-here-qr.py`・`tools/make-rally-qr.py`）と、LINE や X に貼ったときの画像（OGP）は、選んだ環境の URL で作る
+  - `python tools/set-base-url.py`（`--env preview` など）… 公開する前に1回動かすと、HTML の OGP の URL を書きかえる
+  - `python tools/make-here-qr.py --env preview` のように `--env` で選ぶ（書かなければ `default`）。URL を直接書いてもよい
+- `python tools/serve.py` は `local` の URL のポートで開く
 
 ## ファイル
 
 | ファイル | 役割 |
 |---|---|
-| `index.html` | ページの骨組み |
-| `assets/config.js` | **文章・日程・PICK UP・協賛など。普段はここだけ書き換える** |
-| `assets/main.js` | 開催前・中・後の切り替え、カウントダウン、描画 |
-| `assets/live.js` | 当日の更新内容・混雑状況を Firestore から受け取る |
-| `assets/rally.js` | スタンプラリー（スタンプはスマホの中だけに保存） |
-| `assets/scene.js` | 絵の中の触れる場所（5人・建物・隠しスポット）と吹き出し、パネルの開け閉め |
-| `map.html` / `assets/map.js` / `assets/map-page.js` | 校内マップのページ |
+| `index.html` | トップページ |
+| `assets/config.js` | **文章・日程・企画・協賛など。普段はここを書き換える**（本部コンソールでも一部変えられる） |
+| `assets/site-text.js` | 本部コンソールの「文章と書体」で変えた内容をサイトに反映する（変えられる項目と書体の一覧もここ） |
+| `assets/main.js` | 開催前・中・後の切り替え、カウントダウン、生配信、お知らせ、描画 |
+| `assets/live.js` | お知らせ・配信・混雑・模擬店・実況・文章と書体を Firestore から受け取る。エミュレーターへの切りかえも |
+| `assets/posts.js` | Enistagram（みんなの声）：投稿・写真・いいね・報告 |
+| `assets/rally.js` | スタンプラリー（QR を読むだけ。スタンプはスマホの中だけに保存） |
+| `assets/scene.js` / `assets/ask.js` | 絵の中の触れる場所と吹き出し、5人に聞く |
+| `assets/fx.js` / `assets/weather.js` | 花火・短冊・函館の本物の天気 |
 | `assets/test.js` | テスト用パネル（`?test=1` のときだけ読み込む） |
-| `assets/ask.js` | 5人に聞く：質問ごとに、誰が・何と答えて・カードに何を出すか（セリフや担当はここで変える） |
-| `staff/crowd.html` | 本部用：会場の混雑状況と、5人の実況セリフを変える画面（リンクはどこにも貼らない） |
-| `assets/fx.js` | 花火（開幕の瞬間・花火の時間）と、振ると揺れる短冊 |
-| `assets/weather.js` | 函館の本物の天気（Open-Meteo）で雨・雪・霧・雷を降らせ、風で短冊の揺れを変える |
-| `assets/style.css` | 見た目 |
+| `map.html` / `assets/map*.js` | 校内マップと Enistagram |
+| `mido.html` / `rally.html` | みどころ・スタンプカード |
+| `shop.html` | **模擬店の人用**：自分のお店の待ち時間だけを変える（本部コンソールで渡したコードの QR から開く） |
+| `staff/`（`index.html`・`staff.js`・`staff.css`） | **本部コンソール**（下を見る）。リンクはどこにも貼らない |
+| `sw.js` | 電波がなくても開けるようにする（staff/ はしまわない） |
 
 ### 絵（`assets/img/`）
 
@@ -67,6 +85,67 @@ python tools/make-here-qr.py
 - 部屋の中身・種類・スタンプのお店は `config.js` の `MAP`。今は**仮の図**（四角を並べただけ）。
   校舎の図ができたら、Figma で部屋ごとにレイヤー名を `MAP.rooms` の id にして SVG で書き出し、`MAP.floors` の `svg` に指定する（読み込みの仕組みはこれから）
 
+## 本部コンソール（staff/）
+
+本部の画面は `staff/`（`staff/index.html`）の1つにまとめた。前の `staff/crowd.html`・`staff/posts.html` を開いても、ここに移る。
+パソコンでもスマホでも使える（スマホではメニューが下に出る）。
+
+| 画面 | できること |
+|---|---|
+| ダッシュボード | 写真の確認待ち・報告された投稿・入場制限中の会場・完売の模擬店の数、いまサイトに出ているもの |
+| お知らせ・配信 | お知らせ（**ふつう／緊急**。緊急は全員の画面の上に赤い帯）、**YouTube の生配信**（URL・見出し・いますぐ出す）、開催前／中／後の手動切りかえ、灯りを止める |
+| 混雑・実況 | 体育館・玄関・講義室の混雑（4段階）、5人の実況セリフ |
+| 投稿の管理 | **写真の確認**（公開／出さない）、報告された投稿、非表示・削除、**本部（公式）として投稿** |
+| 模擬店 | お店を足す・消す、待ち時間（すぐ買える／10分／20分以上／完売）、お店の人に渡す**コードと QR** |
+| 文章と書体 | 学生主事より・高専祭について・来場案内の札8枚・短い注意・景品・引き換え場所・達成の数・協賛の社数、**見出し／文／ふつうの字の書体**。保存すると開いている人の画面もすぐ変わる |
+
+### 本部のアカウントを作る（最初に1回）
+
+1. Firebase コンソール → Authentication → ログイン方法で「メール / パスワード」と「匿名」を有効にする
+2. Authentication → ユーザーを追加 で、本部用のアカウントを作る
+3. Firestore → `staff` コレクションに、**そのメールアドレスをドキュメント ID にした**ドキュメントを足す（中身は `{ name: "本部" }` など何でもよい）
+
+`staff` にのっていないアカウントは、ログインできても何も変えられない（メールとパスワードのアカウントは、だれでも新しく作れてしまうため）。
+
+### 写真つきの投稿
+
+文だけの投稿は書くとすぐ出る（良くない言葉ははじく・報告が3件で自動で隠れる）。
+**写真つきの投稿は、本部が「写真を公開」を押すまで、書いた人にしか見えない**（書いた人には「本部で確認中」と出る）。
+
+### 模擬店の待ち時間
+
+模擬店の人には、本部コンソールの「模擬店」で「お店の人にコードを渡す」を押して出る QR を読んでもらう。
+`shop.html` が開いて、1回読めばそのスマホではずっと、そのお店の待ち時間だけを変えられる。
+コードを「取り消す」と、そのコードで入った人は変えられなくなる。前の `app/shop-manager.html` の4けたのパスワード（`pass`）は、
+だれでも読めてしまうので使わない（本部コンソールで待ち時間を1回変えると、そのお店の `pass` は消える）。
+
+## Firestore のルール
+
+`firestore.rules`（リポジトリのいちばん上）。公開は `npx firebase-tools deploy --only firestore:rules --project enishi-7f43f`。
+
+- 本部：`staff` にのっている人だけ。書いた人と時刻（`updated_by`・`updated_at`）が残る
+- 来場者：読むだけ。投稿・いいね・報告のときだけ匿名ログイン。写真は確認待ちで入り、公開されたものだけ読める
+- 模擬店の人：コードで入った自分のお店の待ち時間だけ
+- 前の `app/` のクイズ（`quiz_control`・`quiz_answers`）：本部だけ（前はだれでも全員の画面に好きな文字を出せ、回答者の名前と年齢も読めた）
+
+ルールのテストは `tests/firestore-rules/`（Java が要る）：
+
+```
+cd tests/firestore-rules && npm install && npm test
+```
+
+## Firebase を手元で試す（エミュレーター）
+
+本物のデータを触らずに、本部コンソール・模擬店のページ・投稿を試せる。リポジトリのいちばん上で：
+
+```
+npx firebase-tools emulators:start --only firestore,auth --project enishi-7f43f
+python tools/serve.py
+```
+
+`http://localhost:5173/staff/?emulator=1` などのように、URL に `?emulator=1` を付けて開く（テスト用パネルからも切りかえられる）。
+本部のアカウントは、エミュレーターの Authentication に作り、Firestore の `staff` にメールアドレスのドキュメントを足す。
+
 ## 手元で確認
 
 ```
@@ -74,107 +153,44 @@ python tools/serve.py
 ```
 
 http://localhost:5173/?test=1 を開くと、左上に**テスト用パネル**が出る（`?test=1` を付けたときだけ。来場者には出ない）。
-時刻（開幕10秒前・開催中・企画の間・夜・2日目の朝・配信中・閉会式・終了後、好きな日時、±10分／1時間）、空、天気と風、
-デモデータ、花火・最初の演出・メニューの出し入れ・短冊を揺らす、スタンプを1個／そろえる／消す、隠し縁のリセット、
-どのパネルでも開く、がボタンでできる。上の「TEST」を押すとたたむ／ひらく。
+時刻（開幕10秒前・開催中・企画の間・公開終了の直前・2日目の朝・配信中・終了後、好きな日時、±10分／1時間）、空、天気と風、
+デモデータ（緊急のお知らせにもできる）、Firebase エミュレーターにつなぐ、書体を試す（このページだけ）、
+花火・最初の演出・メニューの出し入れ・短冊を揺らす、スタンプを1個／そろえる／消す、隠し縁のリセット、
+トップの場所やパネルへの移動、ほかのページ（地図・Enistagram・みどころ・スタンプカード・模擬店用・本部コンソール）を今の設定のまま開く、がボタンでできる。上の「TEST」を押すとたたむ／ひらく。
 
 パネルを使わなくても、URL に付けると時間や表示を試せる:
 
 - `?now=2026-10-25T13:45` … その時刻として表示（開催中の見た目を確認）
 - `?phase=during` / `?phase=after` … 表示を強制
-- `?demo=1` … 食レポ・配信・お知らせのサンプルを表示
+- `?demo=1` … 食レポ・配信・お知らせのサンプルを表示（`&urgent=1` でお知らせを緊急に）
+- `?emulator=1` … 本物の Firebase ではなく、手元の Firebase エミュレーターにつなぐ（localhost のときだけ。下の「Firebase を手元で試す」）
 - `?weather=rain&wind=12` … 天気と風速（m/s）を固定（`clear` / `cloudy` / `fog` / `rain` / `snow` / `thunder`）
 - `?fireworks=1` … 開幕の花火を今すぐ見る
 - `?sky=night` … 空の時間帯を固定（`dawn` / `day` / `sunset` / `dusk` / `night`）。普段は函館の今の時刻で変わる。
   出す空の絵は「夜・日暮れは時間帯、それ以外は天気（雨・雪・くもり）を優先」で決まり、変わるときは3秒かけて重なる
 
-## 当日の更新（サーバーを触らない）
-
-Firebase コンソール → Firestore → `site_live` コレクション → `current` ドキュメントを書き換えると、開いている全員の画面にすぐ反映される。
-
-| フィールド | 型 | 内容 |
-|---|---|---|
-| `notice` | string | トップ下部の帯に出すお知らせ |
-| `stream_url` | string | YouTube の配信URL |
-| `stream_active` | boolean | `true` の間トップに配信を出す（`config.js` で `live: true` のイベント中は自動で出る） |
-| `now_events` | array | 「今やっていること」を手動で上書き（`{ title, venue, start, end }`） |
-| `food_reports` | array | いちゃの食レポ（`{ shop, text, photo }`） |
-| `photos` | array | 会場写真（`{ url, caption }`） |
-| `phase_override` | string | `before` / `during` / `after` を強制 |
-
-### セキュリティルール（要追加）
-
-今のルールだと `site_live` も `crowd` も読めない（permission-denied）。既存のルールに以下を足す。
-
-```
-match /site_live/{docId} {
-  allow read: if true;
-  allow write: if false;   // コンソールからだけ書き換える
-}
-match /crowd/{venueId} {
-  allow read: if true;
-  // 本部用アカウントだけが level(0〜3) と updated_at を書ける
-  allow write: if request.auth != null
-    && request.auth.token.email == "本部用のメールアドレス"
-    && request.resource.data.keys().hasOnly(["level", "updated_at"])
-    && request.resource.data.level is int
-    && request.resource.data.level >= 0 && request.resource.data.level <= 3;
-}
-```
-
-### 追加のルール（灯り・5人の実況）
-
-```
-// 今この絵を見ている人の数。5分ごとの窓に +1 するだけ許す
-match /presence/{win} {
-  allow read: if true;
-  allow create: if request.resource.data.keys().hasOnly(["n"]) && request.resource.data.n == 1
-    && win.matches("^[0-9]+$")
-    && int(win) >= request.time.toMillis() / 300000 - 1 && int(win) <= request.time.toMillis() / 300000 + 1;
-  allow update: if request.resource.data.keys().hasOnly(["n"]) && request.resource.data.n == resource.data.n + 1;
-}
-// 5人の実況。本部用アカウントだけが書ける
-match /chatter/{docId} {
-  allow read: if true;
-  allow write: if request.auth != null
-    && request.auth.token.email == "本部用のメールアドレス"
-    && request.resource.data.keys().hasOnly(["p1", "p2", "p3", "p4", "p5", "updated_at"]);
-}
-```
-
-灯りは無料枠（1日 読み込み5万回・書き込み2万回）を使う。同時に見ている人が100人いても1日の書き込みは1万回程度だが、
-上限を超えると混雑状況なども止まるので、危なくなったら Firestore の `site_live/current` に `presence_off: true` を足すと灯りだけ止まる。
-`config.js` の `FX.presence.enabled` を `false` にすれば最初から使わない。
-
-## 混雑状況（体育館・玄関ホール・第一講義室）
-
-1. Firebase コンソール → Authentication → ログイン方法で「メール / パスワード」を有効にする
-2. Authentication → ユーザーを追加 で本部用アカウントを1つ作る
-3. 上のルールの「本部用のメールアドレス」をそのアドレスに書き換える
-4. 当日の朝、本部のスマホで `gac_event/staff/crowd.html` を開いて1回ログイン（ログインは残る）
-5. ボタンを押すと、公式サイトの「会場の混雑状況」にすぐ反映される。30分更新がないと薄く表示される
-
-会場を増やす・減らすときは `config.js` の `CROWD.venues`。
-
-## 5人の実況
-
-`staff/crowd.html` の下の欄にセリフを書いて「公開する」と、サイトを開いている人の画面ですぐその人がしゃべる。空にすると、いつものセリフに戻る。
-
 ## スマホで確認（同じWi-Fi）
 
 `python tools/serve.py` を動かしたまま、スマホで `http://（PCのIPアドレス）:5173/` を開く。
-https ではないので、iPhone の「振ると揺れる」は動かない（本番の https では動く）。スタンプラリーは動く。
+https ではないので、iPhone の「振ると揺れる」と、スタンプラリーの引き換え（スタッフ番号の確認）は動かない（本番の https では動く）。
 
 ## スタンプラリー
 
-1. `tools/rally-admin.html` を**自分のPCで**ダブルクリックして開く（サーバーには置かない）
-2. お店の一覧・日ごとの合言葉・引き換え用のスタッフ番号を入れて「作る」
-3. 出てきた `shops` と `staffPinHash` を `config.js` の `RALLY` に貼る（合言葉そのものはサイトに載らない）
-4. 同じページを印刷して、各お店にその日のQRを貼る
-5. 何個で達成か（`RALLY.goal`）、景品の説明、引き換え場所も `config.js` で変える
+スタンプは**お店に貼った QR を読むだけ**で押せる（合言葉を入力する欄はない）。QR にはお店ごと・日ごとの推測できない長い鍵が入っていて、
+サイトにはその暗号化した値しか載らない。前の日の QR は次の日には使えない。
+
+1. `tools/rally-shops.example.json` を `tools/rally-shops.json` にコピーして、お店を書く（`id`・`name`、地図に出すなら `room` か `place`）
+2. `python tools/make-rally-qr.py` を動かす（本番以外なら `--env preview` など）
+   - `assets/config.js` の `RALLY.shops` と `RALLY.staffPin` が書きかわる
+   - `tools/rally-qr.html`：お店に貼る QR（1日目・2日目で別）。ブラウザで開いて印刷する
+   - 引き換えのスタッフ番号（8けた）が表示される。控えは `tools/rally-secret.json`
+3. 何個で達成か・景品・引き換え場所は、本部コンソールの「文章と書体」か `config.js` の `RALLY` で変える
+
+`rally-shops.json`・`rally-secret.json`・`rally-qr.html` は公開しない（`.gitignore` 済み）。
+2回目からは同じ鍵を使い回す。全部作り直すときは `--new`（印刷し直しになる）。
 
 仕組みと弱点:
-- QRには合言葉が入っているので、QRの写真を回されると離れた場所でも押せてしまう。合言葉を日ごとに変えて被害を1日に留める
+- QR の写真を回されると、離れた場所でも押せてしまう。鍵を日ごとに変えて、被害をその日だけに留める
 - スタンプはスマホのブラウザに保存するだけ。ブラウザのデータを消すと消える
-- 引き換えはスタッフが来場者のスマホで番号を入れる。達成画面は時計が動き背景が流れ続けるので、スクショの使い回しは見れば分かる
-- 今入っている店と合言葉は仮（くれーぷ・そーす・さくさく・たこ・れもん。1日目と2日目で同じ）。スタッフ番号の仮の値は 6363。本番前に必ず作り直す
+- 引き換えはスタッフが来場者のスマホで番号を入れる。番号は PBKDF2（30万回）で混ぜた値だけがサイトに載るので、総当たりで割り出しにくい
+- 達成画面は時計が動き背景が流れ続けるので、スクショの使い回しは見れば分かる
