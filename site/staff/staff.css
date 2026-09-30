@@ -292,13 +292,15 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 
 /* 紙（A4）。画面では縮めて見せ、印刷ではそのままの大きさ */
 .sheet {
-  --ink: #4E3A24; --red: #C8323A; --paper: #FFFBF2; --cream: #FEEBC4;
+  /* 白黒で刷るので、色は黒と白だけ。強調は色でなく、太さ・枠・白抜きで */
+  --ink: #000; --red: #000; --paper: #fff; --cream: #fff;
   position: relative; box-sizing: border-box; width: 210mm; height: 297mm; overflow: hidden; padding: 14mm;
   background: var(--paper); color: var(--ink); font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif; font-weight: 700;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .sheet .ps-head { display: flex; align-items: center; gap: 4mm; padding-bottom: 4mm; border-bottom: .6mm solid var(--ink); }
 .sheet .ps-head img { width: 18mm; height: auto; }
+.sheet .ps-head img, .sheet .pf-head img { filter: grayscale(1) brightness(.35); } /* 色のロゴは白黒だと薄くなるので、濃い黒に */
 .sheet .ps-head b { display: block; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 7mm; }
 .sheet .ps-head small { display: block; font-size: 3.6mm; opacity: .75; }
 .sheet .ps-name { margin: 2mm 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 17mm; line-height: 1.1; word-break: auto-phrase; }
@@ -339,7 +341,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .pf-head h2 { margin: 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 18mm; line-height: 1; color: var(--red); }
 .pf-head h2 small { margin-left: 3mm; font-size: 6mm; color: var(--ink); }
 .pf-days { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 8mm 0 2mm; padding: 0; list-style: none; }
-.pf-days li { padding: 4mm; border-radius: 4mm; background: var(--cream); text-align: center; }
+.pf-days li { padding: 4mm; border: .5mm solid var(--ink); border-radius: 4mm; background: var(--cream); text-align: center; }
 .pf-days b { display: block; font-size: 6mm; }
 .pf-days span { font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 9mm; }
 .pf-place { margin: 0 0 7mm; font-size: 5mm; text-align: center; }
@@ -347,23 +349,33 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .pf-notes { margin: 7mm 0 0; padding: 4mm 4mm 4mm 10mm; border: .5mm solid var(--ink); border-radius: 4mm; font-size: 4.2mm; line-height: 1.7; }
 .pf-foot { margin: auto 0 0; padding-top: 4mm; font-size: 4mm; text-align: center; opacity: .75; }
 
-/* 三角POP：A4 を 3 段（点線で山折り）＋下ののりしろ */
-.sheet.pt { display: grid; grid-template-rows: repeat(3, 1fr) 11mm; padding: 0; }
-.pt-panel { box-sizing: border-box; overflow: hidden; padding: 8mm 12mm; border-bottom: .4mm dashed #b07a4a; }
-.pt-name { display: flex; flex-direction: column; justify-content: center; text-align: center; }
-.pt-name .ps-head { justify-content: center; border: 0; padding: 0; }
-.pt-name .ps-name { font-size: 15mm; margin: 4mm 0 2mm; }
-.pt-links { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; align-items: center; }
-.pt-rally { display: grid; grid-template-columns: 1fr 58mm; gap: 6mm; align-items: center; background: var(--cream); }
-.pt-rally-kicker { margin: 0; font-family: "Roboto Mono", monospace; font-size: 3.6mm; letter-spacing: .3em; color: var(--red); }
-.pt-rally h3 { margin: 1mm 0 3mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 12mm; line-height: 1.05; color: var(--red); }
-.pt-rally-lead { margin: 0 0 3mm; font-size: 4.6mm; line-height: 1.5; }
-.pt-rally-lead b { font-size: 6mm; color: var(--red); }
-.pt-steps { margin: 0; padding-left: 5mm; font-size: 3.8mm; line-height: 1.6; }
+/* 三角POP：A4 を 3 段（点線で山折り）＋下ののりしろ。縦に立てるので、各面の中身は -90度まわす（紙の右の辺が下になる） */
+.sheet.pt { --ph: calc((297mm - 11mm) / 3); display: grid; grid-template-rows: repeat(3, var(--ph)) 11mm; padding: 0; }
+.pt-panel { position: relative; overflow: hidden; border-bottom: .3mm dashed #888; }
+.pt-face {
+  position: absolute; left: 50%; top: 50%; box-sizing: border-box; width: var(--ph); height: 210mm; padding: 10mm 7mm;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5mm; text-align: center;
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+.pt-name .ps-head { flex-direction: column; gap: 2mm; border: 0; padding: 0; text-align: center; }
+.pt-name .ps-head img { width: 22mm; }
+.pt-name .ps-head b { font-size: 5.4mm; }
+.pt-name .ps-name { font-size: 13mm; margin: 6mm 0 2mm; }
+.pt-name .ps-room { font-size: 4.2mm; }
+.pt-links { gap: 10mm; }
+.pt-links .ps-qr { display: flex; flex-direction: column; gap: 3mm; width: 100%; padding: 5mm; text-align: center; }
+.pt-links .ps-qr img { width: 42mm; height: 42mm; }
+.pt-rally .pt-face { gap: 4mm; }
+.pt-rally .pt-face::before { content: ""; position: absolute; inset: 5mm 3mm; border: 1.2mm solid var(--ink); border-radius: 6mm; pointer-events: none; }
+.pt-rally-kicker { margin: 0; padding: .6mm 3mm; background: var(--ink); color: #fff; font-family: "Roboto Mono", monospace; font-size: 3.4mm; letter-spacing: .3em; }
+.pt-rally h3 { margin: 1mm 0 3mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 11mm; line-height: 1.1; color: var(--red); }
+.pt-rally-lead { margin: 0; font-size: 4.2mm; line-height: 1.55; }
+.pt-rally-lead b { font-size: 5.6mm; text-decoration: underline; text-decoration-thickness: .8mm; text-underline-offset: 1mm; }
+.pt-steps { margin: 0; padding-left: 5mm; font-size: 3.6mm; line-height: 1.6; text-align: left; }
 .pt-rally-qr { margin: 0; padding: 3mm; border: .6mm solid var(--ink); border-radius: 5mm; background: #fff; text-align: center; }
 .pt-rally-qr img { width: 50mm; height: 50mm; image-rendering: pixelated; }
 .pt-rally-qr figcaption { font-size: 4mm; }
-.pt-glue { display: grid; place-items: center; font-size: 3.2mm; letter-spacing: .4em; opacity: .6; }
+.pt-glue { display: grid; place-items: center; font-size: 3.2mm; letter-spacing: .4em; color: #666; }
 
 @page { size: A4; margin: 0; }
 @media print {

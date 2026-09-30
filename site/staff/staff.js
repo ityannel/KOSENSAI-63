@@ -654,7 +654,8 @@ async function buildShopSet(shops, withStaff) {
   }
   return pages.join("");
 }
-// 三角POP（A4 を3つに折って、下ののりしろで貼る卓上の札）。1段目＝お店の名前、2段目＝サイトの QR、3段目＝スタンプラリーのおさそい
+// 三角POP（A4 を3つに折って、下ののりしろで貼り、縦に立てる卓上の札）。3面ともまわりから見えるように、中身は90度まわして縦長に置く
+// 1段目＝お店の名前、2段目＝サイトの QR、3段目＝スタンプラリーのおさそい
 function buildTents(shops) {
   return shops.map((s) => {
     const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
@@ -663,24 +664,24 @@ function buildTents(shops) {
       : qrDataUrl(siteUrl("rally.html"));
     return `
       <section class="sheet pt">
-        <div class="pt-panel pt-name">
+        <div class="pt-panel"><div class="pt-face pt-name">
           ${head("縁日（模擬店）")}
           <h2 class="ps-name">${esc(s.name)}</h2>
           <p class="ps-room">${esc([s.group, s.where].filter(Boolean).join("・"))}</p>
-        </div>
-        <div class="pt-panel pt-links">
+        </div></div>
+        <div class="pt-panel"><div class="pt-face pt-links">
           ${qrTile(siteUrl("map.html?tab=feed"), "Enistagram で感想を投稿しよう", "写真やレビューを公式サイトに")}
           ${qrTile(siteUrl("#ennichi"), "待ち時間・ほかのお店", "公式サイトの「縁日」")}
-        </div>
-        <div class="pt-panel pt-rally">
+        </div></div>
+        <div class="pt-panel pt-rally"><div class="pt-face">
           <div class="pt-rally-text">
             <p class="pt-rally-kicker">STAMP RALLY</p>
             <h3>スタンプラリー<br>開催中！</h3>
             <p class="pt-rally-lead">模擬店の QR を <b>${RALLY.goal}個</b> 集めると、<br>${esc(RALLY.claimPlace)}で景品と交換！</p>
-            <ol class="pt-steps"><li>スマホのカメラで QR を読む</li><li>スタンプが押される（アプリ不要）</li><li>${RALLY.goal}個たまったら本部へ</li></ol>
           </div>
           <figure class="pt-rally-qr"><img src="${rallyQr}" alt=""><figcaption>${rally ? "このお店のスタンプ" : "スタンプカードを見る"}</figcaption></figure>
-        </div>
+          <ol class="pt-steps"><li>スマホのカメラで QR を読む</li><li>スタンプが押される（アプリ不要）</li><li>${RALLY.goal}個たまったら本部へ</li></ol>
+        </div></div>
         <div class="pt-glue">の り し ろ</div>
       </section>`;
   }).join("");
