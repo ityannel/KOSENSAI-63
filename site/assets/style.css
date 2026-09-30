@@ -1760,11 +1760,16 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .rc-mini-box:has(.rc-mini:active) { filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
 .rc-mini:active { translate: calc(-6 * var(--u)) calc(4 * var(--u)); }
 .rc-mini .rc-logo { width: calc(34 * var(--u)); }
-.rc-mini-txt { display: grid; line-height: 1.25; }
+/* 丸（5つ）は名前の下の段に並べる（横1列だと、みどころの枠からはみ出すので） */
+.rc-mini { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "logo txt" "logo dots"; align-items: center; column-gap: calc(12 * var(--u)); row-gap: calc(4 * var(--u)); }
+.rc-mini .rc-logo { grid-area: logo; }
+.rc-mini .rc-mini-txt { grid-area: txt; display: flex; align-items: baseline; gap: calc(8 * var(--u)); }
+.rc-mini .rc-mini-dots { grid-area: dots; margin-left: 0; }
+.rc-mini-txt { display: grid; flex: none; line-height: 1.25; white-space: nowrap; }
 .rc-mini-txt b { font-family: var(--hud-font); font-weight: 400; font-size: calc(19 * var(--u)); }
 .rc-mini-txt small { font-family: var(--text-font); font-weight: 700; font-size: calc(10.5 * var(--u)); opacity: .75; }
-.rc-mini-dots { display: flex; gap: calc(5 * var(--u)); margin-left: auto; }
-.rc-mini-dots i { display: grid; place-items: center; width: calc(28 * var(--u)); aspect-ratio: 1; border: calc(1.8 * var(--u)) dashed rgba(99, 74, 46, .55); border-radius: 50%; font-style: normal; }
+.rc-mini-dots { display: flex; flex: none; gap: calc(4 * var(--u)); margin-left: auto; }
+.rc-mini-dots i { display: grid; place-items: center; width: calc(24 * var(--u)); aspect-ratio: 1; border: calc(1.8 * var(--u)) dashed rgba(99, 74, 46, .55); border-radius: 50%; font-style: normal; }
 .rc-mini-dots i.on { border: calc(2 * var(--u)) solid #C8323A; color: #C8323A; font-family: var(--hud-font); font-size: calc(15 * var(--u)); rotate: -10deg; }
 
 /* スタンプカード：スタンプを押すのは「お店の QR を読む」ひとつ。大きなこげ茶のボタン（押すと影の方へ沈む） */
