@@ -172,7 +172,7 @@ service cloud.firestore {
         || get(/databases/$(database)/documents/posts/$(id)).data.photo_status == 'approved';
       allow create: if isVisitor() && data().keys().hasOnly(['data', 'uid']) && data().uid == request.auth.uid
         && data().data is string && data().data.size() < 750000
-        && data().data.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+')
+        && data().data.matches('data:image/(jpeg|webp);base64,[A-Za-z0-9+/=]+')
         && getAfter(/databases/$(database)/documents/posts/$(id)).data.uid == request.auth.uid
         && getAfter(/databases/$(database)/documents/posts/$(id)).data.photo_status == 'pending';
       allow delete: if isStaff();

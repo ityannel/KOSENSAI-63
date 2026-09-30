@@ -16,7 +16,7 @@
 //
 // Firebase に繋がらなくてもページは config.js の内容だけで表示される。
 
-export const FIREBASE_VERSION = "10.12.2";
+export const FIREBASE_VERSION = "10.12.2"; // 変えたら index.html・map.html の modulepreload の版もそろえる
 export const firebaseConfig = {
   apiKey: "AIzaSyCpFQ5nFnW6O0Ful2pAD3nGM-N-qxhS-04",
   authDomain: "enishi-7f43f.firebaseapp.com",

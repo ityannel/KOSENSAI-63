@@ -198,7 +198,7 @@ function render() {
     <button type="button" class="rc" aria-pressed="${flipped}" aria-label="スタンプカード（押すと裏返る）">
       <span class="rc-face rc-front">
         <span class="rc-head">
-          <img class="rc-logo" src="assets/img/logo.webp" width="673" height="657" alt="">
+          <img class="rc-logo" src="assets/img/logo-s.webp" width="673" height="657" alt="">
           <span class="rc-name"><b>スタンプラリー</b><small>第${esc(FESTIVAL.edition)}回 函館高専祭「縁」</small></span>
           <span class="rc-no">No.<b>${cardNo()}</b></span>
         </span>
@@ -340,7 +340,7 @@ export function renderMini(el) {
   const n = Math.max(RALLY.goal, count);
   el.innerHTML = `
     <a class="rc-mini" href="rally.html">
-      <img class="rc-logo" src="assets/img/logo.webp" width="673" height="657" alt="">
+      <img class="rc-logo" src="assets/img/logo-s.webp" width="673" height="657" alt="">
       <span class="rc-mini-txt"><b>スタンプカード</b><small>スタンプラリー</small></span>
       <span class="rc-mini-dots" aria-label="${count} / ${RALLY.goal}">${Array.from({ length: n }, (_, i) => `<i${i < count ? ' class="on"' : ""}>${i < count ? "縁" : ""}</i>`).join("")}</span>
     </a>`;

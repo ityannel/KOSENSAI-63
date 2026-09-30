@@ -68,6 +68,16 @@ await t("visitor photo post starts pending", assertSucceeds((() => {
   return b.commit();
 })()));
 await t("owner can read own pending photo", assertSucceeds(getDoc(doc(anon, "post_photos/p4"))));
+const photoPost = (id, data) => {
+  const b = writeBatch(anon);
+  b.set(doc(anon, `posts/${id}`), { kind: "post", place: "", shop: null, stars: null, text: "", has_photo: true, photo_status: "pending", uid: "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null });
+  b.set(doc(anon, `post_photos/${id}`), { data, uid: "anon1" });
+  b.set(doc(anon, "users_meta/anon1"), { last_post: serverTimestamp() });
+  return b.commit();
+};
+await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), "users_meta/anon1"), { last_post: new Date(Date.now() - 120000) }));
+await t("png photo rejected", assertFails(photoPost("p5", "data:image/png;base64,AAAA")));
+await t("webp photo accepted", assertSucceeds(photoPost("p6", "data:image/webp;base64,AAAA")));
 await t("others cannot read pending photo", assertFails(getDoc(doc(nobody, "post_photos/other"))));
 await t("staff can read pending photo", assertSucceeds(getDoc(doc(staff, "post_photos/other"))));
 await t("visitor cannot approve photo", assertFails(updateDoc(doc(anon, "posts/other"), { photo_status: "approved" })));

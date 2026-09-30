@@ -17,6 +17,15 @@
             "value": "no-cache"
           }
         ]
+      },
+      {
+        "source": "**/*.@(webp|png|jpg|jpeg|svg|gif|avif|woff2)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400"
+          }
+        ]
       }
     ]
   },

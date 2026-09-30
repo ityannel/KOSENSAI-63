@@ -41,15 +41,26 @@ export function looksPersonal(text) {
   return /\d{2,4}-?\d{2,4}-?\d{3,4}/.test(t) || /[\w.+-]+@[\w-]+\.[\w.]+/.test(t) || /@[A-Za-z0-9_]{3,}/.test(t) || /line\s*id/i.test(t);
 }
 
+// 読むだけなら Firestore だけ（ログインの部品は大きいので、書くとき・自分の確認中の写真を見るときだけ読みこむ）
+const BASE = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
+let dbKitP = null;
+function dbKit() {
+  dbKitP ??= (async () => {
+    const [appMod, fs] = await Promise.all([import(`${BASE}/firebase-app.js`), import(`${BASE}/firebase-firestore.js`)]);
+    const app = appMod.getApps().find((a) => a.name === "[DEFAULT]") ?? appMod.initializeApp(firebaseConfig);
+    const k = { fs, app, db: fs.getFirestore(app) };
+    connectEmulators({ fs, db: k.db });
+    return k;
+  })();
+  return dbKitP;
+}
 let kitP = null;
 function kit() {
   kitP ??= (async () => {
-    const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
-    const [appMod, fs, auth] = await Promise.all([import(`${base}/firebase-app.js`), import(`${base}/firebase-firestore.js`), import(`${base}/firebase-auth.js`)]);
-    const app = appMod.getApps().find((a) => a.name === "[DEFAULT]") ?? appMod.initializeApp(firebaseConfig);
-    const k = { fs, auth, db: fs.getFirestore(app), a: auth.getAuth(app) };
-    connectEmulators(k);
-    return k;
+    const [k, auth] = await Promise.all([dbKit(), import(`${BASE}/firebase-auth.js`)]);
+    const full = { ...k, auth, a: auth.getAuth(k.app) };
+    connectEmulators({ auth, a: full.a });
+    return full;
   })();
   return kitP;
 }
@@ -86,7 +97,8 @@ function photoState(v, mine) {
 export async function subscribePosts(callback) {
   if (params.has("demo")) return callback(DEMO.map((p) => ({ reply_to: null, ...p, author: handleOf(p.uid), visible: true })));
   try {
-    const { fs, db } = await kit();
+    const { fs, db } = await dbKit();
+    if (myPosts().length) kit().catch(() => {}); // 自分の投稿があれば、確認中の写真を見るためのログインも裏で用意
     fs.onSnapshot(
       fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(150)),
       (snap) => {
@@ -115,20 +127,81 @@ export async function subscribePosts(callback) {
   }
 }
 
-// 写真（あとから読む。1回読んだら覚えておく）
+// 写真（あとから読む）。1回読んだ写真は、このスマホ（IndexedDB）にしまっておき、次からはすぐ出す（写真は投稿ごとに変わらない）
 const photoCache = new Map();
 export const cachedPhoto = (id) => photoCache.get(id) ?? null;
-export async function loadPhoto(id) {
-  if (photoCache.has(id)) return photoCache.get(id);
-  const { fs, db, a } = await kit();
-  await a.authStateReady?.(); // 確認中の自分の写真は、ログインの印がもどってからでないと読めない
-  const snap = await fs.getDoc(fs.doc(db, "post_photos", id));
-  const data = snap.exists() ? snap.data().data : null;
-  photoCache.set(id, data);
-  return data;
+const IDB = "kosen63-photos", KEEP = 200;
+let idbP = null;
+function idb() {
+  idbP ??= new Promise((ok) => {
+    try {
+      const r = indexedDB.open(IDB, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("p", { keyPath: "id" }).createIndex("at", "at");
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => ok(null);
+    } catch { ok(null); }
+  });
+  return idbP;
+}
+async function idbGet(id) {
+  const d = await idb();
+  if (!d) return null;
+  return new Promise((ok) => {
+    try { const r = d.transaction("p").objectStore("p").get(id); r.onsuccess = () => ok(r.result?.data ?? null); r.onerror = () => ok(null); } catch { ok(null); }
+  });
+}
+async function idbPut(id, data) {
+  const d = await idb();
+  if (!d) return;
+  try {
+    const st = d.transaction("p", "readwrite").objectStore("p");
+    st.put({ id, data, at: Date.now() });
+    const c = st.count();
+    c.onsuccess = () => { // 多くなったら古いものから消す
+      let over = c.result - KEEP;
+      if (over <= 0) return;
+      st.index("at").openCursor().onsuccess = (e) => { const cur = e.target.result; if (cur && over-- > 0) { cur.delete(); cur.continue(); } };
+    };
+  } catch { /* しまえなくても表示はできる */ }
+}
+const loading = new Map();
+export function loadPhoto(id) {
+  if (photoCache.has(id)) return Promise.resolve(photoCache.get(id));
+  if (loading.has(id)) return loading.get(id);
+  const p = (async () => {
+    const saved = await idbGet(id);
+    if (saved) { photoCache.set(id, saved); return saved; }
+    const mine = myPosts().includes(id);
+    // 公開された写真は、ログインを待たずにすぐ読む。確認中の自分の写真だけ、ログインの印がもどってから
+    const { fs, db } = mine ? await kit() : await dbKit();
+    if (mine) await (await kit()).a.authStateReady?.();
+    const snap = await fs.getDoc(fs.doc(db, "post_photos", id));
+    const data = snap.exists() ? snap.data().data : null;
+    photoCache.set(id, data);
+    if (data && !mine) idbPut(id, data); // 確認中の写真は、しまわない（出さないことになるかもしれない）
+    return data;
+  })();
+  loading.set(id, p);
+  p.finally(() => loading.delete(id));
+  return p;
+}
+// 画面に近づいた写真から読む（画面の外の写真で、見えている写真が遅れないように）
+let io = null;
+const onMiss = new WeakMap();
+export function observePhotos(root, missing = (img) => img.remove()) {
+  const imgs = root.querySelectorAll("img[data-photo]:not([src])");
+  const show = (img) => {
+    loadPhoto(img.dataset.photo).then((src) => { if (src) img.src = src; else (onMiss.get(img) ?? missing)(img); }).catch(() => (onMiss.get(img) ?? missing)(img));
+  };
+  if (!("IntersectionObserver" in window)) return imgs.forEach(show);
+  io ??= new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { io.unobserve(e.target); show(e.target); }
+  }, { rootMargin: "800px 0px" });
+  imgs.forEach((img) => { img.decoding = "async"; onMiss.set(img, missing); io.observe(img); });
 }
 
-// 写真を小さくする（長い辺 960px の JPEG。大きすぎたら画質を下げる）。向き（EXIF）はそろえ、位置情報などは残らない
+// 写真を小さくする（長い辺 960px。WebP で書けるスマホは WebP（同じ見た目で JPEG の6〜7割の大きさ＝読みこみが速い）、
+// 書けなければ JPEG。大きすぎたら画質を下げる）。向き（EXIF）はそろえ、位置情報などは残らない
 async function shrink(file) {
   const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
   const scale = Math.min(1, 960 / Math.max(bmp.width, bmp.height));
@@ -136,6 +209,8 @@ async function shrink(file) {
   c.width = Math.round(bmp.width * scale);
   c.height = Math.round(bmp.height * scale);
   c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  const webp = c.toDataURL("image/webp", 0.72);
+  if (webp.startsWith("data:image/webp") && webp.length < PHOTO_MAX) return webp; // WebP を書けないブラウザは PNG を返すので、そのときは JPEG
   for (let q = 0.75; q >= 0.35; q -= 0.1) {
     const url = c.toDataURL("image/jpeg", q);
     if (url.length < PHOTO_MAX) return url;

@@ -10,7 +10,7 @@
 import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION } from "./config.js";
 import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES } from "./campus.js";
 import { findRoute, describe, centerOf, buildingAt } from "./route.js";
-import { submitPost, reportPost, reported, loadPhoto, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
+import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
 
 const HERE_KEY = "kosen63-here";
 const HERE_SEC = 40; // QR を読んでから「いまここ」を出しておく秒数
@@ -1577,9 +1577,7 @@ function voiceSection(p, s) {
 }
 // 写真はあとから読む（1回読んだら覚えておく）
 function fillPhotos(root) {
-  root.querySelectorAll("img[data-photo]:not([src])").forEach((img) => {
-    loadPhoto(img.dataset.photo).then((src) => { if (src) img.src = src; else img.closest(".f-cell")?.remove() ?? img.remove(); }).catch(() => img.remove());
-  });
+  observePhotos(root, (img) => img.closest(".f-cell")?.remove() ?? img.remove());
 }
 // 書く画面（どこでも同じ）。placeId：その場所に書く／pickPlace：場所をえらべる（なくてもよい）／replyTo：コメント（返信）
 // Instagram の新規投稿のように：上に「キャンセル・新規投稿・シェア」、大きな四角で写真、キャプション、「場所を追加」

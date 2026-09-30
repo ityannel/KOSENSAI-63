@@ -18,6 +18,31 @@
   <meta name="apple-mobile-web-app-title" content="高専祭">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Firebase（お知らせ・混雑・投稿）は、ページの部品と同時に読みはじめる（版は assets/live.js の FIREBASE_VERSION と同じにする） -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js" crossorigin>
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js" crossorigin>
+  <!-- ページの部品を最初にまとめて読む（import を1段ずつたどって待たないように） -->
+  <link rel="modulepreload" href="assets/main.js">
+  <link rel="modulepreload" href="assets/config.js">
+  <link rel="modulepreload" href="assets/site-text.js">
+  <link rel="modulepreload" href="assets/live.js">
+  <link rel="modulepreload" href="assets/rally.js">
+  <link rel="modulepreload" href="assets/rally-data.js">
+  <link rel="modulepreload" href="assets/scene.js">
+  <link rel="modulepreload" href="assets/ask.js">
+  <link rel="modulepreload" href="assets/fx.js">
+  <link rel="modulepreload" href="assets/weather.js">
+  <link rel="modulepreload" href="assets/tickets.js">
+  <link rel="modulepreload" href="assets/thread.js">
+  <link rel="modulepreload" href="assets/detail.js">
+  <link rel="modulepreload" href="assets/offline.js">
+  <link rel="modulepreload" href="assets/qr-scan.js">
+  <link rel="modulepreload" href="assets/shops-board.js">
+  <link rel="modulepreload" href="assets/visit.js">
+  <link rel="modulepreload" href="assets/app.js">
+  <link rel="modulepreload" href="assets/side.js">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
   <!-- カウントダウンの字（Figma と同じ WDXL Lubrifont JP N）。全部だと10MBあるので、使う字だけを読み込む。
        config.js の企画名・会場名を変えたら python tools/update-font-subset.py を動かす -->
