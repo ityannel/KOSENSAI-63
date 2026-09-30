@@ -54,7 +54,6 @@
     .btns button[aria-pressed="true"]::after { content: "いまこれ"; flex: none; margin-left: auto; padding: 3px 10px; border-radius: 999px; background: rgba(255, 251, 242, .92); color: var(--c); font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 900; font-size: .8rem; }
     .btns button:disabled { opacity: .6; }
     .msg { min-height: 1.6em; margin: 16px 0 0; text-align: center; }
-    .btns-h { margin: 18px 0 8px; font-size: .8rem; opacity: .7; }
     /* お店のひとこと */
     .note-box { margin-top: 22px; padding: 16px 18px; border-radius: 18px; background: var(--grain), var(--card); box-shadow: -5px 4px 0 rgba(48, 44, 41, .22); }
     .note-box h2 { margin: 0; font-family: var(--wdxl); font-weight: 400; font-size: 1.5rem; }
@@ -86,9 +85,7 @@
         <button type="button" data-status="10min" style="--c:#e8a317">10分くらい待つ</button>
         <button type="button" data-status="20min" style="--c:#d93025">20分以上待つ</button>
         <button type="button" data-status="soldout" style="--c:#6b6b6b">完売しました</button>
-      </div>
-      <p class="btns-h">混みぐあいとは別に（休けい中など）</p>
-      <div class="btns">
+
         <button type="button" data-status="closed" style="--c:#4b5a8a">休業中</button>
       </div>
       <p class="msg" id="msg" role="status"></p>

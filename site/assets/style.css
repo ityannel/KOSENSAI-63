@@ -1654,7 +1654,7 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .dt-status i { width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: wait-blink 1.4s ease-in-out infinite; }
 .dt-status small { font-weight: 400; font-size: 0.72rem; opacity: 0.92; }
 @keyframes wait-blink { 50% { opacity: 0.15; } }
-.dt-msg { margin: 10px 0 4px; padding: 10px 14px; border-radius: 12px; border-left: 4px solid #634A2E; background: rgba(99, 74, 46, 0.08); font-weight: 700; line-height: 1.6; }
+.dt-msg { margin: 10px 0 4px; padding: 10px 14px; border-radius: 12px; background: rgba(99, 74, 46, 0.08); font-weight: 700; line-height: 1.6; }
 .dt-msg b { display: block; font-size: 0.72rem; letter-spacing: 0.08em; opacity: 0.7; }
 .dt-msg small { margin-left: 6px; font-size: 0.72rem; font-weight: 400; opacity: 0.7; }
 
