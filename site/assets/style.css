@@ -1376,20 +1376,31 @@ html { scroll-behavior: smooth; }
 .site-tabs a[aria-current="page"] { background: var(--grain), #634A2E; color: #FEEBC4; }
 
 /* トップページの最初の画面（絵だけが見えているとき）は、帯が画面の下いっぱいに広がる（body.tabs-docked）。
-   下へスクロールすると、なめらかに今の「浮かぶ丸い帯」に縮む。main.js が切りかえる */
-.site-tabs {
-  transition: left .5s cubic-bezier(.2, .8, .2, 1), right .5s cubic-bezier(.2, .8, .2, 1), bottom .5s cubic-bezier(.2, .8, .2, 1),
-    height .5s cubic-bezier(.2, .8, .2, 1), padding .5s cubic-bezier(.2, .8, .2, 1), border-radius .5s cubic-bezier(.2, .8, .2, 1),
-    background-color .5s, box-shadow .5s;
+   下へスクロールすると、なめらかに今の「浮かぶ丸い帯」に縮む。main.js が切りかえる。
+   なめらかに動かすため、ボタン（帯の中身）は動かさず、うしろの地（::before）の切りぬき（clip-path）だけを変える。
+   位置や大きさ（left・height など）を動かすと、毎コマ画面全体の配置を計算し直すので、スマホでカクつく */
+.site-tabs { background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; isolation: isolate; }
+.site-tabs::before, .site-tabs::after { content: ""; position: absolute; z-index: -1; pointer-events: none; }
+/* 地：いちばん広い形（画面の下いっぱい）で置き、浮かぶ帯のときは丸く切りぬく */
+.site-tabs::before {
+  --dx: 12px; --dt: 8px; --db: calc(10px + env(safe-area-inset-bottom));
+  left: calc(-1 * var(--dx)); right: calc(-1 * var(--dx)); top: calc(-1 * var(--dt)); bottom: calc(-1 * var(--db));
+  background-color: rgba(255, 251, 242, 0.84); box-shadow: inset 0 1px 0 rgba(99, 74, 46, 0.16);
+  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  clip-path: inset(var(--dt) var(--dx) var(--db) var(--dx) round 28px);
+  transition: clip-path .45s cubic-bezier(.22, 1, .36, 1), background-color .45s;
+}
+/* 浮かぶ帯の影とふち（丸い形のまま、広がるときは消える） */
+.site-tabs::after {
+  inset: 0; border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(99, 74, 46, 0.18), 0 8px 22px -10px rgba(48, 36, 30, 0.45);
+  transition: opacity .3s;
 }
 /* 最初の画面：絵の下から画面の下までをすき間なくふさぐ四角（後ろのセクションが見えないように、透けない色） */
-body.tabs-docked .site-tabs {
-  left: var(--app-x, 0px); right: var(--app-x, 0px); bottom: 0;
-  height: var(--tabs-h); padding: 8px 14px calc(8px + env(safe-area-inset-bottom));
-  border-radius: 0; background-color: #FFFBF2; backdrop-filter: none; -webkit-backdrop-filter: none;
-  box-shadow: inset 0 1px 0 rgba(99, 74, 46, 0.16);
-}
-@media (prefers-reduced-motion: reduce) { .site-tabs { transition: none; } }
+body.tabs-docked .site-tabs::before { clip-path: inset(0 0 0 0 round 0px); background-color: #FFFBF2; }
+body.tabs-docked .site-tabs::after { opacity: 0; }
+.site-tabs a { transition: color 1.5s, background-color 1.5s, scale .15s; }
+@media (prefers-reduced-motion: reduce) { .site-tabs::before, .site-tabs::after { transition: none; } }
 
 /* アプリとして使う（ホーム画面に追加）：協賛の下の、クリーム色の紙の札。字は WDXL（見出し）と Zen Kaku（説明）。
    「追加」はみどころのチケットのボタン、× はみどころのページの丸いボタンと同じ形 */
@@ -1437,7 +1448,7 @@ body.tabs-docked .site-tabs {
 :root[data-tint="rain"]   { --tint: #5a7fa8; }
 :root[data-tint="snow"]   { --tint: #4f9cc6; }
 /* 色が変わるときは、ふわっと */
-.site-tabs a, .btn, .panel-title span { transition: color 1.5s, background-color 1.5s; }
+.btn, .panel-title span { transition: color 1.5s, background-color 1.5s; }
 
 /* 画面の明るさの切りかえ（自動・ライト・ダーク） */
 .theme-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 28px; font-size: 0.85rem; font-weight: 700; color: var(--text-2); }
