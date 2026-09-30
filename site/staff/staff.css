@@ -359,29 +359,26 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 }
 .pt-v { writing-mode: vertical-rl; }
 .tcy { text-combine-upright: all; }
-.pt-name { justify-content: flex-start; gap: 6mm; }
-.pt-logo { width: 24mm; height: auto; filter: grayscale(1) brightness(.35); }
-.pt-name-v { flex: 1; min-height: 0; max-height: 150mm; }
-.pt-fest { margin: 0 0 0 3mm; font-size: 5mm; }
-.pt-shop { margin: 0 0 0 3mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 16mm; line-height: 1.15; }
-.pt-where { margin: 0; font-size: 4.4mm; }
-.pt-links { gap: 10mm; }
-.pt-tile { display: flex; align-items: center; justify-content: center; gap: 4mm; margin: 0; width: 100%; box-sizing: border-box; padding: 5mm; border: .5mm solid var(--ink); border-radius: 5mm; }
-.pt-tile figcaption { height: 48mm; }
-.pt-tile b { display: block; margin-left: 1.5mm; font-size: 4.6mm; line-height: 1.35; }
-.pt-tile small { display: block; font-size: 3.4mm; font-weight: 500; }
-.pt-tile img { width: 42mm; height: 42mm; image-rendering: pixelated; }
-.pt-rally .pt-face { gap: 5mm; }
+.pt-name { justify-content: flex-start; gap: 8mm; }
+.pt-logo { width: 26mm; height: auto; filter: grayscale(1) brightness(.35); }
+.pt-name-v { max-height: 145mm; text-align: start; }  /* 店名と部活名をまとめて左右の中央に、文字は上から */
+.pt-shop { margin: 0 0 0 4mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 16mm; line-height: 1.15; }
+.pt-group { margin: 0; font-size: 7.5mm; line-height: 1.3; }
+.pt-links { gap: 22mm; }
+.pt-link { display: flex; flex-direction: column; align-items: center; gap: 3mm; margin: 0; }
+.pt-link figcaption { display: flex; align-items: center; justify-content: center; gap: 1mm; font-size: 4.4mm; white-space: nowrap; }
+.pt-link figcaption b { font-size: 5.6mm; }
+.pt-enista { height: 7mm; width: auto; filter: brightness(0); }
+.pt-link-qr { width: 52mm; height: 52mm; image-rendering: pixelated; }
+.pt-rally .pt-face { gap: 8mm; }
 .pt-rally .pt-face::before { content: ""; position: absolute; inset: 5mm 3mm; border: 1.2mm solid var(--ink); border-radius: 6mm; pointer-events: none; }
 .pt-rally-text { height: 100mm; }
-.pt-rally-kicker { margin: 0; padding: .8mm 4mm; background: var(--ink); color: #fff; font-family: "Roboto Mono", monospace; font-size: 3.6mm; letter-spacing: .3em; }
-.pt-rally h3 { margin: 0 0 0 3mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 11mm; line-height: 1.15; }
-.pt-rally-lead { margin: 0 0 0 3mm; font-size: 4.4mm; line-height: 1.6; }
-.pt-rally-lead b { font-size: 6.4mm; font-weight: 900; }
-.pt-steps { margin: 0; font-size: 3.8mm; line-height: 1.6; }
-.pt-rally-qr { margin: 0; padding: 3mm; border: .6mm solid var(--ink); border-radius: 5mm; background: #fff; text-align: center; }
-.pt-rally-qr img { width: 50mm; height: 50mm; image-rendering: pixelated; }
-.pt-rally-qr figcaption { font-size: 4mm; }
+.pt-rally h3 { margin: 0 0 0 4mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 11mm; line-height: 1.2; }
+.pt-rally-lead { margin: 0; font-size: 6mm; line-height: 1.5; }
+.pt-rally-lead b { font-size: 8mm; font-weight: 900; }
+.pt-rally-qr { margin: 0; text-align: center; }
+.pt-rally-qr img { width: 52mm; height: 52mm; image-rendering: pixelated; }
+.pt-rally-qr figcaption { margin-top: 2mm; font-size: 4.4mm; }
 .pt-glue { display: grid; place-items: center; font-size: 3.2mm; letter-spacing: .4em; color: #666; }
 
 @page { size: A4; margin: 0; }

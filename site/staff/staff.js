@@ -664,29 +664,25 @@ function buildTents(shops) {
     const rallyQr = rally
       ? qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
       : qrDataUrl(siteUrl("rally.html"));
-    const tile = (url, title, note) => `<figure class="pt-tile"><figcaption class="pt-v"><b>${tcy(title)}</b><small>${tcy(note)}</small></figcaption><img src="${qrDataUrl(url)}" alt=""></figure>`;
     return `
       <section class="sheet pt">
         <div class="pt-panel"><div class="pt-face pt-name">
           <img class="pt-logo" src="${LOGO}" alt="">
           <div class="pt-v pt-name-v">
-            <p class="pt-fest">${tcy(`第${FESTIVAL.edition}回 函館高専祭「${FESTIVAL.theme}」`)}</p>
             <h2 class="pt-shop">${esc(s.name)}</h2>
-            <p class="pt-where">${esc([s.group, s.where].filter(Boolean).join("・"))}</p>
+            ${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}
           </div>
         </div></div>
         <div class="pt-panel"><div class="pt-face pt-links">
-          ${tile(siteUrl("map.html?tab=feed"), "Enistagram で感想を投稿", "写真やレビューを公式サイトに")}
-          ${tile(siteUrl("#ennichi"), "待ち時間・ほかのお店", "公式サイトの「縁日」")}
+          <figure class="pt-link"><figcaption><img class="pt-enista" src="../assets/img/enistagram.webp" alt="Enistagram"><span>に投稿</span></figcaption><img class="pt-link-qr" src="${qrDataUrl(siteUrl("map.html?tab=feed"))}" alt=""></figure>
+          <figure class="pt-link"><figcaption><b>公式サイト</b><span>で待ち時間をチェック</span></figcaption><img class="pt-link-qr" src="${qrDataUrl(siteUrl("#ennichi"))}" alt=""></figure>
         </div></div>
         <div class="pt-panel pt-rally"><div class="pt-face">
-          <p class="pt-rally-kicker">STAMP RALLY</p>
           <div class="pt-v pt-rally-text">
-            <h3>スタンプラリー<br>開催中！</h3>
-            <p class="pt-rally-lead">${tcy("模擬店のQRを")}<b>${tcy(`${RALLY.goal}個`)}</b>${tcy(`集めると、${RALLY.claimPlace}で景品と交換！`)}</p>
-            <p class="pt-steps">${tcy("スマホのカメラで読むだけ（アプリ不要）")}</p>
+            <h3>スタンプラリー、<br>はじめました。</h3>
+            <p class="pt-rally-lead">スタンプ<b>${tcy(`${RALLY.goal}個`)}</b>で、景品と交換！</p>
           </div>
-          <figure class="pt-rally-qr"><img src="${rallyQr}" alt=""><figcaption>${rally ? "このお店のスタンプ" : "スタンプカードを見る"}</figcaption></figure>
+          <figure class="pt-rally-qr"><img src="${rallyQr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>
         </div></div>
         <div class="pt-glue">の り し ろ</div>
       </section>`;
