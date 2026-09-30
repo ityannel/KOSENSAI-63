@@ -1,9 +1,18 @@
 {
-  "_説明": "サイトを置く場所（URL）。ローカル・確認用・本番でちがうので、ここだけ書きかえる。QR やリンクを貼ったときの画像（OGP）は、選んだ場所の URL で作られる。",
-  "default": "production",
+  "_説明": "サイトを置く場所（URL）。ローカル・確認用・本番でちがうので、ここだけ書きかえる。QR やリンクを貼ったときの画像（OGP）は、選んだ場所の URL で作られる。 いまは Firebase（firebase）を使う。学校のサーバー（production）に置けるようになったら default を production にする。",
+  "default": "firebase",
   "environments": {
-    "local": { "baseUrl": "http://localhost:5173/" },
-    "preview": { "baseUrl": "https://enishi-7f43f--preview-53vzkjwt.web.app/" },
-    "production": { "baseUrl": "https://hakodate-ct.jp/gac_event/" }
+    "local": {
+      "baseUrl": "http://localhost:5173/"
+    },
+    "preview": {
+      "baseUrl": "https://enishi-7f43f--preview-53vzkjwt.web.app/"
+    },
+    "firebase": {
+      "baseUrl": "https://enishi-7f43f.web.app/"
+    },
+    "production": {
+      "baseUrl": "https://hakodate-ct.jp/gac_event/"
+    }
   }
 }
