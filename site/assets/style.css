@@ -1650,13 +1650,12 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 
 /* スタンプカードだけのセクション（学生主事よりの下）：夕焼けから夜へ、ゆっくり色が流れるグラデーション */
 .stampsec {
-  container-type: inline-size; --u: calc(100cqi / 402);
-  position: relative; margin-top: -1px; padding: calc(24 * var(--u)); overflow: hidden;
-  /* 校内マップのボタン・「縁」のうしろ（トップの絵）と同じ色：赤むらさき → 夕焼け → 金色 */
-  background: linear-gradient(170deg, #d8457f, #e2622e 38%, #e3a43a 72%, #dfc27a);
+  container-type: inline-size; position: relative; margin-top: -1px;
+  /* トップの絵（校内マップのボタン・「縁」のうしろ）と同じ色を上から順に。ほかのセクションと同じ、ざらざらの紙 */
+  background: var(--grain), linear-gradient(180deg, #dc495e 0%, #d06260 24%, #d4714d 48%, #d27b4c 64%, #dab03b 82%, #dcc368 100%);
 }
-.stampsec::before { content: ""; position: absolute; inset: 0; background: var(--grain); opacity: .5; pointer-events: none; }
-/* 上下左右の余白をそろえる（カードの傾きと影の分だけ内側に） */
+/* 中の大きさの基準は、このセクションの幅（PC でもスマホと同じ見た目）。上下左右の余白をそろえる */
+.stampsec-in { --u: calc(100cqi / 402); padding: calc(22 * var(--u)) calc(24 * var(--u)); }
 .stampsec .rc-mini-box { position: relative; margin: 0; }
 
 /* 縁日のお店のシート：いまの様子（待ち時間・休業中）と、お店のひとこと */
