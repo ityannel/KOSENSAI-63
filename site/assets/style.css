@@ -1651,18 +1651,13 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 /* スタンプカードだけのセクション（学生主事よりの下）：夕焼けから夜へ、ゆっくり色が流れるグラデーション */
 .stampsec {
   container-type: inline-size; --u: calc(100cqi / 402);
-  position: relative; margin-top: -1px; padding: calc(34 * var(--u)) 0 calc(38 * var(--u)); overflow: hidden;
-  background:
-    radial-gradient(ellipse 70% 90% at 15% 0%, rgba(255, 214, 150, .55), transparent 60%),
-    radial-gradient(ellipse 60% 80% at 90% 100%, rgba(120, 90, 200, .45), transparent 65%),
-    linear-gradient(120deg, #f2a65a, #e2622e 30%, #d8457f 58%, #8e5cc4 85%, #5d6fd6);
-  background-size: 100% 100%, 100% 100%, 220% 220%;
-  animation: stampsec-flow 14s ease-in-out infinite alternate;
+  position: relative; margin-top: -1px; padding: calc(24 * var(--u)); overflow: hidden;
+  /* 校内マップのボタン・「縁」のうしろ（トップの絵）と同じ色：赤むらさき → 夕焼け → 金色 */
+  background: linear-gradient(170deg, #d8457f, #e2622e 38%, #e3a43a 72%, #dfc27a);
 }
 .stampsec::before { content: ""; position: absolute; inset: 0; background: var(--grain); opacity: .5; pointer-events: none; }
-.stampsec .rc-mini-box { position: relative; margin: 0 calc(30 * var(--u)); }
-@keyframes stampsec-flow { from { background-position: 0 0, 0 0, 0% 50%; } to { background-position: 0 0, 0 0, 100% 50%; } }
-@media (prefers-reduced-motion: reduce) { .stampsec { animation: none; } }
+/* 上下左右の余白をそろえる（カードの傾きと影の分だけ内側に） */
+.stampsec .rc-mini-box { position: relative; margin: 0; }
 
 /* 縁日のお店のシート：いまの様子（待ち時間・休業中）と、お店のひとこと */
 .dt-live:empty { display: none; }
