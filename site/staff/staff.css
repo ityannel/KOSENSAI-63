@@ -271,6 +271,91 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .pv-frame.is-sp { border-width: 8px; border-color: #1E2533; border-radius: 34px; }
 .pv-frame iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #fff; }
 
+/* ---------- スタンプラリー ---------- */
+.pin-view { display: inline-flex; align-items: baseline; gap: 10px; padding: 8px 14px; border: 1px dashed var(--sun); border-radius: 12px; background: rgba(242, 169, 106, .08); }
+.pin-view b { font-family: var(--mono); font-size: 1.4rem; letter-spacing: .12em; color: var(--sun); }
+.pin-view small { color: var(--sub); font-size: .75rem; }
+
+/* ---------- 印刷（QR・チラシ） ---------- */
+.pr { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.seg-col { display: grid; border-radius: 16px; }
+.seg-col span { border-radius: 12px; }
+.seg-col small { display: block; font-weight: 400; font-size: .75rem; color: var(--sub); }
+.pr-shops { display: grid; gap: 6px; max-height: 320px; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); }
+.pr-shop { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+.pr-shop:hover { background: var(--panel-2); }
+.pr-shop input { accent-color: var(--teal); width: 18px; height: 18px; }
+.pr-shop .tag { margin-left: 6px; font-style: normal; }
+.pr-stage { overflow: auto; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: #2A2F3A; max-height: calc(100vh - 150px); }
+.print-area .sheet { zoom: .55; margin: 0 auto 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
+.print-area .empty { background: transparent; }
+
+/* 紙（A4）。画面では縮めて見せ、印刷ではそのままの大きさ */
+.sheet {
+  --ink: #4E3A24; --red: #C8323A; --paper: #FFFBF2; --cream: #FEEBC4;
+  position: relative; box-sizing: border-box; width: 210mm; height: 297mm; overflow: hidden; padding: 14mm;
+  background: var(--paper); color: var(--ink); font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif; font-weight: 700;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.sheet .ps-head { display: flex; align-items: center; gap: 4mm; padding-bottom: 4mm; border-bottom: .6mm solid var(--ink); }
+.sheet .ps-head img { width: 18mm; height: auto; }
+.sheet .ps-head b { display: block; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 7mm; }
+.sheet .ps-head small { display: block; font-size: 3.6mm; opacity: .75; }
+.sheet .ps-name { margin: 2mm 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 17mm; line-height: 1.1; word-break: auto-phrase; }
+.ps-shop-main { padding: 10mm 0 6mm; text-align: center; }
+.ps-kicker { margin: 0; font-size: 5mm; color: var(--red); letter-spacing: .2em; }
+.ps-room { margin: 0; font-size: 5mm; }
+.ps-badge { display: inline-block; margin: 3mm 0 0; padding: 1mm 5mm; border-radius: 99mm; background: var(--red); color: #fff; font-size: 4.2mm; }
+.ps-qrs { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
+.ps-qr { display: grid; grid-template-columns: 30mm 1fr; align-items: center; gap: 4mm; margin: 0; padding: 4mm; border: .5mm solid var(--ink); border-radius: 5mm; background: var(--cream); }
+.ps-qr img { width: 30mm; height: 30mm; image-rendering: pixelated; background: #fff; padding: 1.5mm; border-radius: 2mm; }
+.ps-qr b { display: block; font-size: 4.4mm; line-height: 1.35; }
+.ps-qr small { display: block; margin-top: 1mm; font-size: 3.2mm; opacity: .75; font-weight: 500; }
+.ps-cut { margin: 9mm 0 4mm; padding-top: 3mm; border-top: .5mm dashed var(--ink); font-size: 3.4mm; text-align: center; opacity: .8; }
+.ps-stamps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6mm; }
+.ps-stamp { padding: 4mm; border: .6mm solid var(--ink); border-radius: 5mm; background: #fff; text-align: center; }
+.ps-stamp img { width: 44mm; height: 44mm; image-rendering: pixelated; }
+.ps-stamp-top { margin: 0 0 1mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 6mm; color: var(--red); }
+.ps-stamp-name { margin: 1mm 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 6.2mm; line-height: 1.2; }
+.ps-stamp-day { display: inline-block; margin: 0 0 1.5mm; padding: .5mm 4mm; border-radius: 99mm; background: var(--ink); color: var(--cream); font-size: 3.8mm; }
+.ps-stamp-hint { margin: 0; font-size: 3mm; opacity: .75; }
+.ps-grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 6mm; }
+.ps-grid .ps-stamp { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.ps-staff .ps-warn { margin: 2mm 0 8mm; padding: 3mm 5mm; border-radius: 3mm; background: var(--red); color: #fff; font-size: 4.4mm; }
+.ps-staff-body { display: grid; grid-template-columns: 70mm 1fr; gap: 8mm; align-items: center; }
+.ps-staff-qr { width: 70mm; height: 70mm; image-rendering: pixelated; padding: 3mm; border: .6mm solid var(--ink); border-radius: 4mm; background: #fff; }
+.ps-steps { margin: 0; padding-left: 6mm; font-size: 4.6mm; line-height: 1.7; }
+.ps-url { margin: 8mm 0 0; font-family: "Roboto Mono", monospace; font-size: 3mm; word-break: break-all; opacity: .7; }
+.ps-foot { position: absolute; left: 14mm; right: 14mm; bottom: 12mm; margin: 0; font-size: 3.6mm; text-align: center; opacity: .75; }
+
+/* 来場者向けの案内チラシ */
+.pf { display: flex; flex-direction: column; height: 100%; }
+.pf-a5 { display: grid; grid-template-rows: 1fr 1fr; padding: 0; }
+.pf-a5 .pf { padding: 9mm 12mm; zoom: .7; height: calc(148.5mm / .7); }
+.pf-a5 .pf + .pf { border-top: .4mm dashed var(--ink); }
+.pf-head { display: flex; align-items: center; gap: 6mm; }
+.pf-head img { width: 40mm; height: auto; }
+.pf-edition { margin: 0; font-size: 6mm; }
+.pf-head h2 { margin: 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 18mm; line-height: 1; color: var(--red); }
+.pf-head h2 small { margin-left: 3mm; font-size: 6mm; color: var(--ink); }
+.pf-days { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 8mm 0 2mm; padding: 0; list-style: none; }
+.pf-days li { padding: 4mm; border-radius: 4mm; background: var(--cream); text-align: center; }
+.pf-days b { display: block; font-size: 6mm; }
+.pf-days span { font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 9mm; }
+.pf-place { margin: 0 0 7mm; font-size: 5mm; text-align: center; }
+.pf-qrs { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.pf-notes { margin: 7mm 0 0; padding: 4mm 4mm 4mm 10mm; border: .5mm solid var(--ink); border-radius: 4mm; font-size: 4.2mm; line-height: 1.7; }
+.pf-foot { margin: auto 0 0; padding-top: 4mm; font-size: 4mm; text-align: center; opacity: .75; }
+
+@page { size: A4; margin: 0; }
+@media print {
+  body { background: #fff !important; }
+  body > *:not(.shell), .rail, .topbar, .view:not(#view-print), .pr-controls, .toast { display: none !important; }
+  .shell, .main, .view, .pr, .pr-stage, .print-area { display: block !important; padding: 0 !important; margin: 0 !important; border: 0 !important; max-height: none !important; overflow: visible !important; background: none !important; box-shadow: none !important; }
+  .print-area .sheet { zoom: 1; margin: 0; box-shadow: none; break-after: page; }
+  .print-area .empty { display: none; }
+}
+
 /* ---------- お知らせの小窓 ---------- */
 .toast {
   position: fixed; left: 50%; bottom: 24px; z-index: 50; translate: -50% 20px; opacity: 0; pointer-events: none;
@@ -298,7 +383,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   .main { padding-bottom: 110px; }
   .topbar { align-items: flex-start; flex-direction: column; }
   .shop { grid-template-columns: 1fr; }
-  .pv { grid-template-columns: 1fr; }
+  .pv, .pr { grid-template-columns: 1fr; }
   .pv-stage { position: static; order: -1; }
   .quick { grid-template-columns: 1fr; }
   .savebar { bottom: 84px; border-radius: 16px; flex-wrap: wrap; }

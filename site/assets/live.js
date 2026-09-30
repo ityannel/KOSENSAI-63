@@ -149,6 +149,20 @@ export async function subscribeShops(callback) {
 }
 
 // chatter/current = { p1〜p5: string, updated_at }  本部が書く、5人のセリフの実況
+// スタンプラリーの対象のお店とスタッフ番号（rally-data.js が使う）
+export async function subscribeRally(callback) {
+  try {
+    const db = await getDb();
+    fs.onSnapshot(
+      fs.doc(db, "rally", "current"),
+      (snap) => callback(snap.exists() ? snap.data() : null),
+      (err) => console.warn("[rally] Firestore を読めませんでした:", err.code),
+    );
+  } catch (err) {
+    console.warn("[rally] Firebase を読み込めませんでした:", err);
+  }
+}
+
 // 本部の管理画面で変えた文章と書体（site-text.js が使う）
 export async function subscribeSiteText(callback) {
   try {

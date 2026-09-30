@@ -361,6 +361,24 @@ function renderCrowd() {
       </article>`;
   }).join("");
 
+  // トップの「いまの混雑」：会場ごとの札（4つの丸のメーター・度合い・何分前）。1つも更新されていなければ出さない
+  const known = CROWD.venues.filter((id) => CROWD.levels[crowd?.[id]?.level]);
+  $("#crowd-now").hidden = !known.length;
+  $("#crowdnow-list").innerHTML = known.map((id) => {
+    const c = crowd[id];
+    const level = CROWD.levels[c.level];
+    const stale = c.updated_at && nowMs() - c.updated_at > CROWD.staleMinutes * 60000;
+    return `
+      <li class="cn-item${stale ? " is-stale" : ""}" style="--lv:${esc(level.color)}">
+        <a href="map.html#${esc(id)}">
+          <span class="cn-name">${esc(venueName(id))}</span>
+          <b class="cn-level">${esc(level.label)}</b>
+          <span class="cn-meter" aria-hidden="true">${CROWD.levels.map((_, i) => `<i${i <= c.level ? ' class="on"' : ""}></i>`).join("")}</span>
+          <small class="cn-time">${c.updated_at ? `${agoText(c.updated_at)}に更新${stale ? "・古いかも" : ""}` : ""}</small>
+        </a>
+      </li>`;
+  }).join("");
+
   // 電柱の看板（縦書き。色の丸が混雑の度合い）
   $("#pole-sign").innerHTML = `<span class="pole-head">混雑</span>` + CROWD.venues.map((id) => {
     const c = crowd?.[id];
@@ -495,6 +513,18 @@ if (FX.presence.enabled) {
 // 開幕から90秒以内に開いた人にも見せる。?fireworks=1 でいつでも確認できる
 if (params.has("fireworks") || (nowMs() >= OPEN && nowMs() < OPEN + 90000)) {
   setTimeout(playOpening, document.body.classList.contains("intro") ? 3800 : 600);
+}
+
+// ---------- 下のタブ：最初の画面では画面の下いっぱい、スクロールすると浮かぶ丸い帯に ----------
+{
+  const dock = () => document.body.classList.toggle("tabs-docked", scrollY < 40);
+  let queued = false;
+  addEventListener("scroll", () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; dock(); });
+  }, { passive: true });
+  dock();
 }
 
 // ---------- テスト用パネル（?test=1 のときだけ） ----------

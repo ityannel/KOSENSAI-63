@@ -9,6 +9,7 @@ const env = await initializeTestEnvironment({
   projectId: "enishi-test",
   firestore: { rules: readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8"), host: "127.0.0.1", port: 8089 },
 });
+await env.clearFirestore(); // 前に動かしたときのデータを消してから
 let pass = 0, fail = 0;
 async function t(name, p) {
   try { await p; pass++; console.log("PASS", name); } catch (e) { fail++; console.log("FAIL", name, "-", e.message.split("\n")[0]); }
@@ -82,6 +83,12 @@ await t("visitors cannot list shop codes", assertFails(getDoc(doc(anon, "shop_co
 await t("staff can manage shop codes", assertSucceeds(setDoc(doc(staff, "shop_codes/NEWCODE"), { shop: "takoyaki" })));
 await t("staff cannot re-add pass field", assertFails(updateDoc(doc(staff, "shops/takoyaki"), { pass: "1234" })));
 
+await t("staff publishes rally shops", assertSucceeds(setDoc(doc(staff, "rally/current"), { shops: [{ id: "takoyaki", name: "たこ焼き", codes: { "2026-10-24": "abc" } }], staffPin: { salt: "00", iterations: 300000, hash: "ff" }, updated_at: serverTimestamp(), updated_by: "honbu@example.com" })));
+await t("anyone reads rally shops", assertSucceeds(getDoc(doc(nobody, "rally/current"))));
+await t("visitor cannot change rally", assertFails(setDoc(doc(anon, "rally/current"), { shops: [], updated_at: serverTimestamp(), updated_by: null })));
+await t("staff keeps QR keys", assertSucceeds(setDoc(doc(staff, "rally_keys/takoyaki"), { keys: { "2026-10-24": "secret" } })));
+await t("QR keys are not public", assertFails(getDoc(doc(nobody, "rally_keys/takoyaki"))));
+await t("visitors cannot read QR keys", assertFails(getDoc(doc(anon, "rally_keys/takoyaki"))));
 await t("anyone cannot hijack quiz", assertFails(setDoc(doc(nobody, "quiz_control/current"), { is_active: true })));
 await t("quiz answers not public", assertFails(getDoc(doc(nobody, "quiz_answers/a"))));
 await t("presence ok in current window", assertSucceeds(setDoc(doc(nobody, `presence/${Math.floor(Date.now() / 300000)}`), { n: 1 })));

@@ -1373,6 +1373,21 @@ html { scroll-behavior: smooth; }
 .site-tabs a { color: #634A2E; }
 .site-tabs a[aria-current="page"] { background: var(--grain), #634A2E; color: #FEEBC4; }
 
+/* トップページの最初の画面（絵だけが見えているとき）は、帯が画面の下いっぱいに広がる（body.tabs-docked）。
+   下へスクロールすると、なめらかに今の「浮かぶ丸い帯」に縮む。main.js が切りかえる */
+.site-tabs {
+  transition: left .5s cubic-bezier(.2, .8, .2, 1), right .5s cubic-bezier(.2, .8, .2, 1), bottom .5s cubic-bezier(.2, .8, .2, 1),
+    height .5s cubic-bezier(.2, .8, .2, 1), padding .5s cubic-bezier(.2, .8, .2, 1), border-radius .5s cubic-bezier(.2, .8, .2, 1),
+    background-color .5s, box-shadow .5s;
+}
+body.tabs-docked .site-tabs {
+  left: var(--app-x, 0px); right: var(--app-x, 0px); bottom: 0;
+  height: calc(64px + env(safe-area-inset-bottom)); padding: 7px 14px calc(7px + env(safe-area-inset-bottom));
+  border-radius: 22px 22px 0 0; background-color: rgba(255, 251, 242, 0.94);
+  box-shadow: inset 0 1px 0 rgba(99, 74, 46, 0.14), 0 -6px 22px -12px rgba(48, 36, 30, 0.4);
+}
+@media (prefers-reduced-motion: reduce) { .site-tabs { transition: none; } }
+
 /* アプリとして使う（ホーム画面に追加）：協賛の下の、クリーム色の紙の札。字は WDXL（見出し）と Zen Kaku（説明）。
    「追加」はみどころのチケットのボタン、× はみどころのページの丸いボタンと同じ形 */
 .install {
@@ -1707,3 +1722,29 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 
 /* Enistagram の本部の公式の投稿の札（地図の .ig-official と同じ色） */
 .eh-official { display: inline-block; margin-left: 5px; padding: 0 6px; border-radius: 999px; background: linear-gradient(90deg, #3E6BD6, #C8323A); color: #fff; font-style: normal; font-size: .62rem; font-weight: 800; line-height: 1.6; vertical-align: 1px; }
+
+/* ===== いまの混雑（本部が更新したときだけ出る）：夜の掲示板のような濃い紺に、度合いの色がともる ===== */
+.crowdnow {
+  container-type: inline-size; --u: calc(100cqi / 402);
+  position: relative; margin-top: -1px; color: #F7FFF4; scroll-margin-top: 8px;
+  background: var(--grain), linear-gradient(170deg, #2f3953, #263047 60%, #222a3d);
+}
+.crowdnow-in { padding: calc(26 * var(--u)) calc(22 * var(--u)) calc(28 * var(--u)) calc(26 * var(--u)); }
+.crowdnow-title { display: flex; align-items: center; gap: calc(10 * var(--u)); margin: 0 0 calc(16 * var(--u)); font-family: var(--hud-font); font-size: calc(28 * var(--u)); font-weight: 400; line-height: 1; }
+.crowdnow-title small { font-family: var(--text-font); font-weight: 700; font-size: calc(11.5 * var(--u)); opacity: .75; }
+.crowdnow-title .live-dot { width: calc(10 * var(--u)); height: calc(10 * var(--u)); border-radius: 50%; background: #FF5A5F; box-shadow: 0 0 0 calc(4 * var(--u)) rgba(255, 90, 95, .25); animation: notice-blink 1.6s ease-in-out infinite; }
+.crowdnow-list { display: grid; gap: calc(10 * var(--u)); margin: 0; padding: 0; list-style: none; }
+.cn-item a {
+  display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name level" "meter time"; align-items: center; gap: calc(6 * var(--u)) calc(10 * var(--u));
+  padding: calc(12 * var(--u)) calc(14 * var(--u)); border-radius: calc(12 * var(--u)); color: inherit; text-decoration: none;
+  background: rgba(255, 255, 255, .06); box-shadow: inset calc(5 * var(--u)) 0 0 var(--lv);
+}
+.cn-name { grid-area: name; font-family: var(--text-font); font-weight: 700; font-size: calc(14 * var(--u)); }
+.cn-level { grid-area: level; padding: calc(2 * var(--u)) calc(10 * var(--u)); border-radius: 999px; background: var(--lv); color: #1D1A16; font-family: var(--hud-font); font-weight: 400; font-size: calc(15 * var(--u)); }
+.cn-meter { grid-area: meter; display: flex; gap: calc(4 * var(--u)); }
+.cn-meter i { width: calc(22 * var(--u)); height: calc(6 * var(--u)); border-radius: 999px; background: rgba(255, 255, 255, .15); }
+.cn-meter i.on { background: var(--lv); }
+.cn-time { grid-area: time; font-size: calc(10.5 * var(--u)); opacity: .7; }
+.cn-item.is-stale a { opacity: .6; }
+.crowdnow-map { display: inline-block; margin-top: calc(14 * var(--u)); color: #9BD7D0; font-family: var(--text-font); font-weight: 700; font-size: calc(13 * var(--u)); }
+@media (prefers-reduced-motion: reduce) { .crowdnow-title .live-dot { animation: none; } }

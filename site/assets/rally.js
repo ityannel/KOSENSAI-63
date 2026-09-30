@@ -5,6 +5,7 @@
 // ・スタンプはこのスマホの中だけに保存する（名前などの個人情報は集めない）
 // ・goal 個たまると達成画面。本部のスタッフが番号を入れると「引き換え済み」になる
 import { RALLY, FESTIVAL } from "./config.js";
+import { rallyReady, onRallyChange } from "./rally-data.js"; // 本部コンソールで作った対象のお店（Firestore）
 import { openQrScanner } from "./qr-scan.js";
 
 const STORE_KEY = "kosen63-rally";
@@ -121,6 +122,7 @@ async function findShop(code, shopId) {
 }
 
 async function stamp(code, shopId) {
+  await rallyReady(4000); // 対象のお店を読みこむまで少し待つ（前に読んだものがあればすぐ）
   if (!RALLY.shops.some((s) => s.codes?.[tokyoDate()])) {
     return message("スタンプは開催日（" + FESTIVAL.days.map((d) => d.label).join("・") + "）に押せます。", "warn");
   }
@@ -277,6 +279,7 @@ export function initRallyPage(getNow = () => Date.now()) {
   nowMs = getNow;
   warnInAppBrowser();
   render();
+  onRallyChange(render);
   setInterval(tickClock, 1000);
 
   // カードを押すと裏返る

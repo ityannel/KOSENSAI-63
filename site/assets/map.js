@@ -1161,10 +1161,23 @@ function updateLabels() {
 }
 
 // その場で変わるもの（混雑・NOW・スタンプ・道順・印）
+// 会場の混雑の札（検索のバーの下）。本部が1つでも更新していれば出す。古い情報はうすく
+function renderCrowdStrip(s) {
+  const box = $("#m-crowd");
+  if (!box) return;
+  const items = CROWD.venues.map((id) => ({ id, c: crowdOf(id, s), p: place(id) })).filter((x) => x.c && x.p);
+  box.hidden = !items.length;
+  const html = items.length ? `<b class="m-crowd-h">混雑</b>${items.map(({ id, c, p }) => `
+    <button type="button" class="m-crowd-item${c.stale ? " is-stale" : ""}" data-go="${esc(id)}" style="--lv:${esc(c.color)}" title="${esc(`${titleOf(p)}：${c.label}${c.ago ? `（${c.ago}に更新）` : ""}`)}">
+      <i aria-hidden="true"></i><span>${esc(CROWD.short?.[id] ?? titleOf(p))}</span><small>${esc(c.label)}</small></button>`).join("")}` : "";
+  if (box.innerHTML !== html) box.innerHTML = html;
+}
+
 export function renderMap() {
   if (!floorLayer) return;
   if (floorLayer !== floor) drawFloor();
   const s = getState();
+  renderCrowdStrip(s);
   document.querySelectorAll("#m-rooms .room").forEach((el) => {
     const id = el.dataset.id;
     const lv = CROWD.venues.includes(id) ? CROWD.levels[s.crowd?.[id]?.level] : null;
@@ -2636,6 +2649,10 @@ export async function initMap(opts) {
     if (e.key === "Enter") $("#m-results [data-go]")?.click();
   });
   $("#m-clear").addEventListener("click", closeResults);
+  $("#m-crowd")?.addEventListener("click", (e) => {
+    const go = e.target.closest("[data-go]");
+    if (go) select(go.dataset.go);
+  });
   $("#m-results").addEventListener("click", (e) => {
     if (e.target.closest("[data-mappick]")) { beginMapPick(); return; }
     const go = e.target.closest("[data-go]");

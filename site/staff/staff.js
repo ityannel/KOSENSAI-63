@@ -2,7 +2,7 @@
 // お知らせ・緊急のお知らせ・生配信・表示の切りかえ・混雑・5人の実況・投稿（写真の確認・報告・本部の投稿）・模擬店・文章と書体を、ここ1つで変える。
 // だれが使えるかは firestore.rules（staff コレクションにメールアドレスがある人だけ）で決まる。
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
-import { CROWD, VENUES, FESTIVAL } from "../assets/config.js";
+import { CROWD, VENUES, FESTIVAL, RALLY, VISIT } from "../assets/config.js";
 import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
 import { REPORT_HIDE, handleOf } from "../assets/posts.js";
 import { TIMES, SKIES, WEATHERS, PANELS, PAGES } from "../assets/test.js";
@@ -51,7 +51,7 @@ async function write(label, fn) {
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
 // ---------- 画面の切りかえ（#overview など） ----------
-const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "preview", "texts"];
+const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "print", "preview", "texts"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
@@ -69,7 +69,7 @@ addEventListener("hashchange", route);
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
 // ---------- データ ----------
-const state = { live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null };
+const state = { live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {} };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
@@ -95,7 +95,13 @@ function startListening() {
     state.shops = [];
     snap.forEach((d) => state.shops.push({ id: d.id, ...d.data() }));
     state.shops.sort((x, y) => String(x.name).localeCompare(String(y.name), "ja"));
-    renderShops(); renderOverview();
+    renderShops(); renderRally(); renderPrintShops(); renderOverview();
+  });
+  listen(fs.doc(db, "rally", "current"), (snap) => { state.rally = snap.data() ?? null; renderShops(); renderRally(); });
+  listen(fs.collection(db, "rally_keys"), (snap) => {
+    state.rallyKeys = {};
+    snap.forEach((d) => { state.rallyKeys[d.id] = d.data(); });
+    renderRally();
   });
   listen(fs.collection(db, "shop_codes"), (snap) => {
     state.codes = [];
@@ -370,12 +376,15 @@ function renderShops() {
     const codes = state.codes.filter((c) => c.shop === s.id);
     return `
       <article class="shop">
-        <div><h3>${esc(s.name)}</h3><small>${esc(s.id)}${s.updated_at ? `・${hhmm(toMs(s.updated_at))} 更新` : ""}${"pass" in s ? "・古いパスワードあり（次に変えたとき消えます）" : ""}</small></div>
+        <div><h3>${esc(s.name)}</h3><small>${esc(s.id)}${s.map ? `・${esc(s.map)}` : ""}${s.updated_at ? `・${hhmm(toMs(s.updated_at))} 更新` : ""}${"pass" in s ? "・古いパスワードあり（次に変えたとき消えます）" : ""}</small></div>
         <div class="shop-status">${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-shop="${esc(s.id)}" data-status="${v}" style="--c:${c}" aria-pressed="${s.status === v}">${label}</button>`).join("")}</div>
         <div class="shop-codes">
           ${codes.map((c) => `<span class="code-chip">${esc(c.code)}<button class="btn btn-ghost btn-sm" data-qr="${esc(c.code)}">${openCodes.has(c.code) ? "QR を閉じる" : "QR"}</button><button class="btn btn-danger btn-sm" data-revoke="${esc(c.code)}">取り消す</button></span>
             ${openCodes.has(c.code) ? `<div class="qr-box" data-qr-box="${esc(c.code)}" data-qr-shop="${esc(s.id)}"><div class="qr"></div><small>${esc(shopUrl(c.code, s.id))}</small></div>` : ""}`).join("")}
           <button class="btn btn-ghost btn-sm" data-issue="${esc(s.id)}">＋ お店の人にコードを渡す</button>
+          ${isRallyShop(s.id)
+            ? `<span class="tag tag-ok">スタンプの対象</span><button class="btn btn-ghost btn-sm" data-rally-off="${esc(s.id)}">対象から外す</button>`
+            : `<button class="btn btn-ghost btn-sm" data-rally-on="${esc(s.id)}">スタンプの対象にする</button>`}
           <button class="btn btn-danger btn-sm" data-remove="${esc(s.id)}" style="margin-left:auto">お店を消す</button>
         </div>
       </article>`;
@@ -425,6 +434,13 @@ $("#shop-list").addEventListener("click", async (e) => {
       await batch.commit();
     });
   }
+  const rallyOn = e.target.closest("[data-rally-on]");
+  const rallyOff = e.target.closest("[data-rally-off]");
+  if (rallyOn) setRallyShops([...rallyShopIds(), rallyOn.dataset.rallyOn], "スタンプの対象にしました（QR は「印刷」で刷れます）");
+  if (rallyOff) {
+    if (!confirm("スタンプの対象から外しますか？ このお店の QR ではスタンプが押せなくなります。")) return;
+    setRallyShops(rallyShopIds().filter((id) => id !== rallyOff.dataset.rallyOff), "スタンプの対象から外しました");
+  }
   if (remove) {
     const shop = state.shops.find((s) => s.id === remove.dataset.remove);
     if (!confirm(`「${shop.name}」を消しますか？（サイトの一覧からも消えます）`)) return;
@@ -441,9 +457,235 @@ $("#shop-add").addEventListener("submit", async (e) => {
   const id = $("#shop-id").value.trim();
   const name = $("#shop-name").value.trim();
   if (state.shops.some((s) => s.id === id)) return toast("その ID はもう使われています", true);
-  if (await write(`${name}を足しました`, () => fs.setDoc(fs.doc(db, "shops", id), { name, status: "normal", updated_at: fs.serverTimestamp() }))) {
+  const room = $("#shop-room").value.trim();
+  if (await write(`${name}を足しました`, () => fs.setDoc(fs.doc(db, "shops", id), { name, status: "normal", ...(room ? { map: room } : {}), updated_at: fs.serverTimestamp() }))) {
     e.target.reset();
   }
+});
+
+// ---------- スタンプラリー（QR の鍵とスタッフ番号） ----------
+// 鍵そのものは rally_keys/{お店の id}（本部だけ）に、サイトが確かめるための暗号化した値は rally/current（だれでも読める）に置く。
+// 暗号化のしかたは tools/make-rally-qr.py と同じ（sha256("kosen63:お店:日付:鍵")、スタッフ番号は PBKDF2-SHA256 30万回）
+const RALLY_DATES = FESTIVAL.days.map((d) => d.open.slice(0, 10));
+const PIN_ITERATIONS = 300000;
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+const sha256 = async (text) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
+const randomKey = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const rallyShopIds = () => (state.rally?.shops ?? []).map((s) => s.id);
+const isRallyShop = (id) => rallyShopIds().includes(id);
+const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
+
+async function setRallyShops(ids, label) {
+  const unique = [...new Set(ids)].filter((id) => state.shops.some((s) => s.id === id));
+  await write(label, async () => {
+    const batch = fs.writeBatch(db);
+    const shops = [];
+    for (const id of unique) {
+      const shop = state.shops.find((s) => s.id === id);
+      const keys = { ...keysOf(id) };
+      let added = false;
+      for (const d of RALLY_DATES) if (!keys[d]) { keys[d] = randomKey(); added = true; }
+      if (added) batch.set(fs.doc(db, "rally_keys", id), { keys });
+      const codes = Object.fromEntries(await Promise.all(RALLY_DATES.map(async (d) => [d, await sha256(`kosen63:${id}:${d}:${keys[d]}`)])));
+      shops.push({ id, name: shop.name, ...(shop.map ? { room: shop.map } : {}), codes });
+    }
+    batch.set(fs.doc(db, "rally", "current"), { shops, staffPin: state.rally?.staffPin ?? null, ...stamp() });
+    await batch.commit();
+  });
+}
+function renderRally() {
+  const n = rallyShopIds().length;
+  const pin = !!state.rally?.staffPin;
+  const st = $("#rally-state");
+  st.className = `pill ${n && pin ? "is-on" : ""}`;
+  st.textContent = `${n}店が対象・引き換えの番号${pin ? "あり" : "なし"}`;
+  $("#rally-pin-make").textContent = pin ? "引き換えの番号を作り直す" : "引き換えの番号を作る";
+  $("#rally-all").disabled = !state.shops.length || state.shops.every((s) => isRallyShop(s.id));
+}
+$("#rally-all").addEventListener("click", () => {
+  if (!confirm(`すべてのお店（${state.shops.length}店）をスタンプラリーの対象にします。よろしいですか？`)) return;
+  setRallyShops(state.shops.map((s) => s.id), "すべてのお店をスタンプの対象にしました（QR は「印刷」で刷れます）");
+});
+$("#rally-pin-make").addEventListener("click", async () => {
+  if (state.rally?.staffPin && !confirm("番号を作り直すと、前の番号では引き換えられなくなります。よろしいですか？")) return;
+  const pin = String(crypto.getRandomValues(new Uint32Array(1))[0] % 100000000).padStart(8, "0");
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveBits"]);
+  const hash = hex(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: PIN_ITERATIONS }, key, 256));
+  const ok = await write("引き換えの番号を作りました", async () => {
+    const batch = fs.writeBatch(db);
+    batch.set(fs.doc(db, "rally_keys", "_pin"), { pin, at: fs.serverTimestamp() });
+    batch.set(fs.doc(db, "rally", "current"), { shops: state.rally?.shops ?? [], staffPin: { salt: hex(salt), iterations: PIN_ITERATIONS, hash }, ...stamp() });
+    await batch.commit();
+  });
+  if (ok) showPin(pin);
+});
+function showPin(pin) {
+  const v = $("#rally-pin-view");
+  v.hidden = false;
+  v.innerHTML = `引き換えの番号：<b>${esc(pin)}</b><small>本部のスタッフだけに伝える</small>`;
+}
+$("#rally-pin-show").addEventListener("click", () => {
+  const pin = state.rallyKeys._pin?.pin;
+  if (!pin) return toast("まだ番号がありません。「引き換えの番号を作る」を押してください", true);
+  showPin(pin);
+});
+
+// ---------- 印刷（QR・チラシ） ----------
+const siteUrl = (path = "") => new URL(`../${path}`, location.href).href;
+function qrDataUrl(text, size = 480) {
+  if (!window.QRCode) throw new Error("QR を作る部品を読みこめませんでした");
+  const box = document.createElement("div");
+  new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.M });
+  return box.querySelector("canvas").toDataURL("image/png");
+}
+const md = (iso) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
+const dayLabel = (iso) => FESTIVAL.days.find((d) => d.open.startsWith(iso))?.label ?? md(iso);
+const printKind = () => $('[name="pr-kind"]:checked').value;
+function renderPrintShops() {
+  const picked = new Set($$("#pr-shops input:checked").map((x) => x.value));
+  const first = !$("#pr-shops").children.length;
+  $("#pr-shops").innerHTML = state.shops.length
+    ? state.shops.map((s) => `<label class="pr-shop"><input type="checkbox" value="${esc(s.id)}"${first || picked.has(s.id) ? " checked" : ""}><span>${esc(s.name)}${isRallyShop(s.id) ? '<i class="tag tag-ok">スタンプ</i>' : ""}</span></label>`).join("")
+    : '<p class="muted small">お店がありません。「模擬店」で足してください。</p>';
+}
+function syncPrintControls() {
+  const kind = printKind();
+  $("#pr-shops-box").hidden = kind === "flyer";
+  $("#pr-staff-box").hidden = kind !== "shopset";
+  $("#pr-size-box").hidden = kind !== "flyer";
+}
+$$('[name="pr-kind"]').forEach((r) => r.addEventListener("change", syncPrintControls));
+$("#pr-all").addEventListener("click", () => $$("#pr-shops input").forEach((x) => { x.checked = true; }));
+$("#pr-none").addEventListener("click", () => $$("#pr-shops input").forEach((x) => { x.checked = false; }));
+
+const LOGO = "../assets/img/logo.webp";
+const head = (sub) => `<header class="ps-head"><img src="${LOGO}" alt=""><div><b>第${FESTIVAL.edition}回 函館高専祭「${esc(FESTIVAL.theme)}」</b><small>${esc(sub)}</small></div></header>`;
+const qrTile = (url, title, note = "") => `<figure class="ps-qr"><img src="${qrDataUrl(url)}" alt=""><figcaption><b>${esc(title)}</b>${note ? `<small>${esc(note)}</small>` : ""}</figcaption></figure>`;
+const stampCard = (shop, date) => `
+  <div class="ps-stamp">
+    <p class="ps-stamp-top">スタンプラリー</p>
+    <img src="${qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(shop.id)}&c=${encodeURIComponent(keysOf(shop.id)[date])}`))}" alt="">
+    <p class="ps-stamp-name">${esc(shop.name)}</p>
+    <p class="ps-stamp-day">${esc(dayLabel(date))} だけ使える QR</p>
+    <p class="ps-stamp-hint">スマホのカメラで読むと、スタンプが押されます</p>
+  </div>`;
+
+async function ensureShopCode(shopId) {
+  const existing = state.codes.find((c) => c.shop === shopId);
+  if (existing) return existing.code;
+  const code = newCode();
+  await fs.setDoc(fs.doc(db, "shop_codes", code), { shop: shopId, created_at: fs.serverTimestamp() });
+  return code;
+}
+
+async function buildShopSet(shops, withStaff) {
+  const pages = [];
+  for (const s of shops) {
+    const rally = isRallyShop(s.id);
+    pages.push(`
+      <section class="sheet ps-shop">
+        ${head("縁日（模擬店）")}
+        <div class="ps-shop-main">
+          <p class="ps-kicker">いらっしゃいませ！</p>
+          <h2 class="ps-name">${esc(s.name)}</h2>
+          ${s.map ? `<p class="ps-room">場所：${esc(s.map)}</p>` : ""}
+          ${rally ? '<p class="ps-badge">スタンプラリー対象店</p>' : ""}
+        </div>
+        <div class="ps-qrs">
+          ${qrTile(siteUrl("map.html?tab=feed"), "Enistagram で感想を投稿しよう", "写真やレビューを公式サイトに")}
+          ${qrTile(siteUrl("#ennichi"), "待ち時間・ほかのお店", "公式サイトの「縁日」")}
+        </div>
+        ${rally ? `<p class="ps-cut">✂ きりとり（スタンプラリーの QR：その日の分だけを店頭に貼ってください）</p>
+        <div class="ps-stamps">${RALLY_DATES.map((d) => stampCard(s, d)).join("")}</div>` : ""}
+      </section>`);
+    if (withStaff) {
+      const code = await ensureShopCode(s.id);
+      const url = shopUrl(code, s.id);
+      pages.push(`
+        <section class="sheet ps-staff">
+          ${head("お店の人用（店頭には貼らない）")}
+          <h2 class="ps-name">${esc(s.name)}</h2>
+          <p class="ps-warn">この紙は店頭に貼らないでください。お店の人だけで使います。</p>
+          <div class="ps-staff-body">
+            <img class="ps-staff-qr" src="${qrDataUrl(url)}" alt="">
+            <ol class="ps-steps">
+              <li>お店の人のスマホのカメラで、左の QR を読む</li>
+              <li>開いたページで「すぐ買える」「10分くらい待つ」「20分以上待つ」「完売」を押す</li>
+              <li>押すとすぐ、公式サイトと校内マップの「縁日」に出ます</li>
+              <li>1回読めば、そのスマホではずっと使えます</li>
+            </ol>
+          </div>
+          <p class="ps-url">${esc(url)}</p>
+          <p class="ps-foot">困ったら本部（${esc(RALLY.claimPlace)}）へ</p>
+        </section>`);
+    }
+  }
+  return pages.join("");
+}
+function buildStamps(shops) {
+  const cards = shops.flatMap((s) => RALLY_DATES.map((d) => stampCard(s, d)));
+  const pages = [];
+  for (let i = 0; i < cards.length; i += 6) pages.push(`<section class="sheet ps-grid">${cards.slice(i, i + 6).join("")}</section>`);
+  return pages.join("");
+}
+function buildFlyer(size) {
+  const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" });
+  const flyer = `
+    <div class="pf">
+      <header class="pf-head"><img src="${LOGO}" alt=""><div><p class="pf-edition">第${FESTIVAL.edition}回 函館高専祭</p><h2>「${esc(FESTIVAL.theme)}」<small>${esc(FESTIVAL.themeReading ?? "")}</small></h2></div></header>
+      <ul class="pf-days">${FESTIVAL.days.map((d) => `<li><b>${esc(d.label)}</b><span>${hhmm(d.open)}〜${hhmm(d.close)}</span></li>`).join("")}</ul>
+      <p class="pf-place">函館工業高等専門学校</p>
+      <div class="pf-qrs">
+        ${qrTile(siteUrl(""), "公式サイト", "いまやっていること・混雑")}
+        ${qrTile(siteUrl("map.html"), "校内マップ", "トイレ・お店・企画の場所")}
+        ${qrTile(siteUrl("map.html?tab=feed"), "Enistagram", "写真と感想を投稿")}
+        ${qrTile(siteUrl("rally.html"), "スタンプカード", "模擬店のQRで集めよう")}
+      </div>
+      <ul class="pf-notes">${VISIT_NOTES().map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+      <p class="pf-foot">${esc(FESTIVAL.instagramId ?? "")}</p>
+    </div>`;
+  return size === "a5" ? `<section class="sheet pf-a5">${flyer}${flyer}</section>` : `<section class="sheet pf-a4">${flyer}</section>`;
+}
+// 来場案内の札の「ひとこと」（本部が変えていればそちら）。{close} は公開の終わりの時刻に
+const VISIT_NOTES = () => {
+  const cards = state.siteText?.texts?.visit ?? VISIT;
+  const close = new Date(FESTIVAL.days[0].close).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" });
+  return cards.slice(0, 6).map((c) => String(c.title).replace("{close}", close).replace("{voteEnd}", "締め切り"));
+};
+
+$("#pr-make").addEventListener("click", async () => {
+  const kind = printKind();
+  const shops = state.shops.filter((s) => $$("#pr-shops input:checked").some((x) => x.value === s.id));
+  if (kind !== "flyer" && !shops.length) return toast("お店を選んでください", true);
+  const noKeys = kind !== "flyer" ? shops.filter((s) => isRallyShop(s.id) && RALLY_DATES.some((d) => !keysOf(s.id)[d])) : [];
+  if (noKeys.length) return toast("スタンプの鍵が見つからないお店があります。「模擬店」で対象にし直してください", true);
+  if (kind === "stamps" && !shops.some((s) => isRallyShop(s.id))) return toast("選んだお店にスタンプの対象がありません。「模擬店」で対象にしてください", true);
+  $("#pr-make").disabled = true;
+  try {
+    const html = kind === "shopset" ? await buildShopSet(shops, $("#pr-staff").checked)
+      : kind === "stamps" ? buildStamps(shops.filter((s) => isRallyShop(s.id)))
+      : buildFlyer($('[name="pr-size"]:checked').value);
+    $("#print-area").innerHTML = html;
+    loadPrintFont($("#print-area").textContent);
+    $("#pr-print").disabled = false;
+    $("#pr-note").textContent = `${$$("#print-area .sheet").length}枚できました。「印刷する」で刷れます（余白なし・背景のグラフィック：オン）。`;
+  } catch (err) {
+    toast(`作れませんでした（${err.message}）`, true);
+  } finally {
+    $("#pr-make").disabled = false;
+  }
+});
+// 見出しの字（WDXL Lubrifont）は、刷る紙に出る字だけを読みこむ
+function loadPrintFont(text) {
+  const chars = [...new Set(text.replace(/\s+/g, ""))].join("");
+  let link = document.getElementById("print-font");
+  if (!link) { link = document.createElement("link"); link.id = "print-font"; link.rel = "stylesheet"; document.head.append(link); }
+  link.href = `https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap&text=${encodeURIComponent(chars)}`;
+}
+$("#pr-print").addEventListener("click", async () => {
+  await document.fonts?.ready;
+  window.print();
 });
 
 // ---------- プレビュー・演出 ----------

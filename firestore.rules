@@ -77,6 +77,18 @@ service cloud.firestore {
       allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
     }
 
+    // ---------- スタンプラリー（本部コンソールの「模擬店」で作る） ----------
+    // rally/current：対象のお店と、QR の鍵・スタッフ番号の「暗号化した値」だけ（だれでも読める）
+    match /rally/{id} {
+      allow read: if true;
+      allow write: if isStaff() && stamped() && data().keys().hasOnly(['shops', 'staffPin', 'updated_at', 'updated_by'])
+        && data().shops is list && data().shops.size() <= 80;
+    }
+    // rally_keys：QR に入れる鍵そのものと、スタッフ番号（本部だけ。印刷するときに使う）
+    match /rally_keys/{id} {
+      allow read, write: if isStaff();
+    }
+
     // ---------- 模擬店の待ち時間 ----------
     // shops/{id} = { name, status, map, updated_at }。前の app/ の pass（4けたのパスワード）は、だれでも読めてしまうので置かない
     function shopStatusOk() {
