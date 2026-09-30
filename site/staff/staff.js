@@ -425,7 +425,29 @@ function visibleShops() {
   if (shopFilter === "done") return shops.filter((s) => handedAt(s)).sort((x, y) => handedAt(y) - handedAt(x));
   return shops;
 }
+// 混雑・実況：模擬店ごとの待ち時間（「すぐ買える」「10分」「20分以上」「完売」）
+function renderCrowdShops() {
+  const shops = allShops();
+  const busy = shops.filter((s) => s.status && s.status !== "normal").length;
+  $("#cshops-sum").textContent = `　待ちあり・完売 ${busy}店 / ${shops.length}店`;
+  const q = kana($("#cshops-q").value);
+  const list = q ? shops.filter((s) => shopHay(s).includes(q)) : shops;
+  $("#cshops").innerHTML = list.length ? list.map((s) => `
+    <div class="cshop">
+      <div class="cshop-name"><b>${esc(s.name)}</b><small>${[s.group, s.where, s.updated_at ? `${hhmm(toMs(s.updated_at))} 更新` : "まだ出していない"].filter(Boolean).map(esc).join("・")}</small></div>
+      <div class="shop-status">${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-shop="${esc(s.id)}" data-status="${v}" style="--c:${c}" aria-pressed="${s.status === v}">${label}</button>`).join("")}</div>
+    </div>`).join("") : '<p class="muted small">見つかりません</p>';
+}
+$("#cshops-q").addEventListener("input", renderCrowdShops);
+$("#cshops").addEventListener("click", (e) => {
+  const st = e.target.closest("[data-status]");
+  if (!st) return;
+  const shop = findShop(st.dataset.shop);
+  const label = SHOP_STATUS.find(([v]) => v === st.dataset.status)[1];
+  write(`${shop.name}を「${label}」にしました`, () => shopDocWrite(shop, { status: st.dataset.status, updated_at: fs.serverTimestamp() }));
+});
 function renderShops() {
+  renderCrowdShops();
   const shops = allSpots();
   const done = shops.filter((s) => handedAt(s)).length;
   $("#count-todo").textContent = shops.length - done;

@@ -140,6 +140,12 @@
       <!-- ===== 混雑・実況 ===== -->
       <section class="view" id="view-crowd" data-title="混雑・実況" data-eyebrow="CROWD" hidden>
         <div class="crowd-grid" id="venues"></div>
+        <details class="card side-details cshops" id="cshops-box">
+          <summary><h2>模擬店の混みぐあい（待ち時間）</h2><span class="muted small" id="cshops-sum"></span></summary>
+          <p class="muted small">ふだんはお店の人が自分のスマホで変えます。お店から電話などで頼まれたときに、ここから変えてください。「すぐ買える」のときは、地図には何も出ません。</p>
+          <label class="desk-search cshops-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="cshops-q" type="search" placeholder="お店・団体・クラスで探す" autocomplete="off" aria-label="お店を探す"></label>
+          <div class="cshops-list" id="cshops"></div>
+        </details>
         <article class="card">
           <header class="card-head"><h2>5人の実況</h2><small class="muted">空にすると、いつものセリフに戻る</small></header>
           <form id="chatter-form" class="chatter">

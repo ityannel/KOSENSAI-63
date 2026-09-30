@@ -252,6 +252,13 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .shop-status button[aria-pressed="true"] { background: var(--c); border-color: var(--c); color: #1D1A16; }
 .shop-codes { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
 .side-details summary { cursor: pointer; list-style-position: inside; }
+.cshops { margin-top: 16px; }
+.cshops-search { margin: 12px 0; }
+.cshops-search input { height: 44px; font-size: 1rem; }
+.cshops-list { display: grid; gap: 8px; }
+.cshop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); }
+.cshop-name b { display: block; }
+.cshop-name small { color: var(--sub); font-size: .78rem; }
 .side-details summary h2 { display: inline; margin: 0; font-family: var(--head); font-weight: 900; font-size: 1.1rem; }
 .side-details[open] summary { margin-bottom: 12px; }
 .code-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 6px 4px 12px; border: 1px solid var(--line-2); border-radius: 999px; font-family: var(--mono); font-size: .85rem; }
