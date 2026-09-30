@@ -1,0 +1,1150 @@
+/* 校内マップ（map.html）。画面いっぱいの地図の上に、検索・階・下から出るシートを重ねる。明るい色（ライトテーマ） */
+body.mapapp {
+  --font: "LINE Seed JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  --m-ink: #202124;
+  --m-ink-2: #5f6368;
+  --m-accent: var(--tint, #c2571a); /* 小見出し：差し色（ポスターの空の色。theme.js） */
+  --m-outside: #e7e3da;       /* 敷地の外 */
+  --m-site: #efebe3;          /* 敷地の中 */
+  --m-road: #ffffff;
+  --m-out: #b3ab9c;
+  --m-bldg: #e0dace;
+  --m-bldg-edge: #b4ab9b;
+  --m-room: #ffffff;
+  --m-room-edge: #cfc7b8;
+  --m-shed: #e9e5dc;
+  --m-wc: #deebf8;
+  --m-venue: #cfeeea;
+  --m-venue-edge: #3f9e97;
+  --m-exhibit: #d8ddfb;
+  --m-exhibit-edge: #4a5fd0;
+  --m-hq: #fadcd6;
+  --m-shop: #fde3cf;
+  --m-shop-edge: #e07b39;
+  --m-route: #1a73e8;
+  --m-here: #1a73e8;
+  --m-pin: #ea4335;
+  --m-panel: #ffffff;
+  --m-panel-2: #f1f3f4;
+  --m-line: rgba(0, 0, 0, 0.1);
+  --m-shadow: 0 2px 10px rgba(60, 64, 67, 0.22);
+  --m-line-2: #dadce0;
+  --m-blue-soft: #e8f0fe; --m-blue-ink: #174ea6; --m-blue-line: #aecbfa;
+  --m-shop-card: #fff7f0; --m-shop-card-line: #f6d6bd; --m-shop-ink: #8a3b10;
+  --m-label: #3c3a36; --m-halo: rgba(255, 255, 255, 0.92);
+  --e-bg: linear-gradient(180deg, #eef4ff 0%, #fff7f6 100%); --e-soft: #eef4ff; --e-line: #cfdcf5;
+  --m-sheet-h: 0px;
+  background: var(--m-outside);
+  color: var(--m-ink);
+  font-family: var(--font);
+  line-height: 1.6;
+}
+.mapapp button, .mapapp input { font: inherit; color: inherit; }
+
+/* ---------- 地図 ---------- */
+.m-canvas { position: fixed; inset: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+#map-svg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; font-family: var(--font); cursor: grab; }
+/* 回転・傾きのとき：字は地図と一緒に回さない（updateLabels で逆に回す） */
+#map-svg.is-3d { will-change: transform; }
+#map-svg.is-dragging { cursor: grabbing; }
+.m-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--m-ink-2); }
+
+/* 線や字は、拡大しても画面の上で同じ太さ・大きさ（--u は 1 画面ピクセルが地図の何 pt か） */
+#map-svg * { vector-effect: non-scaling-stroke; }
+#map-svg .ground { fill: var(--m-outside); }
+#map-svg .out-path { fill: none; stroke: var(--m-out); stroke-width: 2.5; stroke-dasharray: 2 6; stroke-linecap: round; }
+#map-svg .bldg-edge { fill: var(--m-bldg); stroke: var(--m-bldg-edge); stroke-width: 2.5; stroke-linejoin: round; }
+#map-svg .bldg-fill { fill: var(--m-bldg); }
+#map-svg .bldg-roof { fill: rgba(0, 0, 0, 0.025); stroke: #c3bcae; stroke-width: 1.2; stroke-dasharray: 5 5; }
+#map-svg .bldg-void { fill: url(#m-hatch); stroke: var(--m-bldg-edge); stroke-width: 1; }
+#map-svg .room { fill: var(--m-room); stroke: var(--m-room-edge); stroke-width: 1.2; cursor: pointer; }
+#map-svg .room.k-shed { fill: var(--m-shed); }
+#map-svg .room.k-toilet, #map-svg .room.k-toilet-m, #map-svg .room.k-toilet-f, #map-svg .room.k-toilet-hc { fill: var(--m-wc); }
+#map-svg .room.k-venue { fill: var(--m-venue); stroke: var(--m-venue-edge); stroke-width: 1.8; }
+#map-svg .room.k-exhibit { fill: var(--m-exhibit); stroke: var(--m-exhibit-edge); stroke-width: 2.4; }
+#map-svg .room.k-hq { fill: var(--m-hq); stroke: #d0675b; stroke-width: 1.8; }
+/* 模擬店（教室がまだわからないものは、その階の教室をまとめて点線で） */
+#map-svg .room.k-shops { fill: var(--m-shop); stroke: var(--m-shop-edge); stroke-width: 1.8; }
+#map-svg .room.k-shops.is-zone { fill: #fff1e6; stroke-dasharray: 4 3; }
+#map-svg .room.has-crowd { fill: color-mix(in srgb, var(--lv) 35%, #fff); stroke: var(--lv); stroke-width: 3; }
+/* 一覧のチップで出した場所：差し色で2回ふわっと光る（選んだ場所の輪郭は下の「選んだ場所」） */
+#map-svg .room.is-found { animation: m-found 1.1s ease-in-out 2; }
+@keyframes m-found { 50% { fill: color-mix(in srgb, var(--tint, #ee7b30) 38%, var(--m-room)); stroke: var(--tint, #ee7b30); } }
+
+/* 字（白いふちどり） */
+#map-svg text {
+  font-size: calc(var(--u) * 12px); font-weight: 700; fill: var(--m-label); text-anchor: middle; dominant-baseline: central;
+  paint-order: stroke; stroke: var(--m-halo); stroke-width: calc(var(--u) * 3.5px); stroke-linejoin: round; pointer-events: none;
+}
+#map-svg text.lb-code { font-size: calc(var(--u) * 9.5px); font-family: var(--mono); fill: #8a8378; font-weight: 500; }
+#map-svg text.lb-fest { font-size: calc(var(--u) * 13px); font-weight: 800; fill: #155e58; }
+#map-svg text.lb-shop { font-size: calc(var(--u) * 12px); font-weight: 800; fill: #8a3b10; }
+/* 学科展示：タイトルを大きく、下に学科の名前 */
+#map-svg text.lb-dept { font-size: calc(var(--u) * 14px); font-weight: 800; fill: #2d3fae; }
+#map-svg text.lb-dept-sub { font-size: calc(var(--u) * 10px); font-weight: 700; fill: #4a5fd0; }
+#map-svg text.lb-group { font-size: calc(var(--u) * 8.5px); font-weight: 400; fill: #8a6a55; }
+/* 屋外の建物（学生寮）・グラウンドなどの名前は控えめに（縁取りなし・小さめ・くすんだ色） */
+#map-svg text.lb-bldg { font-size: calc(var(--u) * 10.5px); font-weight: 700; fill: #8a8377; letter-spacing: 0.06em; stroke: none; }
+#map-svg text.lb-bldg tspan.sub { font-size: calc(var(--u) * 10px); font-weight: 400; fill: #8f887c; }
+#map-svg text.lb-area { font-size: calc(var(--u) * 10px); font-weight: 700; fill: #6a8c63; letter-spacing: 0.06em; stroke: none; }
+#map-svg text.lb-area.k-court { fill: #6b87a0; }
+#map-svg .is-hidden { display: none; }
+
+/* 印（画面の上で同じ大きさになるように、位置だけ地図に合わせて --u 倍する） */
+#map-svg .ic { transform-box: view-box; }
+#map-svg .ic circle, #map-svg .ic rect { vector-effect: none; }
+#map-svg .ic .bg { stroke: #fff; stroke-width: 1.5px; }
+#map-svg .ic text { font-size: 9px; stroke: none; font-weight: 800; fill: #fff; }
+#map-svg .ic-ev .bg, #map-svg .ic-st .bg { fill: #80868b; }
+#map-svg .ic-st path { fill: none; stroke: #fff; stroke-width: 1.6px; vector-effect: none; }
+/* 階段（段の模様） */
+#map-svg .stair-area { fill: #efe9df; stroke: #a89c86; stroke-width: 1.2; }
+#map-svg .ev-area { fill: #e6e9ee; stroke: #7d8590; stroke-width: 1.2; }
+#map-svg .ev-cross { fill: none; stroke: #9aa1ab; stroke-width: 0.8; }
+#map-svg .stair-steps { fill: none; stroke: #b9ad97; stroke-width: 0.8; }
+/* 建物の出入口 */
+#map-svg .ic-door .bg { fill: #188038; }
+#map-svg .ic-door path { fill: none; stroke: #fff; stroke-width: 1.5px; stroke-linejoin: round; vector-effect: none; }
+#map-svg .ic-door circle { fill: #fff; stroke: none; }
+#map-svg .ic-now .bg { fill: var(--led); stroke: #1c6b1d; }
+#map-svg .ic-now text { fill: #0c2a0c; font-family: var(--hud-font); font-weight: 400; font-size: 10px; }
+/* みんなの声 */
+#map-svg .ic-voice .bg { fill: #fff; stroke: #1a73e8; stroke-width: 1.5px; }
+#map-svg .ic-voice text { font-size: 8.5px; fill: #1a73e8; }
+.sh-h .v-avg { margin-left: 8px; color: #e8a317; font-size: 0.85rem; }
+.v-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+.v-post { position: relative; padding: 10px 12px; border-radius: 12px; background: var(--m-panel-2); }
+.v-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: 0.85rem; }
+.v-head time { margin-left: auto; color: var(--m-ink-2); font-size: 0.75rem; }
+.v-kind { color: var(--m-route); }
+.v-stars { color: #e8a317; letter-spacing: 0.05em; }
+.v-place { padding: 0 8px; border: 0; border-radius: 999px; background: var(--m-panel); font: inherit; font-size: 0.75rem; cursor: pointer; }
+.v-text { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.92rem; }
+.v-photo { display: block; max-width: 100%; max-height: 260px; margin-top: 8px; border-radius: 10px; }
+.v-report { margin-top: 4px; padding: 0; border: 0; background: none; color: var(--m-ink-2); font: inherit; font-size: 0.72rem; text-decoration: underline; cursor: pointer; }
+.v-report:disabled { text-decoration: none; cursor: default; }
+.m-compose { width: min(92vw, 440px); max-height: 90dvh; padding: 18px; border: 0; border-radius: 18px; box-shadow: var(--m-shadow); font-family: var(--font); }
+.m-compose::backdrop { background: rgba(0, 0, 0, 0.35); }
+.v-form { display: grid; gap: 10px; }
+.v-form label { display: grid; gap: 4px; font-size: 0.85rem; font-weight: 700; }
+.v-form textarea, .v-form select { padding: 10px; border: 1.5px solid var(--m-line-2); border-radius: 10px; font: inherit; font-weight: 400; }
+.v-count { justify-self: end; color: var(--m-ink-2); font-weight: 400; }
+.v-shop { margin: 0; font-weight: 800; }
+.v-starpick { display: flex; gap: 4px; }
+.v-starpick button { padding: 0 2px; border: 0; background: none; color: #e8a317; font-size: 1.8rem; line-height: 1; cursor: pointer; }
+.v-file { justify-self: start; display: inline-flex !important; grid-auto-flow: column; align-items: center; gap: 6px; padding: 8px 14px; border: 1.5px dashed var(--m-line-2); border-radius: 999px; cursor: pointer; }
+.v-file svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.m-sheet-body .v-form { margin-bottom: 8px; }
+.v-file input { display: none; }
+.v-preview { max-width: 100%; max-height: 200px; border-radius: 10px; }
+.v-rule { margin: 0; color: var(--m-ink-2); font-size: 0.75rem; }
+.v-msg { min-height: 1.2em; margin: 0; color: #d93025; font-size: 0.85rem; font-weight: 700; }
+/* 模擬店の待ち時間の印 */
+/* 部屋のすみの札：位置は地図と一緒に回し、中身は読める向きに */
+#map-svg .ic-badge .rot { transform: rotate(var(--brg, 0deg)); transform-box: fill-box; transform-origin: center; }
+#map-svg .ic-wait .bg { stroke: #fff; stroke-width: 1.5px; }
+#map-svg .ic-wait text { font-size: 9px; fill: #fff; }
+#map-svg .ic-wait.w10 .bg { fill: #e8a317; }
+#map-svg .ic-wait.w20 .bg { fill: #d93025; }
+#map-svg .ic-wait.sold .bg { fill: #6b6b6b; }
+.wait { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; color: #fff; vertical-align: 1px; }
+.wait.w0 { background: #1e8e3e; }
+.wait.w10 { background: #e8a317; }
+.wait.w20 { background: #d93025; }
+.wait.sold { background: #6b6b6b; }
+.m-item .mini-hanko { flex: none; }
+#map-svg .ic-stamp .bg { fill: #FFFDF8; stroke: #C8423A; stroke-width: 2px; }
+#map-svg .ic-stamp text { fill: #C8423A; }
+#map-svg .ic-floor { cursor: pointer; pointer-events: all; }
+#map-svg .ic-floor .bg { fill: var(--m-route); }
+#map-svg .ic-floor text { font-size: 11px; }
+#map-svg .ic-gate .bg { fill: var(--m-accent); }
+#map-svg .ic-gate text { font-size: 10px; }
+#map-svg.is-far #m-icons, #map-svg.is-far #m-live { display: none; }
+
+/* トイレの印（男＝青、女＝赤、多目的＝青に車いす） */
+#map-svg .ic-wc .bg { stroke: #fff; stroke-width: 1.2px; }
+#map-svg .ic-wc .bg.m { fill: #2f6fc4; }
+#map-svg .ic-wc .bg.f { fill: #d94a5f; }
+#map-svg .ic-wc .bg.hc { fill: #1f5fa8; }
+#map-svg .ic-wc .fig { fill: #fff; }
+#map-svg .ic-wc .fig .ln { fill: none; stroke: #fff; stroke-width: 1.3px; vector-effect: none; }
+
+/* 屋外（敷地・道路・グラウンド・寮） */
+#map-svg .site-bound { fill: var(--m-site); stroke: #c2bba9; stroke-width: 1.5; stroke-dasharray: 6 5; }
+#map-svg .road, #map-svg .road-public, #map-svg .track { vector-effect: none; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+#map-svg .road { stroke: var(--m-road); stroke-width: 12; }
+#map-svg .road.road-named { stroke-width: 16; cursor: pointer; }
+#map-svg .road-public { stroke: #fbe7a8; stroke-width: 20; }
+#map-svg .area { cursor: pointer; stroke-width: 1.2; }
+#map-svg .area.k-field { fill: #c4e0b6; stroke: #93c283; }
+#map-svg .area.k-court { fill: #cde0ef; stroke: #95b8d6; }
+#map-svg .track { stroke: #e9b69c; stroke-width: 12; }
+#map-svg .obldg { cursor: pointer; }
+#map-svg .site.is-dim, #map-svg .site-labels.is-dim { opacity: 0.4; pointer-events: none; }
+
+/* 道順 */
+#map-svg .rt-case { fill: none; stroke: #0b4aa2; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+#map-svg .rt-line { fill: none; stroke: var(--m-route); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+#map-svg .rt-flow { fill: none; stroke: rgba(255, 255, 255, 0.9); stroke-width: 2; stroke-dasharray: 1 14; stroke-linecap: round; animation: m-flow 1.2s linear infinite; }
+@keyframes m-flow { to { stroke-dashoffset: -15; } }
+#map-svg .rt-step { fill: #fff; stroke: #0b4aa2; stroke-width: 2; }
+
+/* いまここ・目的地 */
+#map-svg .mk-here .dot { fill: var(--m-here); stroke: #fff; stroke-width: 2.5px; }
+#map-svg .mk-here .halo { fill: var(--m-here); opacity: 0.2; animation: m-halo 2s ease-out infinite; transform-origin: 0 0; }
+@keyframes m-halo { from { transform: scale(0.6); opacity: 0.4; } to { transform: scale(2.2); opacity: 0; } }
+#map-svg .mk-pin path { fill: var(--m-pin); stroke: #a52714; stroke-width: 1.5px; }
+#map-svg .mk-pin circle { fill: #a52714; }
+#map-svg .mk-start .dot { fill: #fff; stroke: var(--m-route); stroke-width: 3px; }
+/* 向いている方向（扇形） */
+#map-svg .mk-cone path { fill: var(--m-here); opacity: 0.28; stroke: none; vector-effect: none; }
+/* 選んだ通り：道全体に線 */
+#map-svg .hl-case, #map-svg .hl-line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: none; }
+#map-svg .hl-case { stroke: #a52714; stroke-width: 10; opacity: 0.35; }
+#map-svg .hl-line { stroke: var(--m-pin); stroke-width: 5; }
+
+/* ---------- 上：検索 ---------- */
+.m-top { position: fixed; top: 0; left: 0; right: 0; padding: calc(10px + env(safe-area-inset-top)) 12px 0; pointer-events: none; z-index: 5; }
+.m-top > * { pointer-events: auto; }
+.m-bar {
+  display: flex; align-items: center; gap: 4px; max-width: 560px; margin: 0 auto;
+  padding: 4px 6px 4px 4px; border-radius: 999px; background: var(--m-panel); box-shadow: var(--m-shadow);
+}
+.m-back, .m-clear { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 50%; background: none; color: var(--m-ink-2); cursor: pointer; }
+.m-back svg, .m-clear svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.m-clear[hidden], .m-toast[hidden], .m-notice[hidden], .m-results[hidden] { display: none; }
+.m-search { flex: 1; min-width: 0; }
+.m-search input { width: 100%; height: 42px; border: 0; background: none; color: var(--m-ink); font-size: 16px; font-weight: 700; outline: none; }
+.m-search input::placeholder { color: var(--m-ink-2); font-weight: 400; }
+.m-search input::-webkit-search-cancel-button { display: none; }
+.m-logo { flex: none; width: 34px; height: auto; margin-right: 2px; }
+.m-chips { display: flex; gap: 8px; max-width: 560px; margin: 10px auto 0; padding: 0 2px 6px; overflow-x: auto; scrollbar-width: none; }
+.m-chips::-webkit-scrollbar { display: none; }
+body.is-searching .m-chips { display: none; }
+.m-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px;
+  background: var(--m-panel); color: var(--m-ink); font-size: 0.85rem; font-weight: 700; cursor: pointer; box-shadow: var(--m-shadow);
+}
+.m-chip i { font-style: normal; }
+.m-chip[aria-pressed="true"] { background: var(--m-blue-soft); color: var(--m-blue-ink); box-shadow: var(--m-shadow), inset 0 0 0 1.5px var(--m-blue-line); }
+.m-mappick { display: block; width: 100%; max-width: 560px; margin: 8px auto 4px; padding: 12px; border: 1.5px solid var(--m-route); border-radius: 12px; background: var(--m-panel); color: var(--m-route); font: 700 0.95rem var(--font); cursor: pointer; }
+/* 本部からのお知らせ：地図をふさがないように1行。押すと全部、× で閉じる */
+.m-notice {
+  display: flex; align-items: center; gap: 6px; max-width: 560px; margin: 0 auto; padding: 4px 4px 4px 14px; border-radius: 999px; background: #d93025; color: #fff;
+  font-size: 0.82rem; font-weight: 700; box-shadow: var(--m-shadow); cursor: pointer;
+}
+.m-notice span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-notice.is-open { border-radius: 14px; align-items: flex-start; }
+.m-notice.is-open span { white-space: normal; padding: 4px 0; }
+.m-notice button { flex: none; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.2); cursor: pointer; }
+.m-notice svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; }
+body.has-notice .m-side { top: calc(160px + env(safe-area-inset-top)); }
+/* 地図の見かた（?） */
+.m-help { flex: none; width: 30px; height: 30px; padding: 0; border: 1.5px solid var(--m-line-2); border-radius: 50%; background: var(--m-panel); color: var(--m-ink-2); font-weight: 800; font-size: 0.9rem; cursor: pointer; }
+
+/* 検索の結果（上から画面いっぱい） */
+.m-results {
+  position: fixed; inset: 0; z-index: 4; overflow-y: auto; overscroll-behavior: contain;
+  padding: calc(66px + env(safe-area-inset-top)) 12px calc(var(--m-tabs-h, 58px) + 16px); background: var(--m-panel); /* 下のタブに隠れない */
+}
+.m-results .m-list { max-width: 560px; margin: 0 auto; }
+.m-results h3 { max-width: 560px; margin: 16px auto 4px; font-size: 0.75rem; color: var(--m-accent); letter-spacing: 0.1em; }
+
+/* 場所の一覧（検索の結果・シートの中で共通） */
+.m-list { list-style: none; margin: 0; padding: 0; }
+.m-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 4px; border: 0; border-bottom: 1px solid var(--m-line);
+  background: none; text-align: left; cursor: pointer;
+}
+.m-item .ico {
+  flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--m-panel-2);
+  font-size: 0.8rem; font-weight: 800; color: var(--m-ink-2);
+}
+.m-item .ico.k-venue { background: #3f9e97; color: #fff; }
+.m-item .ico.k-exhibit { background: #6b7fd6; color: #fff; }
+.m-item .ico.k-toilet, .m-item .ico.k-toilet-m { background: #2f6fc4; color: #fff; }
+.m-item .ico.k-toilet-f { background: #d94a5f; color: #fff; }
+.m-item .ico.k-toilet-hc { background: #1f5fa8; color: #fff; }
+.m-item .ico.k-hq { background: #d0675b; color: #fff; }
+.m-item .ico.k-shop, .m-item .ico.k-shops { background: #e07b39; color: #fff; }
+.m-item .ico.k-event { background: #7b61c4; color: #fff; }
+.m-item .ico.k-spot { background: var(--m-here); color: #fff; }
+.m-item .ico.k-outdoor { background: #6fa566; color: #fff; }
+.m-item .txt { flex: 1; min-width: 0; }
+.m-item b { display: block; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-item small { display: block; color: var(--m-ink-2); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-item .dist { flex: none; font-family: var(--mono); font-size: 0.8rem; color: var(--m-ink-2); text-align: right; }
+.m-item .dist b { color: var(--m-ink); font-size: 0.9rem; }
+.m-empty { max-width: 560px; margin: 24px auto; color: var(--m-ink-2); text-align: center; }
+
+/* ---------- 右：階・方位・いまここ ---------- */
+.m-side {
+  position: fixed; right: 12px; z-index: 3; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+  top: calc(120px + env(safe-area-inset-top));
+}
+.m-floors { display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; background: var(--m-panel); box-shadow: var(--m-shadow); }
+.m-floor { position: relative; width: 48px; height: 46px; border: 0; background: none; font-family: var(--mono) !important; font-weight: 700; cursor: pointer; color: var(--m-ink-2) !important; }
+.m-floor + .m-floor { border-top: 1px solid var(--m-line); }
+.m-floor[aria-checked="true"] { background: var(--m-blue-soft); color: var(--m-blue-ink) !important; }
+.m-floor .dot { position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--m-route); box-shadow: 0 0 0 2px var(--m-panel); }
+.m-fab { display: grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: 50%; background: var(--m-panel); cursor: pointer; box-shadow: var(--m-shadow); }
+.m-fab svg { width: 24px; height: 24px; fill: none; stroke: var(--m-ink-2); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.m-fab.has-here svg { stroke: var(--m-here); }
+.m-fab.has-here svg circle { fill: var(--m-here); }
+.m-qr svg { stroke: var(--m-route); }
+/* 向きに合わせる（押しているあいだは青） */
+.m-heading[aria-pressed="true"] { background: var(--m-here); }
+.m-heading[aria-pressed="true"] svg { stroke: #fff; fill: #fff; }
+/* 道案内で階が切りかわったとき、階のボタンを光らせる */
+.m-floor.is-flash { animation: m-floor-flash 0.5s ease-in-out 3 alternate; }
+@keyframes m-floor-flash { to { background: var(--m-route); color: #fff !important; } }
+.m-compass { position: relative; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; background: var(--m-panel); box-shadow: var(--m-shadow); cursor: pointer; }
+.m-tilt { font: 800 0.8rem/1 var(--font); color: var(--m-ink-2); }
+.m-tilt[aria-pressed="true"] { background: var(--m-ink-2, #3c4043); color: #fff; }
+.m-compass i { position: absolute; left: 50%; top: 50%; width: 0; height: 0; margin: -15px 0 0 -5px; border: 5px solid transparent; border-bottom: 15px solid #d93025; transform-origin: 5px 15px; rotate: var(--north, 0deg); }
+.m-compass b { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--mono); font-size: 0.65rem; color: var(--m-ink-2); translate: calc(cos(var(--north, 0deg) - 90deg) * 13px) calc(sin(var(--north, 0deg) - 90deg) * 13px); }
+
+/* ---------- 下：シート ---------- */
+.m-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; max-width: 640px; margin: 0 auto;
+  display: flex; flex-direction: column; max-height: 42dvh;
+  border-radius: 20px 20px 0 0; background: var(--m-panel); box-shadow: 0 -2px 16px rgba(60, 64, 67, 0.25);
+  transition: max-height 0.3s cubic-bezier(.2, .8, .2, 1);
+}
+.m-sheet.is-open { max-height: 78dvh; }
+.m-sheet.is-dragging { transition: none; } /* 指について動かしているあいだ */
+.m-sheet.is-dragging .m-sheet-body { overflow: hidden; }
+.m-grip { flex: none; width: 100%; height: 22px; border: 0; background: none; cursor: pointer; position: relative; }
+.m-grip::before { content: ""; position: absolute; left: 50%; top: 9px; width: 40px; height: 5px; margin-left: -20px; border-radius: 3px; background: var(--m-line-2); }
+.m-sheet-body { overflow-y: auto; overscroll-behavior: contain; padding: 0 18px 18px; }
+/* たたんでいるときは中を動かさず、上へのスワイプで広げる */
+.m-sheet:not(.is-open) .m-sheet-body { overflow: hidden; }
+.m-sheet[hidden], .m-sheet.is-min .m-sheet-x { display: none; }
+.m-sheet.is-min { max-height: 30px; overflow: hidden; }
+.m-sheet.is-min .m-sheet-body { visibility: hidden; transition: visibility 0s 0.3s; }
+.m-sheet.is-min .m-grip { height: 30px; }
+/* 右上の × */
+.m-sheet { position: fixed; }
+.m-sheet-x { position: absolute; top: 10px; right: 10px; z-index: 1; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: var(--m-panel-2); cursor: pointer; }
+.m-sheet-x svg { width: 18px; height: 18px; fill: none; stroke: var(--m-ink-2); stroke-width: 2.4; stroke-linecap: round; }
+.m-sheet-body .sh-kind, .m-sheet-body .sh-title, .m-sheet-body .rt-ends { margin-right: 40px; }
+
+.sh-kind { margin: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; color: var(--m-accent); }
+.sh-title { margin: 0; font-size: 1.3rem; font-weight: 800; line-height: 1.35; }
+.sh-sub { margin: 2px 0 0; color: var(--m-ink-2); font-size: 0.85rem; }
+.sh-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.sh-badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--m-panel-2); font-size: 0.8rem; font-weight: 700; }
+.sh-badge i { width: 10px; height: 10px; border-radius: 50%; background: var(--lv, var(--m-ink-2)); }
+.sh-badge small { font-weight: 400; color: var(--m-ink-2); }
+.sh-badge.is-now { background: var(--led); color: #0c2a0c; font-family: var(--hud-font); font-weight: 400; }
+.sh-badge.is-here { background: var(--m-here); color: #fff; }
+.sh-desc { margin: 10px 0 0; font-size: 0.9rem; }
+.sh-actions { display: flex; gap: 8px; margin: 14px 0 4px; overflow-x: auto; scrollbar-width: none; }
+.sh-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px; border: 1px solid var(--m-line-2); border-radius: 999px;
+  background: var(--m-panel); color: #1a73e8; font-weight: 700; font-size: 0.9rem; cursor: pointer; text-decoration: none;
+}
+.sh-btn.primary { background: var(--m-route); border-color: var(--m-route); color: #fff; }
+.sh-btn.is-icon { justify-content: center; width: 40px; padding: 0; color: var(--m-ink-2); } /* 共有：アイコンだけ */
+.sh-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.sh-h { margin: 16px 0 4px; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--m-accent); }
+.sh-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.sh-events li { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+.sh-events time { font-family: var(--mono); font-size: 0.8rem; color: var(--m-accent); min-width: 5.6em; }
+.sh-events em { margin-left: auto; padding: 0 8px; border-radius: 999px; background: var(--led); color: #0c2a0c; font-style: normal; font-family: var(--hud-font); font-size: 0.8rem; }
+.sh-events small { color: var(--m-ink-2); }
+.sh-events .is-past { opacity: 0.45; }
+.sh-events .mini-hanko { width: 1.9em; height: 1.9em; font-size: 0.85rem; }
+.sh-hint { margin: 8px 0 0; color: var(--m-ink-2); font-size: 0.82rem; }
+.sh-venues { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 10px -18px 0; padding: 0 18px 4px; }
+.sh-venue {
+  flex: none; display: grid; gap: 2px; min-width: 120px; padding: 10px 12px; border: 1px solid var(--m-line-2); border-radius: 14px; background: var(--m-panel); text-align: left; cursor: pointer;
+}
+.sh-venue b { font-size: 0.9rem; }
+.sh-venue small { display: flex; align-items: center; gap: 6px; color: var(--m-ink-2); font-size: 0.75rem; }
+.sh-venue small i { width: 8px; height: 8px; border-radius: 50%; background: var(--lv, var(--m-ink-2)); }
+.sh-venue.is-now { border-color: #1c6b1d; box-shadow: inset 0 0 0 1px #1c6b1d; }
+
+/* 模擬店の一覧（お店の名前を大きく、団体名は小さく） */
+.sh-shops { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sh-shops li { padding: 10px 12px; border-radius: 12px; background: var(--m-shop-card); border: 1px solid var(--m-shop-card-line); }
+.sh-shops b { display: block; font-size: 1rem; font-weight: 800; color: var(--m-shop-ink); }
+.sh-shops small { display: block; color: #8a6a55; font-size: 0.72rem; }
+.sh-shops p { margin: 4px 0 0; font-size: 0.82rem; color: var(--m-ink-2); }
+
+/* 道順 */
+.rt-ends { display: grid; grid-template-columns: 20px 1fr 40px; gap: 0 8px; align-items: center; }
+.rt-ends .rail { grid-row: span 2; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 14px 0; }
+.rt-ends .rail::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 3px solid var(--m-route); }
+.rt-ends .rail::after { content: ""; width: 10px; height: 10px; border-radius: 50% 50% 50% 0; rotate: -45deg; background: var(--m-pin); }
+.rt-end { display: block; width: 100%; min-height: 42px; margin: 3px 0; padding: 6px 12px; border: 1px solid var(--m-line-2); border-radius: 10px; background: var(--m-panel); text-align: left; cursor: pointer; font-weight: 700; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rt-end.is-empty { color: var(--m-ink-2); font-weight: 400; border-color: var(--m-route); box-shadow: inset 0 0 0 1px var(--m-route); }
+.rt-swap { grid-row: span 2; width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.rt-swap svg { width: 22px; height: 22px; fill: none; stroke: var(--m-ink-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rt-sum { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 0; }
+.rt-sum .rt-warn { margin: 0; }
+/* バリアフリー（押すと階段を使わない道順に切りかわる） */
+.rt-bf { flex: none; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1.5px solid var(--m-line-2); border-radius: 50%; background: var(--m-panel); cursor: pointer; }
+.rt-bf svg { width: 24px; height: 24px; fill: none; stroke: var(--m-ink-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rt-bf[aria-pressed="true"] { background: #1a73e8; border-color: #1a73e8; }
+.rt-bf[aria-pressed="true"] svg { stroke: #fff; }
+.rt-sum b { font-size: 1.5rem; font-weight: 800; color: #188038; }
+.rt-sum span { color: var(--m-ink-2); font-size: 0.9rem; }
+.rt-opts { display: flex; gap: 8px; margin: 10px 0 0; flex-wrap: wrap; }
+.rt-opt { min-height: 34px; padding: 0 12px; border: 1px solid var(--m-line-2); border-radius: 999px; background: var(--m-panel); font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.rt-opt[aria-pressed="true"] { background: var(--m-blue-soft); border-color: var(--m-blue-line); color: var(--m-blue-ink); }
+.rt-warn { margin: 10px 0 0; padding: 8px 12px; border-radius: 12px; background: #fdecdc; color: #9a4a12; font-size: 0.85rem; }
+.rt-steps { list-style: none; margin: 12px 0 0; padding: 0; }
+.rt-steps li { border-bottom: 1px solid var(--m-line); }
+.rt-steps button { display: flex; gap: 12px; align-items: center; width: 100%; min-height: 52px; padding: 6px 2px; border: 0; background: none; text-align: left; cursor: pointer; }
+.rt-steps .si { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--m-panel-2); }
+.rt-steps .si svg { width: 20px; height: 20px; fill: none; stroke: var(--m-ink-2); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.rt-steps .is-floor .si { background: var(--m-route); }
+.rt-steps .is-floor .si svg { stroke: #fff; }
+.rt-steps .is-goal .si { background: var(--m-pin); }
+.rt-steps .is-goal .si svg { stroke: #fff; }
+.rt-steps b { display: block; font-size: 0.95rem; }
+.rt-steps small { color: var(--m-ink-2); font-size: 0.78rem; }
+.rt-steps .is-active button { background: var(--m-blue-soft); }
+.rt-opt { display: inline-flex; align-items: center; gap: 4px; }
+.rt-opt svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.rt-opt.is-scan { border-color: var(--m-route); color: var(--m-route); }
+.rt-opt.is-icon { justify-content: center; width: 34px; padding: 0; color: var(--m-ink-2); }
+.rt-opt.is-icon svg { width: 18px; height: 18px; }
+
+/* お知らせ */
+.m-toast {
+  position: fixed; left: 50%; bottom: calc(var(--m-sheet-h) + 16px); z-index: 6; translate: -50% 0; margin: 0; padding: 10px 18px;
+  width: max-content; max-width: calc(100vw - 32px); text-align: center;
+  border-radius: 999px; background: #202124; color: #fff; font-weight: 700; font-size: 0.9rem; box-shadow: var(--m-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #map-svg .rt-flow, #map-svg .mk-here .halo, #map-svg .room.is-found { animation: none; }
+}
+
+/* AED（赤い札。遠くから見ていても出す） */
+#map-svg .ic-aed .bg { fill: #d93025; stroke: #fff; stroke-width: 1.5px; }
+#map-svg .ic-aed text { font-size: 8.5px; font-family: var(--mono); }
+.m-item .ico.k-aed { background: #d93025; color: #fff; font-size: 0.62rem; }
+#map-svg .area.k-green { fill: #b9d8ab; stroke: #8fbf80; }
+#map-svg .paved { fill: #fbfaf7; stroke: #ddd6c8; stroke-width: 1; }
+#map-svg .parking { fill: #e9e5dc; stroke: #cfc7b7; stroke-width: 1; stroke-dasharray: 3 3; }
+/* 歩行者専用の道（シャイニングロード） */
+#map-svg .footway { vector-effect: none; fill: none; stroke: #f6c453; stroke-width: 7; stroke-linecap: round; cursor: pointer; }
+/* 道の名前（大事さは低いので細く小さく） */
+/* 字は道幅に入る大きさ（地図の単位）。まわりを道と同じ色でふち取って、道の点線だけを隠す */
+#map-svg text.lb-road { font-size: 7px; font-weight: 700; letter-spacing: 0.1em; dominant-baseline: central; fill: #6f6a60; stroke: var(--m-road); stroke-width: 3px; }
+#map-svg text.lb-foot { font-size: 5px; fill: #7a5600; stroke: #f6c453; }
+/* 自転車道 */
+#map-svg .bikeway { vector-effect: none; fill: none; stroke: #c9ddf3; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; cursor: pointer; }
+#map-svg text.lb-bike { fill: #245d9e; stroke: #c9ddf3; }
+
+/* QR を読む画面 */
+.m-scan { width: min(92vw, 420px); padding: 16px; border: 0; border-radius: 18px; box-shadow: var(--m-shadow); font-family: var(--font); text-align: center; }
+.m-scan::backdrop { background: rgba(0, 0, 0, 0.6); }
+.scan-view { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 12px; background: #202124; }
+.scan-view video { width: 100%; height: 100%; object-fit: cover; }
+.scan-frame { position: absolute; inset: 18%; border: 3px solid #fff; border-radius: 14px; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.35); }
+.scan-msg { margin: 12px 0; font-size: 0.9rem; font-weight: 700; }
+
+/* 地図の見かた（凡例）。地図の印と同じ色 */
+.m-legend { width: min(92vw, 440px); max-height: 86dvh; padding: 0; border: 0; border-radius: 18px; box-shadow: var(--m-shadow); font-family: var(--font); }
+.m-legend::backdrop { background: rgba(0, 0, 0, 0.35); }
+.lg-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 8px 18px; background: var(--m-panel); }
+.lg-head h2 { margin: 0; font-size: 1.1rem; }
+.lg-head .m-sheet-x { position: static; }
+#m-legend-body { padding: 0 18px 18px; }
+#m-legend-body h3 { margin: 10px 0 4px; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--m-accent); }
+#m-legend-body ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+#m-legend-body li { display: flex; align-items: center; gap: 12px; font-size: 0.88rem; line-height: 1.4; }
+#m-legend-body li svg { flex: none; width: 42px; height: 24px; overflow: visible; }
+.m-legend .lg-sw { stroke-width: 1.5; }
+.m-legend .lg-sw.k-shops { fill: var(--m-shop); stroke: var(--m-shop-edge); }
+.m-legend .lg-sw.k-exhibit { fill: var(--m-exhibit); stroke: var(--m-exhibit-edge); }
+.m-legend .lg-sw.k-venue { fill: var(--m-venue); stroke: var(--m-venue-edge); }
+.m-legend .lg-sw.k-hq { fill: var(--m-hq); stroke: #d0675b; }
+.m-legend .lg-sw.k-toilet { fill: var(--m-wc); stroke: var(--m-room-edge); }
+.m-legend .lg-sw.k-room { fill: var(--m-room); stroke: var(--m-room-edge); }
+.m-legend .lg-road, .m-legend .lg-foot, .m-legend .lg-bike, .m-legend .lg-out, .m-legend .lg-route { fill: none; stroke-linecap: round; }
+.m-legend .lg-road { stroke: #fff; stroke-width: 9; filter: drop-shadow(0 0 1px #b4ab9b); }
+.m-legend .lg-foot { stroke: #f6c453; stroke-width: 6; }
+.m-legend .lg-bike { stroke: #c9ddf3; stroke-width: 8; }
+.m-legend .lg-out { stroke: var(--m-out); stroke-width: 2.5; stroke-dasharray: 2 5; }
+.m-legend .lg-route { stroke: var(--m-route); stroke-width: 5; }
+.m-legend .lg-ic text { font-size: 9px; font-weight: 800; fill: #fff; text-anchor: middle; dominant-baseline: central; font-family: var(--font); }
+.m-legend .bg { stroke: #fff; stroke-width: 1.5; }
+.m-legend .ic-ev .bg, .m-legend .ic-st .bg { fill: #80868b; }
+.m-legend .ic-st path, .m-legend .ic-door path { fill: none; stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
+.m-legend .ic-door .bg { fill: #188038; }
+.m-legend .ic-door circle { fill: #fff; stroke: none; }
+.m-legend .ic-wc .bg.m { fill: #2f6fc4; }
+.m-legend .ic-wc .bg.f { fill: #d94a5f; }
+.m-legend .ic-wc .bg.hc { fill: #1f5fa8; }
+.m-legend .ic-wc .fig { fill: #fff; }
+.m-legend .ic-wc .fig .ln { fill: none; stroke: #fff; stroke-width: 1.3; }
+.m-legend .ic-aed .bg { fill: #d93025; }
+.m-legend .ic-aed text { font-size: 8.5px; font-family: var(--mono); }
+.m-legend .ic-now .bg { fill: var(--led); stroke: #1c6b1d; }
+.m-legend .ic-now text { fill: #0c2a0c; font-family: var(--hud-font); font-weight: 400; font-size: 10px; }
+.m-legend .ic-wait.w10 .bg { fill: #e8a317; }
+.m-legend .ic-voice .bg { fill: #fff; stroke: #1a73e8; }
+.m-legend .ic-voice text { fill: #1a73e8; font-size: 8.5px; }
+.m-legend .ic-stamp .bg { fill: #FFFDF8; stroke: #C8423A; stroke-width: 2; }
+.m-legend .ic-stamp text { fill: #C8423A; }
+.m-legend .mk-here .dot { fill: var(--m-here); stroke: #fff; stroke-width: 2.5; }
+.m-legend .mk-pin path { fill: var(--m-pin); stroke: #a52714; stroke-width: 1.2; }
+.m-legend .mk-pin circle { fill: #a52714; }
+
+/* 自動販売機（遠くから見ているときは出さない） */
+#map-svg .ic-vend .bg, .m-legend .ic-vend .bg { fill: #7b61c4; }
+#map-svg .ic-vend .fg, .m-legend .ic-vend .fg { fill: none; stroke: #fff; stroke-width: 1.3px; vector-effect: none; }
+#map-svg .ic-vend path, .m-legend .ic-vend path { fill: none; stroke: #fff; stroke-width: 1.3px; stroke-linecap: round; vector-effect: none; }
+#map-svg.is-far #m-vend { display: none; }
+.m-item .ico.k-vending { background: #7b61c4; color: #fff; }
+/* 駐輪場 */
+#map-svg .area.k-bike { fill: #e4e8ee; stroke: #a9b4c2; stroke-dasharray: 4 3; }
+#map-svg text.lb-area.k-bike { fill: #5b6b80; }
+#map-svg .ic-bike .bg, .m-legend .ic-bike .bg { fill: #1f5fa8; stroke: #fff; stroke-width: 1.5px; }
+#map-svg .ic-bike .fg, .m-legend .ic-bike .fg { fill: none; stroke: #fff; stroke-width: 1.3px; stroke-linecap: round; stroke-linejoin: round; }
+#map-svg .ic-bike .fg *, .m-legend .ic-bike .fg * { vector-effect: none; fill: none; }/* スマホ：場所のシートのボタン（経路・ここから・ポスト・共有）が1行に入るように詰める */
+@media (max-width: 420px) {
+  .sh-actions { gap: 6px; }
+  .sh-actions .sh-btn { padding: 0 10px; gap: 4px; }
+  .sh-actions .sh-btn.is-icon { width: 40px; padding: 0; }
+}
+
+/* ---------- 下のタブ（サイト／地図／Enistagram。サイトはトップページへ） ---------- */
+@view-transition { navigation: auto; } /* ページをまたいでも、タブはそのまま・中身はふわっと切りかわる */
+.m-tabs { view-transition-name: tabs; }
+body.mapapp { --m-tabs-h: calc(58px + env(safe-area-inset-bottom)); }
+.m-tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; display: flex; height: var(--m-tabs-h); padding-bottom: env(safe-area-inset-bottom);
+  background: var(--m-panel); border-top: 1px solid var(--m-line); box-shadow: 0 -2px 10px rgba(60, 64, 67, 0.12);
+}
+.m-tabs :is(button, a) { flex: 1; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 0; background: none; color: var(--m-ink-2); font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+.m-tabs svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.m-tabs button[aria-selected="true"] { color: var(--tint, var(--m-route)); }
+
+/* ---------- 下のタブ：PC の右上のタブと同じ形（トップページの .site-tabs と同じ） ----------
+   画面の下に浮かぶ、白っぽいガラスの丸い帯（こげ茶の字）。いまのタブは、こげ茶の丸い札（クリーム色の字） */
+body.mapapp { --m-tabs-h: calc(72px + env(safe-area-inset-bottom)); }
+.m-tabs {
+  left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); height: 56px; gap: 4px; padding: 5px; border: 0; border-radius: 999px;
+  background: rgba(255, 251, 242, 0.84); box-shadow: inset 0 0 0 1px rgba(99, 74, 46, 0.18), 0 8px 22px -10px rgba(48, 36, 30, 0.45);
+  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
+}
+.mapapp .m-tabs :is(button, a) {
+  flex: 1 1 auto; flex-direction: row; gap: 6px; padding: 0 12px; border-radius: 999px; white-space: nowrap;
+  color: #634A2E; font-family: var(--hud-font); font-size: 1.02rem; font-weight: 400; line-height: 1; transition: background 0.2s, color 0.2s;
+}
+.m-tabs svg { width: 20px; height: 20px; }
+.mapapp .m-tabs button[aria-selected="true"], .mapapp .m-tabs [data-tab="feed"][aria-selected="true"] { background: var(--grain), #634A2E; color: #FEEBC4; }
+.mapapp .m-tabs [data-tab="feed"] .e-word { font-size: 0.95rem; }
+.mapapp .m-tabs [data-tab="feed"][aria-selected="true"] .e-word { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: inherit; }
+.mapapp .m-tabs :is(button, a):active { filter: none; scale: 0.96; }
+/* シート・お知らせはタブの上に */
+.m-sheet { bottom: var(--m-tabs-h); }
+.m-toast { bottom: calc(var(--m-sheet-h) + var(--m-tabs-h) + 16px); }
+body.is-feed .m-toast { bottom: calc(var(--m-tabs-h) + 80px); }
+
+/* ---------- みんなの声（タイムライン・写真） ---------- */
+.m-feed { position: fixed; left: 0; right: 0; top: 0; bottom: var(--m-tabs-h); z-index: 7; overflow-y: auto; overscroll-behavior: contain; background: var(--m-panel); }
+.m-feed[hidden] { display: none; }
+.f-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; max-width: 640px; margin: 0 auto; padding: calc(12px + env(safe-area-inset-top)) 16px 10px; background: var(--m-panel); border-bottom: 1px solid var(--m-line); }
+.f-head h2 { margin: 0; font-size: 1.2rem; font-weight: 800; }
+.f-seg { display: flex; padding: 3px; border-radius: 999px; background: var(--m-panel-2); }
+.f-seg button { padding: 6px 14px; border: 0; border-radius: 999px; background: none; color: var(--m-ink-2); font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+.f-seg button[aria-selected="true"] { background: var(--m-panel); color: var(--m-ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
+.f-compose, .f-body { max-width: 640px; margin: 0 auto; padding: 12px 16px; }
+.f-compose { border-bottom: 1px solid var(--m-line); }
+.f-compose[hidden] { display: none; }
+.f-body { padding-bottom: 96px; }
+.f-empty { margin: 40px 0; color: var(--m-ink-2); text-align: center; }
+.f-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.f-cell { aspect-ratio: 1; padding: 0; border: 0; background: var(--m-panel-2); cursor: pointer; overflow: hidden; }
+.f-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.f-fab {
+  position: fixed; right: 16px; bottom: calc(var(--m-tabs-h) + 16px); z-index: 8; display: inline-flex; align-items: center; gap: 6px;
+  height: 52px; padding: 0 20px 0 16px; border: 0; border-radius: 999px; background: var(--m-route); color: #fff; font-weight: 800; font-size: 1rem; box-shadow: var(--m-shadow); cursor: pointer;
+}
+.f-fab[hidden], body:not(.is-feed) .f-fab { display: none; }
+.f-fab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* 投稿：いいね・返信 */
+.v-head .v-place { display: inline-flex; align-items: center; gap: 2px; }
+.v-head .v-place svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+.v-acts { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+.v-act { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 4px; border: 0; background: none; color: var(--m-ink-2); font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.v-act svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.v-like.is-on { color: #e0245e; }
+.v-like.is-on svg { fill: currentColor; }
+.v-acts .v-report { margin: 0 0 0 auto; }
+.v-replies { list-style: none; margin: 8px 0 0; padding: 0 0 0 12px; border-left: 2px solid var(--m-line); display: grid; gap: 8px; }
+.v-post.is-reply { padding: 6px 0 0; background: none; }
+.v-replybox { margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--m-panel); }
+.v-replybox[hidden] { display: none; }
+.v-post.is-flash { animation: m-found 0.6s ease-in-out 3 alternate; }
+.v-starlabel { margin: 0; font-size: 0.85rem; font-weight: 700; }
+.v-form select { width: 100%; }
+
+/* 食べもののジャンル */
+.g-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 6px; vertical-align: 1px; }
+.g-tag { padding: 0 7px; border-radius: 999px; background: color-mix(in srgb, var(--g) 14%, #fff); color: var(--g); font-size: 0.7rem; font-weight: 800; }
+.sh-shops .g-tags { margin: 2px 0 0; }
+.g-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -18px; margin-right: -18px; padding: 0 18px 2px; }
+.g-filter .rt-opt { flex: none; }
+.g-filter .rt-opt[aria-pressed="true"][style] { background: color-mix(in srgb, var(--g) 16%, #fff); border-color: var(--g); color: var(--g); }
+
+/* ---------- Enistagram の見た目（ロゴに合わせる：DynaPuff・青→紺→赤のグラデーション・ぷっくり丸い） ---------- */
+body.mapapp {
+  --e-sage: #9fc7bd; --e-blue: #1361cc; --e-navy: #0d5881; --e-red: #ff5253;
+  --e-grad: linear-gradient(135deg, #3d86f0 0%, var(--e-blue) 35%, var(--e-navy) 65%, var(--e-red) 100%);
+  --e-font: "DynaPuff", "LINE Seed JP", "Noto Sans JP", sans-serif;
+}
+.e-word { font-family: var(--e-font); font-weight: 700; letter-spacing: 0.01em; }
+.m-feed { background: var(--e-bg); }
+.f-head { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 0; box-shadow: 0 1px 0 rgba(19, 97, 204, 0.12); max-width: none; }
+.f-logo { margin: 0; line-height: 0; }
+.f-logo img { height: 30px; width: auto; }
+.f-seg { background: #e6eefc; }
+.f-seg button { font-family: var(--e-font); font-weight: 500; }
+.f-seg button[aria-selected="true"] { background: var(--e-grad); color: #fff; box-shadow: 0 2px 6px rgba(13, 88, 129, 0.3); }
+/* 投稿のカード：白く丸く、ふんわり影 */
+.m-feed .v-list { gap: 12px; }
+.m-feed .v-post { padding: 14px 16px; border-radius: 22px; background: var(--m-panel); box-shadow: 0 2px 10px rgba(13, 88, 129, 0.08); }
+.m-feed .v-post.is-reply { padding: 8px 0 0; border-radius: 0; box-shadow: none; }
+.m-feed .v-replies { border-left-color: #d6e3fb; }
+.m-feed .v-place { background: var(--e-soft); color: var(--e-navy); font-weight: 700; }
+.v-act span, .v-head time, .f-grid, .v-count { font-family: var(--e-font); font-weight: 500; }
+.v-like.is-on { color: var(--e-red); }
+.m-feed .v-act:not(.is-on) { color: #5b7390; }
+.f-cell { border-radius: 10px; }
+.f-grid { gap: 6px; }
+.f-empty { font-weight: 700; color: #5b7390; line-height: 1.9; }
+/* ポストのボタン：ロゴと同じグラデーション */
+.f-fab { background: var(--e-grad); box-shadow: 0 6px 18px rgba(13, 88, 129, 0.35); border-radius: 999px; }
+.f-compose { background: var(--m-panel); border-radius: 0 0 22px 22px; border-bottom: 0; box-shadow: 0 2px 10px rgba(13, 88, 129, 0.08); }
+.m-feed .sh-btn.primary, .m-sheet [data-compose] .sh-btn.primary { background: var(--e-grad); border-color: transparent; }
+/* 下のタブ：Enistagram を押しているときはロゴの色 */
+.m-tabs [data-tab="feed"] .e-word { font-size: 0.78rem; }
+.m-tabs [data-tab="feed"][aria-selected="true"] { color: var(--e-blue); }
+.m-tabs [data-tab="feed"][aria-selected="true"] .e-word { background: var(--e-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* 場所のシートの見出し「Enistagram（n）」 */
+.sh-h .e-word { font-size: 0.85rem; background: var(--e-grad); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: 0.02em; }
+/* 場所のシートの「Enistagram にポスト」：ロゴ＋にポスト。入りきらないときは次の行へ */
+.sh-actions:has(.e-post) { flex-wrap: wrap; overflow: visible; }
+.sh-btn.e-post { flex: 1 1 100%; justify-content: center; gap: 3px; color: var(--e-navy); font-weight: 800; border: 1.5px solid var(--e-line); background: linear-gradient(180deg, #fff, #f3f7ff); }
+.sh-btn.e-post img { height: 15px; width: auto; }
+/* 場所のシートの投稿：Enistagram からの引用（埋め込み）の形 */
+.e-embed { margin: 18px 0 6px; padding: 12px 12px 8px; border: 1.5px solid var(--e-line); border-radius: 22px; background: var(--e-bg); }
+.e-embed-head { display: flex; align-items: center; gap: 6px; margin: 0 4px 10px; font-size: 0.8rem; font-weight: 700; color: var(--e-navy); }
+.e-embed-head img { height: 18px; width: auto; }
+.e-embed-head .v-avg { margin-left: auto; }
+.e-embed .v-list { gap: 10px; }
+.e-embed .v-post { padding: 12px 14px; border-radius: 18px; background: var(--m-panel); box-shadow: 0 2px 8px rgba(13, 88, 129, 0.08); }
+.e-embed .v-post.is-reply { padding: 8px 0 0; border-radius: 0; box-shadow: none; }
+.e-embed .v-replies { border-left-color: #d6e3fb; }
+.e-embed .v-act:not(.is-on) { color: #5b7390; }
+.mapapp .e-embed-more { display: block; width: 100%; margin-top: 8px; padding: 8px; border: 0; background: none; color: var(--e-blue); font: 700 0.85rem var(--e-font); cursor: pointer; }
+
+/* ---------- Enistagram：さわったときの動き・読みこみ（調べて直したもの） ---------- */
+/* iPhone は 16px より小さい入力欄を押すと拡大してしまうので 16px に */
+.v-form textarea, .v-form select { font-size: 16px; }
+/* 写真の場所を先にとっておく（読みこんでもずれない） */
+.v-photo { width: 100%; aspect-ratio: 4 / 3; max-height: none; object-fit: cover; background: var(--e-soft); border-radius: 14px; }
+/* 写真 → その投稿：まわりを光らせる */
+.v-post.is-flash { animation: v-flash 0.6s ease-in-out 3 alternate; }
+@keyframes v-flash { to { box-shadow: 0 0 0 3px var(--e-blue); } }
+/* いいね：ハートがぽんとふくらむ */
+.v-like.is-pop svg { animation: v-pop 0.35s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes v-pop { 40% { transform: scale(1.35); } }
+.v-like svg { transform-origin: 50% 55%; }
+/* 文字数：あと少しで赤く */
+.v-count.is-near { color: var(--e-red); font-weight: 700; }
+/* 写真のえらびなおし */
+.v-prevbox { position: relative; justify-self: start; }
+.v-prevbox[hidden] { display: none; }
+.v-unphoto { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 1.1rem; line-height: 1; cursor: pointer; }
+/* 写真をえらぶ：キーボードでも押せるように（隠しかたを変える） */
+.v-file input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.v-file { position: relative; }
+.v-file:focus-within { outline: 2px solid var(--e-blue); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .v-like.is-pop svg, .v-post.is-flash { animation: none; } }
+
+/* ---------- シート・タブ・道案内の動き（調べて直したもの） ---------- */
+/* お知らせは Enistagram の上にも出す。ふわっと出て、ふわっと消える */
+.m-toast { z-index: 10; transition: opacity 0.2s, translate 0.2s; }
+.m-toast.is-off { opacity: 0; translate: -50% 8px; pointer-events: none; }
+/* 広げたシートは、上の検索のバーの下まで（× や見出しが押せるように） */
+.m-sheet.is-open { max-height: min(78dvh, calc(100dvh - var(--m-tabs-h) - var(--m-top-h, 170px) - 8px)); }
+/* シートが出ているときは、右のボタンは階と QR だけ（シートにかくれるので） */
+body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > :is(.m-heading, .m-compass, .m-tilt, #m-fit) { display: none; }
+/* シートが出てくるとき、下からすっと */
+.m-sheet:not([hidden]) { animation: m-sheet-in 0.28s cubic-bezier(.2, .8, .2, 1); }
+@keyframes m-sheet-in { from { translate: 0 48px; opacity: 0; } }
+/* Enistagram に切りかえたとき、ふわっと */
+.m-feed:not([hidden]) { animation: m-fade 0.18s ease-out; }
+@keyframes m-fade { from { opacity: 0; } }
+/* 押したときに少し暗く（押したことがわかるように） */
+.mapapp :is(.m-fab, .m-compass, .m-chip, .sh-btn, .rt-opt, .sh-venue, .m-sheet-x, .m-floor, .m-tabs button, .f-fab, .rt-bf, .v-act):active { filter: brightness(0.9); }
+.mapapp :is(.m-item, .rt-steps button):active { background: var(--m-panel-2); }
+/* 小さなボタンは、見た目はそのまま押せる所だけ広く */
+.m-notice button, .m-help { position: relative; } /* シートの × はもとから absolute */
+.lg-head .m-sheet-x { position: relative; }
+.m-notice button::after, .m-help::after, .m-sheet-x::after { content: ""; position: absolute; inset: -8px; }
+.m-floor:focus-visible { outline-offset: -3px; }
+/* 道案内：「3Fへ ›」の押せる所（見えない） */
+#map-svg .ic-floor .hit { fill: transparent; stroke: none; }
+/* いまの案内の場所 */
+#map-svg .mk-step circle { fill: #0b4aa2; stroke: #fff; stroke-width: 3px; }
+/* 道順の流れは 1秒に5コマで十分（電池のため） */
+#map-svg .rt-flow { animation: m-flow 1.2s steps(6) infinite; }
+/* ピンを落とす・道順をふわっと出す */
+#map-svg .mk-pin > * { animation: m-drop 0.35s cubic-bezier(.3, 1.4, .5, 1) both; }
+@keyframes m-drop { from { translate: 0 -14px; opacity: 0; } }
+#m-route polyline { animation: m-in 0.25s ease-out; }
+#m-route polyline.rt-flow { animation: m-flow 1.2s steps(6) infinite; }
+@keyframes m-in { from { opacity: 0; } }
+/* 出発地をえらんでいるとき：「出発地を選ぶ」を光らせる */
+.rt-end.is-empty { animation: m-pick 1s ease-in-out infinite alternate; }
+@keyframes m-pick { to { box-shadow: inset 0 0 0 1px var(--m-route), 0 0 0 4px rgba(26, 115, 232, 0.2); } }
+/* QR：読めたら枠が緑 */
+.scan-frame { transition: border-color 0.15s; }
+.scan-frame.is-ok { border-color: #34a853; }
+/* 動きを減らす設定のとき */
+@media (prefers-reduced-motion: reduce) {
+  .m-sheet, .m-toast { transition: none; }
+  .m-sheet:not([hidden]), .m-feed:not([hidden]), .m-floor.is-flash, .rt-end.is-empty, #map-svg .mk-pin > *, #m-route polyline, #m-route polyline.rt-flow { animation: none; }
+}
+
+/* ---------- Enistagram の投稿：Instagram のように（名前・四角い写真・♡ 💬 ↗・いいね！・コメント） ---------- */
+.m-feed { background: var(--m-panel); }
+.m-feed .f-body { padding: 0 0 96px; max-width: 520px; }
+.m-feed .v-list { gap: 0; }
+.m-feed .v-post.ig-post, .e-embed .v-post.ig-post { padding: 0 0 14px; border-radius: 0; background: none; box-shadow: none; }
+.m-feed .v-post.ig-post + .v-post.ig-post { border-top: 1px solid var(--m-line-2); padding-top: 4px; }
+/* 名前の行 */
+.ig-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.ig-av { flex: none; display: grid; place-items: center; width: 34px; height: 34px; padding: 2px; border-radius: 50%; background: var(--e-grad); }
+.ig-av i { display: grid; place-items: center; width: 100%; height: 100%; border: 2px solid #fff; border-radius: 50%; background: hsl(var(--h) 55% 88%); color: hsl(var(--h) 45% 32%); font: 700 0.8rem var(--e-font); font-style: normal; }
+.ig-av.sm { width: 26px; height: 26px; }
+.ig-av.sm i { font-size: 0.65rem; border-width: 1.5px; }
+.ig-who { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.ig-who b { font: 700 0.85rem var(--e-font); color: var(--m-ink); }
+.mapapp .ig-loc { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--m-ink); font-size: 0.72rem; cursor: pointer; text-align: left; }
+.mapapp .ig-more { width: 36px; height: 36px; padding: 6px; border: 0; background: none; color: var(--m-ink); cursor: pointer; }
+.ig-more svg { width: 22px; height: 22px; }
+/* 四角い写真・文字のカード */
+.ig-media { position: relative; aspect-ratio: 1; overflow: hidden; background: #f3f3f3; user-select: none; -webkit-user-select: none; }
+.ig-media .v-photo { width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; border-radius: 0; margin: 0; display: block; }
+.ig-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; height: 100%; padding: 12%;
+  background: linear-gradient(145deg, hsl(calc(var(--h) + 200) 75% 55%), var(--e-blue) 45%, var(--e-navy) 70%, var(--e-red)); color: #fff; text-align: center; }
+.ig-card p { margin: 0; font-size: 1.6rem; font-weight: 800; line-height: 1.45; overflow-wrap: anywhere; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); }
+.ig-card.is-mid p { font-size: 1.25rem; }
+.ig-card.is-long p { font-size: 1rem; font-weight: 700; }
+.ig-card .ig-card-stars .v-stars { color: #ffd54a; font-size: 1.2rem; letter-spacing: 0.1em; }
+/* ダブルタップの大きなハート */
+.ig-burst { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: 0; }
+.ig-burst svg { width: 30%; height: 30%; fill: #fff; stroke: none; filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.3)); }
+.ig-media.is-burst .ig-burst { animation: ig-burst 0.9s ease-out; }
+@keyframes ig-burst { 0% { opacity: 0; scale: 0.3; } 15% { opacity: 1; scale: 1.15; } 30% { scale: 0.95; } 45%, 70% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: 1; } }
+/* ♡ 💬 ↗ */
+.ig-acts { display: flex; align-items: center; gap: 4px; padding: 6px 6px 0; }
+.ig-acts .v-act { min-height: 40px; padding: 0 6px; color: var(--m-ink) !important; }
+.ig-acts .v-act svg { width: 26px; height: 26px; stroke-width: 1.8; }
+.ig-acts .v-like.is-on { color: #ff3040 !important; }
+.ig-likes { margin: 2px 12px 0; font-size: 0.85rem; font-weight: 800; color: var(--m-ink); }
+.ig-likes:empty { display: none; }
+.ig-cap { margin: 4px 12px 0; font-size: 0.88rem; color: var(--m-ink); line-height: 1.5; overflow-wrap: anywhere; }
+.ig-cap b { font-family: var(--e-font); font-weight: 700; margin-right: 4px; }
+.ig-cap .v-stars { margin-right: 4px; }
+.ig-shop { font-family: inherit !important; }
+.mapapp .ig-allc { display: block; margin: 4px 12px 0; padding: 0; border: 0; background: none; color: var(--m-ink-2); font-size: 0.85rem; cursor: pointer; }
+.ig-time { display: block; margin: 6px 12px 0; color: var(--m-ink-2); font-size: 0.68rem; letter-spacing: 0.02em; font-family: var(--e-font); }
+/* コメント */
+.ig-post .v-replies { margin: 6px 12px 0; padding: 0; border: 0; gap: 8px; }
+.ig-post .v-post.is-reply { display: flex; align-items: flex-start; gap: 8px; padding: 0; background: none; box-shadow: none; border-radius: 0; }
+.ig-cmt { flex: 1; margin: 0; font-size: 0.85rem; line-height: 1.45; overflow-wrap: anywhere; }
+.ig-cmt b { font-family: var(--e-font); font-weight: 700; margin-right: 4px; }
+.ig-cmt small { display: flex; gap: 10px; margin-top: 2px; color: var(--m-ink-2); font-size: 0.7rem; }
+.mapapp .ig-report { padding: 0; border: 0; background: none; color: var(--m-ink-2); font: inherit; cursor: pointer; }
+.ig-post .v-post.is-reply .v-like { min-height: 26px; padding: 2px; color: var(--m-ink-2); }
+.ig-post .v-post.is-reply .v-like svg { width: 14px; height: 14px; }
+.ig-post .v-post.is-reply .v-like.is-on { color: #ff3040; }
+.ig-post .v-replybox { margin: 8px 12px 0; padding: 0; background: none; }
+/* コメント欄（1行） */
+.ig-cform { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--m-line-2); }
+.ig-cform textarea { flex: 1; min-height: 36px; padding: 8px 0; border: 0; resize: none; outline: none; background: none; }
+.mapapp .ig-post-btn { padding: 8px 4px; border: 0; background: none; color: var(--e-blue); font-weight: 800; cursor: pointer; }
+.ig-cform .v-msg { flex-basis: 100%; }
+/* 引用の枠の中（場所のシート）では角を丸く */
+.e-embed .ig-media { border-radius: 14px; }
+.e-embed .v-post.ig-post { background: var(--m-panel); border-radius: 18px; overflow: hidden; }
+
+/* ---------- 新規投稿（Instagram のように） ---------- */
+.ig-form { display: grid; gap: 0; }
+.ig-fhead { position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 -2px; padding: 8px 2px; background: var(--m-panel); border-bottom: 1px solid var(--m-line-2); }
+.ig-fhead b { font-size: 1rem; font-weight: 800; }
+.mapapp .ig-fbtn { justify-self: start; padding: 6px 4px; border: 0; background: none; color: var(--m-ink); font-size: 0.95rem; cursor: pointer; }
+.mapapp .ig-fbtn.is-share { justify-self: end; color: var(--e-blue); font-weight: 800; }
+.ig-fbtn:disabled { opacity: 0.4; }
+.ig-pick { position: relative; display: block !important; aspect-ratio: 1; margin: 10px 0 0; border-radius: 14px; overflow: hidden; background: #f3f5fb; border: 2px dashed var(--e-line); cursor: pointer; }
+.ig-pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.ig-pick:focus-within { outline: 2px solid var(--e-blue); outline-offset: 2px; }
+.ig-pick-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--e-navy); }
+.ig-pick-empty[hidden] { display: none; }
+.ig-pick-empty svg { width: 48px; height: 48px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.ig-pick-empty b { font-size: 1rem; }
+.ig-pick-empty small { color: var(--m-ink-2); font-weight: 400; }
+.ig-pick .v-preview { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; object-fit: cover; border-radius: 0; }
+.ig-pick .v-preview[hidden] { display: none; }
+.ig-form > .v-unphoto { justify-self: end; position: relative; margin-top: -44px; margin-right: 8px; z-index: 1; }
+.ig-form > .v-unphoto[hidden] { display: none; }
+.ig-caprow { display: flex; gap: 10px; align-items: flex-start; padding: 12px 0 0; }
+.ig-caprow textarea { flex: 1; padding: 4px 0; border: 0 !important; outline: none; resize: none; background: none; }
+.ig-form .v-count { justify-self: end; }
+.ig-row { display: flex !important; align-items: center; gap: 10px; min-height: 48px; margin: 0; padding: 4px 0; border-top: 1px solid var(--m-line-2); font-size: 0.92rem; font-weight: 700; }
+.ig-row svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; }
+.ig-row > span { flex: 1; }
+.ig-row select { flex: 1.3; min-width: 0; padding: 6px 8px; border: 1px solid var(--m-line-2); border-radius: 8px; background: var(--m-panel); font-weight: 400; }
+.ig-row .v-starpick { flex: none; }
+.ig-row .v-starpick button { font-size: 1.5rem; }
+.ig-form .v-rule { margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) { .ig-media.is-burst .ig-burst { animation: none; } }
+
+/* タイムラインの「ポスト」：Instagram の新規投稿のように、画面いっぱいに出す */
+.m-feed .f-compose { position: fixed; left: 0; right: 0; top: 0; bottom: var(--m-tabs-h); z-index: 3; max-width: none; margin: 0; padding: env(safe-area-inset-top) 16px 24px;
+  overflow-y: auto; overscroll-behavior: contain; background: var(--m-panel); border-radius: 0; box-shadow: none; animation: ig-up 0.25s cubic-bezier(.2, .8, .2, 1); }
+.m-feed .f-compose .ig-form { max-width: 520px; margin: 0 auto; }
+@keyframes ig-up { from { translate: 0 40px; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .m-feed .f-compose { animation: none; } }
+
+/* 文字だけの投稿：Twitter のように、名前の下に本文をそのまま（四角いカードにしない） */
+.ig-post.is-text .ig-head { padding-bottom: 2px; }
+.tw-body { padding: 0 14px 0 56px; }
+.tw-review { margin: 0 0 2px; font-size: 0.85rem; }
+.tw-review .v-stars { margin-right: 6px; }
+.tw-text { margin: 0; font-size: 0.98rem; line-height: 1.6; color: var(--m-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.tw-text.is-short { font-size: 1.12rem; font-weight: 700; }
+.ig-post.is-text .ig-acts, .ig-post.is-text .ig-likes, .ig-post.is-text .ig-allc, .ig-post.is-text .v-replies, .ig-post.is-text .ig-time, .ig-post.is-text .v-replybox { margin-left: 50px; }
+.ig-post.is-text .ig-acts { padding-left: 0; }
+.ig-post.is-text .ig-acts .v-act svg { width: 22px; height: 22px; }
+/* ポストのボタン：グラデーションの上は白い字（黒い字は読みにくい） */
+.mapapp .f-fab { color: #fff; }
+.mapapp .f-fab svg { stroke: #fff; }
+
+/* ---------- 印のかたち：上下左右の真ん中・バランス（調べて直したもの） ---------- */
+/* 字は札の上下の真ん中に（y でずらさない） */
+#map-svg .ic text, .m-legend .lg-ic text { dominant-baseline: central; text-anchor: middle; }
+/* 階段：ぬりつぶした段 */
+#map-svg .ic-st path.steps, .m-legend .ic-st path.steps { fill: #fff; stroke: none; }
+/* 凡例：どの印も同じ大きさ・真ん中に */
+#m-legend-body li svg.lg-ic { width: 44px; height: 24px; }
+
+/* Enistagram の投稿の数：ロゴの青の丸に白い数字 */
+#map-svg .ic-voice .bg, .m-legend .ic-voice .bg { fill: var(--e-blue); stroke: #fff; stroke-width: 1.5px; }
+#map-svg .ic-voice text, .m-legend .ic-voice text { fill: #fff; font-size: 9px; font-family: var(--e-font); font-weight: 700; }
+
+/* Enistagram の投稿の数：ロゴと同じグラデーションの丸 */
+#map-svg .ic-voice .bg, .m-legend .ic-voice .bg { fill: url(#e-grad); }
+
+/* 形のある場所の印：ピンのかわりに輪郭の色（名前の字は動かさない） */
+#map-svg :is(.room, .area, .obldg).is-start { stroke: var(--m-route); stroke-width: 3; stroke-dasharray: 6 3; }
+#map-svg :is(.room, .area, .obldg).is-here { stroke: var(--m-here); stroke-width: 3.5; animation: m-here-line 1.4s ease-in-out infinite alternate; }
+@keyframes m-here-line { to { stroke-opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { #map-svg :is(.room, .area, .obldg).is-here { animation: none; } }
+
+/* 一覧の丸の中の絵（漢字のかわり） */
+.m-item .ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.m-item .ico svg.fig { width: 22px; height: 22px; fill: currentColor; stroke: none; }
+.m-item .ico svg.fig .ln { fill: none; stroke: currentColor; stroke-width: 1.3; }
+.m-item .ico svg.fig circle:not(.ln) { fill: currentColor; }
+.m-item .ico.k-room { font-family: var(--mono); }
+
+/* 校内装飾の撮影スポット：カメラ（1年「海」は青、2年「学科・コース」はオレンジ） */
+#map-svg .ic-deco .bg, .m-legend .ic-deco .bg { stroke: #fff; stroke-width: 1.5px; }
+#map-svg .ic-deco.g1 .bg, .m-legend .ic-deco.g1 .bg { fill: #1c8fc9; }
+#map-svg .ic-deco.g2 .bg, .m-legend .ic-deco.g2 .bg { fill: #e07b39; }
+#map-svg .ic-deco .fg *, .m-legend .ic-deco .fg * { fill: none; stroke: #fff; stroke-width: 1.3px; stroke-linejoin: round; vector-effect: none; }
+#map-svg.is-far #m-deco { display: none; }
+.m-item .ico.k-deco, .m-item .ico.k-deco.g1 { background: #1c8fc9; color: #fff; }
+.m-item .ico.k-deco.g2 { background: #e07b39; }
+
+/* 階段・エレベーターの形は部屋の上に描く（押すと下の部屋へ。印のアイコンは別に押せる） */
+#map-svg .stairs-layer { pointer-events: none; }
+
+/* 模擬店総選挙に投票（Microsoft Forms を開く） */
+.sh-actions:has(.vote) { flex-wrap: wrap; overflow: visible; }
+.sh-btn.vote { flex: 1 1 100%; justify-content: center; gap: 5px; color: #7a4a00; font-weight: 800; border: 1.5px solid #ecc978; background: linear-gradient(180deg, #fffaf0, #fff0cc); text-decoration: none; }
+.sh-btn.vote svg, .sh-vote svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sh-vote { float: right; display: inline-flex; align-items: center; gap: 3px; margin: -2px 0 0 8px; padding: 4px 10px; border-radius: 999px; font-size: .78rem; font-weight: 800; color: #7a4a00; border: 1.5px solid #ecc978; background: #fff6dc; text-decoration: none; }
+
+/* =====================================================
+   ダークモード（html[data-theme="dark"]。theme.js が決める）。色の元を入れかえ、元の色が決め打ちの所だけ直す
+   ===================================================== */
+:root[data-theme="dark"] body.mapapp {
+  --m-ink: #e8eaed; --m-ink-2: #9aa0a6;
+  --m-outside: #17191c; --m-site: #1f2226; --m-road: #3a3e45; --m-out: #6b7079;
+  --m-bldg: #2a2e34; --m-bldg-edge: #4a505a; --m-room: #343941; --m-room-edge: #4d545e; --m-shed: #2f333a;
+  --m-wc: #243447; --m-venue: #1d3d3a; --m-venue-edge: #4fb3aa; --m-exhibit: #262d52; --m-exhibit-edge: #8394f2;
+  --m-hq: #4a2a27; --m-shop: #4a3020; --m-shop-edge: #ea8a48;
+  --m-route: #5c9bff; --m-here: #5c9bff; --m-pin: #f26b5b;
+  --m-panel: #202124; --m-panel-2: #2d2e31; --m-line: rgba(255, 255, 255, 0.12); --m-line-2: #3c4043;
+  --m-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+  --m-blue-soft: #1f2d44; --m-blue-ink: #a8c7fa; --m-blue-line: #3b5b8f;
+  --m-shop-card: #33261c; --m-shop-card-line: #5a3e28; --m-shop-ink: #f3a36b;
+  --m-label: #e6e2da; --m-halo: rgba(23, 25, 28, 0.9);
+  --e-bg: linear-gradient(180deg, #151b26 0%, #1d1719 100%); --e-soft: #1f2a3d; --e-line: #2f3f5c; --e-navy: #8cc4f0;
+}
+/* 地図の中の決め打ちの色 */
+:root[data-theme="dark"] #map-svg text.lb-code { fill: #8f96a0; }
+:root[data-theme="dark"] #map-svg text.lb-fest { fill: #7fd6cc; }
+:root[data-theme="dark"] #map-svg text.lb-shop { fill: #f3a36b; }
+:root[data-theme="dark"] #map-svg text.lb-dept { fill: #aab6ff; }
+:root[data-theme="dark"] #map-svg text.lb-dept-sub { fill: #8e9cf0; }
+:root[data-theme="dark"] #map-svg text.lb-group { fill: #c7a58c; }
+:root[data-theme="dark"] #map-svg text.lb-bldg, :root[data-theme="dark"] #map-svg text.lb-bldg tspan.sub { fill: #8f949c; }
+:root[data-theme="dark"] #map-svg text.lb-area { fill: #8fbf86; }
+:root[data-theme="dark"] #map-svg text.lb-area.k-court { fill: #8fb0cc; }
+:root[data-theme="dark"] #map-svg text.lb-road { fill: #aeb3ba; }
+:root[data-theme="dark"] #map-svg .room.k-shops.is-zone { fill: #3a2a1f; }
+:root[data-theme="dark"] #map-svg .room.has-crowd { fill: color-mix(in srgb, var(--lv) 30%, var(--m-room)); }
+:root[data-theme="dark"] #map-svg .room.k-hq { stroke: #e0857a; }
+:root[data-theme="dark"] #map-svg .bldg-roof { fill: rgba(255, 255, 255, 0.03); stroke: #4a4f57; }
+:root[data-theme="dark"] #map-svg .site-bound { stroke: #3d4148; }
+:root[data-theme="dark"] #map-svg .road-public { stroke: #4a4330; }
+:root[data-theme="dark"] #map-svg .area.k-field { fill: #24382a; stroke: #3d5e44; }
+:root[data-theme="dark"] #map-svg .area.k-green { fill: #213625; stroke: #3a5a3f; }
+:root[data-theme="dark"] #map-svg .area.k-court { fill: #1f2e3c; stroke: #3b5670; }
+:root[data-theme="dark"] #map-svg .area.k-bike { fill: #262b33; stroke: #4c5563; }
+:root[data-theme="dark"] #map-svg .track { stroke: #5a3a2c; }
+:root[data-theme="dark"] #map-svg .paved { fill: #2a2d32; stroke: #3d4148; }
+:root[data-theme="dark"] #map-svg .parking { fill: #262a2f; stroke: #3d4148; }
+:root[data-theme="dark"] #map-svg .footway { stroke: #7a6326; }
+:root[data-theme="dark"] #map-svg text.lb-foot { fill: #f6d27a; stroke: #7a6326; }
+:root[data-theme="dark"] #map-svg .bikeway, :root[data-theme="dark"] .m-legend .lg-bike { stroke: #2c3e55; }
+:root[data-theme="dark"] .m-legend .lg-road { stroke: var(--m-road); filter: none; }
+:root[data-theme="dark"] .m-legend .lg-foot { stroke: #7a6326; }
+:root[data-theme="dark"] #m-hatch rect { fill: #262a30; }
+:root[data-theme="dark"] #m-hatch line { stroke: #3a3f47; }
+/* シート・一覧・Enistagram の決め打ちの色 */
+:root[data-theme="dark"] .mapapp .ig-acts .v-act { color: var(--m-ink) !important; }
+:root[data-theme="dark"] .ig-who b, :root[data-theme="dark"] .ig-likes, :root[data-theme="dark"] .ig-cap, :root[data-theme="dark"] .tw-text { color: var(--m-ink); }
+:root[data-theme="dark"] .m-feed .v-post { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); }
+:root[data-theme="dark"] .mapapp :is(input, select, textarea) { background: var(--m-panel-2); color: var(--m-ink); border-color: var(--m-line-2); }
+:root[data-theme="dark"] .sh-btn.vote { color: #ffd98a; border-color: #6b5320; background: linear-gradient(180deg, #2f2716, #3a2e14); }
+:root[data-theme="dark"] .sh-vote { color: #ffd98a; border-color: #6b5320; background: #2f2716; }
+:root[data-theme="dark"] .sh-btn.e-post { color: var(--e-navy); border-color: var(--e-line); background: linear-gradient(180deg, #1f2733, #18202b); }
+:root[data-theme="dark"] .m-tabs [data-tab="feed"][aria-selected="true"] { color: #8cc4f0; }
+/* 画面の明るさの切りかえ（地図の見かたの下） */
+.lg-theme { padding: 6px 18px 18px; }
+.lg-theme h3 { margin: 8px 0; font-size: 0.9rem; }
+.mapapp .theme-pick { background: var(--m-panel-2); }
+.mapapp .theme-pick button { color: var(--m-ink-2); }
+.mapapp .theme-pick button[aria-pressed="true"] { background: var(--tint); color: #fff; }
+/* ロゴ（紺色）は暗い所では白に */
+:root[data-theme="dark"] .mapapp :is(.sh-btn.e-post img, .f-logo img, .e-embed img[src*="enistagram"]) { filter: brightness(0) invert(1); }
+
+/* ---------- 選んだ場所（行き先）：部屋の形を上に重ねる（map.js の drawSelection） ----------
+   出てくるとき：色がふわっとのり、輪郭が太いところから細くすっと締まり、波紋が1回だけ外へ広がる。止まったあとは動かない */
+#map-svg #m-sel { pointer-events: none; }
+#map-svg #m-sel > * { stroke-linejoin: round; }
+#map-svg .sel-tint { fill: var(--m-pin); fill-opacity: 0.13; stroke: none; animation: sel-tint 0.4s ease-out both; }
+#map-svg .sel-glow { fill: none; stroke: var(--m-pin); stroke-width: 10; stroke-opacity: 0.18; animation: sel-glow 0.7s ease-out 0.15s both; }
+#map-svg .sel-line { fill: none; stroke: var(--m-pin); stroke-width: 2.75; animation: sel-line 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+#map-svg .sel-ripple { fill: none; stroke: var(--m-pin); stroke-width: 3; stroke-opacity: 0; animation: sel-ripple 1.1s cubic-bezier(0.1, 0.6, 0.3, 1) 0.25s both; }
+@keyframes sel-tint { from { fill-opacity: 0; } }
+@keyframes sel-glow { from { stroke-opacity: 0; stroke-width: 2; } }
+@keyframes sel-line { from { stroke-opacity: 0; stroke-width: 11; } }
+@keyframes sel-ripple { from { stroke-opacity: 0.5; stroke-width: 3; } to { stroke-opacity: 0; stroke-width: 34; } }
+:root[data-theme="dark"] #map-svg .sel-tint { fill-opacity: 0.2; }
+:root[data-theme="dark"] #map-svg .sel-glow { stroke-opacity: 0.28; }
+@media (prefers-reduced-motion: reduce) {
+  #map-svg #m-sel > *, #map-svg .room.is-found { animation: none; }
+}
+
+/* ---------- PC ではスマホの大きさ：真ん中に縦長の画面（幅 430px） ----------
+   .app-frame に transform をつけると、中の position: fixed（地図・検索・シート・タブ）がその中に収まる。まわりは side.js */
+@media (min-width: 600px) {
+  body.mapapp { background: transparent; height: 100dvh; overflow: hidden; } /* うしろは今の空の絵（style.css の .pc-bg） */
+  .app-frame { position: relative; width: 430px; height: 100dvh; margin: 0 auto; overflow: hidden; transform: translateZ(0); background: var(--m-outside); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 60px rgba(0, 0, 0, 0.5); }
+}
+/* もっと広い PC では、下のタブは右の案内へ（side.js）。地図の下はタブの分だけ広く */
+@media (min-width: 1000px) {
+  body.mapapp { --m-tabs-h: 0px; }
+  .m-tabs { display: none; }
+}
+
+/* =====================================================
+   トップページと同じ見た目（字と色）：地図のまわりのボタン・シート・Enistagram
+   - 字：短い見出し・ボタン・数字は WDXL Lubrifont（--hud-font）、文は Zen Kaku Gothic New（太字）
+   - 色：クリーム色の紙（ざらざらの粒）・こげ茶の字・ずらした影（押すと影の方へ沈む）
+   - 背景：最初のカラフルなグラデーション（ピンク → 赤いオレンジ → 黄色）をうすく
+   - 道順の線は「縁」の赤い糸の色。いまここ（青い点）はそのまま
+   Enistagram のロゴ・名前の字（DynaPuff）・ポストのボタンのグラデーションは、ロゴの色のまま
+   ===================================================== */
+body.mapapp {
+  --font: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  --paper: #FFFBF2; --paper-2: #FEEBC4; --ink: #634A2E;
+  --press: rgba(48, 44, 41, 0.45);
+  --iro: linear-gradient(115deg, rgba(216, 69, 127, .2), rgba(226, 98, 46, .15) 35%, rgba(227, 164, 58, .15) 65%, rgba(223, 194, 122, .2));
+  --m-ink: #634A2E; --m-ink-2: #8B6E4E; --m-accent: #C8323A;
+  --m-panel: #FFFBF2; --m-panel-2: #F6E7C8;
+  --m-line: rgba(99, 74, 46, 0.16); --m-line-2: rgba(99, 74, 46, 0.24);
+  --m-shadow: -4px 3px 0 var(--press);
+  --m-blue-soft: #634A2E; --m-blue-ink: #FEEBC4; --m-blue-line: #634A2E;
+  --m-route: #C8323A; --m-label: #4f3c27;
+  /* 地図の地面・道・建物も、少しあたたかい色に */
+  --m-outside: #ece2cc; --m-site: #f4ecda; --m-road: #fffaf0; --m-bldg: #e5d9c1; --m-bldg-edge: #b09f84;
+  --m-room: #fffbf2; --m-room-edge: #d2c3a6; --m-shed: #ece2cf;
+  --e-bg: var(--iro), #FFF6E6; --e-soft: #F6E7C8; --e-line: rgba(99, 74, 46, 0.24);
+}
+/* 地図の中の、会場などの名前は WDXL */
+#map-svg text.lb-fest { font-family: var(--hud-font); font-weight: 400; }
+
+/* 押せるものは、紙に影。押すと影の方へ沈む */
+.mapapp :is(.m-bar, .m-chip, .m-floors, .m-fab, .m-compass, .m-help) { background: var(--grain), var(--iro), var(--paper); box-shadow: var(--m-shadow); }
+.mapapp :is(.m-chip, .m-fab, .m-compass, .sh-btn, .rt-opt, .m-sheet-x, .f-seg button) { transition: translate .12s, box-shadow .12s; }
+.mapapp :is(.m-chip, .m-fab, .m-compass):active { translate: -4px 3px; box-shadow: 0 0 0 var(--press); filter: none; }
+
+/* 上：さがす */
+.m-bar { border: 1.5px solid var(--ink); }
+.m-search input { font-weight: 700; color: var(--ink); }
+.m-search input::placeholder { color: var(--m-ink-2); font-weight: 700; }
+.mapapp .m-help { border: 1.5px solid var(--ink); color: var(--ink); font-family: var(--hud-font); font-weight: 400; font-size: 1rem; box-shadow: none; }
+/* 上：よくさがすもの（縁日のジャンルの札と同じ形） */
+.m-chip { border: 1.5px solid var(--ink); color: var(--ink); font-size: 0.82rem; }
+.mapapp .m-chip[aria-pressed="true"] { background: var(--ink); color: var(--paper-2); box-shadow: var(--m-shadow); }
+.m-mappick { border-color: var(--ink); color: var(--ink); background: var(--grain), var(--iro), var(--paper); font-family: var(--hud-font); font-weight: 400; font-size: 1.05rem; }
+/* 右：階（数字は WDXL で大きめ）・方位・いまここ */
+.m-floors { border: 1.5px solid var(--ink); border-radius: 12px; }
+.m-floor { font-family: var(--hud-font) !important; font-weight: 400; font-size: 1.15rem; color: var(--m-ink-2) !important; }
+.m-floor[aria-checked="true"] { background: var(--ink); color: var(--paper-2) !important; }
+.m-floor .dot { background: var(--m-route); box-shadow: 0 0 0 2px var(--paper); }
+.m-fab, .m-compass { border: 1.5px solid var(--ink); }
+.m-fab svg { stroke: var(--ink); }
+.m-tilt { font-family: var(--hud-font); font-weight: 400; font-size: 1rem; color: var(--ink); }
+.mapapp .m-tilt[aria-pressed="true"] { background: var(--ink); color: var(--paper-2); }
+.m-compass b { color: var(--ink); }
+.mapapp .m-heading[aria-pressed="true"] { background: var(--m-here); }
+
+/* 下：シート（みどころ・縁日の詳しいシートと同じ紙） */
+.m-sheet { background: var(--grain), var(--iro), var(--paper); border-radius: 12px 12px 0 0; box-shadow: 0 -3px 0 rgba(99, 74, 46, .12), 0 -6px 18px rgba(48, 44, 41, .18); }
+.m-grip::before { background: rgba(99, 74, 46, .3); }
+/* × は丸いクリーム色のボタン（みどころのページと同じ） */
+.m-sheet-x { background: var(--grain), var(--iro), var(--paper-2); box-shadow: -3px 2px 0 var(--press); }
+.m-sheet-x svg { stroke: var(--ink); stroke-width: 2.6; }
+.mapapp .m-sheet-x:active { translate: -3px 2px; box-shadow: 0 0 0 var(--press); filter: none; }
+.sh-title { font-family: var(--hud-font); font-weight: 400; font-size: 1.7rem; line-height: 1.2; }
+.sh-kind { font-family: var(--hud-font); font-weight: 400; font-size: 0.95rem; letter-spacing: 0.04em; }
+.sh-sub { font-size: 0.85rem; }
+.sh-desc { font-size: 0.92rem; line-height: 1.7; }
+/* 小見出し（企画・模擬店など）は、詳しいシートの「日時・場所」と同じ、こげ茶の丸い札 */
+.sh-h, .m-results h3 { display: table; margin: 18px 0 8px; padding: 2px 12px 1px; border-radius: 999px; background: var(--ink); color: var(--paper-2); font-family: var(--hud-font); font-weight: 400; font-size: 0.9rem; letter-spacing: 0.04em; line-height: 1.5; }
+.m-results h3 { margin: 16px auto 6px 0; }
+.sh-h .e-word { font-size: 0.85rem; background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--paper-2); }
+.sh-events time { font-family: var(--hud-font); font-size: 1rem; color: var(--m-accent); }
+.sh-events em { font-size: 0.85rem; }
+.sh-events li { font-weight: 700; }
+/* 模擬店の名前は、Zen Kaku のいちばん太い字（900） */
+.sh-shops b, .m-item:has(.ico.k-shop, .ico.k-shops) b, .ig-shop { font-weight: 900; }
+/* ボタン：こげ茶のふち・WDXL。いちばん大事なもの（経路）は、こげ茶の紙 */
+.mapapp .sh-btn { border: 1.5px solid var(--ink); background: var(--grain), var(--iro), var(--paper); color: var(--ink); font-family: var(--hud-font); font-weight: 400; font-size: 1.02rem; box-shadow: -3px 2px 0 var(--press); }
+.mapapp .sh-btn.primary { background: var(--grain), var(--ink); border-color: var(--ink); color: var(--paper-2); }
+.sh-btn.is-icon { color: var(--ink); }
+.mapapp .sh-btn:active { translate: -3px 2px; box-shadow: 0 0 0 var(--press); filter: none; }
+.mapapp .sh-btn.e-post { font-family: var(--hud-font); font-weight: 400; color: var(--ink); border: 1.5px solid var(--ink); background: var(--grain), var(--iro), var(--paper); }
+.sh-btn.vote { font-family: var(--hud-font); font-weight: 400; }
+.sh-venue { border: 1.5px solid var(--m-line-2); background: var(--grain), var(--iro), var(--paper); }
+.sh-venue b { font-family: var(--hud-font); font-weight: 400; font-size: 1rem; }
+/* 道案内 */
+.rt-end { border-color: var(--m-line-2); background: var(--iro), var(--paper); }
+.rt-opt { border: 1.5px solid var(--ink); background: var(--iro), var(--paper); color: var(--ink); }
+.rt-opt[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper-2); }
+.rt-sum b { font-family: var(--hud-font); font-weight: 400; }
+.rt-warn { background: #FBE3CF; color: #8a3b10; }
+@keyframes m-pick { to { box-shadow: inset 0 0 0 1px var(--m-route), 0 0 0 4px rgba(200, 50, 58, 0.2); } }
+/* 一覧・さがした結果 */
+.m-results { background: var(--grain), var(--iro), var(--paper); }
+.m-item b { font-weight: 700; }
+.m-item .dist b { font-family: var(--hud-font); font-weight: 400; font-size: 1.05rem; }
+/* お知らせ（下に出る小さな札） */
+.m-toast { background: var(--ink); color: var(--paper-2); box-shadow: -3px 2px 0 var(--press); }
+
+/* ---------- Enistagram ---------- */
+.m-feed { background: var(--grain), var(--iro), #FFF6E6; }
+.f-head { background: rgba(255, 246, 230, 0.9); box-shadow: 0 1.5px 0 rgba(99, 74, 46, 0.18); }
+/* タイムライン・写真の切りかえ：こげ茶の札 */
+.f-seg { padding: 3px; border: 1.5px solid var(--ink); background: var(--iro), var(--paper); }
+.f-seg button { font-family: var(--hud-font); font-weight: 400; font-size: 0.95rem; color: var(--ink); }
+.f-seg button[aria-selected="true"] { background: var(--ink); color: var(--paper-2); box-shadow: none; }
+/* 投稿のあいだの線・写真の下地 */
+.m-feed .v-post.ig-post + .v-post.ig-post { border-top: 1.5px dashed rgba(99, 74, 46, 0.25); }
+.ig-media, .f-cell { background: var(--m-panel-2); }
+.ig-likes { font-family: var(--hud-font); font-weight: 400; font-size: 0.95rem; }
+.ig-cap, .tw-text, .ig-cmt { font-weight: 700; }
+.mapapp .ig-acts .v-act { color: var(--ink) !important; }
+.mapapp .ig-acts .v-like.is-on { color: #ff3040 !important; }
+/* 文字だけの投稿の四角いカード：ポスターの空の色（ピンク → 赤いオレンジ → 黄色） */
+.ig-card { background: linear-gradient(145deg, #d8457f, #e2622e 40%, #e3a43a 75%, #dfc27a); }
+.ig-card p { font-family: var(--hud-font); font-weight: 400; }
+/* 新しい投稿の画面 */
+.ig-fhead { background: var(--iro), var(--paper); border-bottom-color: var(--m-line-2); }
+.ig-fhead b { font-family: var(--hud-font); font-weight: 400; font-size: 1.15rem; }
+.ig-pick { background: var(--grain), var(--iro), var(--paper); border-color: rgba(99, 74, 46, .35); }
+.ig-pick-empty { color: var(--ink); }
+.ig-pick-empty b { font-family: var(--hud-font); font-weight: 400; font-size: 1.1rem; }
+.ig-row { border-top-color: var(--m-line-2); }
+.m-feed .f-compose { background: var(--grain), var(--iro), var(--paper); }
+/* ポストのボタン：ロゴの色のまま、影だけトップと同じずらした影 */
+.mapapp .f-fab { box-shadow: -4px 3px 0 var(--press); font-family: var(--hud-font); font-weight: 400; font-size: 1.15rem; }
+.mapapp .f-fab:active { translate: -4px 3px; box-shadow: 0 0 0 var(--press); filter: none; }
+
+/* 地図の絵の上にも、同じグラデーションをうっすら（さわるのは地図のまま） */
+.m-canvas::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, #d8457f, #e2622e 35%, #e3a43a 65%, #dfc27a); opacity: .12; }
+/* PC の地図のまわりの枠も */
+.app-frame { background: var(--iro), var(--m-outside); }
+/* 横にすべらせる列（ボタン・よくさがすもの）は、はしで中身が切れる。ずらした影（左と下）の分だけ、列を外に広げて中を空ける */
+.sh-actions { margin: 14px -6px 0; padding: 2px 6px 7px; }
+.m-chips { max-width: 572px; margin: 8px max(-6px, calc((100% - 572px) / 2)) 0; padding: 2px 6px 8px; }
+.sh-venues { padding-bottom: 8px; }
+.g-filter { padding-bottom: 7px; }
+/* 絵文字のかわりの線のアイコン（よくさがすもの・シートの札・地図で選ぶ） */
+.m-chip i { display: grid; place-items: center; }
+.m-chip i svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.m-chip i svg.fig { width: 20px; fill: currentColor; stroke: none; }
+.m-chip i svg.fig .ln { fill: none; stroke: currentColor; stroke-width: 1.3; }
+.m-chip[data-chip="now"] i, .m-chip[data-chip="aed"] i { color: #C8323A; }
+.m-chip[aria-pressed="true"] i { color: inherit; }
+.sh-badge svg, .m-mappick svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.m-mappick { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.m-mappick svg { width: 18px; height: 18px; }
+/* さがす欄：虫眼鏡・入力欄・（さがしているときだけ）× だけにして、すっきり */
+.m-bar { padding: 4px 6px 4px 14px; }
+.m-search { display: flex; align-items: center; gap: 8px; }
+.m-glass { flex: none; width: 21px; height: 21px; fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; }
+/* 地図の見かた（?）は、右のボタンの列のいちばん下 */
+.mapapp .m-help.m-fab { width: 48px; height: 48px; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--grain), var(--iro), var(--paper); box-shadow: var(--m-shadow); font-size: 1.35rem; }
+body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none; }
+/* 「いまここ」QR を読むところは、どこでも同じ見た目：QR の絵＋「「いまここ」QRを読む」・こげ茶のふちの紙のボタン（右の列の丸いボタンも同じ絵・同じ色） */
+.mapapp .qr-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px; border: 1.5px solid var(--ink); border-radius: 999px;
+  background: var(--grain), var(--iro), var(--paper); color: var(--ink); font-family: var(--hud-font); font-weight: 400; font-size: 1.02rem;
+  box-shadow: -3px 2px 0 var(--press); cursor: pointer;
+}
+.mapapp .qr-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mapapp .qr-btn:active { translate: -3px 2px; box-shadow: 0 0 0 var(--press); filter: none; }
+.mapapp .m-qr svg { stroke: var(--ink); }
+/* QR を読む画面も、同じ紙 */
+.m-scan { background: var(--grain), var(--iro), var(--paper); color: var(--ink); border: 1.5px solid var(--ink); border-radius: 12px; box-shadow: -4px 3px 0 var(--press); }
+.m-scan::backdrop { background: rgba(48, 36, 30, 0.55); }
+.scan-title { margin: 0 0 12px; font-family: var(--hud-font); font-size: 1.3rem; line-height: 1.2; }
+.scan-msg { font-weight: 700; }
+
+/* 下のタブが浮いた帯になったので、Enistagram・検索の結果は画面のいちばん下までのばす（中身は帯の上まで）。場所のシートは帯の上に浮かせる */
+.mapapp .m-feed { bottom: 0; }
+.mapapp .m-feed .f-body { padding-bottom: calc(var(--m-tabs-h) + 80px); }
+.mapapp .m-feed .f-compose { bottom: 0; padding-bottom: calc(var(--m-tabs-h) + 24px); }
+.mapapp .m-results { padding-bottom: calc(var(--m-tabs-h) + 16px); }

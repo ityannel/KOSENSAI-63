@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# 高専祭サイト：手元だけのもの
+.firebase/
+.claude/
+__pycache__/
+# スタンプラリーの合言葉を作るツール（自分のPCで開くだけ。公開しない）
+tools/rally-admin.html

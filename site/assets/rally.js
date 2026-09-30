@@ -1,0 +1,303 @@
+// スタンプラリー
+// ・模擬店に貼った QR（rally.html?s=店ID&c=合言葉）を、スマホのカメラかページの「お店の QR を読む」で読むとスタンプが押される
+// ・合言葉は日ごとに変えられる（config.js の codes に日付ごとの暗号化した値を入れる）
+// ・スタンプはこのスマホの中だけに保存する（名前などの個人情報は集めない）
+// ・goal 個たまると達成画面。本部のスタッフが番号を入れると「引き換え済み」になる
+import { RALLY, FESTIVAL } from "./config.js";
+import { openQrScanner } from "./qr-scan.js";
+
+const STORE_KEY = "kosen63-rally";
+const $ = (sel) => document.querySelector(sel);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+// 表記ゆれを吸収：全角半角・大文字小文字・カタカナ→ひらがな・空白
+export function normalize(s) {
+  return String(s).normalize("NFKC").trim().toLowerCase().replace(/\s+/g, "")
+    .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+}
+
+export async function sha256(text) {
+  const bytes = new TextEncoder().encode(text);
+  // https でないページ（同じWi-Fiのスマホで確認するときなど）では crypto.subtle が使えないので自前で計算する
+  if (!globalThis.crypto?.subtle) return sha256Fallback(bytes);
+  const buf = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// SHA-256（FIPS 180-4）をそのまま書いたもの
+function sha256Fallback(bytes) {
+  const K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
+  const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const len = bytes.length;
+  const padded = new Uint8Array(((len + 9 + 63) >> 6) << 6);
+  padded.set(bytes);
+  padded[len] = 0x80;
+  const view = new DataView(padded.buffer);
+  view.setUint32(padded.length - 8, Math.floor((len * 8) / 2 ** 32));
+  view.setUint32(padded.length - 4, (len * 8) >>> 0);
+  const W = new Uint32Array(64);
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let off = 0; off < padded.length; off += 64) {
+    for (let i = 0; i < 16; i++) W[i] = view.getUint32(off + i * 4);
+    for (let i = 16; i < 64; i++) {
+      const s0 = rotr(W[i - 15], 7) ^ rotr(W[i - 15], 18) ^ (W[i - 15] >>> 3);
+      const s1 = rotr(W[i - 2], 17) ^ rotr(W[i - 2], 19) ^ (W[i - 2] >>> 10);
+      W[i] = (W[i - 16] + s0 + W[i - 7] + s1) >>> 0;
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let i = 0; i < 64; i++) {
+      const t1 = (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + W[i]) >>> 0;
+      const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+      [h, g, f, e, d, c, b, a] = [g, f, e, (d + t1) >>> 0, c, b, a, (t1 + t2) >>> 0];
+    }
+    [a, b, c, d, e, f, g, h].forEach((v, i) => (H[i] = (H[i] + v) >>> 0));
+  }
+  return H.map((v) => v.toString(16).padStart(8, "0")).join("");
+}
+
+function load() {
+  try {
+    return { stamps: {}, claimedAt: null, ...JSON.parse(localStorage.getItem(STORE_KEY) ?? "{}") };
+  } catch {
+    return { stamps: {}, claimedAt: null };
+  }
+}
+function save() {
+  if (DEMO) return; // 見た目をたしかめているときは、本物のスタンプに混ぜない
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  } catch {
+    // 保存できないブラウザでは、このページを開いている間だけ有効。そのことを知らせる
+    const note = document.getElementById("rally-note");
+    if (!note) return;
+    note.dataset.kind = "warn";
+    note.textContent = "このブラウザではスタンプを保存できません。ページを閉じると消えてしまうので、SafariやChromeで開き直してください。";
+  }
+}
+
+// Instagram や LINE のアプリ内ブラウザは、Safari / Chrome と保存場所が別になる。
+// QR をカメラで読むと Safari / Chrome で開くので、スタンプが別々に分かれてしまう
+function warnInAppBrowser() {
+  if (!/Instagram|FBAN|FBAV|\bLine\//i.test(navigator.userAgent)) return;
+  const note = document.getElementById("rally-note");
+  note.dataset.kind = "warn";
+  note.innerHTML = "いまアプリの中のブラウザで開いています。<b>スタンプがSafariやChromeと別々になってしまう</b>ので、右上のメニューから「ブラウザで開く」を選んでから集めてください。";
+}
+
+let state = load();
+// 対象のお店。手元（localhost）で ?demo を付けたときだけ、見た目をたしかめる仮のお店とスタンプ
+const DEMO = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSearchParams(location.search).has("demo");
+const DEMO_SHOPS = [{ id: "d1", name: "5SE たこ焼き" }, { id: "d2", name: "麺屋 つちよし" }, { id: "d3", name: "クッキングミオ♡" }, { id: "d4", name: "やきとり処清" }];
+const shops = () => (DEMO ? DEMO_SHOPS : RALLY.shops);
+if (DEMO) state = { ...state, stamps: { d1: Date.parse("2026-10-24T11:20:00+09:00"), d2: Date.parse("2026-10-24T13:05:00+09:00") } };
+export const stampCount = () => Object.keys(state.stamps).length;
+export const stampIds = () => Object.keys(state.stamps);
+let nowMs = () => Date.now();
+const tokyoDate = () => new Date(nowMs()).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" }); // YYYY-MM-DD
+
+// 合言葉が今日のどの店のものかを調べる。店IDが分かっていればその店だけ
+async function findShop(code, shopId) {
+  const today = tokyoDate();
+  const candidates = shopId ? RALLY.shops.filter((s) => s.id === shopId) : RALLY.shops;
+  for (const shop of candidates) {
+    const expected = shop.codes[today];
+    if (expected && expected === await sha256(`kosen63:${shop.id}:${today}:${normalize(code)}`)) return shop;
+  }
+  return null;
+}
+
+async function stamp(code, shopId) {
+  if (!RALLY.shops.some((s) => s.codes[tokyoDate()])) {
+    return message("スタンプは開催日（" + FESTIVAL.days.map((d) => d.label).join("・") + "）に押せます。", "warn");
+  }
+  const shop = await findShop(code, shopId);
+  if (!shop) return message("この QR ではスタンプを押せませんでした。お店の人に聞いてみてください。", "warn");
+  if (state.stamps[shop.id]) return message(`「${shop.name}」のスタンプはもう押してあります。`, "info");
+  state.stamps[shop.id] = nowMs();
+  save();
+  celebrate(shop);
+}
+
+
+// ---------- スタンプカード（rally.html）：本物のカードのように ----------
+// 表：「縁」のロゴ・カード番号・スタンプの丸（達成に必要な数）。押したお店の名前と日にちが、はんこの下に入る
+// 裏：あそびかた・景品・引き換える場所・対象のお店。カードを押すと、くるっと裏返る
+const shopOf = (id) => shops().find((s) => s.id === id);
+const md = (t) => new Date(t).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric" }).replace("/", ".");
+const TILTS = [-9, 7, -4, 11, -12, 5];
+let justStamped = null; // いま押したお店（そのはんこだけ、ポンッと押される動き）
+
+// カード番号：このスマホで最初に開いたときに決める（4けた）。本物のカードの通し番号のように
+function cardNo() {
+  if (!state.no) { state.no = String(1000 + Math.floor(Math.random() * 9000)); save(); }
+  return state.no;
+}
+
+function message(text, kind = "info") {
+  const el = $("#rally-msg");
+  if (!el) return;
+  el.textContent = text;
+  el.dataset.kind = kind;
+}
+
+// スタンプを押した瞬間：カードを表に戻して、そのはんこだけ上から押される
+function celebrate(shop) {
+  justStamped = shop.id;
+  const card = $(".rc");
+  if (card) card.setAttribute("aria-pressed", "false");
+  render();
+  $("#rc")?.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  const count = stampCount();
+  message(count >= RALLY.goal ? `「${shop.name}」のスタンプを押しました。達成です！` : `「${shop.name}」のスタンプを押しました！ あと${RALLY.goal - count}個`, "ok");
+}
+
+function slotsHtml() {
+  const ids = Object.keys(state.stamps).sort((a, b) => state.stamps[a] - state.stamps[b]); // 押した順
+  const n = Math.max(RALLY.goal, ids.length);
+  return Array.from({ length: n }, (_, i) => {
+    const id = ids[i];
+    if (!id) return `<li class="rc-slot"><span class="rc-ring" aria-hidden="true"><b>${i + 1}</b></span><span class="visually-hidden">${i + 1}個目：まだ</span></li>`;
+    const s = shopOf(id);
+    return `<li class="rc-slot is-stamped${id === justStamped ? " is-new" : ""}" style="--tilt:${TILTS[i % TILTS.length]}deg">
+      <span class="rc-ring" aria-hidden="true"><i class="rc-hanko">縁</i>${id === justStamped ? '<i class="rc-pon">ポンッ</i>' : ""}</span>
+      <span class="rc-shop">${esc(s?.name ?? "")}</span><small class="rc-date">${md(state.stamps[id])}</small>
+    </li>`;
+  }).join("");
+}
+
+function render() {
+  const count = stampCount();
+  const done = count >= RALLY.goal;
+  const flipped = $(".rc")?.getAttribute("aria-pressed") === "true";
+  const list = shops();
+  $("#rc").innerHTML = `
+    <button type="button" class="rc" aria-pressed="${flipped}" aria-label="スタンプカード（押すと裏返る）">
+      <span class="rc-face rc-front">
+        <span class="rc-head">
+          <img class="rc-logo" src="assets/img/logo.webp" width="673" height="657" alt="">
+          <span class="rc-name"><b>模擬店スタンプラリー</b><small>第${esc(FESTIVAL.edition)}回 函館高専祭「縁」</small></span>
+          <span class="rc-no">No.<b>${cardNo()}</b></span>
+        </span>
+        <ol class="rc-slots">${slotsHtml()}</ol>
+        <span class="rc-foot">
+          <b class="rc-state">${done ? (state.claimedAt ? "引き換え済み" : "達成！ 景品と交換できます") : `あと<em>${RALLY.goal - count}</em>個で景品！`}</b>
+          <small class="rc-turn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9M4 5v4h4M4 13a8 8 0 0 0 14.3 4.9M20 19v-4h-4"/></svg>うらを見る</small>
+        </span>
+        ${state.claimedAt ? '<i class="rc-claimed" aria-hidden="true">引換済</i>' : ""}
+      </span>
+      <span class="rc-face rc-back">
+        <b class="rc-back-title">あそびかた</b>
+        <ol class="rc-rules">
+          <li>対象の模擬店で、お店の QR を読む</li>
+          <li>スタンプが<em>${RALLY.goal}個</em>たまったら達成</li>
+          <li>${esc(RALLY.claimPlace)}で、この画面を見せて景品と交換</li>
+        </ol>
+        <small class="rc-prize">${esc(RALLY.prize)}</small>
+        <small class="rc-shops">${list.length ? `対象のお店：${list.map((s) => esc(s.name)).join("・")}` : "対象のお店は、決まりしだいここに出ます"}</small>
+      </span>
+    </button>`;
+  justStamped = null;
+
+  const goal = $("#rally-goal");
+  goal.hidden = !done;
+  if (!done) return;
+  if (state.claimedAt) {
+    const when = new Date(state.claimedAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    goal.innerHTML = `
+      <div class="goal-card is-claimed">
+        <p class="goal-title">引き換え済みです</p>
+        <p>${esc(when)} に引き換えました。ご参加ありがとうございました！</p>
+      </div>`;
+    return;
+  }
+  // 画面のスクショで使い回せないよう、今の時刻が秒単位で動き、背景も流れ続ける
+  goal.innerHTML = `
+    <div class="goal-card">
+      <p class="goal-title">達成！</p>
+      <p>${esc(RALLY.prize)}。<br>この画面を<b>${esc(RALLY.claimPlace)}</b>で見せてください。</p>
+      <p class="goal-clock" id="goal-clock" aria-live="off"></p>
+      <form class="claim-form" id="claim-form">
+        <label for="claim-pin">スタッフ用</label>
+        <input id="claim-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="番号">
+        <button type="submit">引き換える</button>
+      </form>
+      <p class="claim-msg" id="claim-msg" role="status"></p>
+    </div>`;
+  tickClock();
+  $("#claim-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pin = $("#claim-pin").value;
+    if (await sha256(`kosen63:staff:${normalize(pin)}`) !== RALLY.staffPinHash) {
+      $("#claim-msg").textContent = "番号が違います（スタッフが入力します）";
+      return;
+    }
+    state.claimedAt = nowMs();
+    save();
+    render();
+  });
+}
+
+function tickClock() {
+  const el = document.getElementById("goal-clock");
+  if (el) el.textContent = new Date(nowMs()).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" });
+}
+
+// スタンプカードのページ（rally.html）
+export function initRallyPage(getNow = () => Date.now()) {
+  nowMs = getNow;
+  warnInAppBrowser();
+  render();
+  setInterval(tickClock, 1000);
+
+  // カードを押すと裏返る
+  $("#rc").addEventListener("click", (e) => {
+    const b = e.target.closest(".rc");
+    if (b) b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
+  });
+  // お店の QR を読む（ページの中のカメラ）。読めたら、その QR の合言葉でスタンプを押す
+  $("#rally-scan").addEventListener("click", () => openQrScanner({
+    title: "お店の QR を読む",
+    hint: "模擬店に置いてある QR を枠に入れてください",
+    wrong: "スタンプラリーの QR ではないようです",
+    noCamera: "スマホのカメラアプリでお店の QR を読んでも、スタンプは押せます",
+    accept: (text) => {
+      try {
+        const q = new URL(text, location.href).searchParams;
+        return q.get("s") && q.get("c") ? { s: q.get("s"), c: q.get("c") } : null;
+      } catch { return null; }
+    },
+    onRead: ({ s, c }) => stamp(c, s),
+  }));
+
+  // QR から来たとき（?s=店ID&c=合言葉）。押したらURLから消して、再読み込みで二重に出ないようにする
+  const params = new URLSearchParams(location.search);
+  if (params.has("s") && params.has("c")) {
+    const [s, c] = [params.get("s"), params.get("c")];
+    params.delete("s");
+    params.delete("c");
+    history.replaceState(null, "", location.pathname + (params.size ? `?${params}` : ""));
+    stamp(c, s);
+  }
+}
+
+// トップページの「縁日」の下の、小さなスタンプカード（入口）。押すとスタンプカードのページ
+export function renderMini(el) {
+  if (!el) return;
+  const count = stampCount();
+  const n = Math.max(RALLY.goal, count);
+  el.innerHTML = `
+    <a class="rc-mini" href="rally.html">
+      <img class="rc-logo" src="assets/img/logo.webp" width="673" height="657" alt="">
+      <span class="rc-mini-txt"><b>スタンプカード</b><small>模擬店スタンプラリー</small></span>
+      <span class="rc-mini-dots" aria-label="${count} / ${RALLY.goal}">${Array.from({ length: n }, (_, i) => `<i${i < count ? ' class="on"' : ""}>${i < count ? "縁" : ""}</i>`).join("")}</span>
+    </a>`;
+}

@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>第63回 函館高専祭「縁」</title>
+  <meta name="description" content="第63回 函館高専祭 テーマ「縁」 2026年10月24日(土) 12:00〜17:00・25日(日) 10:00〜17:00">
+  <meta property="og:title" content="第63回 函館高専祭「縁」">
+  <meta property="og:description" content="2026年10月24日(土) 12:00〜17:00・25日(日) 10:00〜17:00 開催">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.hakodate-ct.ac.jp/gac_event/">
+  <meta property="og:image" content="https://www.hakodate-ct.ac.jp/gac_event/assets/img/ogp.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#3E3F42">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/img/icon-180.png">
+  <meta name="apple-mobile-web-app-title" content="高専祭">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- カウントダウンの字（Figma と同じ WDXL Lubrifont JP N）。全部だと10MBあるので、使う字だけを読み込む。
+       config.js の企画名・会場名を変えたら python tools/update-font-subset.py を動かす -->
+  <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;display=swap&amp;text=%E9%AB%98%E5%B0%82%E7%A5%AD%E3%81%BE%E3%81%A7%E3%81%82%E3%81%A8%E6%97%A5%E6%99%82%E9%96%93%E5%88%86%E7%A7%920123456789%3A%E3%80%9C%40%20-%21%EF%BC%81%E2%97%8F%E9%96%8B%E5%82%AC%E4%B8%AD%E6%9C%AC%E3%81%AF%E7%B5%82%E4%BA%86%E3%82%82%E3%81%AA%E3%81%8F%E5%A0%B4%E3%81%AE%E5%85%AC%E3%81%97%E3%81%9F%E3%81%8A%E6%A5%BD%E3%81%BF%E3%81%A0%E3%81%95%E3%81%84%E4%BC%9A%E3%82%92%E7%AC%AC%E5%9B%9E%E5%87%BD%E9%A4%A8%E3%81%94%E6%9D%A5%E3%82%8A%E3%81%8C%E3%81%86%E3%81%96%E6%98%8ENOWEXT%E5%AD%A6%E7%94%9F%E4%B8%BB%E4%BA%8B%E3%82%88~.SUMDHFRA%E6%A7%8B%E5%86%85%E8%A3%85%E9%A3%BE%E3%82%B9%E3%83%86%E3%83%BC%E3%82%B8%E3%83%91%E3%83%95%E3%82%A9%E3%83%9E%E3%83%B3%E8%8A%B1%E7%81%AB%E7%A7%91%E5%B1%95%E7%A4%BA%E6%A8%A1%E6%93%AC%E5%BA%97%E6%8A%BD%E9%81%B8%E4%BC%81%E6%A5%AD%E3%82%BB%E3%83%9F%E3%83%8A%E3%83%BB%E8%A3%BD%E5%93%81%E7%B7%8F%E6%8C%99%E7%B5%90%E6%9E%9C%E7%99%BA%E8%A1%A8%E5%A4%A7%7Bclose%7D%E8%BB%8A%E6%AD%A2%E3%82%81%E3%82%89%E3%82%8C%E3%81%9B%E3%82%93%E3%82%B0%E3%83%A9%E3%82%A6%E3%83%89%E7%AB%8B%E3%81%A1%E5%85%A5%E7%A6%81%E3%81%A9%E6%92%AE%E3%81%A3%E3%81%A6%E6%8A%95%E7%A8%BF%E3%83%A2%E3%83%83%E3%82%B7%E3%83%A5%E3%83%80%E3%82%A4%E3%83%96%E7%A5%A8%E3%81%8D%E3%81%B8%E6%A0%A1%E5%85%A8%E9%9D%A2%E7%85%99%E3%82%A8%E5%90%B9%E5%A5%8F%E6%94%BE%E8%AA%B2%E5%BE%8C%E3%82%AA%E3%83%90%E3%82%AF%E3%83%ADam%E7%B8%81%E3%82%B3%E3%83%AB%E3%82%BA%E3%83%9C%E3%83%88%E6%BC%AB%E6%89%8D%E3%83%8F%E3%83%AA%E8%B7%AF%E3%82%A2%E3%82%AB%E3%83%9A%E3%83%99KV%E4%BA%94%E7%A8%9C%E9%83%AD%E3%82%B5%E3%83%A0%E3%83%81%E5%AE%9A%E9%9B%BB%E5%9C%A7%E3%83%8B%E5%BC%B1%E5%BC%BE%E8%AA%9E%E8%B8%8A%E9%9A%8A%E4%BB%98%E3%81%91%E5%A4%9C%E7%B7%9A%E3%83%87%E3%81%AD%E3%81%98%E5%B7%BB%E3%83%97%E3%82%A1%E3%83%A7%E3%82%A3%E3%83%AC%E5%90%88%E5%90%8CJ%E5%A5%BD%E7%84%BC%E9%BA%BA%E5%B1%8B%E3%81%A4%E3%81%93%E6%B2%B9%E3%81%9D%E3%81%B0%E5%B7%A5%E5%8B%99%E3%83%A1%E3%83%AF%E9%87%8E%E7%90%83%E9%83%A8%E3%82%84%EF%BC%86%E3%82%B1%E3%82%ADip%26ChzngP%E2%98%86%EF%BD%9E%E3%82%85%E3%82%8D%E3%81%99%E5%96%AB%E8%8C%B6%E6%82%A6%E7%B4%94%E9%99%B8%E3%81%AB%E3%81%8E%C3%B4tu%E5%9C%92%E3%81%8B%E8%84%B1%E5%87%BA%E7%89%B9%E3%82%A7%E7%86%B1%E3%82%8F%E3%82%83%E2%99%A1YdLb%E9%BB%84%E9%87%91%E4%B8%91%E5%88%BB%E5%8F%82rG%E7%A0%94%E7%A9%B6%E9%81%8B%E8%BB%A2%E3%82%BF%E5%87%A6%E6%B8%85%E3%83%9BB%E8%AC%9B%E7%BE%A9%E5%AE%A4Z%E5%AE%9F%E7%BF%92%E4%B8%80%E4%BD%93%E8%82%B2%E6%9D%B1%E4%BA%AC%E6%B0%B4%E9%81%93%E4%BA%8C%E5%A4%AA%E5%B9%B3%E6%B4%8B%E9%A3%9F%E5%8D%81%E5%A0%82%E5%9B%B3%E6%9B%B8%E7%8E%84%E9%96%A2%E3%81%BB%E8%A6%8B%E3%82%8B%E8%A9%B3%E4%BB%B6%EF%BC%88%EF%BC%89%E5%9C%B0%E6%89%80%E6%A1%88%E3%80%81%E7%A8%AE%E9%A1%9E%E5%9B%A3%E5%89%8D%E6%AC%A1%E7%9A%86%E5%8D%94%E8%B3%9B%E4%BD%BF%E8%BF%BD%E5%8A%A0Q%E8%AA%AD%E3%82%80%E5%80%8B%E6%99%AF%E9%81%94%E6%88%90%E5%BC%95%E6%8F%9B%E3%81%88%E6%B8%88%E3%81%B3%E3%83%9D%E6%8A%BC%E8%A8%80%E8%91%89%E3%83%A3%C3%97%E7%A8%8BI%3F%3Df" rel="stylesheet">
+  <!-- 下のタブの「Enistagram」の字（ロゴと同じ DynaPuff。使う字だけ） -->
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&amp;display=swap&amp;text=Enistagram" rel="stylesheet">
+  <!-- 学生主事メッセージの字（Figma と同じ Zen Kaku Gothic New。使う字だけ。python tools/update-font-subset.py で更新） -->
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&amp;display=swap&amp;text=%E8%BF%91%E5%B9%B4%E3%81%AE%E6%97%A5%E6%9C%AC15%E6%AD%B3%E4%BA%BA%E5%8F%A3%E3%81%AF%E7%B4%840%E4%B8%87%E3%80%82%E3%81%93%E3%81%86%E3%81%A1%E9%AB%98%E5%B0%82%E5%85%A5%E5%AD%A6%E8%80%85%E6%95%B0%E6%88%91%E3%82%89%E5%83%85%E3%81%8B%25%E4%BE%A1%E5%80%A4%E3%81%82%E3%82%8B%E7%B2%BE%E9%8B%AD%E3%81%9D%E5%88%86%E3%81%8C%E7%B8%81%E3%81%A3%E3%81%A6%E5%87%BD%E9%A4%A8%E3%81%AB%E9%9B%86%E3%81%9F%E4%B8%80%E3%81%A7%E5%9B%B0%E9%9B%A3%E3%81%AA%E5%B1%80%E9%9D%A2%E3%82%92%E3%80%81%E5%B0%8E%E3%82%8C%E7%9A%86%E3%82%A8%E3%83%8D%E3%83%AB%E3%82%AE%E3%83%BC%E7%AA%81%E7%A0%B4%E3%81%99%E3%81%B9%E3%81%97%E5%90%B9%E5%A5%8F%E6%A5%BD%E8%8F%AF%E3%82%84%E9%96%8B%E5%B9%95%E6%9B%B2%5Cn%E5%85%A8%E5%8A%9B%E3%83%95%E3%82%A1%E3%83%B3%E3%83%AC%E3%83%AD%E3%83%83%E3%82%AF%E3%82%A2%E3%83%84%E3%81%84%E5%AE%9A%E6%A0%BC%E8%B6%85%E3%81%88%E9%B3%B4%E3%81%BE%E8%80%B3%E6%94%BE%E7%86%B1%E3%81%94%E6%B3%A8%E6%84%8F%EF%BC%81%E3%83%80%E3%82%B9%E3%82%AD%E3%81%A42%E3%83%86%E3%82%B8%E3%81%8E%E3%83%91%E9%A6%99%E3%81%B0%E3%83%A9%E3%81%A0%E3%81%91%E3%82%82%E6%AD%A2%E3%83%93%E3%83%89%E5%A4%B1%E6%95%97%E4%B8%8A%E7%AD%89%E6%BC%AB%E6%89%8D%E3%82%86%E7%B7%A0%E3%82%81%E8%A9%B1%E3%82%80%E4%BA%8C%E3%82%AB%E3%83%9A%E3%81%95%E5%A3%B0%E3%81%8F%E4%B8%A6%E5%88%97%E5%9B%9E%E8%B7%AF%E3%83%90%E3%81%B6%E4%BD%8E%E9%9F%B3%E5%9D%82%E8%A1%97%E6%B8%AF%E7%94%BA%E3%81%8A%E3%81%A9%E3%82%8A%E3%83%A2%E7%9B%AE%E3%83%88%E3%83%AA%E6%98%9F%E5%BD%A2%E7%88%86%E5%B1%8A%E9%9B%BB%E6%B0%97%E4%BB%8A%E5%85%83%E3%82%B5%E3%82%A4%E3%83%81%E5%9C%A7aset/imgch.wbp%E5%BC%BE%E3%81%8D%E8%AA%9E%E6%82%B2%E3%83%8B%E5%BC%B1%E2%80%A6%E5%90%8D%E7%89%A9%E8%B8%8A%E4%BB%A4%E5%92%8C%E9%A2%A8%E3%81%92%E3%83%A5%E3%81%A8%E3%81%B13%E7%B7%9A%E7%A9%BA%E6%AD%8C%E3%82%8F%E3%82%B0%E7%9B%B4%E3%81%9A%E3%83%8E%E4%B9%97%E5%88%87%E3%82%B3%E3%81%9B%E5%B7%BB%E3%81%BB%E3%81%98%E3%83%97%E7%94%98%E9%96%89%E5%BA%97%E3%83%9E%E3%81%9C%E3%82%93%E5%90%88%E5%90%8C%E5%A4%A7%E5%9B%A3%E5%86%86%E5%87%BA%E6%BC%94%E3%81%BF%E6%9C%80%E5%BE%8Cvuxorq%E5%B1%95%E7%A4%BA%E5%8D%94%E8%B3%9B%E4%BC%81%E6%A5%AD%E3%82%BB%E3%83%9F%E3%83%8A%E8%A3%BD%E5%93%81%E3%81%A5%E5%89%8D%E3%81%9E%E7%99%BA%E8%A1%A8%E6%A8%A1%E6%93%AC%EF%BC%9FYT%20%E7%94%9F%E9%85%8D%E4%BF%A1%E3%82%A3%E7%A5%AD%E9%A3%9B%E8%A1%8C%E6%A9%9F%E9%83%BD%E9%81%85%E7%87%83%E7%BC%B6%E3%83%BB%E3%81%B3%E3%83%9C%E7%AC%AC%E8%AC%9B%E7%BE%A9%E5%AE%A4ZACROSl%E5%AE%9F%E7%BF%92%E5%B7%A5%E5%A0%B4%E4%BD%93%E8%82%B2%E6%9D%B1%E4%BA%AC%E6%B0%B4%E9%81%93%E5%A4%AA%E5%B9%B3%E6%B4%8B%E3%83%A1%E9%A3%9F%E5%8D%81%E5%A0%82%E5%9B%B3%E6%9B%B8KE%E3%83%96%E7%8E%84%E9%96%A2%E3%83%9B%E7%B7%8F%E3%82%A6%E3%82%BF%E3%83%A0%E8%A6%8B%E2%86%92J%E7%BE%8E%E5%91%B3%E6%9D%A5%E3%81%ADM%E8%BF%B7%E6%B2%B9%E8%85%B9%E6%B8%9B%E7%84%BC%E5%A3%B2%E4%B8%BB%E8%82%89%E9%87%8D%E6%A9%8B%E5%BC%B7%E5%BA%A6%E3%83%A3%E3%82%B7%E4%B8%BC%E3%82%BD%E9%83%A8%E3%81%B5%E3%83%94%E9%81%B8%E7%B5%B6%E3%83%AF%E7%A1%AC%E5%BC%8F%E9%87%8E%E7%90%83%E4%B8%B9%E8%BE%BC%E4%BD%9C%E5%A5%B3%E5%AD%90%E3%82%B1%E4%BB%AE%E8%A3%85%E8%B2%A9%E7%94%B7%E3%82%83%E9%9B%B0%E5%9B%B2%E4%B8%AD%E6%84%9B%E5%A5%BD%E4%BC%9A%E2%99%AA%E3%81%B2%E8%BF%8E%E3%82%87%E7%89%B9%E5%88%A5%E3%82%A7%E7%8F%88%E7%90%B2%E8%8C%B6%E7%A0%94%E7%A9%B6%E3%83%92%E8%8F%93%E4%BB%96%E8%B2%B7%E6%8C%81%E9%99%B8%E7%AB%B6%E6%8A%80LQ%E5%8B%99%E7%94%A8%E3%83%9D%E5%8F%82%E5%8A%A0%E8%B5%A4%E7%82%B9%E7%8F%AD%E5%89%B5%E8%AC%8E%E8%A7%A3%E5%80%8B%E3%82%B2%E5%93%A1%E3%83%8F%E7%90%86%E6%83%B3%E5%8F%96%E9%A0%91%E5%BC%B5%E5%96%B6%E5%8D%93%E6%BA%A2%E6%B1%81%E7%88%BD%E3%83%A8%E3%81%81-%28%E8%89%AF%29%E8%BB%BD%E6%A7%98%E3%80%85%E5%88%9D%E5%8C%96%E5%B1%8B%E6%95%B7%E5%A7%8B%E5%9B%BD%E3%83%99%E6%80%96%E9%AD%9A%E9%87%A3%E6%96%99%E6%89%8B%E9%9D%A9%E7%B4%B0%E6%93%8D%E7%B8%A6%E8%B3%9E%E9%A8%93%E5%82%AC%E8%87%AA%E5%8B%95%E8%BB%8A%E6%A0%A1%E9%81%8B%E8%BB%A2%E9%AD%82%E5%A1%A9%E7%AA%93%E5%86%99%E7%9C%9F%E6%B4%BB%E7%B4%B9%E4%BB%8B%E4%BA%A4%E6%B5%81%E7%B3%BB%E8%BE%9B%E5%9C%B0%E8%88%AC%E5%85%AC%E4%B8%A1%7B%7D%E7%B5%82%E5%86%85%E6%AE%8B%E5%B8%82%E5%85%B1%E9%80%9A%E8%B6%8A%3A%E8%8A%B1%E7%81%AB%E6%BA%96%E5%82%99%E5%81%B4%E6%8A%95%E7%A8%BF%E6%92%AE%E8%81%9E%E5%BD%B1%E7%A6%81%E9%85%92%E6%89%89%E7%A5%A8d%E7%B5%90%E6%9E%9C6%E8%AA%98%E5%BE%93%E9%81%BF%E8%88%8E%E5%A4%96%E7%85%994789%E3%80%9C%EF%BC%8FUN%EF%BC%88%EF%BC%89%E4%BA%86%E6%99%82%E6%89%80%E7%A8%AE%E9%A1%9E%E6%AC%A1%E6%96%B9%E9%99%90%E7%94%BB%E3%80%90%E3%80%91%E9%96%93%E6%8A%BC%E6%8C%87%E6%8B%A1%E8%A8%88%E7%A4%BE%E3%82%88%E5%BF%83%E6%84%9F%E8%AC%9D%E7%94%B3%C2%A9%E9%96%80%E8%BF%BD%E3%81%90%E6%B3%A2%E3%82%8D%E4%B8%8BP%E6%9C%89%E3%80%8C%E3%80%8D%E8%AA%AD%E8%A8%80%E8%91%89%E5%AF%BE%E8%B1%A1%E9%81%94%E6%88%90%E6%99%AF%E6%8F%9B%E6%B1%BA%E3%82%B6%E4%BF%9D%E5%AD%98%E5%B1%A5%E6%AD%B4%E5%89%8A%E9%99%A4%E5%BC%95%E7%B6%99%E9%81%95%E7%95%AA%E5%8F%B7%E6%B8%88%E3%81%96%E7%BD%AE%E6%9E%A0%E4%BD%BF%E8%A8%B1%E5%8F%AF%E2%86%90%E6%9D%A1%E4%BB%B6" rel="stylesheet">
+  <link rel="preload" as="image" href="assets/img/scene.webp">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/theme.js"></script><!-- ライト／ダークと差し色（描く前に決める） -->
+</head>
+<body data-phase="before">
+  <!-- 初めての人にだけ、最初は絵だけを見せる。JSが途中で止まっても6秒後には必ず全部出す -->
+  <script>
+    let seen = false;
+    try { seen = !!localStorage.getItem("kosen63-intro-seen"); } catch {}
+    if (!seen) {
+      document.body.classList.add("intro");
+      setTimeout(() => document.body.classList.remove("intro"), 6000);
+    }
+  </script>
+  <!-- ===== 最初の画面は絵の1枚。下へスクロールすると Enistagram =====
+       ふだんは Figma のデザインどおり「絵・縁・カウントダウン」だけ。
+       画面に触れると、カウントダウンが消えて、下から質問ボタンがせり上がる（body.awake）。 -->
+  <main class="scene">
+    <!-- 絵（世界）。高さいっぱいに表示して、スマホでは左右が少し切れる -->
+    <div class="stage" id="stage">
+      <!-- 絵の電線を画面の端まで延ばす（絵の外だけに見える） -->
+      <svg class="wires" viewBox="0 0 1215 1845" aria-hidden="true" preserveAspectRatio="none">
+        <line x1="-4000" y1="1571" x2="5000" y2="-256" />
+        <line x1="-4000" y1="1601" x2="5000" y2="-235" />
+        <line x1="-4000" y1="1413" x2="5000" y2="-35" />
+      </svg>
+      <!-- 絵は3枚重ね：空 → （星） → 街と5人。空は2枚を重ねて、時間帯や天気でゆっくり入れ替える -->
+      <div class="poster-clip">
+        <img class="layer-sky" id="sky-a" width="1215" height="1845" alt="">
+        <img class="layer-sky" id="sky-b" width="1215" height="1845" alt="">
+        <div class="sky" aria-hidden="true"><div class="stars"></div></div>
+        <img class="layer-scene" src="assets/img/scene.webp" width="1215" height="1845"
+          alt="夕焼けの空の下、電線の張る坂道を5人の学生が駆けていく絵">
+      </div>
+      <!-- 花火（開幕の瞬間と、花火の時間） -->
+      <canvas class="fireworks" id="fireworks" aria-hidden="true"></canvas>
+      <p class="opening-text" id="opening-text" aria-hidden="true">開幕</p>
+      <!-- 今この絵を見ている人の数だけ、電線に灯り -->
+      <div class="lanterns" id="lanterns" aria-hidden="true"></div>
+      <!-- 絵の中の触れる場所（人・建物・隠しスポット） -->
+      <div class="hotspots" id="hotspots"></div>
+      <!-- 触れたときだけ出るもの：電柱の看板（混雑）と、電線の短冊（メニュー） -->
+      <a class="pole-sign awake-only" id="pole-sign" href="#crowd" data-topic="crowd" aria-label="会場の混雑状況を聞く"></a>
+      <nav class="tanzaku-nav awake-only" id="tanzaku-nav" aria-label="メニュー"></nav>
+    </div>
+
+    <!-- 絵の上の表示。見えている範囲（スマホなら画面の幅）に合わせて置く -->
+    <div class="hud" id="hud">
+      <h1 class="visually-hidden">第63回 函館高専祭「縁」</h1>
+      <p class="notice-bar" id="notice-bar" hidden></p>
+      <!-- 開催中：「縁」の上に「●開催中！」 -->
+      <p class="live-badge phase-during ui"><span class="live-dot"></span><span id="live-badge">開催中！</span></p>
+
+      <!-- 「縁」のロゴ（開催中に生配信があるときは、配信と入れ替わる） -->
+      <a class="logo" href="#pickup" aria-label="縁（えにし）― みどころ">
+        <img src="assets/img/logo.webp" width="673" height="657" alt="">
+      </a>
+      <div class="live-pip" id="live" hidden>
+        <div id="live-stream"></div>
+      </div>
+
+      <!-- 下のほうを少し暗くして、道路の上の小さい字を読みやすく -->
+      <div class="hud-shade" aria-hidden="true"></div>
+      <!-- 下の道路の上の表示（開催前・中・後で入れ替わる）。触れると消える -->
+      <div class="slot ui">
+        <div class="phase-before">
+          <p class="slot-label">高専祭まであと</p>
+          <div class="countdown" id="countdown" role="timer" aria-live="off">
+            <span class="cd-unit"><b data-cd="d">--</b><small>日</small></span>
+            <span class="cd-unit"><b data-cd="h">--</b><small>時間</small></span>
+            <span class="cd-unit"><b data-cd="m">--</b><small>分</small></span>
+            <span class="cd-unit"><b data-cd="s">--</b><small>秒</small></span>
+          </div>
+        </div>
+        <div class="phase-during">
+          <div id="now-events" class="now-events"></div>
+        </div>
+        <div class="phase-after">
+          <p class="slot-label">第63回 函館高専祭は</p>
+          <p class="thanks">ご来場ありがとうございました</p>
+        </div>
+      </div>
+
+      <p class="sky-caption awake-only" id="sky-caption"></p>
+      <!-- 下にスクロールできることの案内（押すものではない）。少しスクロールすると消える -->
+      <div class="scroll-hint ui" aria-hidden="true" style="--d: 1.6s"><svg viewBox="0 0 16 96"><path class="track" d="M8 3V90"/><path class="run" d="M8 3V90" pathLength="1"/><path class="head" d="M3.5 85.5L8 90.5l4.5-5"/></svg></div>
+      <button type="button" class="shake-btn awake-only" id="shake-btn" hidden>スマホを振ると短冊がゆれるよ</button>
+      <p class="secret-toast" id="secret-toast" role="status" hidden></p>
+
+      <!-- 5人の答え（質問ボタンか、絵の中の人を押すと出る） -->
+      <section class="answer" id="answer" hidden aria-live="polite"></section>
+      <!-- 5人への質問ボタン。触れると下からせり上がる -->
+      <nav class="askbar" id="askbar" aria-label="5人に聞く"></nav>
+    </div>
+  </main>
+
+  <!-- 函館の本物の天気（雨・雪）を画面全体に -->
+  <canvas class="weather-fx" id="weather-fx" aria-hidden="true"></canvas>
+
+  <!-- ===== 絵のすぐ下（Figma「通常」のデザイン）：日付 → 道路の影から出てきた人 → 校内マップ・Enistagram の入口 → 学生主事より =====
+       夕焼けの背景ごと、画面の幅に合わせて大きさが変わる（中の位置は Figma の 402px 幅の数字） -->
+  <section class="k-top" id="days" aria-label="日程と入口">
+    <img class="k-bg" src="assets/img/top-bg.webp" width="804" height="2106" alt="" loading="lazy" decoding="async">
+    <div class="k-band">
+      <p class="k-title">函館高専<br>第63回<br>高専祭</p>
+      <div class="k-days" id="k-days"></div>
+    </div>
+    <img class="k-sil" src="assets/img/top-sil.webp" width="1017" height="262" alt="" loading="lazy" decoding="async">
+    <a class="k-btn is-map" href="map.html"><img src="assets/img/btn-map.svg" width="246" height="221" alt="校内マップ"></a>
+    <a class="k-btn is-enista" href="map.html?tab=feed"><img src="assets/img/btn-enista.svg" width="291" height="152" alt=""><img class="k-logo" src="assets/img/enista-puffy.webp" width="666" height="117" alt="Enistagram"></a>
+    <!-- 道を歩く小さな人（マップの上を走る人・横に腰かける人・Enistagram の前に立つ人） -->
+    <img class="k-figs" src="assets/img/top-figs.webp" width="315" height="569" alt="" loading="lazy" decoding="async">
+    <figure class="k-msg" id="message"></figure>
+  </section>
+
+  <!-- ===== みどころ（Figma）：時間の決まった企画をチケットの形で。いま・次のものを3枚（時間で自動で入れかわる） ===== -->
+  <section class="mido" id="pickup" aria-labelledby="mido-title">
+    <div class="mido-in">
+      <h2 class="mido-title" id="mido-title">みどころ</h2>
+      <div class="mido-tickets" id="mido-tickets"></div>
+      <a class="mido-more" href="mido.html"><span>ほかの見どころも見る</span></a>
+    </div>
+  </section>
+
+  <!-- ===== 縁日（模擬店の紹介）：掲示板にチラシを貼ったように、横にすべらせて見る。押すと地図でお店の場所 ===== -->
+  <section class="ennichi" id="ennichi" aria-labelledby="ennichi-title">
+    <div class="ennichi-in">
+      <h2 class="ennichi-title" id="ennichi-title">縁日<small>模擬店</small></h2>
+      <div class="ennichi-chips" id="ennichi-chips" role="group" aria-label="ジャンル"></div>
+      <ul class="ennichi-list" id="ennichi-list"></ul>
+      <a class="mido-more" href="map.html?list=food"><span>地図でお店をさがす</span></a>
+      <!-- 模擬店スタンプラリーの入口：小さなスタンプカード（たまった数が見える）。押すとスタンプカードのページ -->
+      <div class="rc-mini-box" id="rally-mini"></div>
+    </div>
+  </section>
+
+  <!-- ===== ご来場の皆さまへ：駅の案内板のように、絵とひとことの札。押すとくわしい説明（要項より） ===== -->
+  <section class="visit" id="info" aria-labelledby="visit-title">
+    <div class="visit-in">
+      <h2 class="visit-title" id="visit-title">ご来場の皆さまへ</h2>
+      <ul class="visit-grid" id="visit-grid"></ul>
+    </div>
+  </section>
+
+
+  <!-- ===== 絵の下：ふつうにスクロールして読むところ（URLの #about などで、その場所へ飛ぶ） ===== -->
+  <div class="sections">
+
+
+  <!-- 一度削除（戻すときは hidden を外す） -->
+  <section class="sec" id="about" hidden aria-labelledby="about-title">
+    <h2 class="panel-title" id="about-title"><span>ABOUT</span>高専祭について</h2>
+    <div id="about-body" class="prose"></div>
+  </section>
+
+  <!-- 一度削除：みどころのページ（mido.html）がタイムテーブルの代わり（戻すときは hidden を外す） -->
+  <section class="sec" id="schedule" hidden aria-labelledby="schedule-title">
+    <h2 class="panel-title" id="schedule-title"><span>TIMETABLE</span>タイムテーブル</h2>
+    <div id="timetable"></div>
+  </section>
+
+  <!-- Enistagram の最新の投稿（地図の Enistagram と同じもの）。一度削除（戻すときは hidden を外し、下の home-feed.js と side.js のメニューを戻す） -->
+  <section class="sec e-home" id="enistagram" hidden aria-labelledby="e-home-title">
+    <div class="e-home-head">
+      <h2 id="e-home-title"><img src="assets/img/enistagram.webp" width="640" height="114" alt="Enistagram"><span>の最新の投稿</span></h2>
+      <a class="e-home-all" href="map.html?tab=feed">すべて見る</a>
+    </div>
+    <ul class="e-home-list" id="e-home-list"></ul>
+    <a class="e-home-more" href="map.html?tab=feed">地図の Enistagram でポストする</a>
+  </section>
+
+  <!-- 一度削除（戻すときは hidden を外す） -->
+  <section class="sec" id="crowd" hidden aria-labelledby="crowd-title">
+    <h2 class="panel-title" id="crowd-title"><span>CROWD</span>会場の混雑状況</h2>
+    <div class="crowd-grid" id="crowd-list"></div>
+    <p class="crowd-note">本部がリアルタイムで更新しています。</p>
+  </section>
+
+  <!-- スタンプラリーは、スタンプカードのページ（rally.html）へ移した -->
+
+  <!-- 一度削除（戻すときは hidden を外す） -->
+  <section class="sec" id="guide" hidden aria-labelledby="guide-title">
+    <h2 class="panel-title" id="guide-title"><span>GUIDE</span>企画案内</h2>
+    <div class="guide-grid" id="guide-grid"></div>
+  </section>
+
+  <!-- 一度削除（戻すときは hidden を外す） -->
+  <section class="sec" id="report" hidden aria-labelledby="report-title">
+    <h2 class="panel-title" id="report-title"><span>REPORT</span>いちゃの食レポ・会場の様子</h2>
+    <div id="food-reports" class="report-list"></div>
+    <h3 class="sub-title">写真</h3>
+    <div id="photo-grid" class="photo-grid"></div>
+  </section>
+
+  <!-- 一度削除：下の「ご来場の皆さまへ」（絵とひとことの札）が代わり（戻すときは hidden を外して id を info に） -->
+  <section class="sec" id="info-old" hidden aria-labelledby="info-title">
+    <h2 class="panel-title" id="info-title"><span>INFO</span>ご来場の皆さまへ</h2>
+    <ul class="notice-list" id="notice-list"></ul>
+    <h3 class="sub-title">ごみの捨て方</h3>
+    <div class="garbage-grid" id="garbage-grid"></div>
+    <p class="insta-line"><a class="insta" id="insta-link" href="#" target="_blank" rel="noopener noreferrer">
+      <img src="assets/img/PC-instagram.png" alt="Instagram @KOSEN_GAKUSEIKAI" width="205" height="28">
+    </a></p>
+  </section>
+
+  </div>
+
+  <!-- ===== 協賛：協賛企業のロゴを並べる（要項 p.10「公式ホームページへの企業ロゴ掲載」）。ページのいちばん下 ===== -->
+  <section class="spon" id="sponsors" aria-labelledby="sponsors-title">
+    <div class="spon-in">
+      <h2 class="spon-title" id="sponsors-title">協賛<small>スポンサー</small></h2>
+      <p class="spon-lead" id="sponsor-lead"></p>
+      <ul class="spon-grid" id="sponsor-list"></ul>
+      <!-- アプリとして使う（ホーム画面に追加）。入れられるときだけ出る。クリーム色の紙の札（ほかのボタンと同じ形） -->
+      <aside class="install" id="install" hidden>
+        <img src="assets/img/icon-192.png" width="192" height="192" alt="">
+        <div class="install-text">
+          <b>アプリとして使う</b>
+          <small class="install-lead">ホーム画面に追加すると、すぐ開けて、電波が弱くても地図やみどころが見られます</small>
+          <small class="install-howto">画面の下（iPad は上）の <b>共有ボタン</b> →「<b>ホーム画面に追加</b>」</small>
+        </div>
+        <button type="button" class="install-btn mido-more"><span>追加</span></button>
+        <button type="button" class="install-x mido-close" aria-label="閉じる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></button>
+      </aside>
+      <p class="spon-copy">© 函館工業高等専門学校 学生会</p>
+    </div>
+  </section>
+
+  <!-- 隠し縁を全部見つけたときだけ開くパネル -->
+  <div class="panel-backdrop" id="panel-backdrop" hidden></div>
+  <section class="panel" id="secret" hidden aria-labelledby="secret-title">
+    <h2 class="panel-title" id="secret-title"><span>SECRET</span>隠し縁、ぜんぶ見つけた！</h2>
+    <p id="secret-reward"></p>
+    <a class="btn" id="secret-download" href="#" download>壁紙を保存する</a>
+  </section>
+
+  <div class="stamp-toast" id="stamp-toast" hidden></div>
+
+  <!-- 下のタブ：サイト・地図・Enistagram（地図のページにも同じタブ） -->
+  <nav class="site-tabs" id="site-tabs" aria-label="切りかえ">
+    <a href="./" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg>サイト</a>
+    <a href="map.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/></svg>地図</a>
+    <a href="map.html?tab=feed"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 5.2A9 9 0 1 0 16.6 18.8L9.5 12z"/><circle cx="9" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="13.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="17.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="21.3" cy="12" r="1.35" fill="currentColor" stroke="none"/></svg><span class="e-word">Enistagram</span></a>
+  </nav>
+
+  <script type="module" src="assets/main.js"></script>
+  <!-- 一度削除（Enistagram の欄）<script type="module" src="assets/home-feed.js"></script> -->
+  <script type="module" src="assets/shops-board.js"></script>
+  <script type="module" src="assets/visit.js"></script>
+  <script type="module" src="assets/app.js"></script>
+  <script type="module" src="assets/side.js"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>本部用：Enistagram の管理</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <style>
+    :root { --bg: #2E2F32; --card: #494A4E; --ink: #F3EEE6; --sub: #B9B2A8; --radius: 14px; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif; }
+    main { max-width: 560px; margin: 0 auto; }
+    h1 { font-size: 1.2rem; margin: 8px 0 6px; }
+    .lead { margin: 0 0 14px; color: var(--sub); font-size: 0.85rem; }
+    .card { background: var(--card); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+    .card.is-hidden { opacity: 0.55; }
+    .head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 0 0 6px; font-size: 0.85rem; color: var(--sub); }
+    .head b { color: var(--ink); }
+    .tag { padding: 0 8px; border-radius: 999px; background: #2A2624; font-size: 0.75rem; }
+    .tag.warn { background: #d93025; color: #fff; }
+    .text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    img { display: block; max-width: 100%; max-height: 280px; margin-top: 8px; border-radius: 10px; }
+    .row { display: flex; gap: 8px; margin-top: 10px; }
+    .row button, .ghost { flex: 1; padding: 10px; border-radius: 999px; font: inherit; font-weight: 700; cursor: pointer; }
+    .hide { border: 0; background: #F2A96A; color: #2A2624; }
+    .del { border: 1px solid #d93025; background: none; color: #ff8a80; }
+    .ghost { border: 1px solid var(--sub); background: none; color: var(--ink); }
+    form { display: grid; gap: 10px; }
+    input { padding: 12px; border-radius: 10px; border: 0; font: inherit; }
+    .primary { padding: 12px; border: 0; border-radius: 999px; background: #F2A96A; color: #2A2624; font: inherit; font-weight: 900; cursor: pointer; }
+    .msg { min-height: 1.5em; color: #F2A96A; font-weight: 700; }
+    .filters { display: flex; gap: 8px; margin-bottom: 12px; }
+    .filters button { flex: 1; padding: 8px; border-radius: 999px; border: 1px solid var(--sub); background: none; color: var(--ink); font: inherit; cursor: pointer; }
+    .filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+    .foot { display: flex; justify-content: space-between; align-items: center; color: var(--sub); font-size: 0.85rem; }
+    .foot button { background: none; border: 1px solid var(--sub); color: var(--sub); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>本部用：Enistagram の管理</h1>
+    <p class="lead">来場者のレビュー・投稿は書くとすぐ公開されます。良くないものは「非表示」に。報告が3件たまったものは自動で隠れています（ここで「表示にもどす」もできます）。</p>
+
+    <section class="card" id="login" hidden>
+      <form id="login-form">
+        <input id="email" type="email" autocomplete="username" placeholder="本部用メールアドレス" required>
+        <input id="password" type="password" autocomplete="current-password" placeholder="パスワード" required>
+        <button class="primary" type="submit">ログイン</button>
+      </form>
+      <p class="msg" id="login-msg" role="status"></p>
+    </section>
+
+    <div id="panel" hidden>
+      <div class="filters" role="group" aria-label="しぼりこみ">
+        <button type="button" data-f="all" aria-pressed="true">すべて</button>
+        <button type="button" data-f="reported" aria-pressed="false">報告あり</button>
+        <button type="button" data-f="hidden" aria-pressed="false">非表示</button>
+      </div>
+      <p class="msg" id="msg" role="status"></p>
+      <div id="list"></div>
+      <div class="foot"><span id="who"></span><button type="button" id="logout">ログアウト</button></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { FIREBASE_VERSION, firebaseConfig } from "../assets/live.js";
+    import { REPORT_HIDE } from "../assets/posts.js";
+
+    const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
+    const [{ initializeApp }, auth, fs] = await Promise.all([
+      import(`${base}/firebase-app.js`),
+      import(`${base}/firebase-auth.js`),
+      import(`${base}/firebase-firestore.js`),
+    ]);
+    const app = initializeApp(firebaseConfig);
+    const a = auth.getAuth(app);
+    const db = fs.getFirestore(app);
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+    let posts = [], filter = "all", unsubscribe = null;
+    const photos = new Map();
+
+    function render() {
+      const list = posts.filter((p) => filter === "all" || (filter === "reported" ? p.reports > 0 : p.hidden || p.reports >= REPORT_HIDE));
+      $("#list").innerHTML = list.length ? list.map((p) => {
+        const off = p.hidden || p.reports >= REPORT_HIDE;
+        const t = p.created_at ? new Date(p.created_at).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+        return `
+          <section class="card${off ? " is-hidden" : ""}">
+            <p class="head"><b>${p.reply_to ? "返信" : p.kind === "review" ? `${"★".repeat(p.stars ?? 0)} ${esc(p.shop ?? "")}` : "ポスト"}</b><span>📍${esc(p.place || "場所なし")}</span><span>${t}</span>${p.likes ? `<span>♥ ${p.likes}</span>` : ""}
+              ${p.reports ? `<span class="tag warn">報告 ${p.reports}</span>` : ""}${off ? '<span class="tag">非表示中</span>' : ""}</p>
+            <p class="text">${esc(p.text)}</p>
+            ${p.has_photo ? `<img data-photo="${esc(p.id)}" alt="投稿の写真"${photos.get(p.id) ? ` src="${photos.get(p.id)}"` : ""}>` : ""}
+            <div class="row">
+              <button type="button" class="hide" data-hide="${esc(p.id)}" data-to="${off ? "show" : "hide"}">${off ? "表示にもどす" : "非表示にする"}</button>
+              <button type="button" class="del" data-del="${esc(p.id)}" data-photo-del="${p.has_photo ? "1" : ""}">削除</button>
+            </div>
+          </section>`;
+      }).join("") : '<p class="lead">ありません。</p>';
+      document.querySelectorAll("img[data-photo]:not([src])").forEach(async (img) => {
+        const snap = await fs.getDoc(fs.doc(db, "post_photos", img.dataset.photo));
+        const src = snap.exists() ? snap.data().data : null;
+        photos.set(img.dataset.photo, src);
+        if (src) img.src = src; else img.remove();
+      });
+    }
+
+    document.querySelector(".filters").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-f]");
+      if (!b) return;
+      filter = b.dataset.f;
+      document.querySelectorAll(".filters button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      render();
+    });
+
+    $("#list").addEventListener("click", async (e) => {
+      const h = e.target.closest("[data-hide]"), d = e.target.closest("[data-del]");
+      try {
+        if (h) {
+          // 表示にもどすときは、報告の数も0にもどす（自動で隠れないように）
+          const show = h.dataset.to === "show";
+          await fs.updateDoc(fs.doc(db, "posts", h.dataset.hide), show ? { hidden: false, reports: 0 } : { hidden: true });
+          $("#msg").textContent = show ? "表示にもどしました" : "非表示にしました";
+        }
+        if (d) {
+          if (!confirm("この投稿を削除しますか？（もとにもどせません）")) return;
+          const b = fs.writeBatch(db);
+          b.delete(fs.doc(db, "posts", d.dataset.del));
+          if (d.dataset.photoDel) b.delete(fs.doc(db, "post_photos", d.dataset.del));
+          await b.commit();
+          $("#msg").textContent = "削除しました";
+        }
+      } catch (err) {
+        $("#msg").textContent = `できませんでした（${err.code}）`;
+      }
+    });
+
+    $("#login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("#login-msg").textContent = "";
+      try {
+        await auth.signInWithEmailAndPassword(a, $("#email").value, $("#password").value);
+      } catch (err) {
+        $("#login-msg").textContent = "ログインできませんでした。メールアドレスとパスワードを確認してください。";
+      }
+    });
+    $("#logout").addEventListener("click", () => auth.signOut(a));
+
+    auth.onAuthStateChanged(a, (user) => {
+      const staff = user && !user.isAnonymous;
+      $("#login").hidden = !!staff;
+      $("#panel").hidden = !staff;
+      unsubscribe?.();
+      unsubscribe = null;
+      if (!staff) return;
+      $("#who").textContent = user.email;
+      unsubscribe = fs.onSnapshot(fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(300)), (snap) => {
+        posts = [];
+        snap.forEach((doc) => {
+          const v = doc.data();
+          posts.push({ id: doc.id, ...v, reports: Number(v.reports ?? 0), created_at: v.created_at?.toMillis?.() ?? null });
+        });
+        render();
+      });
+    });
+  </script>
+</body>
+</html>
