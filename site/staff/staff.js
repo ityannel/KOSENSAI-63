@@ -656,31 +656,37 @@ async function buildShopSet(shops, withStaff) {
 }
 // 三角POP（A4 を3つに折って、下ののりしろで貼り、縦に立てる卓上の札）。3面ともまわりから見えるように、中身は90度まわして縦長に置く
 // 1段目＝お店の名前、2段目＝サイトの QR、3段目＝スタンプラリーのおさそい
+// 縦書きの中の「QR」や数字は、横に寝かせずに1文字ぶんに立てる（縦中横）
+const tcy = (t) => esc(t).replace(/QR|\d{1,2}/g, (m) => `<span class="tcy">${m}</span>`);
 function buildTents(shops) {
   return shops.map((s) => {
     const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
     const rallyQr = rally
       ? qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
       : qrDataUrl(siteUrl("rally.html"));
+    const tile = (url, title, note) => `<figure class="pt-tile"><figcaption class="pt-v"><b>${tcy(title)}</b><small>${tcy(note)}</small></figcaption><img src="${qrDataUrl(url)}" alt=""></figure>`;
     return `
       <section class="sheet pt">
         <div class="pt-panel"><div class="pt-face pt-name">
-          ${head("縁日（模擬店）")}
-          <h2 class="ps-name">${esc(s.name)}</h2>
-          <p class="ps-room">${esc([s.group, s.where].filter(Boolean).join("・"))}</p>
+          <img class="pt-logo" src="${LOGO}" alt="">
+          <div class="pt-v pt-name-v">
+            <p class="pt-fest">${tcy(`第${FESTIVAL.edition}回 函館高専祭「${FESTIVAL.theme}」`)}</p>
+            <h2 class="pt-shop">${esc(s.name)}</h2>
+            <p class="pt-where">${esc([s.group, s.where].filter(Boolean).join("・"))}</p>
+          </div>
         </div></div>
         <div class="pt-panel"><div class="pt-face pt-links">
-          ${qrTile(siteUrl("map.html?tab=feed"), "Enistagram で感想を投稿しよう", "写真やレビューを公式サイトに")}
-          ${qrTile(siteUrl("#ennichi"), "待ち時間・ほかのお店", "公式サイトの「縁日」")}
+          ${tile(siteUrl("map.html?tab=feed"), "Enistagram で感想を投稿", "写真やレビューを公式サイトに")}
+          ${tile(siteUrl("#ennichi"), "待ち時間・ほかのお店", "公式サイトの「縁日」")}
         </div></div>
         <div class="pt-panel pt-rally"><div class="pt-face">
-          <div class="pt-rally-text">
-            <p class="pt-rally-kicker">STAMP RALLY</p>
+          <p class="pt-rally-kicker">STAMP RALLY</p>
+          <div class="pt-v pt-rally-text">
             <h3>スタンプラリー<br>開催中！</h3>
-            <p class="pt-rally-lead">模擬店の QR を <b>${RALLY.goal}個</b> 集めると、<br>${esc(RALLY.claimPlace)}で景品と交換！</p>
+            <p class="pt-rally-lead">${tcy("模擬店のQRを")}<b>${tcy(`${RALLY.goal}個`)}</b>${tcy(`集めると、${RALLY.claimPlace}で景品と交換！`)}</p>
+            <p class="pt-steps">${tcy("スマホのカメラで読むだけ（アプリ不要）")}</p>
           </div>
           <figure class="pt-rally-qr"><img src="${rallyQr}" alt=""><figcaption>${rally ? "このお店のスタンプ" : "スタンプカードを見る"}</figcaption></figure>
-          <ol class="pt-steps"><li>スマホのカメラで QR を読む</li><li>スタンプが押される（アプリ不要）</li><li>${RALLY.goal}個たまったら本部へ</li></ol>
         </div></div>
         <div class="pt-glue">の り し ろ</div>
       </section>`;
