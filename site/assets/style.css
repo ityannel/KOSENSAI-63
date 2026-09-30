@@ -1704,3 +1704,6 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .qs-x { min-height: 40px; padding: 0 22px; border: 1.5px solid #634A2E; border-radius: 999px; background: #FFFBF2; color: #634A2E; font-family: var(--hud-font); font-size: 1.05rem; cursor: pointer; box-shadow: -3px 2px 0 rgba(48, 44, 41, 0.45); }
 .qs-x:active { translate: -3px 2px; box-shadow: none; }
 
+
+/* Enistagram の本部の公式の投稿の札（地図の .ig-official と同じ色） */
+.eh-official { display: inline-block; margin-left: 5px; padding: 0 6px; border-radius: 999px; background: linear-gradient(90deg, #3E6BD6, #C8323A); color: #fff; font-style: normal; font-size: .62rem; font-weight: 800; line-height: 1.6; vertical-align: 1px; }

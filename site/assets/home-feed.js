@@ -22,7 +22,7 @@ function card(p) {
   const stars = p.kind === "review" && p.stars ? `<span class="eh-stars" aria-label="★${p.stars}">${"★".repeat(p.stars)}${"☆".repeat(5 - p.stars)}</span>` : "";
   const photo = p.has_photo ? `<div class="eh-photo"><img data-photo="${esc(p.id)}" alt="" ${cachedPhoto(p.id) ? `src="${cachedPhoto(p.id)}"` : ""}></div>` : "";
   return `<li><a class="eh-card${p.has_photo ? "" : " is-text"}" href="map.html?tab=feed">
-    <div class="eh-top"><i class="eh-av" aria-hidden="true"></i><b>${esc(p.author)}</b><time>${ago(p.created_at)}</time></div>
+    <div class="eh-top"><i class="eh-av" aria-hidden="true"></i><b>${esc(p.author)}${p.official ? '<i class="eh-official">公式</i>' : ""}</b><time>${ago(p.created_at)}</time></div>
     ${photo}
     ${stars || where ? `<p class="eh-where">${stars}${where ? `<span>${esc(where)}</span>` : ""}</p>` : ""}
     ${p.text ? `<p class="eh-text">${esc(p.text)}</p>` : ""}

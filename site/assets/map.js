@@ -1520,7 +1520,7 @@ function postHtml(x, s, { withPlace = false, reply = false } = {}) {
   if (reply) {
     // コメント：名前・本文・時間、右に小さな ♡
     return `<li class="v-post is-reply" data-post="${esc(x.id)}">${avatar(who, true)}
-      <p class="ig-cmt"><b>${esc(who)}</b> ${esc(x.text)}<small><time>${esc(s.agoText(x.created_at))}</time>${n ? `<span data-likes-of="${esc(x.id)}">いいね！${n}件</span>` : `<span data-likes-of="${esc(x.id)}"></span>`}<button type="button" class="ig-report" data-report="${esc(x.id)}"${reported(x.id) ? " disabled" : ""}>${reported(x.id) ? "報告しました" : "報告"}</button></small></p>
+      <p class="ig-cmt"><b>${esc(who)}${x.official ? '<i class="ig-official" title="本部の公式の投稿">公式</i>' : ""}</b> ${esc(x.text)}<small><time>${esc(s.agoText(x.created_at))}</time>${n ? `<span data-likes-of="${esc(x.id)}">いいね！${n}件</span>` : `<span data-likes-of="${esc(x.id)}"></span>`}<button type="button" class="ig-report" data-report="${esc(x.id)}"${reported(x.id) ? " disabled" : ""}>${reported(x.id) ? "報告しました" : "報告"}</button></small></p>
       ${heart}</button></li>`;
   }
   const p = withPlace && x.place && place(x.place);
