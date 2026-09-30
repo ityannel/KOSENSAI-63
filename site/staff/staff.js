@@ -628,7 +628,7 @@ async function buildShopSet(shops, withStaff) {
           ${qrTile(siteUrl("#ennichi"), "待ち時間・ほかのお店", "公式サイトの「縁日」")}
         </div>
         ${rally ? `<p class="ps-cut">✂ きりとり（スタンプラリーの QR：店頭に貼ってください。2日とも同じ QR です）</p>
-        <div class="ps-stamps">${stampCard(s)}</div>` : ""}
+        <div class="ps-rally">${rallyBody(s)}</div>` : ""}
       </section>`);
     if (withStaff) {
       const code = await ensureShopCode(s.id);
@@ -665,12 +665,21 @@ const kanjiNum = (n) => {
   const tens = Math.floor(n / 10), ones = n % 10;
   return `${tens > 1 ? d[tens] : ""}十${ones ? d[ones] : ""}`;
 };
+// スタンプラリーのおさそい（三角POPの3段目と、模擬店セットのきりとり）。文は縦書き、下に QR
+function rallyBody(s) {
+  const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
+  const qr = rally
+    ? qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
+    : qrDataUrl(siteUrl("rally.html"));
+  return `
+          <div class="pt-v pt-rally-text">
+            <h3>スタンプラリー、<br>はじめました。</h3>
+            <p class="pt-rally-lead">スタンプ<b>${kanjiNum(RALLY.goal)}個</b>で、景品と交換！</p>
+          </div>
+          <figure class="pt-rally-qr"><img src="${qr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>`;
+}
 function buildTents(shops) {
   return shops.map((s) => {
-    const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
-    const rallyQr = rally
-      ? qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
-      : qrDataUrl(siteUrl("rally.html"));
     return `
       <section class="sheet pt">
         <div class="pt-panel"><div class="pt-face pt-name">
@@ -685,11 +694,7 @@ function buildTents(shops) {
           <figure class="pt-link"><figcaption><b>公式サイト</b><span>で待ち時間をチェック</span></figcaption><img class="pt-link-qr" src="${qrDataUrl(siteUrl("#ennichi"))}" alt=""></figure>
         </div></div>
         <div class="pt-panel pt-rally"><div class="pt-face">
-          <div class="pt-v pt-rally-text">
-            <h3>スタンプラリー、<br>はじめました。</h3>
-            <p class="pt-rally-lead">スタンプ<b>${kanjiNum(RALLY.goal)}個</b>で、景品と交換！</p>
-          </div>
-          <figure class="pt-rally-qr"><img src="${rallyQr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>
+${rallyBody(s)}
         </div></div>
         <div class="pt-glue">の り し ろ</div>
       </section>`;
