@@ -4,6 +4,6 @@
   "environments": {
     "local": { "baseUrl": "http://localhost:5173/" },
     "preview": { "baseUrl": "https://enishi-7f43f--preview-53vzkjwt.web.app/" },
-    "production": { "baseUrl": "https://www.hakodate-ct.ac.jp/gac_event/" }
+    "production": { "baseUrl": "https://hakodate-ct.jp/gac_event/" }
   }
 }
