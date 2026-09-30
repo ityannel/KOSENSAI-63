@@ -2,7 +2,7 @@
 // お知らせ・緊急のお知らせ・生配信・表示の切りかえ・混雑・5人の実況・投稿（写真の確認・報告・本部の投稿）・模擬店・文章と書体を、ここ1つで変える。
 // だれが使えるかは firestore.rules（staff コレクションにメールアドレスがある人だけ）で決まる。
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
-import { CROWD, VENUES, FESTIVAL, RALLY, VISIT } from "../assets/config.js";
+import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP } from "../assets/config.js";
 import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
 import { REPORT_HIDE, handleOf } from "../assets/posts.js";
 import { TIMES, SKIES, WEATHERS, PANELS, PAGES } from "../assets/test.js";
@@ -94,7 +94,6 @@ function startListening() {
   listen(fs.collection(db, "shops"), (snap) => {
     state.shops = [];
     snap.forEach((d) => state.shops.push({ id: d.id, ...d.data() }));
-    state.shops.sort((x, y) => String(x.name).localeCompare(String(y.name), "ja"));
     renderShops(); renderRally(); renderPrintShops(); renderOverview();
   });
   listen(fs.doc(db, "rally", "current"), (snap) => { state.rally = snap.data() ?? null; renderShops(); renderRally(); });
@@ -115,14 +114,14 @@ function startListening() {
 function renderOverview() {
   const pending = state.posts.filter((p) => p.photo_status === "pending" && !p.hidden).length;
   const reported = state.posts.filter((p) => p.reports > 0 && !p.hidden).length;
-  const soldout = state.shops.filter((s) => s.status === "soldout").length;
+  const soldout = allShops().filter((s) => s.status === "soldout").length;
   const limited = CROWD.venues.filter((v) => state.crowd[v]?.level === 3).length;
   const kpi = (label, value, sub, color, href) => `<a class="kpi" href="${href}" style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
   $("#kpis").innerHTML = [
     kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts"),
     kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts"),
     kpi("入場制限中の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),
-    kpi("完売の模擬店", soldout, `${state.shops.length}店のうち`, "var(--amber)", "#shops"),
+    kpi("完売の模擬店", soldout, `${allShops().length}店のうち`, "var(--amber)", "#shops"),
   ].join("");
   const badge = $("#nav-posts-badge");
   badge.hidden = !pending;
@@ -371,12 +370,38 @@ const SHOP_STATUS = [
 ];
 const shopUrl = (code, shop) => new URL(`../shop.html?shop=${encodeURIComponent(shop)}&code=${encodeURIComponent(code)}`, location.href).href;
 const openCodes = new Set();
+// 地図に載っているお店（config.js の SHOPS）はすべて最初から並べる。shops/{id} の文書は、待ち時間を変えたりコードを渡したりしたときに作る。
+// map には地図がお店を見分ける値（クラス・部屋番号・名前）を入れる（map.js の shopDocFor が見る）
+const shopSlug = (v) => String(v).toLowerCase().replace(/[^a-z0-9_-]/g, "");
+const placeName = (id) => MAP.places.find((p) => p.id === id)?.name ?? id;
+const CATALOG = SHOPS.map((sh) => {
+  const room = sh.room ?? HOMEROOMS[sh.cls] ?? null;
+  const where = sh.place ? placeName(sh.place) : [sh.bldg && `${sh.bldg}棟${sh.floor ? sh.floor.replace("F", "階") : ""}`, room].filter(Boolean).join("・");
+  return { id: shopSlug(sh.cls ?? sh.room ?? sh.place), name: sh.name, group: sh.group, map: sh.cls ?? sh.room ?? sh.name,
+    ...(room ? { room } : {}), ...(sh.place ? { place: sh.place } : {}), where, catalog: true };
+});
+function allShops() {
+  const docs = new Map(state.shops.map((d) => [d.id, d]));
+  const list = CATALOG.map((c) => ({ ...c, ...(docs.get(c.id) ?? {}), name: c.name, map: c.map, exists: docs.has(c.id) }));
+  const extra = state.shops.filter((d) => !CATALOG.some((c) => c.id === d.id))
+    .map((d) => ({ ...d, where: d.map ?? "", exists: true }))
+    .sort((x, y) => String(x.name).localeCompare(String(y.name), "ja"));
+  return [...list, ...extra];
+}
+const findShop = (id) => allShops().find((s) => s.id === id);
+// お店の文書がまだなければ作る（shop.html はこれがないと使えない）
+function shopDocWrite(shop, fields) {
+  const ref = fs.doc(db, "shops", shop.id);
+  if (!shop.exists) return fs.setDoc(ref, { name: shop.name, map: shop.map, ...fields });
+  return fs.updateDoc(ref, { ...fields, ...("pass" in shop ? { pass: fs.deleteField() } : {}) });
+}
 function renderShops() {
-  $("#shop-list").innerHTML = state.shops.length ? state.shops.map((s) => {
+  const shops = allShops();
+  $("#shop-list").innerHTML = shops.length ? shops.map((s) => {
     const codes = state.codes.filter((c) => c.shop === s.id);
     return `
       <article class="shop">
-        <div><h3>${esc(s.name)}</h3><small>${esc(s.id)}${s.map ? `・${esc(s.map)}` : ""}${s.updated_at ? `・${hhmm(toMs(s.updated_at))} 更新` : ""}${"pass" in s ? "・古いパスワードあり（次に変えたとき消えます）" : ""}</small></div>
+        <div><h3>${esc(s.name)}</h3><small>${[s.group, s.where, s.updated_at ? `${hhmm(toMs(s.updated_at))} 更新` : "", "pass" in s ? "古いパスワードあり（次に変えたとき消えます）" : ""].filter(Boolean).map(esc).join("・")}</small></div>
         <div class="shop-status">${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-shop="${esc(s.id)}" data-status="${v}" style="--c:${c}" aria-pressed="${s.status === v}">${label}</button>`).join("")}</div>
         <div class="shop-codes">
           ${codes.map((c) => `<span class="code-chip">${esc(c.code)}<button class="btn btn-ghost btn-sm" data-qr="${esc(c.code)}">${openCodes.has(c.code) ? "QR を閉じる" : "QR"}</button><button class="btn btn-danger btn-sm" data-revoke="${esc(c.code)}">取り消す</button></span>
@@ -385,7 +410,7 @@ function renderShops() {
           ${isRallyShop(s.id)
             ? `<span class="tag tag-ok">スタンプの対象</span><button class="btn btn-ghost btn-sm" data-rally-off="${esc(s.id)}">対象から外す</button>`
             : `<button class="btn btn-ghost btn-sm" data-rally-on="${esc(s.id)}">スタンプの対象にする</button>`}
-          <button class="btn btn-danger btn-sm" data-remove="${esc(s.id)}" style="margin-left:auto">お店を消す</button>
+          ${s.catalog ? "" : `<button class="btn btn-danger btn-sm" data-remove="${esc(s.id)}" style="margin-left:auto">お店を消す</button>`}
         </div>
       </article>`;
   }).join("") : '<p class="empty">お店はまだありません。上で足してください。</p>';
@@ -406,15 +431,17 @@ $("#shop-list").addEventListener("click", async (e) => {
   const revoke = e.target.closest("[data-revoke]");
   const remove = e.target.closest("[data-remove]");
   if (st) {
-    const shop = state.shops.find((s) => s.id === st.dataset.shop);
+    const shop = findShop(st.dataset.shop);
     const label = SHOP_STATUS.find(([v]) => v === st.dataset.status)[1];
-    write(`${shop.name}を「${label}」にしました`, () => fs.updateDoc(fs.doc(db, "shops", shop.id), {
-      status: st.dataset.status, updated_at: fs.serverTimestamp(), ...("pass" in shop ? { pass: fs.deleteField() } : {}),
-    }));
+    write(`${shop.name}を「${label}」にしました`, () => shopDocWrite(shop, { status: st.dataset.status, updated_at: fs.serverTimestamp() }));
   }
   if (issue) {
     const code = newCode();
-    if (await write("コードを作りました", () => fs.setDoc(fs.doc(db, "shop_codes", code), { shop: issue.dataset.issue, created_at: fs.serverTimestamp() }))) {
+    const shop = findShop(issue.dataset.issue);
+    if (await write("コードを作りました", async () => {
+      if (!shop.exists) await shopDocWrite(shop, { updated_at: fs.serverTimestamp() });
+      await fs.setDoc(fs.doc(db, "shop_codes", code), { shop: shop.id, created_at: fs.serverTimestamp() });
+    })) {
       openCodes.add(code);
       renderShops();
     }
@@ -442,7 +469,7 @@ $("#shop-list").addEventListener("click", async (e) => {
     setRallyShops(rallyShopIds().filter((id) => id !== rallyOff.dataset.rallyOff), "スタンプの対象から外しました");
   }
   if (remove) {
-    const shop = state.shops.find((s) => s.id === remove.dataset.remove);
+    const shop = findShop(remove.dataset.remove);
     if (!confirm(`「${shop.name}」を消しますか？（サイトの一覧からも消えます）`)) return;
     write("お店を消しました", async () => {
       const batch = fs.writeBatch(db);
@@ -456,7 +483,7 @@ $("#shop-add").addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = $("#shop-id").value.trim();
   const name = $("#shop-name").value.trim();
-  if (state.shops.some((s) => s.id === id)) return toast("その ID はもう使われています", true);
+  if (allShops().some((s) => s.id === id)) return toast("その ID はもう使われています", true);
   const room = $("#shop-room").value.trim();
   if (await write(`${name}を足しました`, () => fs.setDoc(fs.doc(db, "shops", id), { name, status: "normal", ...(room ? { map: room } : {}), updated_at: fs.serverTimestamp() }))) {
     e.target.reset();
@@ -476,18 +503,19 @@ const isRallyShop = (id) => rallyShopIds().includes(id);
 const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 
 async function setRallyShops(ids, label) {
-  const unique = [...new Set(ids)].filter((id) => state.shops.some((s) => s.id === id));
+  const unique = [...new Set(ids)].filter((id) => findShop(id));
   await write(label, async () => {
     const batch = fs.writeBatch(db);
     const shops = [];
     for (const id of unique) {
-      const shop = state.shops.find((s) => s.id === id);
+      const shop = findShop(id);
       const keys = { ...keysOf(id) };
       let added = false;
       for (const d of RALLY_DATES) if (!keys[d]) { keys[d] = randomKey(); added = true; }
       if (added) batch.set(fs.doc(db, "rally_keys", id), { keys });
       const codes = Object.fromEntries(await Promise.all(RALLY_DATES.map(async (d) => [d, await sha256(`kosen63:${id}:${d}:${keys[d]}`)])));
-      shops.push({ id, name: shop.name, ...(shop.map ? { room: shop.map } : {}), codes });
+      const room = shop.catalog ? shop.room : shop.map;
+      shops.push({ id, name: shop.name, ...(room ? { room } : {}), ...(shop.place ? { place: shop.place } : {}), codes });
     }
     batch.set(fs.doc(db, "rally", "current"), { shops, staffPin: state.rally?.staffPin ?? null, ...stamp() });
     await batch.commit();
@@ -500,11 +528,12 @@ function renderRally() {
   st.className = `pill ${n && pin ? "is-on" : ""}`;
   st.textContent = `${n}店が対象・引き換えの番号${pin ? "あり" : "なし"}`;
   $("#rally-pin-make").textContent = pin ? "引き換えの番号を作り直す" : "引き換えの番号を作る";
-  $("#rally-all").disabled = !state.shops.length || state.shops.every((s) => isRallyShop(s.id));
+  $("#rally-all").disabled = allShops().every((s) => isRallyShop(s.id));
 }
 $("#rally-all").addEventListener("click", () => {
-  if (!confirm(`すべてのお店（${state.shops.length}店）をスタンプラリーの対象にします。よろしいですか？`)) return;
-  setRallyShops(state.shops.map((s) => s.id), "すべてのお店をスタンプの対象にしました（QR は「印刷」で刷れます）");
+  const shops = allShops();
+  if (!confirm(`すべてのお店（${shops.length}店）をスタンプラリーの対象にします。よろしいですか？`)) return;
+  setRallyShops(shops.map((s) => s.id), "すべてのお店をスタンプの対象にしました（QR は「印刷」で刷れます）");
 });
 $("#rally-pin-make").addEventListener("click", async () => {
   if (state.rally?.staffPin && !confirm("番号を作り直すと、前の番号では引き換えられなくなります。よろしいですか？")) return;
@@ -545,8 +574,9 @@ const printKind = () => $('[name="pr-kind"]:checked').value;
 function renderPrintShops() {
   const picked = new Set($$("#pr-shops input:checked").map((x) => x.value));
   const first = !$("#pr-shops").children.length;
-  $("#pr-shops").innerHTML = state.shops.length
-    ? state.shops.map((s) => `<label class="pr-shop"><input type="checkbox" value="${esc(s.id)}"${first || picked.has(s.id) ? " checked" : ""}><span>${esc(s.name)}${isRallyShop(s.id) ? '<i class="tag tag-ok">スタンプ</i>' : ""}</span></label>`).join("")
+  const shops = allShops();
+  $("#pr-shops").innerHTML = shops.length
+    ? shops.map((s) => `<label class="pr-shop"><input type="checkbox" value="${esc(s.id)}"${first || picked.has(s.id) ? " checked" : ""}><span>${esc(s.name)}${isRallyShop(s.id) ? '<i class="tag tag-ok">スタンプ</i>' : ""}</span></label>`).join("")
     : '<p class="muted small">お店がありません。「模擬店」で足してください。</p>';
 }
 function syncPrintControls() {
@@ -574,6 +604,8 @@ const stampCard = (shop, date) => `
 async function ensureShopCode(shopId) {
   const existing = state.codes.find((c) => c.shop === shopId);
   if (existing) return existing.code;
+  const shop = findShop(shopId);
+  if (shop && !shop.exists) await shopDocWrite(shop, { updated_at: fs.serverTimestamp() });
   const code = newCode();
   await fs.setDoc(fs.doc(db, "shop_codes", code), { shop: shopId, created_at: fs.serverTimestamp() });
   return code;
@@ -589,7 +621,7 @@ async function buildShopSet(shops, withStaff) {
         <div class="ps-shop-main">
           <p class="ps-kicker">いらっしゃいませ！</p>
           <h2 class="ps-name">${esc(s.name)}</h2>
-          ${s.map ? `<p class="ps-room">場所：${esc(s.map)}</p>` : ""}
+          ${s.where ? `<p class="ps-room">場所：${esc(s.where)}</p>` : ""}
           ${rally ? '<p class="ps-badge">スタンプラリー対象店</p>' : ""}
         </div>
         <div class="ps-qrs">
@@ -656,7 +688,7 @@ const VISIT_NOTES = () => {
 
 $("#pr-make").addEventListener("click", async () => {
   const kind = printKind();
-  const shops = state.shops.filter((s) => $$("#pr-shops input:checked").some((x) => x.value === s.id));
+  const shops = allShops().filter((s) => $$("#pr-shops input:checked").some((x) => x.value === s.id));
   if (kind !== "flyer" && !shops.length) return toast("お店を選んでください", true);
   const noKeys = kind !== "flyer" ? shops.filter((s) => isRallyShop(s.id) && RALLY_DATES.some((d) => !keysOf(s.id)[d])) : [];
   if (noKeys.length) return toast("スタンプの鍵が見つからないお店があります。「模擬店」で対象にし直してください", true);
