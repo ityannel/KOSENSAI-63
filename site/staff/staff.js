@@ -2,7 +2,7 @@
 // お知らせ・緊急のお知らせ・生配信・表示の切りかえ・混雑・5人の実況・投稿（写真の確認・報告・本部の投稿）・模擬店・文章と書体を、ここ1つで変える。
 // だれが使えるかは firestore.rules（staff コレクションにメールアドレスがある人だけ）で決まる。
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
-import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP } from "../assets/config.js";
+import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS } from "../assets/config.js";
 import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
 import { REPORT_HIDE, handleOf } from "../assets/posts.js";
 import { TIMES, SKIES, WEATHERS, PANELS, PAGES } from "../assets/test.js";
@@ -109,7 +109,7 @@ function startListening() {
     renderShops();
   });
   listen(fs.doc(db, "site_text", "current"), (snap) => { state.siteText = snap.data() ?? null; renderTexts(); renderOverview(); });
-  listen(fs.doc(db, "site_config", "current"), (snap) => { state.siteConfig = snap.data() ?? null; renderTabs(); });
+  listen(fs.doc(db, "site_config", "current"), (snap) => { state.siteConfig = snap.data() ?? null; if (!blocksDirty) renderBlocks(); }); // 並べかえている途中は描き直さない
   listen(fs.doc(db, "rally_control", "current"), (snap) => { state.rallyControl = snap.data() ?? null; });
 }
 
@@ -1214,22 +1214,91 @@ $("#texts-reset").addEventListener("click", async () => {
     textsDirty = false;
   }
 });
-addEventListener("beforeunload", (e) => { if (textsDirty) e.preventDefault(); });
+addEventListener("beforeunload", (e) => { if (textsDirty || blocksDirty) e.preventDefault(); });
 
-// ---------- サイトの設定：下のタブ ----------
-// site_config/current = { tabs: { site, map, feed } }。false のタブは、来場者の画面の下のタブ・PC の右上から消える（assets/tabs-config.js）
-const TAB_NAMES = { site: "サイト", map: "地図", feed: "Enistagram" };
-function renderTabs() {
-  const tabs = state.siteConfig?.tabs ?? {};
-  $$("[data-tab-toggle]").forEach((c) => { c.checked = tabs[c.dataset.tabToggle] !== false; });
-  const off = Object.keys(TAB_NAMES).filter((id) => tabs[id] === false);
-  $("#tabs-state").textContent = off.length ? `出していない：${off.map((id) => TAB_NAMES[id]).join("・")}` : "すべて出している";
+// ---------- サイトの設定：トップページの並び ----------
+// site_config/current = { blocks: [{ id, show }] }。来場者のトップページは assets/blocks.js がこの順に並べる
+// ⠿ をつかんで上下にドラッグ（マウスでも指でも）。キーボードでは ⠿ を選んで ↑↓
+const BLOCK_INFO = Object.fromEntries(TOP_BLOCKS.map(([id, name, note]) => [id, { name, note }]));
+let blocksDirty = false;
+function blocksFromConfig() {
+  const saved = Array.isArray(state.siteConfig?.blocks) ? state.siteConfig.blocks.filter((b) => BLOCK_INFO[b?.id]) : [];
+  const seen = new Set(saved.map((b) => b.id));
+  return [...saved.map((b) => ({ id: b.id, show: b.show !== false })), ...TOP_BLOCKS.filter(([id]) => !seen.has(id)).map(([id]) => ({ id, show: true }))];
 }
-$("#tabs-form").addEventListener("submit", (e) => {
+function renderBlocks(list = blocksFromConfig()) {
+  $("#blocks-list").innerHTML = list.map(({ id, show }) => `
+    <li class="block-row${show ? "" : " is-off"}" data-block-id="${esc(id)}">
+      <button class="block-grip" type="button" aria-label="${esc(BLOCK_INFO[id].name)}を動かす（↑↓）" title="ドラッグして並べかえ">⠿</button>
+      <span class="block-no"></span>
+      <span class="block-name"><b>${esc(BLOCK_INFO[id].name)}</b><small>${esc(BLOCK_INFO[id].note)}</small></span>
+      <label class="switch block-show"><input type="checkbox" data-block-show${show ? " checked" : ""}><span class="switch-ui" aria-hidden="true"></span><span class="visually-hidden">出す</span></label>
+    </li>`).join("");
+  numberBlocks();
+  const off = list.filter((b) => !b.show).map((b) => BLOCK_INFO[b.id].name);
+  $("#blocks-state").textContent = blocksDirty ? "保存していない変更があります" : off.length ? `出していない：${off.join("・")}` : "すべて出している";
+}
+// 番号と「いちばん上（角が丸くなる）」の印
+function numberBlocks() {
+  let n = 0;
+  $$(".block-row").forEach((row) => {
+    const on = $("[data-block-show]", row).checked;
+    row.classList.toggle("is-off", !on);
+    $(".block-no", row).textContent = on ? String(++n) : "−";
+    row.classList.toggle("is-top", on && n === 1);
+  });
+}
+const readBlocks = () => $$(".block-row").map((row) => ({ id: row.dataset.blockId, show: $("[data-block-show]", row).checked }));
+function touched() {
+  blocksDirty = true;
+  numberBlocks();
+  $("#blocks-state").textContent = "保存していない変更があります";
+}
+// ドラッグ：⠿ を押したまま動かすと、指のいる行の前後に入れかわる
+$("#blocks-list").addEventListener("pointerdown", (e) => {
+  const grip = e.target.closest(".block-grip");
+  if (!grip || e.button > 0) return;
   e.preventDefault();
-  const tabs = Object.fromEntries($$("[data-tab-toggle]").map((c) => [c.dataset.tabToggle, c.checked]));
-  if (!Object.values(tabs).some(Boolean) && !confirm("タブを全部オフにすると、下のタブの帯ごと消えます。よろしいですか？")) return;
-  write("下のタブを公開しました", () => fs.setDoc(fs.doc(db, "site_config", "current"), { tabs, ...stamp() }));
+  const row = grip.closest(".block-row"), list = $("#blocks-list");
+  grip.setPointerCapture(e.pointerId);
+  row.classList.add("is-dragging");
+  const move = (ev) => {
+    const others = $$(".block-row", list).filter((r) => r !== row);
+    const after = others.find((r) => { const b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
+    if (after) { if (row.nextElementSibling !== after) list.insertBefore(row, after); } else if (list.lastElementChild !== row) list.append(row);
+  };
+  const up = () => {
+    grip.removeEventListener("pointermove", move);
+    grip.removeEventListener("pointerup", up);
+    grip.removeEventListener("pointercancel", up);
+    row.classList.remove("is-dragging");
+    touched();
+  };
+  grip.addEventListener("pointermove", move);
+  grip.addEventListener("pointerup", up);
+  grip.addEventListener("pointercancel", up);
+});
+// キーボード：⠿ を選んで ↑↓
+$("#blocks-list").addEventListener("keydown", (e) => {
+  const grip = e.target.closest(".block-grip");
+  if (!grip || !["ArrowUp", "ArrowDown"].includes(e.key)) return;
+  e.preventDefault();
+  const row = grip.closest(".block-row");
+  if (e.key === "ArrowUp" && row.previousElementSibling) row.previousElementSibling.before(row);
+  if (e.key === "ArrowDown" && row.nextElementSibling) row.nextElementSibling.after(row);
+  grip.focus();
+  touched();
+});
+$("#blocks-list").addEventListener("change", (e) => { if (e.target.matches("[data-block-show]")) touched(); });
+$("#blocks-default").addEventListener("click", () => { renderBlocks(TOP_BLOCKS.map(([id]) => ({ id, show: true }))); touched(); });
+$("#blocks-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const blocks = readBlocks();
+  if (!blocks.some((b) => b.show) && !confirm("欄を全部オフにすると、トップページは上の絵だけになります。よろしいですか？")) return;
+  if (await write("トップページの並びを公開しました", () => fs.setDoc(fs.doc(db, "site_config", "current"), { blocks, ...stamp() }))) {
+    blocksDirty = false;
+    $("#blocks-state").textContent = "公開しました";
+  }
 });
 
 // ---------- サイトの設定：スタンプラリー（全員） ----------

@@ -58,7 +58,6 @@
   <link rel="preload" as="image" href="assets/img/scene.webp">
   <link rel="stylesheet" href="assets/style.css">
   <script src="assets/theme.js"></script><!-- ライト／ダークと差し色（描く前に決める） -->
-  <script type="module" src="assets/tabs-config.js"></script><!-- 本部が「出さない」にした下のタブを隠す -->
 </head>
 <body data-phase="before">
   <!-- 初めての人にだけ、最初は絵だけを見せる。JSが途中で止まっても6秒後には必ず全部出す -->
@@ -168,16 +167,23 @@
     <a class="k-btn is-enista" href="map.html?tab=feed"><img src="assets/img/btn-enista.svg" width="291" height="152" alt=""><img class="k-logo" src="assets/img/enista-puffy.webp" width="666" height="117" alt="Enistagram"></a>
     <!-- 道を歩く小さな人（マップの上を走る人・横に腰かける人・Enistagram の前に立つ人） -->
     <img class="k-figs" src="assets/img/top-figs.webp" width="315" height="569" alt="" loading="lazy" decoding="async">
+  </section>
+
+  <!-- ===== トップの欄（学生主事より・スタンプカード・いまの混雑・みどころ・縁日・ご来場の皆さまへ・協賛）=====
+       並び順と、出す・出さないは本部コンソールの「サイトの設定」で変えられる（assets/blocks.js が並べかえる。data-block が欄の名前）。
+       いちばん上の欄は、上の絵に少し重なって、上の角だけ丸くなる（前の学生主事よりと同じ形） -->
+  <!-- ===== 学生主事より ===== -->
+  <section class="k-msgsec" id="message-sec" data-block="message" aria-label="学生主事より">
     <figure class="k-msg" id="message"></figure>
   </section>
 
   <!-- ===== スタンプラリーの入口：学生主事よりのすぐ下に、スタンプカードだけをぽんと置く（押すとスタンプカードのページ） ===== -->
-  <section class="stampsec" id="stamp" aria-label="スタンプカード">
+  <section class="stampsec" id="stamp" data-block="stamp" aria-label="スタンプカード">
     <div class="stampsec-in"><div class="rc-mini-box" id="rally-mini"></div></div>
   </section>
 
   <!-- ===== いまの混雑：本部がコンソールで変えると、すぐここに出る（1つも更新されていないあいだは出さない） ===== -->
-  <section class="crowdnow" id="crowd-now" aria-labelledby="crowdnow-title" hidden>
+  <section class="crowdnow" id="crowd-now" data-block="crowd" aria-labelledby="crowdnow-title" hidden>
     <div class="crowdnow-in">
       <h2 class="crowdnow-title" id="crowdnow-title">いまの混雑</h2>
       <ul class="crowdnow-list" id="crowdnow-list"></ul>
@@ -185,7 +191,7 @@
   </section>
 
   <!-- ===== みどころ（Figma）：時間の決まった企画をチケットの形で。いま・次のものを3枚（時間で自動で入れかわる） ===== -->
-  <section class="mido" id="pickup" aria-labelledby="mido-title">
+  <section class="mido" id="pickup" data-block="pickup" aria-labelledby="mido-title">
     <div class="mido-in">
       <h2 class="mido-title" id="mido-title">みどころ</h2>
       <div class="mido-tickets" id="mido-tickets"></div>
@@ -194,7 +200,7 @@
   </section>
 
   <!-- ===== 縁日（模擬店の紹介）：掲示板にチラシを貼ったように、横にすべらせて見る。押すと地図でお店の場所 ===== -->
-  <section class="ennichi" id="ennichi" aria-labelledby="ennichi-title">
+  <section class="ennichi" id="ennichi" data-block="ennichi" aria-labelledby="ennichi-title">
     <div class="ennichi-in">
       <h2 class="ennichi-title" id="ennichi-title">縁日<small>模擬店</small></h2>
       <div class="ennichi-chips" id="ennichi-chips" role="group" aria-label="ジャンル"></div>
@@ -204,7 +210,7 @@
   </section>
 
   <!-- ===== ご来場の皆さまへ：駅の案内板のように、絵とひとことの札。押すとくわしい説明（要項より） ===== -->
-  <section class="visit" id="info" aria-labelledby="visit-title">
+  <section class="visit" id="info" data-block="info" aria-labelledby="visit-title">
     <div class="visit-in">
       <h2 class="visit-title" id="visit-title">ご来場の皆さまへ</h2>
       <ul class="visit-grid" id="visit-grid"></ul>
@@ -275,7 +281,7 @@
   </div>
 
   <!-- ===== 協賛：協賛企業のロゴを並べる（要項 p.10「公式ホームページへの企業ロゴ掲載」）。ページのいちばん下 ===== -->
-  <section class="spon" id="sponsors" aria-labelledby="sponsors-title">
+  <section class="spon" id="sponsors" data-block="sponsors" aria-labelledby="sponsors-title">
     <div class="spon-in">
       <h2 class="spon-title" id="sponsors-title">協賛</h2>
       <p class="spon-lead" id="sponsor-lead"></p>
@@ -313,6 +319,7 @@
   </nav>
 
   <script type="module" src="assets/main.js"></script>
+  <script type="module" src="assets/blocks.js"></script><!-- トップの欄の並び（本部の「サイトの設定」） -->
   <!-- 一度削除（Enistagram の欄）<script type="module" src="assets/home-feed.js"></script> -->
   <script type="module" src="assets/shops-board.js"></script>
   <script type="module" src="assets/visit.js"></script>

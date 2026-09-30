@@ -519,3 +519,18 @@ body.is-printing { overflow: hidden; }
 .rally-table .bar { display: block; height: 8px; width: calc(var(--p) * 100%); min-width: 2px; border-radius: 999px; background: var(--teal); }
 .rally-table tr + tr { border-top: 1px solid var(--line); }
 .rally-foot { font-size: .78rem; }
+/* トップページの並び：⠿ をつかんで上下にドラッグ */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.blocks { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.block-row { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); transition: opacity .15s, box-shadow .15s; }
+.block-row.is-top { border-color: var(--teal); box-shadow: inset 3px 0 0 var(--teal); }
+.block-row.is-off { opacity: .5; }
+.block-row.is-dragging { position: relative; z-index: 1; box-shadow: 0 10px 24px rgba(0, 0, 0, .45), inset 0 0 0 1px var(--teal); background: var(--panel-2); }
+.block-grip { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--sub); font-size: 1.2rem; line-height: 1; cursor: grab; touch-action: none; }
+.block-grip:hover, .block-grip:focus-visible { background: var(--panel-2); color: var(--ink); }
+.is-dragging .block-grip { cursor: grabbing; }
+.block-no { min-width: 1.4em; font-family: var(--mono); font-weight: 700; color: var(--teal); text-align: center; }
+.block-name { display: grid; line-height: 1.35; }
+.block-name small { color: var(--sub); font-size: .78rem; }
+.block-row.is-top .block-name b::after { content: "いちばん上・角が丸い"; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: rgba(94, 211, 195, .16); color: var(--teal); font-size: .7rem; font-weight: 700; vertical-align: 1px; }
+.block-show { align-items: center; }

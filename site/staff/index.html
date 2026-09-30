@@ -370,13 +370,14 @@
       <section class="view" id="view-settings" data-title="サイトの設定" data-eyebrow="SETTINGS" hidden>
         <div class="grid-2">
           <article class="card">
-            <header class="card-head"><h2>下のタブ</h2><span class="pill" id="tabs-state"></span></header>
-            <form id="tabs-form" class="stack">
-              <p class="muted">オフにしたタブは、スマホの下のタブと PC の右上から消えます。保存すると、開いている人の画面もすぐ変わります。</p>
-              <label class="switch"><input type="checkbox" data-tab-toggle="site" checked><span class="switch-ui" aria-hidden="true"></span><span>サイト<small>トップページ（みどころ・縁日・ご来場の皆さまへ など）</small></span></label>
-              <label class="switch"><input type="checkbox" data-tab-toggle="map" checked><span class="switch-ui" aria-hidden="true"></span><span>地図<small>校内マップ</small></span></label>
-              <label class="switch"><input type="checkbox" data-tab-toggle="feed" checked><span class="switch-ui" aria-hidden="true"></span><span>Enistagram<small>みんなの投稿</small></span></label>
-              <div class="row"><button class="btn btn-primary" type="submit">保存して公開</button></div>
+            <header class="card-head"><h2>トップページの並び</h2><span class="pill" id="blocks-state"></span></header>
+            <form id="blocks-form" class="stack">
+              <p class="muted">⠿ をつかんで上下にドラッグすると、トップページの欄の順番が変わります。スイッチをオフにした欄は出しません。いちばん上の欄は、上の絵に重なって上の角が丸くなります（いまの学生主事よりの形）。保存すると、開いている人の画面もすぐ変わります。</p>
+              <ol class="blocks" id="blocks-list"></ol>
+              <div class="row">
+                <button class="btn btn-ghost" type="button" id="blocks-default">いつもの並びに戻す</button>
+                <button class="btn btn-primary" type="submit">保存して公開</button>
+              </div>
             </form>
           </article>
 

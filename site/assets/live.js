@@ -180,8 +180,8 @@ export async function subscribeRally(callback) {
   }
 }
 
-// 本部コンソールの「サイトの設定」（tabs-config.js が使う）
-//   site_config/current = { tabs: { site, map, feed }（false のタブは出さない） }
+// 本部コンソールの「サイトの設定」（blocks.js が使う）
+//   site_config/current = { blocks: [{ id, show }] }（トップページの欄の並びと、出す・出さない）
 export async function subscribeSiteConfig(callback) {
   try {
     const db = await getDb();

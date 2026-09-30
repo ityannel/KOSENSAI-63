@@ -109,11 +109,11 @@ service cloud.firestore {
     }
 
     // ---------- サイトの設定（本部コンソールの「サイトの設定」） ----------
-    // site_config/current = { tabs: { site, map, feed } }：false のタブは、来場者の画面の下のタブ・PC の右上から消える
+    // site_config/current = { blocks: [{ id, show }] }：トップページの欄（学生主事より・みどころ・縁日…）の並び順と、出す・出さない
     match /site_config/{id} {
       allow read: if true;
-      allow write: if isStaff() && stamped() && data().keys().hasOnly(['tabs', 'updated_at', 'updated_by'])
-        && data().tabs is map && data().tabs.keys().hasOnly(['site', 'map', 'feed']);
+      allow write: if isStaff() && stamped() && data().keys().hasOnly(['blocks', 'updated_at', 'updated_by'])
+        && data().blocks is list && data().blocks.size() <= 20;
     }
 
     // ---------- 模擬店の待ち時間 ----------

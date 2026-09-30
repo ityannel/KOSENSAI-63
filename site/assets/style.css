@@ -340,12 +340,12 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
    夕焼けの背景ごと画面の幅に合わせて大きさが変わる。位置と大きさは Figma の 402px 幅の数字 × --u */
 .k-top {
   position: relative; overflow: hidden; container-type: inline-size;
-  aspect-ratio: 402 / 1053; /* 背景の絵（top-bg.webp）と同じ形。下は学生主事のカードで終わる（すぐ下が「みどころ」） */
+  aspect-ratio: 402 / 807; /* 背景の絵（top-bg.webp・402×1053）の上から 787＋重なり 20 まで。その下は並べかえられる欄（blocks.js） */
   --u: calc(100cqi / 402);
   background: linear-gradient(#d8457f, #e2622e 35%, #e3a43a 65%, #dfc27a); /* 背景の絵が読み込まれるまで */
   color: #fff;
 }
-.k-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.k-bg { position: absolute; inset: 0 0 auto; width: 100%; height: auto; } /* 絵はのばさず、下は切れる */
 /* 道を歩く小さな人（Figma「新ボタン案」。この案の位置は、セクションの上から 54.5 引いたもの） */
 .k-figs { position: absolute; left: calc(121 * var(--u)); top: calc(345 * var(--u)); width: calc(157.5 * var(--u)); height: auto; pointer-events: none; }
 /* 日付の帯：ポスターの道路の色が、下へだんだん透けて、ふちを作らずに消える（シルエットの頭の上で透明になる） */
@@ -376,10 +376,11 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 .k-btn.is-map { left: calc(76 * var(--u)); top: calc(394 * var(--u)); width: calc(161.9 * var(--u)); --sx: calc(8.55 * var(--u)); --sy: calc(3.95 * var(--u)); } /* Figma「新ボタン案」：前の 0.658 倍 */
 .k-btn.is-enista { left: calc(129.94 * var(--u)); top: calc(601 * var(--u)); width: calc(202.9 * var(--u)); --sx: calc(-9.06 * var(--u)); --sy: calc(4.18 * var(--u)); } /* 前の 0.697 倍 */
 .k-btn .k-logo { position: absolute; left: 14.09%; top: 51.32%; width: 76.29%; } /* Figma の中の位置（41, 78 / 291×152） */
-/* 学生主事より */
+/* 学生主事より（ほかの欄と同じく並べかえられる。いちばん上のときは、上の絵に重なって上の角が丸い＝前と同じ形） */
+.k-msgsec { container-type: inline-size; position: relative; margin-top: -1px; }
 .k-msg {
-  position: absolute; inset: calc(787 * var(--u)) 0 auto; height: calc(266 * var(--u)); margin: 0;
-  border-radius: calc(20 * var(--u)) calc(20 * var(--u)) 0 0;
+  --u: calc(100cqi / 402);
+  position: relative; height: calc(266 * var(--u)); margin: 0; overflow: hidden;
   background: linear-gradient(#6e887d, #6f92a0);
 }
 .k-msg-photo { position: absolute; right: 0; bottom: 0; width: calc(233 * var(--u)); height: auto; }
@@ -633,7 +634,7 @@ body.mido-page { background: linear-gradient(rgba(20, 12, 18, 0.45), rgba(20, 12
     radial-gradient(ellipse 90% 40% at 88% 0%, rgba(233, 150, 110, .16), transparent 70%),
     linear-gradient(170deg, #4b5f80, #3b4968 50%, #2f3953);
 }
-.spon-in { padding: calc(30 * var(--u)) calc(22 * var(--u)) calc(var(--tabs-h) + 30 * var(--u)) calc(26 * var(--u)); }
+.spon-in { padding: calc(30 * var(--u)) calc(22 * var(--u)) calc(30 * var(--u)) calc(26 * var(--u)); } /* 下のタブの分は、いちばん下の欄（.is-last-block）で空ける */
 .spon-title { display: flex; align-items: baseline; gap: calc(10 * var(--u)); margin: 0 0 calc(16 * var(--u)) calc(1 * var(--u)); font-family: var(--hud-font); font-size: calc(32 * var(--u)); font-weight: 400; line-height: 1; }
 .spon-title small { font-family: var(--text-font); font-weight: 700; font-size: calc(13 * var(--u)); }
 /* 文は学生主事よりと同じ形（15px・行間25.7px・数字は1.25倍） */
@@ -1336,7 +1337,7 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 .lenis.lenis-stopped { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-.sections { padding-bottom: calc(var(--tabs-h) + 24px); color: var(--text); }
+.sections { padding-bottom: 0; color: var(--text); } /* 中は隠してある欄だけ。下のタブの分は、いちばん下の欄で空ける */
 .sec { position: relative; width: min(100%, 640px); margin: 0 auto; padding: 40px 20px 12px; scroll-margin-top: 8px; }
 /* セクションの区切りは短冊の色の細い帯 */
 .sec + .sec::before {
@@ -1876,9 +1877,14 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .crowdnow-map { display: inline-block; margin-top: calc(12 * var(--u)); color: #FFF1A8; font-family: var(--text-font); font-weight: 700; font-size: calc(13 * var(--u)); }
 @media (prefers-reduced-motion: reduce) { .cn-level::before, .cn-p > * { animation: none; } .cn-item.is-torn { animation: none; } }
 
-/* 本部コンソールの「サイトの設定」で出さないことにした下のタブ（tabs-config.js が html に data-tabs-off を付ける）。
-   スマホの下のタブ（.site-tabs・地図の .m-tabs）と、PC の右上のタブ（.pc-tabs）の両方 */
-:root[data-tabs-off~="site"] :is(.site-tabs a[href="./"], .m-tabs a[href="./"], [data-pc-tab="site"]),
-:root[data-tabs-off~="map"] :is(.site-tabs a[href="map.html"], .m-tabs [data-tab="map"], [data-pc-tab="map"]),
-:root[data-tabs-off~="feed"] :is(.site-tabs a[href="map.html?tab=feed"], .m-tabs [data-tab="feed"], [data-pc-tab="feed"]) { display: none !important; }
-:root[data-tabs-none] :is(.site-tabs, .m-tabs, .pc-tabs) { display: none !important; }
+
+/* ---------- トップの欄の並び（blocks.js）---------- */
+/* 本部が「出さない」にした欄 */
+[data-block][data-off] { display: none !important; }
+/* いちばん上の欄：上の絵に --edge（402px 幅で 20）だけ重なり、上の角だけ丸い。下へはみ出すもの（影・動き）は切らない */
+[data-block].is-first-block {
+  position: relative; z-index: 1; margin-top: calc(-1 * var(--edge, 20px));
+  clip-path: inset(0 0 -100vh 0 round var(--edge, 20px) var(--edge, 20px) 0 0);
+}
+/* いちばん下の欄：下のタブに隠れないよう、欄の色のまま下を空ける */
+[data-block].is-last-block { padding-bottom: var(--tabs-h); }

@@ -8,12 +8,12 @@
 // - 混雑・お知らせ・みんなの声（Firestore）はしまわない（電波がないときは出ないだけ）
 // - staff/（本部用）はしまわない
 // 中身を大きく変えたときは VERSION を上げる（古いしまったものを消す）
-const VERSION = "kosen63-v124";
+const VERSION = "kosen63-v125";
 const CORE = [
   "./", "index.html", "map.html", "mido.html", "rally.html", "favicon.svg", "manifest.webmanifest",
   "assets/style.css", "assets/map.css",
   "assets/main.js", "assets/map-page.js", "assets/map.js", "assets/route.js", "assets/campus.js", "assets/config.js",
-  "assets/live.js", "assets/posts.js", "assets/home-feed.js", "assets/tickets.js", "assets/thread.js", "assets/shops-board.js", "assets/detail.js", "assets/visit.js", "assets/mido-page.js", "assets/rally-page.js", "assets/qr-scan.js", "assets/tabs-config.js", "assets/app.js", "assets/site-text.js", "assets/theme.js", "assets/side.js", "assets/offline.js", "assets/rally.js", "assets/rally-data.js", "assets/ask.js", "assets/scene.js", "assets/fx.js", "assets/weather.js",
+  "assets/live.js", "assets/posts.js", "assets/home-feed.js", "assets/tickets.js", "assets/thread.js", "assets/shops-board.js", "assets/detail.js", "assets/visit.js", "assets/mido-page.js", "assets/rally-page.js", "assets/qr-scan.js", "assets/blocks.js", "assets/app.js", "assets/site-text.js", "assets/theme.js", "assets/side.js", "assets/offline.js", "assets/rally.js", "assets/rally-data.js", "assets/ask.js", "assets/scene.js", "assets/fx.js", "assets/weather.js",
   "assets/map/rooms.json", "assets/img/logo.webp", "assets/img/logo-s.webp", "assets/img/icon-192.png",
 ];
 const SIDE = [/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, /^https:\/\/www\.gstatic\.com\/firebasejs\//, /^https:\/\/cdn\.jsdelivr\.net\/npm\/(jsqr|lenis)@/];
