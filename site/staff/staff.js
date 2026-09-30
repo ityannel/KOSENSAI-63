@@ -637,14 +637,13 @@ async function buildShopSet(shops, withStaff) {
         <section class="sheet ps-staff">
           ${head("お店の人用（店頭には貼らない）")}
           <h2 class="ps-name">${esc(s.name)}</h2>
-          <p class="ps-warn">この紙は店頭に貼らないでください。お店の人だけで使います。</p>
+          <p class="ps-warn">この紙は店頭に貼らないでください！お店の人だけで使います！</p>
           <div class="ps-staff-body">
             <img class="ps-staff-qr" src="${qrDataUrl(url)}" alt="">
             <ol class="ps-steps">
-              <li>お店の人のスマホのカメラで、左の QR を読む</li>
-              <li>開いたページで「すぐ買える」「10分くらい待つ」「20分以上待つ」「完売」を押す</li>
-              <li>押すとすぐ、公式サイトと校内マップの「縁日」に出ます</li>
-              <li>1回読めば、そのスマホではずっと使えます</li>
+              <li>お店の人のスマホのカメラで、QR を読む</li>
+              <li>開いたページで「すぐ買える」「10分くらい待つ」「20分以上待つ」「完売」を選ぶ</li>
+              <li>押すとすぐに、公式サイトと校内マップに反映されます！</li>
             </ol>
           </div>
           <p class="ps-url">${esc(url)}</p>
