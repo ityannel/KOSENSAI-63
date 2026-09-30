@@ -650,6 +650,29 @@ function qrDataUrl(text, size = 480) {
   new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.M });
   return box.querySelector("canvas").toDataURL("image/png");
 }
+// スタンプの QR：まん中に「縁」のはんこ。はんこで隠れても読めるように、誤り訂正を一番強く（H：3割まで欠けても読める）する。
+// はんこは幅の3割弱（面積では1割未満）にとどめる
+function stampQrDataUrl(text, size = 480) {
+  if (!window.QRCode) throw new Error("QR を作る部品を読みこめませんでした");
+  const box = document.createElement("div");
+  new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.H });
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  g.drawImage(box.querySelector("canvas"), 0, 0);
+  const m = size / 2;
+  g.fillStyle = "#fff";
+  g.beginPath(); g.arc(m, m, size * 0.15, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "#000";
+  g.lineWidth = size * 0.02;
+  g.beginPath(); g.arc(m, m, size * 0.122, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = "#000";
+  g.font = `900 ${Math.round(size * 0.15)}px "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText("縁", m, m + size * 0.008);
+  return c.toDataURL("image/png");
+}
 const printKind = () => $('[name="pr-kind"]:checked').value;
 function syncPrintControls() {
   const kind = printKind();
@@ -665,7 +688,7 @@ const qrTile = (url, title, note = "") => `<figure class="ps-qr"><img src="${qrD
 const stampCard = (shop) => `
   <div class="ps-stamp">
     <p class="ps-stamp-top">スタンプラリー</p>
-    <img src="${qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(shop.id)}&c=${encodeURIComponent(keysOf(shop.id)[FEST])}`))}" alt="">
+    <img src="${stampQrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(shop.id)}&c=${encodeURIComponent(keysOf(shop.id)[FEST])}`))}" alt="">
     <p class="ps-stamp-name">${esc(shop.name)}</p>
     <p class="ps-stamp-day">${esc(FESTIVAL.days.map((d) => d.label).join("・"))} 両日使える QR</p>
     <p class="ps-stamp-hint">スマホのカメラで読むと、スタンプが押されます</p>
@@ -710,7 +733,7 @@ async function buildShopSet(shops, withStaff, format = printFormat()) {
   return pages.join("");
 }
 // 三角POP（A4 を3つに折って、下ののりしろで貼り、縦に立てる卓上の札）。3面ともまわりから見えるように、中身は90度まわして縦長に置く
-// 1段目＝お店の名前、2段目＝サイトの QR、3段目＝スタンプラリーのおさそい
+// 1段目＝お店の名前、2段目＝スタンプラリーのおさそい、3段目＝名前（小さく）とサイトの QR（小さく、下に）
 // 縦書きの中の「QR」や数字は、横に寝かせずに1文字ぶんに立てる（縦中横）
 const tcy = (t) => esc(t).replace(/QR|\d{1,2}/g, (m) => `<span class="tcy">${m}</span>`);
 // 縦書きの数は漢数字で（3 → 三、12 → 十二）
@@ -724,7 +747,7 @@ const kanjiNum = (n) => {
 function rallyBody(s) {
   const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
   const qr = rally
-    ? qrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
+    ? stampQrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
     : qrDataUrl(siteUrl("rally.html"));
   return `
           <div class="pt-v pt-rally-text">
@@ -735,15 +758,17 @@ function rallyBody(s) {
           </div>
           <figure class="pt-rally-qr"><img src="${qr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>`;
 }
-// 2段目の QR：Enistagram と、公式サイト（模擬店は待ち時間、学科展示は展示の一覧、インフォは校内マップ）
+// サイトの QR（小さく横に2つ）：Enistagram と、公式サイト（模擬店は待ち時間、学科展示は展示の一覧、インフォは校内マップ）
 const SITE_LINK = { shop: ["#ennichi", "で待ち時間をチェック"], exhibit: ["map.html?list=exhibit", "で学科展示を見る"], info: ["map.html", "で校内マップを見る"] };
 function linksHtml(s) {
   const [path, text] = SITE_LINK[s.kind] ?? SITE_LINK.shop;
   return `
-          <figure class="pt-link"><figcaption><img class="pt-enista" src="../assets/img/enistagram.webp" alt="Enistagram"><span>に投稿</span></figcaption><img class="pt-link-qr" src="${qrDataUrl(siteUrl("map.html?tab=feed"))}" alt=""></figure>
-          <figure class="pt-link"><figcaption><b>公式サイト</b><span>${text}</span></figcaption><img class="pt-link-qr" src="${qrDataUrl(siteUrl(path))}" alt=""></figure>`;
+          <div class="pl-links">
+            <figure class="pl-link"><img class="pl-qr" src="${qrDataUrl(siteUrl("map.html?tab=feed"))}" alt=""><figcaption><img class="pt-enista" src="../assets/img/enistagram.webp" alt="Enistagram"><span>に投稿</span></figcaption></figure>
+            <figure class="pl-link"><img class="pl-qr" src="${qrDataUrl(siteUrl(path))}" alt=""><figcaption><b>公式サイト</b><span>${text}</span></figcaption></figure>
+          </div>`;
 }
-// 貼り紙（壁に貼る A4 たて）：三角POP と同じ中身を、上から「名前」「サイトの QR」「スタンプラリー」の順に
+// 貼り紙（壁に貼る A4 たて）：三角POP と同じ中身を、上から「名前」「スタンプラリー」「サイトの QR（小さく、下に）」の順に
 function buildWall(s) {
   return `
       <section class="sheet pw">
@@ -751,8 +776,8 @@ function buildWall(s) {
           <img class="pw-logo" src="${LOGO}" alt="">
           <div><h2 class="pw-shop">${esc(s.name)}</h2>${s.group ? `<p class="pw-group">${esc(s.group)}</p>` : ""}</div>
         </div>
-        <div class="pw-links">${linksHtml(s)}</div>
         <div class="pw-rally">${rallyBody(s)}</div>
+        <div class="pw-links">${linksHtml(s)}</div>
         <p class="pw-foot">第${FESTIVAL.edition}回 函館高専祭「${esc(FESTIVAL.theme)}」</p>
       </section>`;
 }
@@ -767,10 +792,12 @@ function buildTents(shops) {
             ${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}
           </div>
         </div></div>
-        <div class="pt-panel"><div class="pt-face pt-links">${linksHtml(s)}
-        </div></div>
         <div class="pt-panel pt-rally"><div class="pt-face">
 ${rallyBody(s)}
+        </div></div>
+        <div class="pt-panel"><div class="pt-face pt-links">
+          <div class="pt-v pt-links-name"><h2 class="pt-shop">${esc(s.name)}</h2>${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}</div>
+          ${linksHtml(s)}
         </div></div>
         <div class="pt-glue">の り し ろ</div>
       </section>`;

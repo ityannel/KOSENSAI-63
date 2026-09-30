@@ -397,14 +397,20 @@ body.is-printing { overflow: hidden; }
 .pt-name { justify-content: flex-start; gap: 8mm; }
 .pt-logo { width: 26mm; height: auto; filter: grayscale(1) brightness(.35); }
 .pt-name-v { max-height: 145mm; text-align: start; }  /* 店名と部活名をまとめて左右の中央に、文字は上から */
-.pt-shop { margin: 0 0 0 4mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 16mm; line-height: 1.15; }
+.pt-shop { margin: 0 0 0 4mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 16mm; line-height: 1.15; word-break: auto-phrase; }
 .pt-group { margin: 0; font-size: 7.5mm; line-height: 1.3; }
-.pt-links { gap: 22mm; }
-.pt-link { display: flex; flex-direction: column; align-items: center; gap: 3mm; margin: 0; }
-.pt-link figcaption { display: flex; align-items: center; justify-content: center; gap: 1mm; font-size: 4.4mm; white-space: nowrap; }
-.pt-link figcaption b { font-size: 5.6mm; }
+.pt-links { justify-content: space-between; gap: 6mm; }
+.pt-links-name { flex: 1; min-height: 0; max-height: 135mm; text-align: start; }
+.pt-links-name .pt-shop { font-size: 12mm; margin: 0 0 0 3mm; }
+.pt-links-name .pt-group { font-size: 5.5mm; }
+/* サイトの QR：小さく横に2つ（三角POP の3段目の下・貼り紙の下） */
+.pl-links { display: flex; justify-content: center; gap: 8mm; }
+.pl-link { display: flex; flex-direction: column; align-items: center; gap: 1.5mm; width: 32mm; margin: 0; text-align: center; }
+.pl-qr { width: 26mm; height: 26mm; image-rendering: pixelated; }
+.pl-link figcaption { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .5mm 1mm; font-size: 3.2mm; line-height: 1.3; }
+.pl-link figcaption b { font-size: 3.6mm; }
+.pl-link .pt-enista { height: 4.2mm; }
 .pt-enista { height: 7mm; width: auto; filter: brightness(0); }
-.pt-link-qr { width: 52mm; height: 52mm; image-rendering: pixelated; }
 .pt-rally .pt-face { gap: 8mm; }
 .pt-rally .pt-face::before { content: ""; position: absolute; inset: 5mm 3mm; border: 1.2mm solid var(--ink); border-radius: 6mm; pointer-events: none; }
 .pt-rally-text { height: 100mm; }
@@ -416,14 +422,20 @@ body.is-printing { overflow: hidden; }
 .pt-rally-qr figcaption { margin-top: 2mm; font-size: 4.4mm; }
 .pt-glue { display: grid; place-items: center; font-size: 3.2mm; letter-spacing: .4em; color: #666; }
 /* 貼り紙（壁に貼る A4 たて）：三角POP と同じ中身を上から順に。名前は横書き、スタンプラリーは縦書きの文と QR */
-.sheet.pw { display: grid; grid-template-rows: auto auto 1fr auto; gap: 8mm; padding: 14mm 14mm 10mm; }
+.sheet.pw { display: grid; grid-template-rows: auto 1fr auto auto; gap: 8mm; padding: 14mm 14mm 10mm; }
 .pw-name { display: flex; align-items: center; gap: 7mm; padding-bottom: 6mm; border-bottom: .6mm solid var(--ink); }
 .pw-logo { flex: none; width: 30mm; height: auto; filter: grayscale(1) brightness(.35); }
 .pw-shop { margin: 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 17mm; line-height: 1.1; word-break: auto-phrase; }
 .pw-group { margin: 3mm 0 0; font-size: 7mm; }
-.pw-links { display: flex; justify-content: center; gap: 24mm; }
+.pw-links .pl-links { gap: 30mm; }
+.pw-links .pl-qr { width: 30mm; height: 30mm; }
+.pw-links .pl-link { width: 44mm; }
+.pw-links .pl-link figcaption { font-size: 3.8mm; }
 .pw-rally { position: relative; display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; gap: 18mm; padding: 6mm 10mm; border: 1.2mm solid var(--ink); border-radius: 6mm; }
-.pw-rally .pt-rally-text { height: 96mm; }
+.pw-rally .pt-rally-text { height: 120mm; }
+.pw-rally .pt-rally-text h3 { font-size: 14mm; }
+.pw-rally .pt-rally-lead { font-size: 7.5mm; }
+.pw-rally .pt-rally-qr img { width: 64mm; height: 64mm; }
 .pw-foot { margin: 0; font-size: 3.6mm; text-align: center; color: #555; }
 
 @page { size: A4; margin: 0; }
