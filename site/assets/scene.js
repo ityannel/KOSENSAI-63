@@ -44,7 +44,12 @@ const SPOTS = [
 ];
 
 // 細いスマホでは絵の左右が切れる。画面に見えているか
-const sceneBox = () => document.querySelector(".scene")?.getBoundingClientRect() ?? { left: 0, right: innerWidth };
+// 見えている絵の範囲（絵は画面より広いことがあるので、画面の中に限る）
+const sceneBox = () => {
+  const r = document.querySelector(".scene")?.getBoundingClientRect() ?? { left: 0, right: innerWidth };
+  const vw = document.documentElement.clientWidth;
+  return { left: Math.max(0, r.left), right: Math.min(vw, r.right) };
+};
 const onScreen = (el) => { if (!el) return false; const r = el.getBoundingClientRect(), s = sceneBox(); return r.right > s.left && r.left < s.right; };
 // 絵の中の隠しスポット。印も出さない。全部見つけるとごほうび
 const HIDDEN = [
@@ -147,11 +152,19 @@ export function say(id, text, ms = 3200) {
   const b = el.querySelector(".bubble");
   b.textContent = text ?? pick(linesOf(s));
   el.classList.add("is-talking");
-  // 吹き出しが画面の外に出ないように、内側へずらす
-  b.style.marginLeft = "0px";
-  const r = b.getBoundingClientRect();
+  // 吹き出しが画面の外に出ないように、内側へずらす（出てくる途中の縮んだ大きさではなく、本当の大きさで測る）。
+  // ずらした分だけ、しっぽを逆へずらして、しゃべっている人を指したままにする
+  b.style.transform = "";
+  b.style.removeProperty("--tail");
+  const w = b.offsetWidth;
+  const left = el.getBoundingClientRect().left + b.offsetLeft, right = left + w; // 配置の位置（動きの縮み・ずれを含まない）
   const sb = sceneBox(); // 見えている絵の中（PC ではスマホの幅）に収める
-  b.style.marginLeft = `${Math.min(0, sb.right - 8 - r.right) || Math.max(0, sb.left + 8 - r.left)}px`;
+  const shift = Math.min(0, sb.right - 8 - right) || Math.max(0, sb.left + 8 - left);
+  b.style.transform = shift ? `translateX(${shift}px)` : ""; // 左右どちら向きの吹き出しでも効くように、transform でずらす
+  if (shift) {
+    const base = b.classList.contains("bubble-left") ? w - 18 : 18;
+    b.style.setProperty("--tail", `${Math.max(16, Math.min(w - 16, base - shift))}px`);
+  }
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove("is-talking"), ms);
 }

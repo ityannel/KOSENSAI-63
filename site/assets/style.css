@@ -183,30 +183,39 @@ body:not(.awake) .spot.is-person::before { opacity: 0; }
 @keyframes beacon { 0% { box-shadow: 0 0 0 0 rgba(255, 253, 248, 0.8); } 100% { box-shadow: 0 0 0 max(10px, 1.6cqw) rgba(255, 253, 248, 0); } }
 .spot:hover, .spot:focus-visible { background: rgba(255, 253, 248, 0.12); box-shadow: 0 0 0 2px rgba(255, 253, 248, 0.7); }
 
-/* 吹き出し */
+/* 吹き出し：まんがのふきだし。クリーム色の紙（ざらざら）に、こげ茶の線。影はサイトの札と同じ、ずらした影。
+   しっぽ（::after）はふちの線ごとつながり、しゃべっている人の頭を指す（画面に収めるために吹き出しをずらしても、
+   しっぽは同じ所を指したまま：--tail を scene.js がずらす）。出るときは、しっぽの所から、ぽんっとはずんで出る */
 .bubble {
-  position: absolute; bottom: calc(100% + max(12px, 2cqw));
-  width: max-content; max-width: max(150px, 24cqw);
-  padding: 0.5em 0.8em; border-radius: 1em;
-  background: #FFFDF8; color: var(--ink);
-  font-size: max(11px, 1.45cqw); font-weight: 700; line-height: 1.5;
-  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.5);
-  opacity: 0; translate: 0 6px; scale: 0.9;
-  transition: opacity 0.25s, translate 0.25s, scale 0.25s;
+  --ink: #634A2E; --paper: #FFFBF2; --tail: 18px;
+  position: absolute; bottom: calc(100% + max(14px, 2.2cqw)); z-index: 2;
+  width: max-content; max-width: min(62cqw, 250px);
+  padding: 0.55em 0.95em 0.6em; border: 2px solid var(--ink); border-radius: 1.1em;
+  background: var(--grain, none), var(--paper); color: var(--ink);
+  font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif; font-size: max(12px, 1.5cqw); font-weight: 900; line-height: 1.45;
+  word-break: auto-phrase; text-wrap: balance; letter-spacing: 0.02em;
+  filter: drop-shadow(-3px 3px 0 rgba(48, 36, 30, 0.28));
+  opacity: 0; scale: 0.6; translate: 0 8px;
+  transform-origin: var(--tail) calc(100% + 10px);
+  transition: opacity 0.18s ease, scale 0.42s cubic-bezier(.34, 1.56, .64, 1), translate 0.42s cubic-bezier(.34, 1.56, .64, 1);
   pointer-events: none;
 }
+/* しっぽ：ふちの線がついた小さな四角を45度まわして、下半分だけを出す（上半分は吹き出しのふちに重なって見えない） */
 .bubble::after {
-  content: ""; position: absolute; top: 100%;
-  border: 7px solid transparent; border-top-color: #FFFDF8;
+  content: ""; position: absolute; top: 100%; left: var(--tail);
+  width: 11px; height: 11px; margin: -6px 0 0 -7px;
+  background: var(--paper); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+  border-bottom-right-radius: 3px;
+  transform: rotate(45deg) skew(8deg, 8deg);
 }
-.bubble-right { left: 20%; }
-.bubble-right::after { left: 14px; }
-.bubble-left { right: 20%; }
-.bubble-left::after { right: 14px; }
-.spot:not(.is-person) .bubble { bottom: auto; top: 50%; left: 50%; right: auto; translate: -50% -50%; }
+.bubble-right { left: 12%; }
+.bubble-left { right: 12%; --tail: calc(100% - 18px); }
+.spot:not(.is-person) .bubble { bottom: auto; top: 50%; left: 50%; right: auto; translate: -50% -50%; transform-origin: 50% 50%; }
 .spot:not(.is-person) .bubble::after { display: none; }
 .spot.is-talking .bubble, .spot:hover .bubble, .spot:focus-visible .bubble { opacity: 1; translate: 0 0; scale: 1; }
 .spot:not(.is-person):hover .bubble, .spot:not(.is-person):focus-visible .bubble { translate: -50% -50%; }
+/* しまうときは、はずまずに、すっと */
+.spot:not(.is-talking):not(:hover) .bubble { transition: opacity 0.2s ease, scale 0.2s ease, translate 0.2s ease; }
 
 /* ---------- 電柱の看板（混雑状況） ---------- */
 .pole-sign {
