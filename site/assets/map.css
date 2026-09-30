@@ -152,6 +152,16 @@ body.mapapp {
 .wait.w10 { background: #e8a317; }
 .wait.w20 { background: #d93025; }
 .wait.sold { background: #6b6b6b; }
+.wait small { margin-left: 5px; font-size: .68rem; font-weight: 400; opacity: .92; } /* いつの情報か（「待ちなし」より細い字） */
+.wait.is-stale { opacity: .55; }
+/* 左の●：いまの情報（リアルタイム）の印。ゆっくり点滅。古い情報は点滅しない */
+.wait::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: #fff; vertical-align: 1px; animation: wait-blink 1.4s ease-in-out infinite; }
+.wait.is-stale::before { animation: none; opacity: .6; }
+@keyframes wait-blink { 50% { opacity: .15; } }
+@media (prefers-reduced-motion: reduce) { .wait::before { animation: none; } }
+/* 名前の横に置く札（NOW と同じ） */
+.sh-title .wait { margin-left: 6px; padding: 0 7px; font-family: "Noto Sans JP", sans-serif; font-weight: 700; font-size: .72rem; line-height: 1.6; vertical-align: 4px; white-space: nowrap; }
+.sh-venue small .wait { margin-left: 0; }
 .m-item .mini-hanko { flex: none; }
 #map-svg .ic-stamp .bg { fill: #FFFDF8; stroke: #C8423A; stroke-width: 2px; }
 #map-svg .ic-stamp text { fill: #C8423A; }
@@ -222,18 +232,6 @@ body.mapapp {
 .m-chips { display: flex; gap: 8px; max-width: 560px; margin: 10px auto 0; padding: 0 2px 6px; overflow-x: auto; scrollbar-width: none; }
 .m-chips::-webkit-scrollbar { display: none; }
 body.is-searching .m-chips { display: none; }
-/* 会場の混雑の札：色の丸（空いている→入場制限）と、短い会場名・度合い */
-.m-crowd { display: flex; align-items: center; gap: 6px; max-width: 560px; margin: 2px auto 0; padding: 0 2px 6px; overflow-x: auto; scrollbar-width: none; }
-.m-crowd::-webkit-scrollbar { display: none; }
-body.is-searching .m-crowd { display: none; }
-.m-crowd-h { flex: none; padding: 0 4px 0 2px; font-size: .72rem; color: var(--m-sub, #6b6258); letter-spacing: .08em; }
-.m-crowd-item {
-  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px 0 10px; border: 2px solid var(--lv); border-radius: 999px;
-  background: color-mix(in srgb, var(--lv) 18%, var(--m-panel, #fff)); color: var(--m-ink); font: inherit; font-size: .8rem; font-weight: 800; cursor: pointer; box-shadow: var(--m-shadow);
-}
-.m-crowd-item i { width: 10px; height: 10px; border-radius: 50%; background: var(--lv); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lv) 35%, transparent); }
-.m-crowd-item small { font-size: .72rem; font-weight: 700; opacity: .8; }
-.m-crowd-item.is-stale { opacity: .55; border-style: dashed; }
 .m-chip {
   flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px;
   background: var(--m-panel); color: var(--m-ink); font-size: 0.85rem; font-weight: 700; cursor: pointer; box-shadow: var(--m-shadow);

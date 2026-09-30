@@ -1161,23 +1161,10 @@ function updateLabels() {
 }
 
 // その場で変わるもの（混雑・NOW・スタンプ・道順・印）
-// 会場の混雑の札（検索のバーの下）。本部が1つでも更新していれば出す。古い情報はうすく
-function renderCrowdStrip(s) {
-  const box = $("#m-crowd");
-  if (!box) return;
-  const items = CROWD.venues.map((id) => ({ id, c: crowdOf(id, s), p: place(id) })).filter((x) => x.c && x.p);
-  box.hidden = !items.length;
-  const html = items.length ? `<b class="m-crowd-h">混雑</b>${items.map(({ id, c, p }) => `
-    <button type="button" class="m-crowd-item${c.stale ? " is-stale" : ""}" data-go="${esc(id)}" style="--lv:${esc(c.color)}" title="${esc(`${titleOf(p)}：${c.label}${c.ago ? `（${c.ago}に更新）` : ""}`)}">
-      <i aria-hidden="true"></i><span>${esc(CROWD.short?.[id] ?? titleOf(p))}</span><small>${esc(c.label)}</small></button>`).join("")}` : "";
-  if (box.innerHTML !== html) box.innerHTML = html;
-}
-
 export function renderMap() {
   if (!floorLayer) return;
   if (floorLayer !== floor) drawFloor();
   const s = getState();
-  renderCrowdStrip(s);
   document.querySelectorAll("#m-rooms .room").forEach((el) => {
     const id = el.dataset.id;
     const lv = CROWD.venues.includes(id) ? CROWD.levels[s.crowd?.[id]?.level] : null;
@@ -1355,7 +1342,13 @@ function shopDocFor(sh, list) {
     return dn.length >= 2 && (dn === n || dn.includes(n) || n.includes(dn));
   }) ?? null;
 }
-const waitOf = (sh, s) => WAIT[shopDocFor(sh, s.shops)?.status] ?? null;
+function waitOf(sh, s) {
+  const d = shopDocFor(sh, s.shops);
+  const w = WAIT[d?.status];
+  return w ? { ...w, ago: d.updated_at ? s.agoText(d.updated_at) : "" } : null;
+}
+// 待ち時間・混雑の札：「待ちなし」の横に、いつの情報か（細い字）。会場の混雑も同じ形（ラベルは混みぐあい）
+const statusPill = (x) => x ? `<span class="wait ${x.cls}${x.stale ? " is-stale" : ""}">${esc(x.label)}${x.ago ? `<small>${esc(x.ago)}</small>` : ""}</span>` : "";
 // 場所の中のお店でいちばん待つもの（地図の印に使う）
 function worstWait(p, s) {
   let w = null;
@@ -1363,13 +1356,14 @@ function worstWait(p, s) {
   return w;
 }
 
+const CROWD_CLS = ["w0", "w10", "w20", "sold"]; // 混雑の4段階を、模擬店の札と同じ色に（空いている 緑・ふつう 黄・混雑 赤・入場制限 灰）
 function crowdOf(id, s) {
   if (!CROWD.venues.includes(id)) return null;
   const c = s.crowd?.[id];
   const lv = CROWD.levels[c?.level];
   if (!lv) return null;
   const stale = c.updated_at && s.now - c.updated_at > CROWD.staleMinutes * 60000;
-  return { ...lv, ago: c.updated_at ? s.agoText(c.updated_at) : "", stale };
+  return { ...lv, cls: CROWD_CLS[c.level], ago: c.updated_at ? s.agoText(c.updated_at) : "", stale };
 }
 
 // 模擬店総選挙の投票フォーム（受付中でなければ null）。prefill があれば、そのお店を選んだ状態で開く
@@ -1437,14 +1431,12 @@ function renderSheet() {
   const oneWait = one && waitOf(one, s);
   const html = `
     ${p.tentative || p.roomGuess ? `<p class="sh-kind">${p.tentative ? "【場所は仮】" : "【教室は仮】"}</p>` : ""}
-    <h2 class="sh-title">${esc(titleOf(p))}</h2>
+    <h2 class="sh-title">${esc(titleOf(p))}${statusPill(oneWait)}${statusPill(crowd)}</h2>
     <p class="sh-sub">${esc(subOf(p))}</p>
     ${one ? `<p class="sh-sub">${esc([one.group, one.food ? "食べもの" : ""].filter(Boolean).join("・"))}${genreTags(one)}</p>` : ""}
     <div class="sh-row">
-      ${oneWait ? `<span class="wait ${oneWait.cls}">${oneWait.label}</span>` : ""}
       ${isHere ? `<span class="sh-badge is-here">${I.pin}いまここ</span>` : ""}
       ${now ? `<span class="sh-badge is-now">NOW ${esc(now.title)}</span>` : ""}
-      ${crowd ? `<span class="sh-badge" style="--lv:${crowd.color}"><i></i>${esc(crowd.label)}${crowd.ago ? `<small>・${esc(crowd.ago)}${crowd.stale ? "（古い情報）" : ""}</small>` : ""}</span>` : ""}
       ${dist ? `<span class="sh-badge">${I.walk}${dist.minutes}分・${dist.meters}m</span>` : ""}
       ${p.kind === "toilet-hc" ? '<span class="sh-badge">車いす・おむつ替え</span>' : ""}
     </div>
@@ -1462,7 +1454,7 @@ function renderSheet() {
       const past = Date.parse(e.end) <= s.now;
       return `<li class="${past ? "is-past" : ""}"><time>${md(e.start)} ${hhmm(e.start)}</time>${esc(e.title)}${e.internal ? "（学内のみ）" : ""}${on ? "<em>NOW</em>" : ""}</li>`;
     }).join("")}</ul>` : ""}
-    ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` <span class="wait ${w.cls}">${w.label}</span>` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${x.note ? `<p>${esc(x.note)}</p>` : ""}</li>`).join("")}</ul>` : ""}
+    ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` ${statusPill(w)}` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${x.note ? `<p>${esc(x.note)}</p>` : ""}</li>`).join("")}</ul>` : ""}
     ${p.zone ? `<p class="sh-hint">この階の教室（${esc(p.codes.join("・"))}）のどれかです。どの教室かは、当日は教室の入口の看板を見てください。</p>` : ""}
     ${shops.length ? `<h3 class="sh-h">スタンプラリーのお店</h3><ul class="sh-events">${shops.map((x) => `<li><span class="mini-hanko${s.stamps?.includes(x.id) ? " on" : ""}">${s.stamps?.includes(x.id) ? "縁" : ""}</span>${esc(x.name)}</li>`).join("")}</ul>` : ""}
     ${picks.length ? `<h3 class="sh-h">みどころ</h3><ul class="sh-events">${picks.map((x) => `<li>${esc(x.name)}${x.note ? `<small>　${esc(x.note)}</small>` : ""}</li>`).join("")}</ul>` : ""}
@@ -1481,7 +1473,7 @@ function renderHome(body, s) {
     <div class="sh-venues">${venues.map((p) => {
       const c = crowdOf(p.id, s);
       const now = s.phase === "during" && s.running?.some((e) => e.venue === p.id);
-      return `<button type="button" class="sh-venue${now ? " is-now" : ""}" data-go="${p.id}"><b>${esc(p.name)}</b><small${c ? ` style="--lv:${c.color}"` : ""}>${c ? `<i></i>${esc(c.label)}` : esc(p.floor)}${now ? "・NOW" : ""}</small></button>`;
+      return `<button type="button" class="sh-venue${now ? " is-now" : ""}" data-go="${p.id}"><b>${esc(p.name)}</b><small>${c ? statusPill(c) : esc(p.floor)}${now ? "・NOW" : ""}</small></button>`;
     }).join("")}</div>`;
 }
 
@@ -2649,10 +2641,6 @@ export async function initMap(opts) {
     if (e.key === "Enter") $("#m-results [data-go]")?.click();
   });
   $("#m-clear").addEventListener("click", closeResults);
-  $("#m-crowd")?.addEventListener("click", (e) => {
-    const go = e.target.closest("[data-go]");
-    if (go) select(go.dataset.go);
-  });
   $("#m-results").addEventListener("click", (e) => {
     if (e.target.closest("[data-mappick]")) { beginMapPick(); return; }
     const go = e.target.closest("[data-go]");
