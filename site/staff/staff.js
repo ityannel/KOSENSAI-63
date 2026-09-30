@@ -76,7 +76,7 @@ function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
 }
 function startListening() {
-  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderLiveEffects(); renderOverview(); });
+  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderLiveEffects(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
     snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: v.level, updated_at: toMs(v.updated_at) }; });
@@ -609,6 +609,14 @@ function renderRally() {
   $("#rally-all").textContent = missing ? `残り${missing}店の QR を用意する` : "全部のお店の QR を用意済み";
 }
 $("#rally-all").addEventListener("click", () => write("全部の場所のスタンプの QR を用意しました", ensureRally));
+// 景品がなくなった：スタンプカードのページにおわびを出す（site_live/current の prize_out）
+$("#prize-out").addEventListener("change", (e) => {
+  const on = e.target.checked;
+  if (!confirm(on ? "「景品はすべてなくなりました」と、スタンプカードのページにおわびを出しますか？" : "景品の受け付けを再開しますか？（おわびを消します）")) { e.target.checked = !on; return; }
+  saveLive(on ? "景品の終了を出しました" : "景品の受け付けを再開しました", { prize_out: on });
+});
+// 何個で達成か（「文章と書体」で変えていればそちら）。印刷する紙もこの数にそろえる
+const rallyGoal = () => { const v = Math.round(Number(state.siteText?.texts?.rally_goal)); return v >= 1 ? v : RALLY.goal; };
 $("#rally-pin-make").addEventListener("click", async () => {
   if (state.rally?.staffPin && !confirm("番号を作り直すと、前の番号では引き換えられなくなります。よろしいですか？")) return;
   const pin = String(crypto.getRandomValues(new Uint32Array(1))[0] % 100000000).padStart(8, "0");
@@ -722,8 +730,8 @@ function rallyBody(s) {
           <div class="pt-v pt-rally-text">
             <h3>スタンプラリー、<br>はじめました。</h3>
             ${s.kind === "info"
-              ? `<p class="pt-rally-lead">まずはここで<b>一個目</b>！<br>スタンプ${kanjiNum(RALLY.goal)}個で、景品と交換！</p>`
-              : `<p class="pt-rally-lead">スタンプ<b>${kanjiNum(RALLY.goal)}個</b>で、景品と交換！</p>`}
+              ? `<p class="pt-rally-lead">まずはここで<b>一個目</b>！<br>スタンプ${kanjiNum(rallyGoal())}個で、景品と交換！</p>`
+              : `<p class="pt-rally-lead">スタンプ<b>${kanjiNum(rallyGoal())}個</b>で、景品と交換！</p>`}
           </div>
           <figure class="pt-rally-qr"><img src="${qr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>`;
 }

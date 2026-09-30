@@ -297,6 +297,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 
 /* ---------- スタンプラリー ---------- */
 .pin-view { display: inline-flex; align-items: baseline; gap: 10px; padding: 8px 14px; border: 1px dashed var(--sun); border-radius: 12px; background: rgba(242, 169, 106, .08); }
+.prize-out { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.prize-out input:checked + .switch-ui { background: var(--rose, #FF6B7A); }
 .pin-view b { font-family: var(--mono); font-size: 1.4rem; letter-spacing: .12em; color: var(--sun); }
 .pin-view small { color: var(--sub); font-size: .75rem; }
 

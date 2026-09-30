@@ -320,8 +320,8 @@ export const SPONSORS = {
 // QR の中身は推測できない長いランダムな文字列で、ここにはその「暗号化した値」だけを置く。
 // shops と staffPin は python tools/make-rally-qr.py で作って貼る（印刷用の QR のページも一緒にできる）。
 export const RALLY = {
-  goal: 3, // 何個で達成か
-  prize: "【仮】本部で景品と交換できます",
+  goal: 5, // 何個で達成か（インフォメーションの1個を含む）
+  prize: "本部でお菓子と交換できます（なくなりしだい終了）",
   claimPlace: "玄関ホールの本部",
   // 対象のお店。空のあいだはスタンプを押せない。
   // place（会場の id）か room（部屋番号）を書くと、校内マップにそのお店の場所が出る。

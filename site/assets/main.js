@@ -509,7 +509,7 @@ if (params.has("s") && params.has("c")) location.replace(`rally.html${location.s
 renderMini($("#rally-mini"));
 initScene(() => {
   const e = phase === "during" ? runningEvents()[0] : null;
-  return { phase, nowEvent: e ? { title: e.title, venueName: venueName(e.venue) } : null };
+  return { phase, nowEvent: e ? { title: e.title, venueName: venueName(e.venue) } : null, prizeOut: !!live?.prize_out };
 });
 // 5人に聞く：答えを作るのに必要な「今の様子」を渡す
 initAsk({

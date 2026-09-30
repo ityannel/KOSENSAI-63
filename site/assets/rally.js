@@ -110,6 +110,7 @@ if (DEMO) state = { ...state, stamps: { d1: Date.parse("2026-10-24T11:20:00+09:0
 export const stampCount = () => Object.keys(state.stamps).length;
 export const stampIds = () => Object.keys(state.stamps);
 let nowMs = () => Date.now();
+let prizeOut = false; // 景品がなくなった（本部コンソールのスイッチ。site_live/current の prize_out）
 const tokyoDate = () => new Date(nowMs()).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" }); // YYYY-MM-DD
 
 // QR の鍵がそのお店のものかを調べる。codes["fest"] は開催日ならどの日でも使える鍵（本部コンソールが作る。2日とも同じ QR）、
@@ -189,6 +190,8 @@ function slotsHtml() {
 function render() {
   const count = stampCount();
   const done = count >= RALLY.goal;
+  const sorry = $("#rally-sorry");
+  if (sorry) sorry.hidden = !prizeOut;
   const flipped = $(".rc")?.getAttribute("aria-pressed") === "true";
   const list = shops();
   $("#rc").innerHTML = `
@@ -201,7 +204,7 @@ function render() {
         </span>
         <ol class="rc-slots">${slotsHtml()}</ol>
         <span class="rc-foot">
-          <b class="rc-state">${done ? (state.claimedAt ? "引き換え済み" : "達成！ 景品と交換できます") : `あと<em>${RALLY.goal - count}</em>個で景品！`}</b>
+          <b class="rc-state">${done ? (state.claimedAt ? "引き換え済み" : prizeOut ? "達成！（景品は終了しました）" : "達成！ 景品と交換できます") : `あと<em>${RALLY.goal - count}</em>個で${prizeOut ? "達成" : "景品"}！`}</b>
           <small class="rc-turn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9M4 5v4h4M4 13a8 8 0 0 0 14.3 4.9M20 19v-4h-4"/></svg>うらを見る</small>
         </span>
         ${state.claimedAt ? '<i class="rc-claimed" aria-hidden="true">引換済</i>' : ""}
@@ -211,9 +214,9 @@ function render() {
         <ol class="rc-rules">
           <li>模擬店・学科展示に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
           <li>スタンプが<em>${RALLY.goal}個</em>たまったら達成</li>
-          <li>${esc(RALLY.claimPlace)}で、この画面を見せて景品と交換</li>
+          <li>${prizeOut ? "景品は終了しました（ごめんなさい）" : `${esc(RALLY.claimPlace)}で、この画面を見せて景品と交換`}</li>
         </ol>
-        <small class="rc-prize">${esc(RALLY.prize)}</small>
+        <small class="rc-prize">${prizeOut ? "景品は、すべてなくなりました。ごめんなさい。" : esc(RALLY.prize)}</small>
         <small class="rc-shops">${list.length ? `対象：${list.map((s) => esc(s.name)).join("・")}` : "対象の場所は、決まりしだいここに出ます"}</small>
       </span>
     </button>`;
@@ -228,6 +231,14 @@ function render() {
       <div class="goal-card is-claimed">
         <p class="goal-title">引き換え済みです</p>
         <p>${esc(when)} に引き換えました。ご参加ありがとうございました！</p>
+      </div>`;
+    return;
+  }
+  if (prizeOut) { // 景品がなくなったあと：引き換えの画面のかわりに、おわび
+    goal.innerHTML = `
+      <div class="goal-card is-claimed">
+        <p class="goal-title">達成！</p>
+        <p>ごめんなさい。景品は、すべてなくなりました。<br>最後まで集めてくれて、ありがとうございました！</p>
       </div>`;
     return;
   }
@@ -286,6 +297,10 @@ export function initRallyPage(getNow = () => Date.now()) {
   render();
   onRallyChange(render);
   setInterval(tickClock, 1000);
+  import("./live.js").then(({ subscribeLive }) => subscribeLive((d) => {
+    const v = !!d?.prize_out;
+    if (v !== prizeOut) { prizeOut = v; render(); }
+  })).catch(() => { /* 読めなくても、スタンプは押せる */ });
 
   // カードを押すと裏返る
   $("#rc").addEventListener("click", (e) => {

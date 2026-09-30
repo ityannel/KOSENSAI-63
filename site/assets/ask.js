@@ -65,14 +65,15 @@ const ANSWERS = {
     };
   },
 
-  rally() {
+  rally(s) {
     const n = stampCount();
     const g = RALLY.goal;
-    const line = n >= g ? `そろった！${RALLY.claimPlace}へ行こう` : n > 0 ? `スタンプあと${g - n}個！` : "模擬店のQRを読むとスタンプがたまるよ";
+    const out = !!s?.live?.prize_out; // 景品がなくなった
+    const line = n >= g ? (out ? "そろった！ 景品はもう終わっちゃったって…" : `そろった！${RALLY.claimPlace}へ行こう`) : n > 0 ? `スタンプあと${g - n}個！` : "模擬店や学科展示のQRを読むとスタンプがたまるよ";
     return {
       line,
       html: `<div class="answer-rally">${Array.from({ length: g }, (_, i) => `<span class="mini-hanko${i < n ? " on" : ""}">${i < n ? "縁" : ""}</span>`).join("")}
-        <b>${n} / ${g}</b></div><p>${n >= g ? esc(RALLY.prize) : "対象の模擬店で、お店の QR を読んでね。"}</p>`,
+        <b>${n} / ${g}</b></div><p>${out ? "景品は、すべてなくなりました。ごめんなさい。" : n >= g ? esc(RALLY.prize) : "模擬店・学科展示の QR を読んでね（はじめの1個は、玄関のインフォメーションで）。"}</p>`,
       actions: [link("#rally", n >= g ? "引き換え画面" : "スタンプカード")],
     };
   },

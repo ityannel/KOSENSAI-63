@@ -906,6 +906,8 @@ html.dt-open { overflow: hidden; }
 .rally-msg { min-height: 1.8em; margin: 10px 0 0; font-weight: 700; }
 .rally-msg[data-kind="ok"] { color: var(--en); }
 .rally-msg[data-kind="warn"] { color: var(--tint); }
+.rally-sorry { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(224, 101, 90, 0.18); color: var(--text); font-size: 0.85rem; line-height: 1.7; }
+.rally-sorry b { display: block; margin-bottom: 2px; font-size: 0.95rem; }
 .rally-note { margin: 4px 0 0; font-size: 0.8rem; color: var(--text-2); line-height: 1.7; }
 .rally-note[data-kind="warn"] { padding: 10px 12px; border-radius: 10px; background: rgba(224, 101, 90, 0.18); color: var(--text); }
 .goal-card {

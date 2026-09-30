@@ -23,9 +23,9 @@ const SPOTS = [
   },
   {
     id: "p3", person: true, box: [698, 1237, 842, 1421], topic: "rally", label: "走っている人に、スタンプラリーのことを聞く",
-    lines: () => {
+    lines: (c) => {
       const n = stampCount();
-      if (n >= RALLY.goal) return ["スタンプそろった！本部行こ！"];
+      if (n >= RALLY.goal) return [c.prizeOut ? "スタンプそろった！ 景品は終わっちゃったけど…" : "スタンプそろった！本部行こ！"];
       if (n > 0) return [`スタンプあと${RALLY.goal - n}個！`];
       return ["スタンプラリー、一緒に回ろ！", "スタンプ集めに走ってる！"];
     },

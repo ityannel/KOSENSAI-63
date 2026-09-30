@@ -9,9 +9,10 @@
 //   stream_active  : boolean                                 true の間トップに配信を出す
 //   food_reports   : [{ shop, text, photo }]                 いちゃの食レポ
 //   photos         : [{ url, caption }]                      会場の写真
+//   prize_out      : boolean                                 スタンプラリーの景品がなくなった（スタンプカードのページにおわび）
 //
-// 混雑状況は別のコレクション crowd/{会場ID}（本部が staff/crowd.html から書き込む）
-// 模擬店の待ち時間は shops/{id}（模擬店スタッフが app/shop-manager.html から書き込む）
+// 混雑状況は別のコレクション crowd/{会場ID}（本部コンソールから書き込む）
+// 模擬店の待ち時間は shops/{id}（模擬店の人が shop.html から、本部が本部コンソールから書き込む）
 //
 // Firebase に繋がらなくてもページは config.js の内容だけで表示される。
 

@@ -40,6 +40,9 @@ await t("staff fires fireworks now", assertSucceeds(setDoc(doc(staff, "site_live
 await t("other writes keep old fireworks_at", assertSucceeds(setDoc(doc(staff, "site_live/current"), { notice: "x", updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
 await t("fireworks time cannot be faked", assertFails(setDoc(doc(staff, "site_live/current"), { fireworks_at: new Date(2030, 0, 1), updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
 await t("unknown weather rejected", assertFails(setDoc(doc(staff, "site_live/current"), { weather_override: "tornado", updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
+await t("staff can mark prizes out", assertSucceeds(setDoc(doc(staff, "site_live/current"), { prize_out: true, updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
+await t("prize_out must be a boolean", assertFails(setDoc(doc(staff, "site_live/current"), { prize_out: "yes", updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
+await t("visitors cannot mark prizes out", assertFails(setDoc(doc(anon, "site_live/current"), { prize_out: true, updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
 await t("anyone can read site_live", assertSucceeds(getDoc(doc(nobody, "site_live/current"))));
 await t("staff writes site_text", assertSucceeds(setDoc(doc(staff, "site_text/current"), { texts: { about: ["a"] }, fonts: { text: "zenmaru" }, updated_at: serverTimestamp(), updated_by: "honbu@example.com" })));
 await t("stranger cannot write site_text", assertFails(setDoc(doc(stranger, "site_text/current"), { texts: {}, fonts: {}, updated_at: serverTimestamp(), updated_by: "evil@example.com" })));
