@@ -373,12 +373,19 @@ body.is-printing { overflow: hidden; }
 
 /* 三角POP：A4 を 3 段（点線で山折り）＋下ののりしろ。縦に立てるので、各面の中身は -90度まわす（紙の右の辺が下になる） */
 .sheet.pt { --ph: calc((297mm - 11mm) / 3); display: grid; grid-template-rows: repeat(3, var(--ph)) 11mm; padding: 0; }
-.pt-panel { position: relative; overflow: hidden; border-bottom: .3mm dashed #888; }
+.sheet.pt { position: relative; }
+.pt-panel { border-bottom: .3mm dashed #888; }
+/* 各面の中身は、まわす前の箱（幅 --ph × 高さ 200mm）を紙のまん中（上から 48.5〜248.5mm）に置き、
+   まわしてから、その面（k 段目）の高さへずらす。まわす前の箱が A4 の外にはみ出すと、
+   印刷のときにページの切れ目で中身が欠けるので（画面では正しく見えても）、はみ出さない位置に置く */
 .pt-face {
-  position: absolute; left: 50%; top: 50%; box-sizing: border-box; width: var(--ph); height: 210mm; padding: 10mm 7mm;
+  position: absolute; left: calc((210mm - var(--ph)) / 2); top: 48.5mm; box-sizing: border-box; width: var(--ph); height: 200mm; padding: 8mm 7mm;
   display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5mm; text-align: center;
-  transform: translate(-50%, -50%) rotate(-90deg);
+  transform: translateY(calc((var(--k) + .5) * var(--ph) - 148.5mm)) rotate(-90deg);
 }
+.pt-panel:nth-child(1) .pt-face { --k: 0; }
+.pt-panel:nth-child(2) .pt-face { --k: 1; }
+.pt-panel:nth-child(3) .pt-face { --k: 2; }
 .pt-v { writing-mode: vertical-rl; }
 .tcy { text-combine-upright: all; }
 .pt-name { justify-content: flex-start; gap: 8mm; }
