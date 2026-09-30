@@ -1,0 +1,88 @@
+// firestore.rules のテスト。Java が要る。
+//   cd tests/firestore-rules && npm install && npm test
+// 本部（staff の名簿）・来場者（匿名）・模擬店の人・ログインなし、それぞれができること／できないことを確かめる
+import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
+import { readFileSync } from "node:fs";
+import { doc, setDoc, getDoc, updateDoc, writeBatch, serverTimestamp, deleteDoc } from "firebase/firestore";
+
+const env = await initializeTestEnvironment({
+  projectId: "enishi-test",
+  firestore: { rules: readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8"), host: "127.0.0.1", port: 8089 },
+});
+let pass = 0, fail = 0;
+async function t(name, p) {
+  try { await p; pass++; console.log("PASS", name); } catch (e) { fail++; console.log("FAIL", name, "-", e.message.split("\n")[0]); }
+}
+const staffTok = { email: "honbu@example.com", firebase: { sign_in_provider: "password" } };
+const strangerTok = { email: "evil@example.com", firebase: { sign_in_provider: "password" } };
+const anonTok = { firebase: { sign_in_provider: "anonymous" } };
+await env.withSecurityRulesDisabled(async (c) => {
+  const db = c.firestore();
+  await setDoc(doc(db, "staff/honbu@example.com"), { name: "本部" });
+  await setDoc(doc(db, "shops/takoyaki"), { name: "たこ焼き", status: "normal" });
+  await setDoc(doc(db, "shop_codes/CODE123456789"), { shop: "takoyaki" });
+  await setDoc(doc(db, "posts/other"), { kind: "post", place: "", shop: null, stars: null, text: "x", has_photo: true, photo_status: "pending", uid: "anon2", reports: 0, hidden: false, reply_to: null });
+  await setDoc(doc(db, "post_photos/other"), { data: "data:image/jpeg;base64,AAAA", uid: "anon2" });
+});
+const staff = env.authenticatedContext("staff1", staffTok).firestore();
+const stranger = env.authenticatedContext("evil1", strangerTok).firestore();
+const anon = env.authenticatedContext("anon1", anonTok).firestore();
+const nobody = env.unauthenticatedContext().firestore();
+const live = (db, email) => setDoc(doc(db, "site_live/current"), { notice: "テスト", notice_level: "urgent", stream_url: "https://youtu.be/abc", stream_active: true, updated_at: serverTimestamp(), updated_by: email });
+
+await t("self-registered password user is NOT staff", assertFails(live(stranger, "evil@example.com")));
+await t("anonymous cannot write site_live", assertFails(live(anon, null)));
+await t("listed staff can write site_live", assertSucceeds(live(staff, "honbu@example.com")));
+await t("staff cannot forge updated_by", assertFails(live(staff, "someone@else")));
+await t("bad notice_level rejected", assertFails(setDoc(doc(staff, "site_live/current"), { notice_level: "panic", updated_at: serverTimestamp(), updated_by: "honbu@example.com" })));
+await t("anyone can read site_live", assertSucceeds(getDoc(doc(nobody, "site_live/current"))));
+await t("staff writes site_text", assertSucceeds(setDoc(doc(staff, "site_text/current"), { texts: { about: ["a"] }, fonts: { text: "zenmaru" }, updated_at: serverTimestamp(), updated_by: "honbu@example.com" })));
+await t("stranger cannot write site_text", assertFails(setDoc(doc(stranger, "site_text/current"), { texts: {}, fonts: {}, updated_at: serverTimestamp(), updated_by: "evil@example.com" })));
+await t("stranger cannot read staff list", assertFails(getDoc(doc(stranger, "staff/honbu@example.com"))));
+await t("staff can write crowd", assertSucceeds(setDoc(doc(staff, "crowd/gym2"), { level: 2, updated_at: serverTimestamp() })));
+await t("anonymous cannot write crowd", assertFails(setDoc(doc(anon, "crowd/gym2"), { level: 2, updated_at: serverTimestamp() })));
+
+function visitorPost(db, id, extra = {}) {
+  const b = writeBatch(db);
+  b.set(doc(db, "posts", id), { kind: "post", place: "", shop: null, stars: null, text: "たのしい", has_photo: false, photo_status: "none", uid: "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null, ...extra });
+  b.set(doc(db, "users_meta/anon1"), { last_post: serverTimestamp() });
+  return b.commit();
+}
+await t("visitor text post", assertSucceeds(visitorPost(anon, "p1")));
+await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), "users_meta/anon1"), { last_post: new Date(Date.now() - 120000) }));
+await t("visitor cannot self-approve photo", assertFails(visitorPost(anon, "p2", { has_photo: true, photo_status: "approved" })));
+await t("visitor cannot post as official", assertFails(visitorPost(anon, "p3", { official: true })));
+await t("visitor photo post starts pending", assertSucceeds((() => {
+  const b = writeBatch(anon);
+  b.set(doc(anon, "posts/p4"), { kind: "post", place: "", shop: null, stars: null, text: "", has_photo: true, photo_status: "pending", uid: "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null });
+  b.set(doc(anon, "post_photos/p4"), { data: "data:image/jpeg;base64,AAAA", uid: "anon1" });
+  b.set(doc(anon, "users_meta/anon1"), { last_post: serverTimestamp() });
+  return b.commit();
+})()));
+await t("owner can read own pending photo", assertSucceeds(getDoc(doc(anon, "post_photos/p4"))));
+await t("others cannot read pending photo", assertFails(getDoc(doc(nobody, "post_photos/other"))));
+await t("staff can read pending photo", assertSucceeds(getDoc(doc(staff, "post_photos/other"))));
+await t("visitor cannot approve photo", assertFails(updateDoc(doc(anon, "posts/other"), { photo_status: "approved" })));
+await t("staff approves photo", assertSucceeds(updateDoc(doc(staff, "posts/other"), { photo_status: "approved" })));
+await t("everyone reads approved photo", assertSucceeds(getDoc(doc(nobody, "post_photos/other"))));
+await t("staff official post", assertSucceeds(setDoc(doc(staff, "posts/official1"), { kind: "post", place: "", shop: null, stars: null, text: "本部からのお知らせ", has_photo: false, photo_status: "none", uid: "staff1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null, official: true })));
+await t("stranger cannot delete post", assertFails(deleteDoc(doc(stranger, "posts/p1"))));
+
+const setStatus = (db) => updateDoc(doc(db, "shops/takoyaki"), { status: "soldout", updated_at: serverTimestamp() });
+await t("anonymous cannot change shop without code", assertFails(setStatus(anon)));
+await t("wrong shop code rejected", assertFails(setDoc(doc(anon, "shop_members/anon1"), { shop: "takoyaki", code: "WRONG", at: serverTimestamp() })));
+await t("shop code joins shop", assertSucceeds(setDoc(doc(anon, "shop_members/anon1"), { shop: "takoyaki", code: "CODE123456789", at: serverTimestamp() })));
+await t("shop member changes own status", assertSucceeds(setStatus(anon)));
+await t("shop member cannot rename shop", assertFails(updateDoc(doc(anon, "shops/takoyaki"), { name: "x", updated_at: serverTimestamp() })));
+await t("visitors cannot list shop codes", assertFails(getDoc(doc(anon, "shop_codes/CODE123456789"))));
+await t("staff can manage shop codes", assertSucceeds(setDoc(doc(staff, "shop_codes/NEWCODE"), { shop: "takoyaki" })));
+await t("staff cannot re-add pass field", assertFails(updateDoc(doc(staff, "shops/takoyaki"), { pass: "1234" })));
+
+await t("anyone cannot hijack quiz", assertFails(setDoc(doc(nobody, "quiz_control/current"), { is_active: true })));
+await t("quiz answers not public", assertFails(getDoc(doc(nobody, "quiz_answers/a"))));
+await t("presence ok in current window", assertSucceeds(setDoc(doc(nobody, `presence/${Math.floor(Date.now() / 300000)}`), { n: 1 })));
+await t("presence rejects far window", assertFails(setDoc(doc(nobody, "presence/1"), { n: 1 })));
+
+console.log(`\n${pass} passed, ${fail} failed`);
+await env.cleanup();
+process.exit(fail ? 1 : 0);

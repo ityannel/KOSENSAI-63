@@ -1,34 +1,98 @@
 rules_version = '2';
-// 第63回 函館高専祭の Firestore の読み書きのルール（下書き）。
-// ※ 公開する前に、Firebase コンソールにいま入っているルールと見くらべること（ここで消える許可がないか）。
+// 第63回 函館高専祭の Firestore の読み書きのルール。
 // 公開：npx firebase-tools deploy --only firestore:rules --project enishi-7f43f
+// ※ 公開する前に、Firebase コンソールにいま入っているルールと見くらべること（ここで消える許可がないか）。
 //
 // だれが何をできるか
-//   本部（staff/crowd.html・staff/posts.html にメールとパスワードでログインした人）：お知らせ・混雑・実況・みんなの声の管理
-//   来場者：読むだけ。みんなの声を書く・報告するときだけ「匿名ログイン」（名前なしの印）を使う
-//   app/（模擬店・クイズ）：いまの作りのまま（ログインなしで書く）。ただし書きかえられる項目はしぼる
+//   本部：staff/ の管理画面にメールとパスワードでログインした人のうち、
+//         Firestore の staff コレクションに「メールアドレスを名前にしたドキュメント」がある人だけ。
+//         （メールとパスワードのログインは、だれでも新しく作れてしまうので、ログインしただけでは本部にしない）
+//   模擬店の人：管理画面が出した「お店のコード」を shop.html で1回入れた人。自分のお店の待ち時間だけ変えられる
+//   来場者：読むだけ。みんなの声を書く・いいね・報告するときだけ「匿名ログイン」（名前なしの印）を使う
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 本部：メールとパスワードでログインした人（匿名ログインの来場者はふくまない）
     function isStaff() {
-      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'password';
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && request.auth.token.email is string
+        && exists(/databases/$(database)/documents/staff/$(request.auth.token.email));
     }
     function isVisitor() {
       return request.auth != null;
     }
+    function data() {
+      return request.resource.data;
+    }
     function onlyChanges(keys) {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+      return data().diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    function stamped() {
+      return data().updated_at == request.time && data().updated_by == request.auth.token.email;
     }
 
-    // ---------- トップページ・地図（site/） ----------
-    match /site_live/{id} { allow read: if true; allow write: if isStaff(); }
-    match /crowd/{venue}  { allow read: if true; allow write: if isStaff(); }
-    match /chatter/{id}   { allow read: if true; allow write: if isStaff(); }
-    // 見ている人の数：n を 1 ずつ足すだけ
+    // ---------- 本部の名簿（コンソールからだけ足す。管理画面は自分がのっているかを見るだけ） ----------
+    match /staff/{email} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+
+    // ---------- トップページ・地図が読むもの（書くのは本部だけ） ----------
+    // お知らせ・緊急のお知らせ・生配信・今やっていること
+    match /site_live/{id} {
+      allow read: if true;
+      allow write: if isStaff() && stamped()
+        && data().keys().hasOnly(['notice', 'notice_level', 'stream_url', 'stream_title', 'stream_active', 'now_events',
+                                  'phase_override', 'presence_off', 'food_reports', 'photos', 'updated_at', 'updated_by'])
+        && (!('notice_level' in data()) || data().notice_level in ['info', 'urgent'])
+        && (!('stream_url' in data()) || (data().stream_url is string && data().stream_url.size() <= 300));
+    }
+    // 文章と書体
+    match /site_text/{id} {
+      allow read: if true;
+      allow write: if isStaff() && stamped() && data().keys().hasOnly(['texts', 'fonts', 'updated_at', 'updated_by'])
+        && data().texts is map && data().fonts is map;
+    }
+    match /crowd/{venue} {
+      allow read: if true;
+      allow write: if isStaff() && data().keys().hasOnly(['level', 'updated_at'])
+        && data().level is int && data().level >= 0 && data().level <= 3 && data().updated_at == request.time;
+    }
+    match /chatter/{id} {
+      allow read: if true;
+      allow write: if isStaff() && data().keys().hasOnly(['p1', 'p2', 'p3', 'p4', 'p5', 'updated_at']);
+    }
+    // 見ている人の数：5分ごとの窓（いまの前後だけ）に 1 ずつ足すだけ
     match /presence/{w} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == 1;
-      allow update: if request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == resource.data.n + 1;
+      allow create: if w.matches('^[0-9]+$')
+        && int(w) >= request.time.toMillis() / 300000 - 1 && int(w) <= request.time.toMillis() / 300000 + 1
+        && data().keys().hasOnly(['n']) && data().n == 1;
+      allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
+    }
+
+    // ---------- 模擬店の待ち時間 ----------
+    // shops/{id} = { name, status, map, updated_at }。前の app/ の pass（4けたのパスワード）は、だれでも読めてしまうので置かない
+    function shopStatusOk() {
+      return data().status in ['normal', '10min', '20min', 'soldout'] && data().updated_at == request.time;
+    }
+    match /shops/{id} {
+      allow read: if true;
+      allow create, delete: if isStaff();
+      allow update: if (isStaff() && !('pass' in data()))
+        || (isVisitor() && onlyChanges(['status', 'updated_at']) && shopStatusOk()
+            && get(/databases/$(database)/documents/shop_members/$(request.auth.uid)).data.shop == id);
+    }
+    // お店のコード（管理画面が作る長いランダムな文字列。だれも一覧を読めない）
+    match /shop_codes/{code} {
+      allow read, write: if isStaff();
+    }
+    // コードを入れた模擬店の人（その人の匿名ログインの印に、お店をひもづける）
+    match /shop_members/{uid} {
+      allow read: if isStaff() || (isVisitor() && request.auth.uid == uid);
+      allow create, update: if isVisitor() && request.auth.uid == uid && data().keys().hasOnly(['shop', 'code', 'at'])
+        && data().at == request.time
+        && get(/databases/$(database)/documents/shop_codes/$(data().code)).data.shop == data().shop;
+      allow delete: if isStaff() || (isVisitor() && request.auth.uid == uid);
     }
 
     // ---------- みんなの声（site/assets/posts.js） ----------
@@ -38,72 +102,86 @@ service cloud.firestore {
     }
     match /posts/{id} {
       allow read: if true;
-      // 書く：自分の印・文字数・★・報告0・非表示なし、かつ 60 秒に1回（users_meta を同じ書き込みで更新）
-      allow create: if isVisitor()
-        && request.resource.data.keys().hasOnly(['kind', 'place', 'shop', 'stars', 'text', 'has_photo', 'uid', 'created_at', 'reports', 'hidden', 'reply_to'])
-        && (request.resource.data.get('reply_to', null) == null || (request.resource.data.reply_to is string && request.resource.data.reply_to.size() <= 40))
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.kind in ['review', 'post']
-        && request.resource.data.place is string && request.resource.data.place.size() <= 40   // "" は場所なし
-        && request.resource.data.text is string && request.resource.data.text.size() <= 140 && clean(request.resource.data.text)
-        && (request.resource.data.kind == 'post' || (request.resource.data.stars is int && request.resource.data.stars >= 1 && request.resource.data.stars <= 5))
-        && (request.resource.data.shop == null || (request.resource.data.shop is string && request.resource.data.shop.size() <= 60))
-        && request.resource.data.has_photo is bool
-        && request.resource.data.created_at == request.time
-        && request.resource.data.reports == 0 && request.resource.data.hidden == false
+      // 来場者が書く：自分の印・文字数・★・報告0・非表示なし・写真は「確認待ち」から、かつ 60 秒に1回（users_meta を同じ書き込みで更新）
+      allow create: if (isVisitor()
+        && data().keys().hasOnly(['kind', 'place', 'shop', 'stars', 'text', 'has_photo', 'photo_status', 'uid', 'created_at', 'reports', 'hidden', 'reply_to'])
+        && (data().get('reply_to', null) == null || (data().reply_to is string && data().reply_to.size() <= 40))
+        && data().uid == request.auth.uid
+        && data().kind in ['review', 'post']
+        && data().place is string && data().place.size() <= 40   // "" は場所なし
+        && data().text is string && data().text.size() <= 140 && clean(data().text)
+        && (data().kind == 'post' || (data().stars is int && data().stars >= 1 && data().stars <= 5))
+        && (data().shop == null || (data().shop is string && data().shop.size() <= 60))
+        && data().has_photo is bool
+        && data().photo_status == (data().has_photo ? 'pending' : 'none')
+        && data().created_at == request.time
+        && data().reports == 0 && data().hidden == false
         && getAfter(/databases/$(database)/documents/users_meta/$(request.auth.uid)).data.last_post == request.time
         && (!exists(/databases/$(database)/documents/users_meta/$(request.auth.uid))
-            || get(/databases/$(database)/documents/users_meta/$(request.auth.uid)).data.last_post < request.time - duration.value(60, 's'));
+            || get(/databases/$(database)/documents/users_meta/$(request.auth.uid)).data.last_post < request.time - duration.value(60, 's')))
+        // 本部の公式の投稿（管理画面から。写真なし）
+        || (isStaff()
+          && data().keys().hasOnly(['kind', 'place', 'shop', 'stars', 'text', 'has_photo', 'photo_status', 'uid', 'created_at', 'reports', 'hidden', 'reply_to', 'official'])
+          && data().official == true && data().uid == request.auth.uid && data().kind == 'post'
+          && data().text is string && data().text.size() > 0 && data().text.size() <= 400
+          && data().has_photo == false && data().photo_status == 'none'
+          && data().created_at == request.time && data().reports == 0 && data().hidden == false);
       // 報告：reports を1つ足すだけ（同じ書き込みで post_reports に自分の報告を作る＝1人1回）
       // いいね：likes を1つ足す（post_likes を作る）か、1つ引く（自分の post_likes を消す）だけ
-      allow update: if isStaff()
-        || (isVisitor() && onlyChanges(['reports']) && request.resource.data.reports == resource.data.reports + 1
+      // 本部：表示・非表示・写真の公開／非公開
+      allow update: if (isStaff() && onlyChanges(['hidden', 'reports', 'photo_status'])
+            && data().get('hidden', false) is bool && data().get('reports', 0) is int
+            && data().get('photo_status', 'none') in ['none', 'pending', 'approved', 'rejected'])
+        || (isVisitor() && onlyChanges(['reports']) && data().reports == resource.data.reports + 1
             && !exists(/databases/$(database)/documents/post_reports/$(id + '_' + request.auth.uid))
             && existsAfter(/databases/$(database)/documents/post_reports/$(id + '_' + request.auth.uid)))
         || (isVisitor() && onlyChanges(['likes'])
-            && ((request.resource.data.likes == resource.data.get('likes', 0) + 1
+            && ((data().likes == resource.data.get('likes', 0) + 1
                  && !exists(/databases/$(database)/documents/post_likes/$(id + '_' + request.auth.uid))
                  && existsAfter(/databases/$(database)/documents/post_likes/$(id + '_' + request.auth.uid)))
-             || (request.resource.data.likes == resource.data.get('likes', 0) - 1
+             || (data().likes == resource.data.get('likes', 0) - 1
                  && exists(/databases/$(database)/documents/post_likes/$(id + '_' + request.auth.uid))
                  && !existsAfter(/databases/$(database)/documents/post_likes/$(id + '_' + request.auth.uid)))));
       allow delete: if isStaff();
     }
+    // 写真：本部が「公開」にしたものだけ、みんなが読める（確認中は書いた本人と本部だけ）
     match /post_photos/{id} {
-      allow read: if true;
-      allow create: if isVisitor() && request.resource.data.keys().hasOnly(['data', 'uid']) && request.resource.data.uid == request.auth.uid
-        && request.resource.data.data is string && request.resource.data.data.size() < 750000
-        && request.resource.data.data.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+')
-        && getAfter(/databases/$(database)/documents/posts/$(id)).data.uid == request.auth.uid;
+      allow read: if isStaff()
+        || (isVisitor() && resource.data.uid == request.auth.uid)
+        || get(/databases/$(database)/documents/posts/$(id)).data.photo_status == 'approved';
+      allow create: if isVisitor() && data().keys().hasOnly(['data', 'uid']) && data().uid == request.auth.uid
+        && data().data is string && data().data.size() < 750000
+        && data().data.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+')
+        && getAfter(/databases/$(database)/documents/posts/$(id)).data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/posts/$(id)).data.photo_status == 'pending';
       allow delete: if isStaff();
     }
     match /post_reports/{rid} {
       allow read: if isStaff();
-      allow create: if isVisitor() && request.resource.data.uid == request.auth.uid && rid == request.resource.data.post + '_' + request.auth.uid;
+      allow create: if isVisitor() && data().keys().hasOnly(['post', 'uid', 'at']) && data().uid == request.auth.uid
+        && rid == data().post + '_' + request.auth.uid;
       allow delete: if isStaff();
     }
     match /post_likes/{lid} {
       allow read: if isStaff();
-      allow create: if isVisitor() && request.resource.data.keys().hasOnly(['post', 'uid', 'at']) && request.resource.data.uid == request.auth.uid
-        && lid == request.resource.data.post + '_' + request.auth.uid;
+      allow create: if isVisitor() && data().keys().hasOnly(['post', 'uid', 'at']) && data().uid == request.auth.uid
+        && lid == data().post + '_' + request.auth.uid;
       allow delete: if isVisitor() && resource.data.uid == request.auth.uid;
     }
     match /users_meta/{uid} {
       allow read: if isVisitor() && request.auth.uid == uid;
-      allow write: if isVisitor() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['last_post']) && request.resource.data.last_post == request.time;
+      allow write: if isVisitor() && request.auth.uid == uid && data().keys().hasOnly(['last_post']) && data().last_post == request.time;
     }
 
-    // ---------- app/（模擬店の待ち時間・クイズ）：いまの作りのまま動くように ----------
-    match /shops/{id} {
+    // ---------- 前の app/（クイズ）：本部だけ ----------
+    // 前はログインなしでだれでも書けて、全員の画面に好きな文字を出せた・回答者の名前と年齢をだれでも読めた。
+    // 新しいサイト（site/）はクイズを使わないので、本部だけが読み書きできるようにしてある。
+    match /quiz_control/{id} {
       allow read: if true;
-      allow update: if onlyChanges(['status']) && request.resource.data.status in ['normal', '10min', '20min', 'soldout'];
-      allow create, delete: if isStaff();
+      allow write: if isStaff();
     }
-    match /quiz_control/{id} { allow read: if true; allow write: if true; }   // app/portal.html（ログインなし）
     match /quiz_answers/{id} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if onlyChanges(['is_claimed']) && request.resource.data.is_claimed == true;   // app/claim.html
+      allow read, write: if isStaff();
     }
   }
 }

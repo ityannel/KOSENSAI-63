@@ -1,0 +1,13 @@
+{
+  "name": "kosen63-firestore-rules-test",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "cd ../.. && firebase emulators:exec --only firestore --project enishi-test \"node tests/firestore-rules/rules.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.0",
+    "firebase": "^10.12.2",
+    "firebase-tools": "^13.0.0"
+  }
+}
