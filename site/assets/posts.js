@@ -12,7 +12,7 @@
 //   users_meta/{uid}        = { last_post }                              続けて投稿できないようにする（60秒）
 // 書くには匿名ログインが要る（Firebase コンソール → Authentication → ログイン方法 → 匿名 を有効にする）。
 // 読み書きのルールは KOSENSAI-63/firestore.rules。
-import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "./live.js";
+import { FIREBASE_VERSION, firebaseConfig, connectEmulators, firestoreFor } from "./live.js";
 
 export const MAX_TEXT = 140;       // 文字数
 // 投稿した人の名前（ログインの印 uid から作る。本当の名前は集めないので、同じ人は同じ名前になるだけ）
@@ -48,7 +48,7 @@ function dbKit() {
   dbKitP ??= (async () => {
     const [appMod, fs] = await Promise.all([import(`${BASE}/firebase-app.js`), import(`${BASE}/firebase-firestore.js`)]);
     const app = appMod.getApps().find((a) => a.name === "[DEFAULT]") ?? appMod.initializeApp(firebaseConfig);
-    const k = { fs, app, db: fs.getFirestore(app) };
+    const k = { fs, app, db: firestoreFor(fs, app) };
     connectEmulators({ fs, db: k.db });
     return k;
   })();
@@ -100,7 +100,7 @@ export async function subscribePosts(callback) {
     const { fs, db } = await dbKit();
     if (myPosts().length) kit().catch(() => {}); // 自分の投稿があれば、確認中の写真を見るためのログインも裏で用意
     fs.onSnapshot(
-      fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(150)),
+      fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(100)),
       (snap) => {
         const list = [];
         const mine = new Set(myPosts());

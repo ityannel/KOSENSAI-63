@@ -66,6 +66,21 @@ const DEMO_CROWD = {
 let dbPromise = null;
 let fs = null;
 
+// Firestore を1つだけ作る（live.js・posts.js・rally.js で共通）。読んだものをこのスマホ（IndexedDB）に覚えておき、
+// 次にページを開いたときは、変わったものだけをサーバーから読む（読みこみの回数＝Firestore の上限・料金を減らす）。
+// 覚えられないブラウザ（シークレットモードなど）では、いつもどおり毎回読む
+export function firestoreFor(firestore, app) {
+  if (app.__kosenDb) return app.__kosenDb;
+  let db;
+  try {
+    db = firestore.initializeFirestore(app, { localCache: firestore.persistentLocalCache({ tabManager: firestore.persistentMultipleTabManager() }) });
+  } catch {
+    db = firestore.getFirestore(app); // もう作ってあった・覚えておけない
+  }
+  app.__kosenDb = db;
+  return db;
+}
+
 // Firebase の読み込みは1回だけ
 function getDb() {
   dbPromise ??= (async () => {
@@ -76,7 +91,7 @@ function getDb() {
     ]);
     fs = firestore;
     // みんなの声（posts.js）が先に立ち上げていればそれを使う
-    const db = firestore.getFirestore(getApps().find((a) => a.name === "[DEFAULT]") ?? initializeApp(firebaseConfig));
+    const db = firestoreFor(firestore, getApps().find((a) => a.name === "[DEFAULT]") ?? initializeApp(firebaseConfig));
     connectEmulators({ fs: firestore, db });
     return db;
   })();

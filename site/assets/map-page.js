@@ -40,5 +40,19 @@ await initMap({ getState: () => ({ phase: phase(), now: nowMs(), running: phase(
 subscribeCrowd((data) => { crowd = data; renderMap(); });
 subscribeLive((data) => { live = data; setNotice(live?.notice, live?.notice_level); renderMap(); });
 subscribeShops((list) => { shops = list; renderMap(); }); // 模擬店の待ち時間・売り切れ
-subscribePosts((list, err) => { if (list) posts = list; postsErr = err ?? null; renderMap(); }); // Enistagram（ポスト・レビュー・返信）
+// Enistagram（ポスト・レビュー・返信）は、Enistagram のタブを開いたときか、場所を押してシートが出たときに初めて読む
+// （地図を見るだけの人の分、Firestore の読みこみを減らす）。一度読みはじめたら、あとはずっと届く
+let postsOn = false;
+function wantPosts() {
+  if (postsOn) return;
+  postsOn = true;
+  watch.disconnect();
+  subscribePosts((list, err) => { if (list) posts = list; postsErr = err ?? null; renderMap(); });
+}
+const needPosts = () => document.body.classList.contains("is-feed") || !document.getElementById("m-sheet")?.hidden;
+const watch = new MutationObserver(() => { if (needPosts()) wantPosts(); });
+watch.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+const sheetEl = document.getElementById("m-sheet");
+if (sheetEl) watch.observe(sheetEl, { attributes: true, attributeFilter: ["hidden"] });
+if (needPosts()) wantPosts();
 setInterval(renderMap, 30000);

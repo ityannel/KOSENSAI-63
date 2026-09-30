@@ -150,11 +150,11 @@ const signature = () => JSON.stringify([state.stamps, state.claimedAt ?? null]);
 let fbP = null;
 function firebase() {
   fbP ??= (async () => {
-    const { FIREBASE_VERSION, firebaseConfig, connectEmulators } = await import("./live.js");
+    const { FIREBASE_VERSION, firebaseConfig, connectEmulators, firestoreFor } = await import("./live.js");
     const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
     const [appMod, auth, fs] = await Promise.all([import(`${base}/firebase-app.js`), import(`${base}/firebase-auth.js`), import(`${base}/firebase-firestore.js`)]);
     const app = appMod.getApps().find((x) => x.name === "[DEFAULT]") ?? appMod.initializeApp(firebaseConfig);
-    const k = { auth, fs, a: auth.getAuth(app), db: fs.getFirestore(app) };
+    const k = { auth, fs, a: auth.getAuth(app), db: firestoreFor(fs, app) };
     connectEmulators({ fs, db: k.db, auth, a: k.a });
     return k;
   })();
