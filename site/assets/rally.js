@@ -2,7 +2,9 @@
 // ・模擬店に貼った QR（rally.html?s=店ID&c=QRの鍵）を、スマホのカメラかページの「お店の QR を読む」で読むとスタンプが押される。
 //   入力欄はない（QR を読むだけ）
 // ・QR の鍵は日ごとに変わる推測できない長い文字列。config.js にはその暗号化した値だけを置く（tools/make-rally-qr.py で作る）
-// ・スタンプはこのスマホの中だけに保存する（名前などの個人情報は集めない）
+// ・スタンプはこのスマホの中に保存する（名前などの個人情報は集めない）。本部が全員の状況を見られるよう、
+//   押したお店と時刻だけを Firestore の rally_logs/{匿名ログインの印} にも写す（本部だけが読める）
+// ・本部が「全員の履歴をリセット」すると rally_control/current の reset_at が変わり、それより前のスタンプは各スマホで消える
 // ・goal 個たまると達成画面。本部のスタッフが番号を入れると「引き換え済み」になる
 import { RALLY, FESTIVAL } from "./config.js";
 import { rallyReady, onRallyChange } from "./rally-data.js"; // 本部コンソールで作った対象のお店（Firestore）
@@ -137,7 +139,64 @@ async function stamp(code, shopId) {
   if (state.stamps[shop.id]) return message(`「${shop.name}」のスタンプはもう押してあります。`, "info");
   state.stamps[shop.id] = nowMs();
   save();
+  syncLog();
   celebrate(shop);
+}
+
+// ---------- 本部へ写す・全員リセット ----------
+// 押したスタンプ（お店と時刻）と引き換えた時刻を rally_logs/{匿名ログインの印} に写す。
+// 同じ中身はもう一度書かない。電波がなくて書けなかったら、次にページを開いたときにまた写す
+const signature = () => JSON.stringify([state.stamps, state.claimedAt ?? null]);
+let fbP = null;
+function firebase() {
+  fbP ??= (async () => {
+    const { FIREBASE_VERSION, firebaseConfig, connectEmulators } = await import("./live.js");
+    const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
+    const [appMod, auth, fs] = await Promise.all([import(`${base}/firebase-app.js`), import(`${base}/firebase-auth.js`), import(`${base}/firebase-firestore.js`)]);
+    const app = appMod.getApps().find((x) => x.name === "[DEFAULT]") ?? appMod.initializeApp(firebaseConfig);
+    const k = { auth, fs, a: auth.getAuth(app), db: fs.getFirestore(app) };
+    connectEmulators({ fs, db: k.db, auth, a: k.a });
+    return k;
+  })();
+  return fbP;
+}
+let syncing = false;
+async function syncLog() {
+  if (DEMO || syncing || state.synced === signature()) return;
+  if (!Object.keys(state.stamps).length && !state.claimedAt && !state.synced) return; // 何も押していない人は写さない（ログインもしない）
+  syncing = true;
+  try {
+    const k = await firebase();
+    if (!k.a.currentUser) await k.auth.signInAnonymously(k.a);
+    const sig = signature();
+    await k.fs.setDoc(k.fs.doc(k.db, "rally_logs", k.a.currentUser.uid), { stamps: { ...state.stamps }, claimed_at: state.claimedAt ?? null, updated_at: k.fs.serverTimestamp() });
+    state.synced = sig;
+    save();
+  } catch (err) {
+    console.warn("[rally] 本部へ写せませんでした:", err?.code ?? err);
+  } finally {
+    syncing = false;
+  }
+}
+// スタンプが変わったとき（全員リセットで消えたときなど）に描き直すもの
+const changeFns = new Set();
+// 本部が全員の履歴をリセットした：その時刻より前に押したスタンプと引き換えを、このスマホからも消す
+function applyReset(resetAt) {
+  if (!resetAt || resetAt <= (state.resetSeen ?? 0)) return;
+  const first = state.resetSeen == null && !Object.keys(state.stamps).length;
+  state.resetSeen = resetAt;
+  if (!first) {
+    state.stamps = Object.fromEntries(Object.entries(state.stamps).filter(([, t]) => t > resetAt));
+    if (state.claimedAt && state.claimedAt <= resetAt) state.claimedAt = null;
+    state.synced = null;
+  }
+  save();
+  changeFns.forEach((fn) => fn());
+  syncLog();
+}
+if (!DEMO) {
+  import("./live.js").then(({ subscribeRallyControl }) => subscribeRallyControl((d) => applyReset(d?.reset_at?.toMillis?.() ?? null))).catch(() => {});
+  setTimeout(syncLog, 1500); // 前に書けなかった分（この仕組みより前に押したスタンプも）を写す
 }
 
 
@@ -281,6 +340,7 @@ function render() {
     }
     state.claimedAt = nowMs();
     save();
+    syncLog();
     render();
   });
 }
@@ -296,6 +356,7 @@ export function initRallyPage(getNow = () => Date.now()) {
   warnInAppBrowser();
   render();
   onRallyChange(render);
+  changeFns.add(() => { justStamped = null; render(); message("本部がスタンプラリーをリセットしました。", "info"); });
   setInterval(tickClock, 1000);
   import("./live.js").then(({ subscribeLive }) => subscribeLive((d) => {
     const v = !!d?.prize_out;
@@ -334,8 +395,11 @@ export function initRallyPage(getNow = () => Date.now()) {
 }
 
 // トップページの「縁日」の下の、小さなスタンプカード（入口）。押すとスタンプカードのページ
+let miniEl = null;
 export function renderMini(el) {
   if (!el) return;
+  if (!miniEl) changeFns.add(() => renderMini(miniEl));
+  miniEl = el;
   const count = stampCount();
   const n = Math.max(RALLY.goal, count);
   el.innerHTML = `

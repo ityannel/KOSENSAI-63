@@ -497,3 +497,25 @@ body.is-printing { overflow: hidden; }
   .savebar { bottom: 84px; border-radius: 16px; flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ---------- サイトの設定 ---------- */
+/* パスワードをたずねる小窓 */
+.pw-dialog { width: min(92vw, 400px); padding: 22px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+.pw-dialog::backdrop { background: rgba(4, 6, 10, .7); backdrop-filter: blur(2px); }
+.pw-dialog h2 { margin: 0; font-family: var(--head); font-weight: 900; font-size: 1.15rem; }
+.pw-dialog p { margin: 0; }
+.pw-msg { min-height: 1.4em; color: #FF8A97; font-weight: 700; font-size: .85rem; }
+.pw-actions { justify-content: flex-end; }
+/* 全員の状況 */
+.rally-all { display: grid; gap: 12px; }
+.rally-kpis { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.rally-kpis .kpi { padding: 12px 14px; }
+.rally-kpis .kpi b { font-size: 1.6rem; }
+.rally-h { margin: 6px 0 0; font-size: .85rem; color: var(--sub); }
+.rally-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.rally-table th { width: 38%; padding: 6px 8px 6px 0; text-align: left; font-weight: 700; }
+.rally-table td { padding: 6px 0; }
+.rally-table .num { width: 4.5em; text-align: right; font-family: var(--mono); }
+.rally-table .bar { display: block; height: 8px; width: calc(var(--p) * 100%); min-width: 2px; border-radius: 999px; background: var(--teal); }
+.rally-table tr + tr { border-top: 1px solid var(--line); }
+.rally-foot { font-size: .78rem; }

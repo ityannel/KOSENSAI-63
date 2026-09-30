@@ -44,6 +44,7 @@
         <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店・印刷</span></a>
         <a href="#preview" data-nav="preview"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20M10 8.5l4 2-4 2z"/></svg><span data-short="演出">プレビュー・演出</span></a>
         <a href="#texts" data-nav="texts"><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg><span data-short="文章">文章と書体</span></a>
+        <a href="#settings" data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span data-short="設定">サイトの設定</span></a>
       </nav>
       <div class="me">
         <span class="me-dot" aria-hidden="true"></span>
@@ -364,8 +365,50 @@
           </div>
         </form>
       </section>
+
+      <!-- ===== サイトの設定 ===== -->
+      <section class="view" id="view-settings" data-title="サイトの設定" data-eyebrow="SETTINGS" hidden>
+        <div class="grid-2">
+          <article class="card">
+            <header class="card-head"><h2>下のタブ</h2><span class="pill" id="tabs-state"></span></header>
+            <form id="tabs-form" class="stack">
+              <p class="muted">オフにしたタブは、スマホの下のタブと PC の右上から消えます。保存すると、開いている人の画面もすぐ変わります。</p>
+              <label class="switch"><input type="checkbox" data-tab-toggle="site" checked><span class="switch-ui" aria-hidden="true"></span><span>サイト<small>トップページ（みどころ・縁日・ご来場の皆さまへ など）</small></span></label>
+              <label class="switch"><input type="checkbox" data-tab-toggle="map" checked><span class="switch-ui" aria-hidden="true"></span><span>地図<small>校内マップ</small></span></label>
+              <label class="switch"><input type="checkbox" data-tab-toggle="feed" checked><span class="switch-ui" aria-hidden="true"></span><span>Enistagram<small>みんなの投稿</small></span></label>
+              <div class="row"><button class="btn btn-primary" type="submit">保存して公開</button></div>
+            </form>
+          </article>
+
+          <article class="card">
+            <header class="card-head"><h2>スタンプラリー（全員）</h2><span class="pill">パスワードが必要</span></header>
+            <div class="stack">
+              <p class="muted">来場者のスマホに入っているスタンプを、全員分まとめて見たり、消したりします。どちらも押すたびにパスワードをたずねます。</p>
+              <div class="row row-wrap">
+                <button class="btn btn-ghost" type="button" id="rally-all-show">全員の状況を見る</button>
+                <button class="btn btn-danger" type="button" id="rally-all-reset">全員の履歴をリセット</button>
+              </div>
+              <div class="rally-all" id="rally-all" hidden></div>
+            </div>
+          </article>
+        </div>
+      </section>
     </main>
   </div>
+
+  <!-- パスワードをたずねる小窓（スタンプラリーの全員の状況・リセット） -->
+  <dialog class="pw-dialog" id="pw-dialog" aria-labelledby="pw-title">
+    <form method="dialog" class="stack" id="pw-form">
+      <h2 id="pw-title">パスワード</h2>
+      <p class="muted" id="pw-lead"></p>
+      <label class="field"><span>パスワード</span><input id="pw-input" type="password" autocomplete="off" required></label>
+      <p class="pw-msg" id="pw-msg" role="status"></p>
+      <div class="row pw-actions">
+        <button class="btn btn-ghost" type="button" id="pw-cancel">やめる</button>
+        <button class="btn btn-primary" type="submit" id="pw-ok">決定</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- 印刷の確かめ（受付の「印刷する」・まとめて印刷）。印刷のときはこの中の紙だけが出る -->
   <div class="pr-overlay" id="print-overlay" role="dialog" aria-modal="true" aria-labelledby="pr-title" hidden>

@@ -165,6 +165,36 @@ export async function subscribeRally(callback) {
   }
 }
 
+// 本部コンソールの「サイトの設定」（tabs-config.js が使う）
+//   site_config/current = { tabs: { site, map, feed }（false のタブは出さない） }
+export async function subscribeSiteConfig(callback) {
+  try {
+    const db = await getDb();
+    fs.onSnapshot(
+      fs.doc(db, "site_config", "current"),
+      (snap) => callback(snap.exists() ? snap.data() : null),
+      (err) => console.warn("[site_config] Firestore を読めませんでした:", err.code),
+    );
+  } catch (err) {
+    console.warn("[site_config] Firebase を読み込めませんでした:", err);
+  }
+}
+
+// スタンプラリーを全員リセットした時刻（rally.js が使う）
+//   rally_control/current = { reset_at }
+export async function subscribeRallyControl(callback) {
+  try {
+    const db = await getDb();
+    fs.onSnapshot(
+      fs.doc(db, "rally_control", "current"),
+      (snap) => callback(snap.exists() ? snap.data() : null),
+      (err) => console.warn("[rally_control] Firestore を読めませんでした:", err.code),
+    );
+  } catch (err) {
+    console.warn("[rally_control] Firebase を読み込めませんでした:", err);
+  }
+}
+
 // 本部の管理画面で変えた文章と書体（site-text.js が使う）
 export async function subscribeSiteText(callback) {
   try {

@@ -51,7 +51,7 @@ async function write(label, fn) {
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
 // ---------- 画面の切りかえ（#overview など） ----------
-const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "preview", "texts"];
+const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "preview", "texts", "settings"];
 if (location.hash === "#print") history.replaceState(null, "", "#shops"); // 印刷は「模擬店・印刷」にまとめた
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
@@ -70,7 +70,7 @@ addEventListener("hashchange", route);
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
 // ---------- データ ----------
-const state = { live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {} };
+const state = { live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
@@ -109,6 +109,8 @@ function startListening() {
     renderShops();
   });
   listen(fs.doc(db, "site_text", "current"), (snap) => { state.siteText = snap.data() ?? null; renderTexts(); renderOverview(); });
+  listen(fs.doc(db, "site_config", "current"), (snap) => { state.siteConfig = snap.data() ?? null; renderTabs(); });
+  listen(fs.doc(db, "rally_control", "current"), (snap) => { state.rallyControl = snap.data() ?? null; });
 }
 
 // ---------- ダッシュボード ----------
@@ -1213,6 +1215,121 @@ $("#texts-reset").addEventListener("click", async () => {
   }
 });
 addEventListener("beforeunload", (e) => { if (textsDirty) e.preventDefault(); });
+
+// ---------- サイトの設定：下のタブ ----------
+// site_config/current = { tabs: { site, map, feed } }。false のタブは、来場者の画面の下のタブ・PC の右上から消える（assets/tabs-config.js）
+const TAB_NAMES = { site: "サイト", map: "地図", feed: "Enistagram" };
+function renderTabs() {
+  const tabs = state.siteConfig?.tabs ?? {};
+  $$("[data-tab-toggle]").forEach((c) => { c.checked = tabs[c.dataset.tabToggle] !== false; });
+  const off = Object.keys(TAB_NAMES).filter((id) => tabs[id] === false);
+  $("#tabs-state").textContent = off.length ? `出していない：${off.map((id) => TAB_NAMES[id]).join("・")}` : "すべて出している";
+}
+$("#tabs-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const tabs = Object.fromEntries($$("[data-tab-toggle]").map((c) => [c.dataset.tabToggle, c.checked]));
+  if (!Object.values(tabs).some(Boolean) && !confirm("タブを全部オフにすると、下のタブの帯ごと消えます。よろしいですか？")) return;
+  write("下のタブを公開しました", () => fs.setDoc(fs.doc(db, "site_config", "current"), { tabs, ...stamp() }));
+});
+
+// ---------- サイトの設定：スタンプラリー（全員） ----------
+// パスワードはページに置かず、PBKDF2（SHA-256・31万回）で混ぜた値だけを置く。押すたびにたずねる
+const ADMIN_PW = { salt: "7c38294656e6170c05a3fea3fa66d5c6", iterations: 310000, hash: "a39c719c9ef8c1d38484993ae43f617e14da38a3374ae3f3a454a13ab12d3842" };
+async function pwHash(pw) {
+  const hex = (h) => new Uint8Array(h.match(/../g).map((b) => parseInt(b, 16)));
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: hex(ADMIN_PW.salt), iterations: ADMIN_PW.iterations }, key, 256);
+  return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+// パスワードをたずねる。合っていれば true、やめたら false
+function askPassword(title, lead) {
+  const dlg = $("#pw-dialog"), input = $("#pw-input"), msg = $("#pw-msg");
+  $("#pw-title").textContent = title;
+  $("#pw-lead").textContent = lead;
+  input.value = "";
+  msg.textContent = "";
+  dlg.showModal();
+  input.focus();
+  return new Promise((resolve) => {
+    const done = (ok) => { cleanup(); if (dlg.open) dlg.close(); resolve(ok); };
+    const onSubmit = async (e) => {
+      e.preventDefault();
+      if (!crypto?.subtle) { msg.textContent = "https で開いてください"; return; }
+      $("#pw-ok").disabled = true;
+      msg.textContent = "たしかめています…";
+      const ok = (await pwHash(input.value)) === ADMIN_PW.hash;
+      $("#pw-ok").disabled = false;
+      if (ok) done(true); else { msg.textContent = "パスワードがちがいます"; input.select(); }
+    };
+    const onCancel = () => done(false);
+    const onClose = () => done(false);
+    function cleanup() {
+      $("#pw-form").removeEventListener("submit", onSubmit);
+      $("#pw-cancel").removeEventListener("click", onCancel);
+      dlg.removeEventListener("cancel", onClose);
+    }
+    $("#pw-form").addEventListener("submit", onSubmit);
+    $("#pw-cancel").addEventListener("click", onCancel);
+    dlg.addEventListener("cancel", onClose);
+  });
+}
+
+// 全員の状況：rally_logs を全部読んで数える（読むのは本部だけ。firestore.rules）
+const rallyShopName = (id) => (state.rally?.shops ?? RALLY.shops).find((s) => s.id === id)?.name ?? id;
+async function showRallyAll() {
+  const box = $("#rally-all");
+  box.hidden = false;
+  box.innerHTML = '<p class="muted">読みこんでいます…</p>';
+  try {
+    const snap = await fs.getDocs(fs.collection(db, "rally_logs"));
+    const goal = RALLY.goal;
+    const logs = [];
+    snap.forEach((d) => { const v = d.data(); logs.push({ stamps: v.stamps ?? {}, claimed: v.claimed_at ?? null, at: toMs(v.updated_at) }); });
+    const people = logs.filter((l) => Object.keys(l.stamps).length > 0);
+    const done = people.filter((l) => Object.keys(l.stamps).length >= goal);
+    const claimed = logs.filter((l) => l.claimed);
+    const dist = Array.from({ length: goal }, (_, i) => people.filter((l) => Math.min(goal, Object.keys(l.stamps).length) === i + 1).length);
+    const perShop = {};
+    people.forEach((l) => Object.keys(l.stamps).forEach((id) => { perShop[id] = (perShop[id] ?? 0) + 1; }));
+    const last = Math.max(0, ...logs.map((l) => l.at ?? 0));
+    const resetAt = toMs(state.rallyControl?.reset_at);
+    box.innerHTML = `
+      <div class="kpis rally-kpis">
+        <div class="kpi"><small>参加した人</small><b>${people.length}</b><span>人（1つ以上押した）</span></div>
+        <div class="kpi"><small>達成（${goal}個）</small><b>${done.length}</b><span>人</span></div>
+        <div class="kpi"><small>引き換えた</small><b>${claimed.length}</b><span>人</span></div>
+      </div>
+      <h3 class="rally-h">押した数ごとの人数</h3>
+      <table class="rally-table"><tbody>${dist.map((n, i) => `<tr><th>${i + 1}個${i + 1 === goal ? "（達成）" : ""}</th><td><i class="bar" style="--p:${people.length ? n / people.length : 0}"></i></td><td class="num">${n}人</td></tr>`).join("")}</tbody></table>
+      <h3 class="rally-h">お店・場所ごとのスタンプの数</h3>
+      ${Object.keys(perShop).length ? `<table class="rally-table"><tbody>${Object.entries(perShop).sort((x, y) => y[1] - x[1]).map(([id, n]) => `<tr><th>${esc(rallyShopName(id))}</th><td><i class="bar" style="--p:${n / people.length}"></i></td><td class="num">${n}回</td></tr>`).join("")}</tbody></table>` : '<p class="muted">まだだれも押していません</p>'}
+      <p class="muted rally-foot">${last ? `いちばん新しい記録：${time(last)}` : ""}${resetAt ? `　最後のリセット：${time(resetAt)}` : ""}　（${time(Date.now())} に読みこみ）</p>`;
+  } catch (err) {
+    console.warn(err);
+    box.innerHTML = `<p class="muted">読めませんでした（${esc(err.code ?? err.message)}）。firestore.rules に rally_logs を足して公開してあるか確かめてください。</p>`;
+  }
+}
+$("#rally-all-show").addEventListener("click", async () => {
+  if (!(await askPassword("全員の状況を見る", "スタンプラリーの全員の状況を見るには、パスワードを入れてください。"))) return;
+  showRallyAll();
+});
+
+// 全員の履歴をリセット：reset_at を今にして（各スマホが、それより前のスタンプを消す）、本部の記録（rally_logs）も全部消す
+$("#rally-all-reset").addEventListener("click", async () => {
+  if (!(await askPassword("全員の履歴をリセット", "全員のスタンプと引き換えの記録を消します。元に戻せません。パスワードを入れてください。"))) return;
+  if (!confirm("本当に、全員のスタンプラリーの履歴をリセットしますか？\n来場者のスマホに入っているスタンプも、次に開いたときに消えます。元に戻せません。")) return;
+  const ok = await write("全員のスタンプラリーの履歴をリセットしました", async () => {
+    await fs.setDoc(fs.doc(db, "rally_control", "current"), { reset_at: fs.serverTimestamp(), ...stamp() });
+    const snap = await fs.getDocs(fs.collection(db, "rally_logs"));
+    const docs = snap.docs;
+    for (let i = 0; i < docs.length; i += 400) {
+      const batch = fs.writeBatch(db);
+      docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+  });
+  if (ok && !$("#rally-all").hidden) showRallyAll();
+});
 
 // ---------- ログイン ----------
 $("#login-form").addEventListener("submit", async (e) => {

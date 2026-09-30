@@ -1875,3 +1875,10 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .cn-item.is-stale a { opacity: .6; }
 .crowdnow-map { display: inline-block; margin-top: calc(12 * var(--u)); color: #FFF1A8; font-family: var(--text-font); font-weight: 700; font-size: calc(13 * var(--u)); }
 @media (prefers-reduced-motion: reduce) { .cn-level::before, .cn-p > * { animation: none; } .cn-item.is-torn { animation: none; } }
+
+/* 本部コンソールの「サイトの設定」で出さないことにした下のタブ（tabs-config.js が html に data-tabs-off を付ける）。
+   スマホの下のタブ（.site-tabs・地図の .m-tabs）と、PC の右上のタブ（.pc-tabs）の両方 */
+:root[data-tabs-off~="site"] :is(.site-tabs a[href="./"], .m-tabs a[href="./"], [data-pc-tab="site"]),
+:root[data-tabs-off~="map"] :is(.site-tabs a[href="map.html"], .m-tabs [data-tab="map"], [data-pc-tab="map"]),
+:root[data-tabs-off~="feed"] :is(.site-tabs a[href="map.html?tab=feed"], .m-tabs [data-tab="feed"], [data-pc-tab="feed"]) { display: none !important; }
+:root[data-tabs-none] :is(.site-tabs, .m-tabs, .pc-tabs) { display: none !important; }

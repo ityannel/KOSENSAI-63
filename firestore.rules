@@ -90,6 +90,31 @@ service cloud.firestore {
     match /rally_keys/{id} {
       allow read, write: if isStaff();
     }
+    // rally_logs/{来場者の匿名ログインの印}：その人が押したスタンプ（お店のID → 押した時刻）と引き換えた時刻。
+    // 本人が自分の分だけ書く。全員分を読めるのは本部だけ（本部コンソールの「サイトの設定」→ 全員の状況）
+    match /rally_logs/{uid} {
+      allow read: if isStaff() || (isVisitor() && request.auth.uid == uid);
+      allow create, update: if isVisitor() && request.auth.uid == uid
+        && data().keys().hasOnly(['stamps', 'claimed_at', 'updated_at'])
+        && data().stamps is map && data().stamps.size() <= 100
+        && (data().get('claimed_at', null) == null || data().claimed_at is number)
+        && data().updated_at == request.time;
+      allow delete: if isStaff() || (isVisitor() && request.auth.uid == uid);
+    }
+    // rally_control/current = { reset_at }：本部が全員の履歴をリセットした時刻（これより前のスタンプは、各スマホで消える）
+    match /rally_control/{id} {
+      allow read: if true;
+      allow write: if isStaff() && stamped() && data().keys().hasOnly(['reset_at', 'updated_at', 'updated_by'])
+        && data().reset_at == request.time;
+    }
+
+    // ---------- サイトの設定（本部コンソールの「サイトの設定」） ----------
+    // site_config/current = { tabs: { site, map, feed } }：false のタブは、来場者の画面の下のタブ・PC の右上から消える
+    match /site_config/{id} {
+      allow read: if true;
+      allow write: if isStaff() && stamped() && data().keys().hasOnly(['tabs', 'updated_at', 'updated_by'])
+        && data().tabs is map && data().tabs.keys().hasOnly(['site', 'map', 'feed']);
+    }
 
     // ---------- 模擬店の待ち時間 ----------
     // shops/{id} = { name, status, map, updated_at }。前の app/ の pass（4けたのパスワード）は、だれでも読めてしまうので置かない
