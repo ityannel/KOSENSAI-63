@@ -112,18 +112,21 @@ export const stampIds = () => Object.keys(state.stamps);
 let nowMs = () => Date.now();
 const tokyoDate = () => new Date(nowMs()).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" }); // YYYY-MM-DD
 
-// QR の鍵が今日のそのお店のものかを調べる
+// QR の鍵が今日のそのお店のものかを調べる。codes["*"] は日付に関係なくいつでも使える鍵（テスト用のお店だけに使う）
 async function findShop(code, shopId) {
   const today = tokyoDate();
   const shop = RALLY.shops.find((s) => s.id === shopId);
-  const expected = shop?.codes?.[today];
-  if (expected && expected === await sha256(`kosen63:${shop.id}:${today}:${String(code).trim()}`)) return shop;
+  const key = String(code).trim();
+  for (const day of [today, "*"]) {
+    const expected = shop?.codes?.[day];
+    if (expected && expected === await sha256(`kosen63:${shop.id}:${day}:${key}`)) return shop;
+  }
   return null;
 }
 
 async function stamp(code, shopId) {
   await rallyReady(4000); // 対象のお店を読みこむまで少し待つ（前に読んだものがあればすぐ）
-  if (!RALLY.shops.some((s) => s.codes?.[tokyoDate()])) {
+  if (!RALLY.shops.some((s) => s.codes?.[tokyoDate()] || s.codes?.["*"])) {
     return message("スタンプは開催日（" + FESTIVAL.days.map((d) => d.label).join("・") + "）に押せます。", "warn");
   }
   const shop = await findShop(code, shopId);

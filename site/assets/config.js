@@ -328,12 +328,12 @@ export const RALLY = {
   // 例：{ id: "takoyaki", name: "たこ焼き", room: "L103", codes: { "2026-10-24": "…", "2026-10-25": "…" } }
   // @rally-generated-start（tools/make-rally-qr.py が書きかえる。手で直さない）
   shops: [
-    { id: "test-1", name: "テスト店1", codes: { "2026-10-01": "550369d4fcc12a4df1a09d3151b6188e57f7dc68f884093f4d9d624dbe61484a", "2026-10-24": "f967e82d4126d8374b93159e6946ea8c982c4fdb8fbccf16d10921cce0254663", "2026-10-25": "40f18a967c4169150ad1b4087223c045dac98c6be9b69e3e57e215c2e5c30b64" } },
-    { id: "test-2", name: "テスト店2", codes: { "2026-10-01": "1248e55fc2ac697b54c5496f0b2df7fe02eb98f8b349f9958de583c4cf421d04", "2026-10-24": "82827dde83e534eff8472c2c8fb9d6c34240cdf0c689dcb78b2ae49ecaec85e6", "2026-10-25": "0efe5a8b7baccf5bb1a0630ed9446d8a081c2444514ddde744ee23fdbf8fda22" } },
-    { id: "test-3", name: "テスト店3", codes: { "2026-10-01": "1c6d929c0d0e16a3626c6fb23e52942fd10ffe132f3d4a35661f3367093ae666", "2026-10-24": "e9d814f5089762052da07bba300979238c70edd399f0ac862e75b923adf09b2f", "2026-10-25": "da42f50bcc1efbfd1648ea3d58c8c2a844c824cd3ba99ac01a2034d1e9001f6a" } },
+    { id: "test-1", name: "テスト店1", codes: { "*": "b348ac37e62946d848d19ca289406ff374168afa487e90045c0bf8531498b7f0" } },
+    { id: "test-2", name: "テスト店2", codes: { "*": "f037f1536dd5e456cd4d0f2065bf47b940ea40c1b4052c5d4f8b9edcaade922d" } },
+    { id: "test-3", name: "テスト店3", codes: { "*": "ad49e30973257190008bb5b85fd59a7d45b1030883c91a15e176706058578dac" } },
   ],
   // 引き換えのときにスタッフが入れる番号（PBKDF2 で何十万回も混ぜた値。番号そのものはここに載らない）
-  staffPin: { salt: "02d7e7fe2fe9ad3c4847c91a95c074e7", iterations: 300000, hash: "33d67e7a918bb884b84121c50605a671ab43c0c4fd6fc3515360876d111d031d" },
+  staffPin: { salt: "a7c46213a4132f45007045a91991d333", iterations: 300000, hash: "6388520adc2af640425da9bcce853924c4887f02f4f41c8cb21c0f756da28073" },
   // @rally-generated-end
 };
 
