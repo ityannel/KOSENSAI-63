@@ -373,6 +373,17 @@
             <header class="card-head"><h2>トップページの並び</h2><span class="pill" id="blocks-state"></span></header>
             <form id="blocks-form" class="stack">
               <p class="muted">⠿ をつかんで上下にドラッグすると、トップページの欄の順番が変わります。スイッチをオフにした欄は出しません。いちばん上の欄は、上の絵に重なって上の角が丸くなります（いまの学生主事よりの形）。保存すると、開いている人の画面もすぐ変わります。</p>
+              <div class="field"><span>サイトに出す並び</span>
+                <div class="seg" role="radiogroup" aria-label="サイトに出す並び">
+                  <label><input type="radio" name="blocks-mode" value="auto" checked><span>自動<small>（公開の前は開催前・始まったら期間中）</small></span></label>
+                  <label><input type="radio" name="blocks-mode" value="before"><span>開催前</span></label>
+                  <label><input type="radio" name="blocks-mode" value="during"><span>期間中</span></label>
+                </div></div>
+              <div class="field"><span>直すプリセット</span>
+                <div class="seg" role="radiogroup" aria-label="直すプリセット">
+                  <label><input type="radio" name="blocks-edit" value="before" checked><span>開催前</span></label>
+                  <label><input type="radio" name="blocks-edit" value="during"><span>期間中</span></label>
+                </div></div>
               <ol class="blocks" id="blocks-list"></ol>
               <div class="row">
                 <button class="btn btn-ghost" type="button" id="blocks-default">いつもの並びに戻す</button>

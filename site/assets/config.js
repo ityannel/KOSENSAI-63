@@ -40,6 +40,12 @@ export const TOP_BLOCKS = [
   ["info", "ご来場の皆さまへ", "注意の札"],
   ["sponsors", "協賛", "協賛企業のロゴ"],
 ];
+// 並びのプリセット（本部コンソールで保存したものがなければ、これ）。開催前は学生主事よりが先、期間中はスタンプカード・混雑が先
+const P = (ids) => ids.map((t) => ({ id: t.replace(/^-/, ""), show: !t.startsWith("-") }));
+export const TOP_PRESETS = {
+  before: P(["message", "pickup", "ennichi", "info", "stamp", "-crowd", "sponsors"]),
+  during: P(["stamp", "crowd", "pickup", "ennichi", "info", "message", "sponsors"]),
+};
 
 export const MESSAGE = {
   name: "平沢 学生主事",

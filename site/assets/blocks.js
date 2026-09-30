@@ -3,7 +3,7 @@
 // 前に読んだ並びをこのスマホに覚えておき、開いたらすぐ並べる（あとから届いた設定で、すぐ並べかわる）。
 // ・いちばん上に来た欄（見えているもの）は .is-first-block：上の絵に少し重なり、上の角だけ丸くなる（前の学生主事よりの形）
 // ・いちばん下に来た欄は .is-last-block：下のタブに隠れないよう、下を空ける
-import { TOP_BLOCKS } from "./config.js";
+import { TOP_BLOCKS, TOP_PRESETS, FESTIVAL } from "./config.js";
 import { subscribeSiteConfig } from "./live.js";
 
 const KEY = "kosen63-blocks";
@@ -45,10 +45,23 @@ if (top) new ResizeObserver(([e]) => document.documentElement.style.setProperty(
 
 // 手元（localhost）で見た目をたしかめるとき：?blocks=pickup,-message,ennichi（- は出さない）。本部の設定は読まない
 const test = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSearchParams(location.search).get("blocks");
+// どのプリセットを使うか：mode が "auto"（いつも）なら、最初の日の公開の前は「開催前」、それからは「期間中」
+const nowParam = new URLSearchParams(location.search).get("now");
+const now = () => (nowParam ? Date.parse(nowParam.includes("+") ? nowParam : nowParam + "+09:00") : Date.now());
+const phase = () => (now() < Date.parse(FESTIVAL.days[0].open) ? "before" : "during");
+function pick(cfg) {
+  const which = cfg?.mode === "before" || cfg?.mode === "during" ? cfg.mode : phase();
+  return cfg?.presets?.[which] ?? TOP_PRESETS[which];
+}
+let cfg = null;
 if (test) apply(test.split(",").map((t) => ({ id: t.replace(/^-/, ""), show: !t.startsWith("-") })));
-else try { apply(JSON.parse(localStorage.getItem(KEY) ?? "null")); } catch { apply(null); }
-if (!test) subscribeSiteConfig((d) => {
-  const blocks = d?.blocks ?? null;
-  apply(blocks);
-  try { localStorage.setItem(KEY, JSON.stringify(blocks)); } catch { /* 保存できないブラウザ */ }
-});
+else try { apply(JSON.parse(localStorage.getItem(KEY) ?? "null") ?? pick(null)); } catch { apply(pick(null)); }
+if (!test) {
+  subscribeSiteConfig((d) => {
+    cfg = d ?? null;
+    const blocks = pick(cfg);
+    apply(blocks);
+    try { localStorage.setItem(KEY, JSON.stringify(blocks)); } catch { /* 保存できないブラウザ */ }
+  });
+  setInterval(() => apply(pick(cfg)), 60000); // 開催の時刻をまたいだら切りかえる
+}

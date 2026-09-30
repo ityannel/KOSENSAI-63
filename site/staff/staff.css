@@ -534,3 +534,4 @@ body.is-printing { overflow: hidden; }
 .block-name small { color: var(--sub); font-size: .78rem; }
 .block-row.is-top .block-name b::after { content: "いちばん上・角が丸い"; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: rgba(94, 211, 195, .16); color: var(--teal); font-size: .7rem; font-weight: 700; vertical-align: 1px; }
 .block-show { align-items: center; }
+.seg span small { font-weight: 500; font-size: .72rem; opacity: .8; }

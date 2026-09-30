@@ -2,7 +2,7 @@
 // お知らせ・緊急のお知らせ・生配信・表示の切りかえ・混雑・5人の実況・投稿（写真の確認・報告・本部の投稿）・模擬店・文章と書体を、ここ1つで変える。
 // だれが使えるかは firestore.rules（staff コレクションにメールアドレスがある人だけ）で決まる。
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
-import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS } from "../assets/config.js";
+import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS } from "../assets/config.js";
 import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
 import { REPORT_HIDE, handleOf } from "../assets/posts.js";
 import { TIMES, SKIES, WEATHERS, PANELS, PAGES } from "../assets/test.js";
@@ -109,7 +109,7 @@ function startListening() {
     renderShops();
   });
   listen(fs.doc(db, "site_text", "current"), (snap) => { state.siteText = snap.data() ?? null; renderTexts(); renderOverview(); });
-  listen(fs.doc(db, "site_config", "current"), (snap) => { state.siteConfig = snap.data() ?? null; if (!blocksDirty) renderBlocks(); }); // 並べかえている途中は描き直さない
+  listen(fs.doc(db, "site_config", "current"), (snap) => { state.siteConfig = snap.data() ?? null; if (!blocksDirty) { draft = null; renderBlocks(); renderMode(); } }); // 並べかえている途中は描き直さない
   listen(fs.doc(db, "rally_control", "current"), (snap) => { state.rallyControl = snap.data() ?? null; });
 }
 
@@ -1221,8 +1221,16 @@ addEventListener("beforeunload", (e) => { if (textsDirty || blocksDirty) e.preve
 // ⠿ をつかんで上下にドラッグ（マウスでも指でも）。キーボードでは ⠿ を選んで ↑↓
 const BLOCK_INFO = Object.fromEntries(TOP_BLOCKS.map(([id, name, note]) => [id, { name, note }]));
 let blocksDirty = false;
+// 開催前・期間中の2つのプリセット。直しているあいだは draft に入れておき、「保存して公開」で両方まとめて書く
+let draft = null;
+const editing = () => $('[name="blocks-edit"]:checked').value;
+function presetsFromConfig() {
+  const c = state.siteConfig;
+  return { before: c?.presets?.before ?? TOP_PRESETS.before, during: c?.presets?.during ?? TOP_PRESETS.during };
+}
 function blocksFromConfig() {
-  const saved = Array.isArray(state.siteConfig?.blocks) ? state.siteConfig.blocks.filter((b) => BLOCK_INFO[b?.id]) : [];
+  draft ??= presetsFromConfig();
+  const saved = (draft[editing()] ?? []).filter((b) => BLOCK_INFO[b?.id]);
   const seen = new Set(saved.map((b) => b.id));
   return [...saved.map((b) => ({ id: b.id, show: b.show !== false })), ...TOP_BLOCKS.filter(([id]) => !seen.has(id)).map(([id]) => ({ id, show: true }))];
 }
@@ -1248,9 +1256,10 @@ function numberBlocks() {
     row.classList.toggle("is-top", on && n === 1);
   });
 }
-const readBlocks = () => $$(".block-row").map((row) => ({ id: row.dataset.blockId, show: $("[data-block-show]", row).checked }));
+const readRows = () => $$(".block-row").map((row) => ({ id: row.dataset.blockId, show: $("[data-block-show]", row).checked }));
 function touched() {
   blocksDirty = true;
+  draft[editing()] = readRows();
   numberBlocks();
   $("#blocks-state").textContent = "保存していない変更があります";
 }
@@ -1266,6 +1275,7 @@ $("#blocks-list").addEventListener("pointerdown", (e) => {
     const others = $$(".block-row", list).filter((r) => r !== row);
     const after = others.find((r) => { const b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
     if (after) { if (row.nextElementSibling !== after) list.insertBefore(row, after); } else if (list.lastElementChild !== row) list.append(row);
+    numberBlocks();
   };
   const up = () => {
     grip.removeEventListener("pointermove", move);
@@ -1290,13 +1300,24 @@ $("#blocks-list").addEventListener("keydown", (e) => {
   touched();
 });
 $("#blocks-list").addEventListener("change", (e) => { if (e.target.matches("[data-block-show]")) touched(); });
-$("#blocks-default").addEventListener("click", () => { renderBlocks(TOP_BLOCKS.map(([id]) => ({ id, show: true }))); touched(); });
+$("#blocks-default").addEventListener("click", () => { renderBlocks(TOP_PRESETS[editing()].map((b) => ({ ...b }))); touched(); });
+$$('[name="blocks-edit"]').forEach((r) => r.addEventListener("change", () => renderBlocks()));
+$$('[name="blocks-mode"]').forEach((r) => r.addEventListener("change", () => { blocksDirty = true; draft ??= presetsFromConfig(); $("#blocks-state").textContent = "保存していない変更があります"; }));
+function renderMode() {
+  const m = state.siteConfig?.mode ?? "auto";
+  const r = $(`[name="blocks-mode"][value="${m}"]`);
+  if (r) r.checked = true;
+}
 $("#blocks-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const blocks = readBlocks();
-  if (!blocks.some((b) => b.show) && !confirm("欄を全部オフにすると、トップページは上の絵だけになります。よろしいですか？")) return;
-  if (await write("トップページの並びを公開しました", () => fs.setDoc(fs.doc(db, "site_config", "current"), { blocks, ...stamp() }))) {
+  draft ??= presetsFromConfig();
+  draft[editing()] = readRows();
+  const presets = { before: draft.before, during: draft.during };
+  const mode = $('[name="blocks-mode"]:checked').value;
+  if (Object.values(presets).some((l) => !l.some((b) => b.show)) && !confirm("欄が全部オフのプリセットがあります。そのときトップページは上の絵だけになります。よろしいですか？")) return;
+  if (await write("トップページの並び（開催前・期間中）を公開しました", () => fs.setDoc(fs.doc(db, "site_config", "current"), { presets, mode, ...stamp() }))) {
     blocksDirty = false;
+    draft = null;
     $("#blocks-state").textContent = "公開しました";
   }
 });

@@ -109,11 +109,13 @@ service cloud.firestore {
     }
 
     // ---------- サイトの設定（本部コンソールの「サイトの設定」） ----------
-    // site_config/current = { blocks: [{ id, show }] }：トップページの欄（学生主事より・みどころ・縁日…）の並び順と、出す・出さない
+    // site_config/current = { presets: { before, during }（それぞれ [{ id, show }]）, mode: auto|before|during }：トップページの欄の並びと、出す・出さない
     match /site_config/{id} {
       allow read: if true;
-      allow write: if isStaff() && stamped() && data().keys().hasOnly(['blocks', 'updated_at', 'updated_by'])
-        && data().blocks is list && data().blocks.size() <= 20;
+      allow write: if isStaff() && stamped() && data().keys().hasOnly(['blocks', 'presets', 'mode', 'updated_at', 'updated_by'])
+        && (!('blocks' in data()) || (data().blocks is list && data().blocks.size() <= 20))
+        && (!('presets' in data()) || (data().presets is map && data().presets.keys().hasOnly(['before', 'during'])))
+        && (!('mode' in data()) || data().mode in ['auto', 'before', 'during']);
     }
 
     // ---------- 模擬店の待ち時間 ----------
