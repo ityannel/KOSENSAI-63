@@ -8,7 +8,7 @@ import { renderMini } from "./rally.js";
 import { initScene, setChatter, say, setAwake } from "./scene.js";
 import { initAsk } from "./ask.js";
 import { createFireworks, initShake, initParallax } from "./fx.js";
-import { initWeather } from "./weather.js";
+import { initWeather, setWeatherOverride } from "./weather.js";
 import { upcomingTickets, ticketHtml } from "./tickets.js";
 import { drawThread, watchThread } from "./thread.js";
 import { wireDetails } from "./detail.js";
@@ -276,7 +276,8 @@ function updateSky() {
   const d = new Date(nowMs());
   const [h, m] = d.toLocaleTimeString("en-GB", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" }).split(":").map(Number);
   const hour = h + m / 60;
-  const forced = SKIES.find((s) => s.id === params.get("sky"));
+  // URL の ?sky= か、本部の管理画面で固定した空（全員の画面）
+  const forced = SKIES.find((s) => s.id === (params.get("sky") ?? live?.sky_override));
   const sky = forced ?? [...SKIES].reverse().find((s) => hour >= s.from);
   document.body.dataset.sky = sky.id;
   setSkyImage(skyImageFor(sky.id, weather?.kind));
@@ -399,6 +400,15 @@ function playOpening() {
   fireworks.show(9000);
   setTimeout(() => document.body.classList.remove("opening"), 9500);
 }
+// 本部の管理画面の「花火を上げる」：押してから1分以内に開いている人の画面に、1回だけ上がる
+let playedFireworksAt = null;
+function checkLiveFireworks() {
+  const at = live?.fireworks_at?.toMillis?.() ?? null;
+  if (!at || at === playedFireworksAt) return;
+  playedFireworksAt = at;
+  if (Math.abs(Date.now() - at) < 60000) playOpening();
+}
+
 // 花火の時間（学内のみ）は、その間ずっと空に花火
 function checkFireworksTime() {
   if (!FX.fireworks.start) return;
@@ -465,6 +475,8 @@ subscribeCrowd((data) => {
 
 subscribeLive((data) => {
   live = data;
+  checkLiveFireworks();
+  setWeatherOverride(live?.weather_override ? { kind: live.weather_override, wind: live.wind_override ?? 4 } : null);
   renderLiveContent();
   update();
 });
@@ -486,6 +498,11 @@ if (params.has("fireworks") || (nowMs() >= OPEN && nowMs() < OPEN + 90000)) {
 }
 
 // ---------- テスト用パネル（?test=1 のときだけ） ----------
-if (params.has("test")) {
-  import("./test.js").then(({ initTest }) => initTest({ playOpening, setAwake, shake }));
+// 本部コンソールのプレビュー（?preview=1 で iframe の中に開いたとき）からも、同じことができる
+if (params.has("test") || params.has("preview")) {
+  import("./test.js").then(({ initTest, initPreviewBridge }) => {
+    const hooks = { playOpening, setAwake, shake };
+    if (params.has("test")) initTest(hooks);
+    if (params.has("preview")) initPreviewBridge(hooks);
+  });
 }

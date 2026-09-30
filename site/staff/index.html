@@ -42,6 +42,7 @@
         <a href="#crowd" data-nav="crowd"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.5M17.5 19a5.5 5.5 0 0 0-2.5-4.6"/></svg><span data-short="混雑">混雑・実況</span></a>
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
         <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店</span></a>
+        <a href="#preview" data-nav="preview"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20M10 8.5l4 2-4 2z"/></svg><span data-short="演出">プレビュー・演出</span></a>
         <a href="#texts" data-nav="texts"><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg><span data-short="文章">文章と書体</span></a>
       </nav>
       <div class="me">
@@ -186,6 +187,95 @@
           <p class="muted small">お店の人には「コード」を渡します。コードの QR を読むと、そのお店の待ち時間だけを変えられるページ（shop.html）が開きます。</p>
         </article>
         <div class="shop-list" id="shop-list"></div>
+      </section>
+
+      <!-- ===== プレビュー・演出 ===== -->
+      <section class="view" id="view-preview" data-title="プレビュー・演出" data-eyebrow="PREVIEW" hidden>
+        <div class="pv">
+          <div class="pv-controls">
+            <article class="card card-live">
+              <header class="card-head"><h2>全員の画面に出す</h2><span class="pill is-live">本番</span></header>
+              <div class="stack">
+                <button class="btn btn-primary btn-block" type="button" id="live-fire">花火を今すぐ上げる</button>
+                <small class="muted">押してから1分以内にトップを開いている人の画面に、1回だけ上がる</small>
+                <div class="pv-2">
+                  <label class="field"><span>空を固定</span><select id="live-sky"></select></label>
+                  <label class="field"><span>天気を固定</span><select id="live-weather"></select></label>
+                </div>
+                <label class="field"><span>風（天気を固定したとき）<b id="live-wind-v">4</b> m/s</span><input id="live-wind" type="range" min="0" max="20" value="4"></label>
+                <div class="row">
+                  <button class="btn btn-primary" type="button" id="live-sky-save">保存</button>
+                  <button class="btn btn-ghost" type="button" id="live-sky-clear">いつもどおりに戻す</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <header class="card-head"><h2>プレビュー</h2><small class="muted">この画面の中だけ。来場者には出ない</small></header>
+              <div class="stack">
+                <div class="pv-2">
+                  <label class="field"><span>ページ</span><select id="pv-page"></select></label>
+                  <div class="field"><span>画面</span>
+                    <div class="seg" role="radiogroup" aria-label="画面の大きさ">
+                      <label><input type="radio" name="pv-device" value="sp" checked><span>スマホ</span></label>
+                      <label><input type="radio" name="pv-device" value="pc"><span>PC</span></label>
+                    </div>
+                  </div>
+                </div>
+                <label class="field"><span>時刻</span><select id="pv-time"></select></label>
+                <div class="row row-wrap">
+                  <input class="pv-dt" id="pv-dt" type="datetime-local" aria-label="好きな日時">
+                  <button class="btn btn-ghost btn-sm" type="button" data-shift="-60">−1時間</button>
+                  <button class="btn btn-ghost btn-sm" type="button" data-shift="-10">−10分</button>
+                  <button class="btn btn-ghost btn-sm" type="button" data-shift="10">＋10分</button>
+                  <button class="btn btn-ghost btn-sm" type="button" data-shift="60">＋1時間</button>
+                </div>
+                <div class="pv-2">
+                  <label class="field"><span>空</span><select id="pv-sky"></select></label>
+                  <label class="field"><span>天気</span><select id="pv-weather"></select></label>
+                </div>
+                <label class="field"><span>風 <b id="pv-wind-v">4</b> m/s</span><input id="pv-wind" type="range" min="0" max="20" value="4"></label>
+                <label class="switch"><input type="checkbox" id="pv-demo"><span class="switch-ui" aria-hidden="true"></span><span>デモのデータ<small>お知らせ・配信・食レポ・混雑・実況・灯り・仮のお店</small></span></label>
+                <label class="switch"><input type="checkbox" id="pv-urgent"><span class="switch-ui" aria-hidden="true"></span><span>デモのお知らせを「緊急」にする</span></label>
+              </div>
+            </article>
+
+            <article class="card">
+              <header class="card-head"><h2>書体を試す</h2><small class="muted">保存は「文章と書体」</small></header>
+              <div class="stack" id="pv-fonts"></div>
+            </article>
+
+            <article class="card">
+              <header class="card-head"><h2>演出・スタンプ</h2><small class="muted" id="pv-bridge">トップページで使える</small></header>
+              <div class="pv-btns">
+                <button class="btn btn-ghost btn-sm" type="button" data-pv="fire">花火を上げる</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-pv="intro">最初の演出</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-pv="wake">メニューを出す</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-pv="sleep">メニューをしまう</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-pv="shake">短冊を揺らす</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-pv="stamp1">スタンプ1個</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-pv="stampAll">スタンプをそろえる</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-pv="stampClear">スタンプを全部消す</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-pv="secretReset">隠し縁をリセット</button>
+              </div>
+              <small class="muted small">スタンプと隠し縁は、このブラウザに保存されている分だけが変わる</small>
+              <div class="row" style="margin-top:12px">
+                <select class="pv-select" id="pv-goto" aria-label="トップの場所・パネル"></select>
+                <button class="btn btn-ghost btn-sm" type="button" id="pv-goto-btn">移動</button>
+              </div>
+            </article>
+          </div>
+
+          <div class="pv-stage">
+            <div class="pv-bar">
+              <span class="pv-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="pv-url" id="pv-url"></span>
+              <button class="btn btn-ghost btn-sm" type="button" id="pv-reload">読み込み直す</button>
+              <a class="btn btn-ghost btn-sm" id="pv-open" target="_blank" rel="noopener">新しいタブ ↗</a>
+            </div>
+            <div class="pv-frame" id="pv-frame"><iframe id="pv-iframe" title="サイトのプレビュー"></iframe></div>
+          </div>
+        </div>
       </section>
 
       <!-- ===== 文章と書体 ===== -->

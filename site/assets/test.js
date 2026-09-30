@@ -7,7 +7,7 @@ const params = new URLSearchParams(location.search);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 // よく使う時刻（日本時間）
-const TIMES = [
+export const TIMES = [
   ["いま（本当の時刻）", ""],
   ["開幕10秒前（花火）", "2026-10-24T11:59:50"],
   ["開催中・企画あり", "2026-10-24T13:30"],
@@ -19,14 +19,14 @@ const TIMES = [
   ["公開終了後（結果発表の配信）", "2026-10-25T16:05"],
   ["終了後", "2026-10-26T10:00"],
 ];
-const SKIES = [["自動", ""], ["明け方", "dawn"], ["昼", "day"], ["夕焼け", "sunset"], ["日暮れ", "dusk"], ["夜", "night"]];
-const WEATHERS = [["本物", ""], ["晴れ", "clear"], ["くもり", "cloudy"], ["霧", "fog"], ["雨", "rain"], ["雪", "snow"], ["雷", "thunder"]];
+export const SKIES = [["自動", ""], ["明け方", "dawn"], ["昼", "day"], ["夕焼け", "sunset"], ["日暮れ", "dusk"], ["夜", "night"]];
+export const WEATHERS = [["本物", ""], ["晴れ", "clear"], ["くもり", "cloudy"], ["霧", "fog"], ["雨", "rain"], ["雪", "snow"], ["雷", "thunder"]];
 // トップページの場所（スクロールで出るもの）と、押すと開くパネル
-const PANELS = [["日程・入口", "days"], ["みどころ", "pickup"], ["縁日（模擬店）", "ennichi"], ["ご来場の皆さまへ", "info"], ["協賛", "sponsors"],
+export const PANELS = [["日程・入口", "days"], ["みどころ", "pickup"], ["縁日（模擬店）", "ennichi"], ["ご来場の皆さまへ", "info"], ["協賛", "sponsors"],
   ["（パネル）高専祭について", "about"], ["（パネル）タイムテーブル", "schedule"], ["（パネル）Enistagram", "enistagram"], ["（パネル）混雑状況", "crowd"],
   ["（パネル）企画案内", "guide"], ["（パネル）食レポ・写真", "report"], ["（パネル）隠し縁のごほうび", "secret"]];
 // ほかのページ（今の設定のまま開く）
-const PAGES = [["校内マップ", "map.html"], ["Enistagram", "map.html?tab=feed"], ["みどころ", "mido.html"], ["スタンプカード", "rally.html"],
+export const PAGES = [["校内マップ", "map.html"], ["Enistagram", "map.html?tab=feed"], ["みどころ", "mido.html"], ["スタンプカード", "rally.html"],
   ["模擬店用のページ", "shop.html"], ["本部コンソール", "staff/"]];
 const local = ["localhost", "127.0.0.1"].includes(location.hostname);
 
@@ -42,6 +42,51 @@ function reloadWith(changes) {
 }
 function store(fn) {
   try { fn(localStorage); } catch { /* 保存できないブラウザ */ }
+}
+
+// スタンプ・隠し縁・最初の演出（このブラウザに保存されている分を直接いじって、読み込み直す）
+const setStamps = (ids) => {
+  store((ls) => ls.setItem("kosen63-rally", JSON.stringify({ stamps: Object.fromEntries(ids.map((id) => [id, Date.now()])), claimedAt: null })));
+  location.reload();
+};
+const currentStamps = () => { let st = {}; store((ls) => { st = JSON.parse(ls.getItem("kosen63-rally") ?? "{}").stamps ?? {}; }); return Object.keys(st); };
+const STORAGE_ACTIONS = {
+  stamp1() {
+    const have = currentStamps();
+    const next = RALLY.shops.find((s) => !have.includes(s.id));
+    if (next) setStamps([...have, next.id]);
+  },
+  stampAll: () => setStamps(RALLY.shops.slice(0, RALLY.goal).map((s) => s.id)),
+  stampClear: () => { store((ls) => ls.removeItem("kosen63-rally")); location.reload(); },
+  secretReset: () => { store((ls) => ls.removeItem("kosen63-secrets")); location.reload(); },
+  intro: () => { store((ls) => ls.removeItem("kosen63-intro-seen")); location.reload(); },
+};
+// トップの場所（見えていればそこへ）か、パネル（#about など）を開く
+function goTo(id) {
+  const el = document.getElementById(id);
+  if (el && !el.hidden) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  else location.hash = id;
+}
+
+// 本部コンソールの「プレビュー」から動かす（?preview=1 で iframe の中に開いたとき）。
+// 同じサイトの本部コンソールからのメッセージだけを受け付ける。できることはテスト用パネルと同じ
+export function initPreviewBridge(hooks) {
+  if (window.parent === window) return;
+  const actions = {
+    fire: () => hooks.playOpening(),
+    wake: () => hooks.setAwake(true),
+    sleep: () => hooks.setAwake(false),
+    shake: () => hooks.shake?.push(12),
+    fonts: (v) => previewFonts(v),
+    goto: (v) => goTo(v),
+    ...STORAGE_ACTIONS,
+  };
+  addEventListener("message", (e) => {
+    if (e.origin !== location.origin || e.source !== window.parent) return;
+    const { kosenPreview, value } = e.data ?? {};
+    actions[kosenPreview]?.(value);
+  });
+  window.parent.postMessage({ kosenPreviewReady: true, phase: document.body.dataset.phase }, location.origin);
 }
 
 export function initTest(hooks) {
@@ -164,33 +209,19 @@ export function initTest(hooks) {
 
   // 演出
   $("#tw-fire").addEventListener("click", () => hooks.playOpening());
-  $("#tw-intro").addEventListener("click", () => { store((ls) => ls.removeItem("kosen63-intro-seen")); location.reload(); });
+  $("#tw-intro").addEventListener("click", () => STORAGE_ACTIONS.intro());
   $("#tw-wake").addEventListener("click", () => hooks.setAwake(true));
   $("#tw-sleep").addEventListener("click", () => hooks.setAwake(false));
   $("#tw-shake").addEventListener("click", () => hooks.shake?.push(12));
 
-  // スタンプ・隠し縁（このブラウザに保存されている分を直接いじる）
-  const setStamps = (ids) => {
-    store((ls) => ls.setItem("kosen63-rally", JSON.stringify({ stamps: Object.fromEntries(ids.map((id) => [id, Date.now()])), claimedAt: null })));
-    location.reload();
-  };
-  const current = () => { let st = {}; store((ls) => { st = JSON.parse(ls.getItem("kosen63-rally") ?? "{}").stamps ?? {}; }); return Object.keys(st); };
-  $("#tw-stamp1").addEventListener("click", () => {
-    const have = current();
-    const next = RALLY.shops.find((s) => !have.includes(s.id));
-    if (next) setStamps([...have, next.id]);
-  });
-  $("#tw-stampall").addEventListener("click", () => setStamps(RALLY.shops.slice(0, RALLY.goal).map((s) => s.id)));
-  $("#tw-stamp0").addEventListener("click", () => { store((ls) => ls.removeItem("kosen63-rally")); location.reload(); });
-  $("#tw-secret").addEventListener("click", () => { store((ls) => ls.removeItem("kosen63-secrets")); location.reload(); });
+  // スタンプ・隠し縁
+  $("#tw-stamp1").addEventListener("click", () => STORAGE_ACTIONS.stamp1());
+  $("#tw-stampall").addEventListener("click", () => STORAGE_ACTIONS.stampAll());
+  $("#tw-stamp0").addEventListener("click", () => STORAGE_ACTIONS.stampClear());
+  $("#tw-secret").addEventListener("click", () => STORAGE_ACTIONS.secretReset());
 
   // パネル
-  $("#tw-open").addEventListener("click", () => {
-    const id = $("#tw-panel").value;
-    const el = document.getElementById(id);
-    if (el && !el.hidden) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    else location.hash = id;
-  });
+  $("#tw-open").addEventListener("click", () => goTo($("#tw-panel").value));
   // ほかのページへ。時刻・空・天気・デモなどの設定はそのまま持っていく
   $("#tw-go").addEventListener("click", () => {
     const target = new URL($("#tw-page").value, location.href);

@@ -18,11 +18,20 @@ function classify(code) {
   return { kind: "cloudy", label: "くもり" };
 }
 
+// 本部の管理画面で「天気を固定」したとき（全員の画面）。URL の ?weather= のほうが強い
+let override = null;
+let reload = () => {};
+export function setWeatherOverride(next) {
+  const same = JSON.stringify(next ?? null) === JSON.stringify(override);
+  override = next ?? null;
+  if (!same) reload();
+}
+
 async function fetchWeather() {
-  const forced = params.get("weather");
+  const forced = params.get("weather") ?? override?.kind;
   if (forced) {
     const map = { clear: 0, cloudy: 3, fog: 45, rain: 63, snow: 73, thunder: 95 };
-    return { ...classify(map[forced] ?? 0), wind: Number(params.get("wind") ?? 4) };
+    return { ...classify(map[forced] ?? 0), wind: Number(params.get("wind") ?? override?.wind ?? 4) };
   }
   const { lat, lon } = FX.weather;
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=weather_code,wind_speed_10m&wind_speed_unit=ms&timezone=Asia%2FTokyo`;
@@ -129,6 +138,7 @@ export function initWeather(canvas, onChange) {
     onChange(wx);
   };
   const load = () => fetchWeather().then(apply).catch((err) => console.warn("[weather] 天気を取れませんでした:", err));
+  reload = load;
   load();
   setInterval(load, FX.weather.refreshMinutes * 60 * 1000);
 }

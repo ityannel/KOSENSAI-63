@@ -5,6 +5,7 @@ import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/li
 import { CROWD, VENUES, FESTIVAL } from "../assets/config.js";
 import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
 import { REPORT_HIDE, handleOf } from "../assets/posts.js";
+import { TIMES, SKIES, WEATHERS, PANELS, PAGES } from "../assets/test.js";
 
 const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
 const [appMod, auth, fs] = await Promise.all([
@@ -50,7 +51,7 @@ async function write(label, fn) {
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
 // ---------- 画面の切りかえ（#overview など） ----------
-const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "texts"];
+const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "preview", "texts"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
@@ -60,6 +61,7 @@ function route() {
   $("#page-eyebrow").textContent = view.dataset.eyebrow;
   document.title = `${view.dataset.title}｜本部コンソール`;
   scrollTo({ top: 0 });
+  if (name === "preview") startPreview();
 }
 addEventListener("hashchange", route);
 
@@ -73,7 +75,7 @@ function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
 }
 function startListening() {
-  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); });
+  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderLiveEffects(); renderOverview(); });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
     snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: v.level, updated_at: toMs(v.updated_at) }; });
@@ -133,6 +135,9 @@ function renderOverview() {
     row("お知らせ", notice),
     row("生配信", stream),
     row("表示", esc(phase)),
+    row("空・天気", l.sky_override || l.weather_override
+      ? `<span class="pill is-on">固定中</span> ${esc([SKIES.find(([, v]) => v === l.sky_override)?.[0], WEATHERS.find(([, v]) => v === l.weather_override)?.[0]].filter(Boolean).join("・"))}`
+      : '<span class="muted">いつもどおり</span>'),
     row("5人の実況", chat ? `${chat}人がしゃべっている` : '<span class="muted">いつものセリフ</span>'),
     row("文章と書体", texts || fonts.length ? `文 ${texts}か所・字 ${fonts.length ? esc(fonts.join("／")) : "いつもの"}` : '<span class="muted">いつものまま</span>'),
   ].join("");
@@ -440,6 +445,139 @@ $("#shop-add").addEventListener("submit", async (e) => {
     e.target.reset();
   }
 });
+
+// ---------- プレビュー・演出 ----------
+// テスト用パネル（?test=1）と同じことを、本部コンソールの中の iframe で試す。
+// 「全員の画面に出す」だけは本番の Firestore（site_live/current）に書き、来場者の画面が変わる
+const optionHtml = (list, cur = "") => list.map(([label, value]) => `<option value="${esc(value)}"${value === cur ? " selected" : ""}>${esc(label)}</option>`).join("");
+const DEVICES = { sp: { w: 390, h: 844 }, pc: { w: 1440, h: 900 } };
+$("#pv-page").innerHTML = optionHtml([["トップページ", ""], ...PAGES.filter(([, v]) => v !== "staff/")]);
+$("#pv-time").innerHTML = optionHtml(TIMES) + '<option value="__custom">好きな日時（下で選ぶ）</option>';
+$("#pv-sky").innerHTML = optionHtml(SKIES);
+$("#pv-weather").innerHTML = optionHtml(WEATHERS);
+$("#pv-goto").innerHTML = optionHtml(PANELS);
+$("#live-sky").innerHTML = optionHtml([["いつもどおり（時刻で）", ""], ...SKIES.slice(1)]);
+$("#live-weather").innerHTML = optionHtml([["いつもどおり（本物の天気）", ""], ...WEATHERS.slice(1)]);
+const ROLE_LABEL_SHORT = { display: "見出し・数字", text: "文", body: "ふつう" };
+$("#pv-fonts").innerHTML = Object.entries(FONTS).map(([role, list]) => `
+  <label class="field"><span>${ROLE_LABEL_SHORT[role]}</span><select data-pv-font="${role}">${list.map((c) => `<option value="${c.id}">${esc(c.label)}</option>`).join("")}</select></label>`).join("");
+
+let pvNow = "";
+let pvReady = false;
+let pvStarted = false;
+function previewUrl() {
+  const u = new URL(`../${$("#pv-page").value}`, location.href);
+  const set = (k, v) => { if (v) u.searchParams.set(k, v); };
+  set("preview", "1");
+  set("now", pvNow);
+  set("sky", $("#pv-sky").value);
+  set("weather", $("#pv-weather").value);
+  if ($("#pv-weather").value) set("wind", $("#pv-wind").value);
+  if ($("#pv-demo").checked) set("demo", "1");
+  if ($("#pv-demo").checked && $("#pv-urgent").checked) set("urgent", "1");
+  if (new URLSearchParams(location.search).has("emulator")) set("emulator", "1");
+  return u.href;
+}
+function fitPreview() {
+  const device = DEVICES[$('[name="pv-device"]:checked').value];
+  const frame = $("#pv-frame");
+  const iframe = $("#pv-iframe");
+  frame.classList.toggle("is-sp", device === DEVICES.sp);
+  const room = frame.parentElement.clientWidth - (device === DEVICES.sp ? 16 : 2);
+  const maxH = Math.max(420, innerHeight - 140);
+  const scale = Math.min(1, room / device.w, device === DEVICES.sp ? maxH / device.h : 1);
+  iframe.style.width = `${device.w}px`;
+  iframe.style.height = `${device.h}px`;
+  iframe.style.transform = `scale(${scale})`;
+  frame.style.width = `${device.w * scale + (device === DEVICES.sp ? 16 : 2)}px`;
+  frame.style.height = `${device.h * scale + (device === DEVICES.sp ? 16 : 2)}px`;
+}
+function loadPreview() {
+  const url = previewUrl();
+  pvReady = false;
+  updateBridgeState();
+  $("#pv-url").textContent = url.replace(location.origin, "");
+  $("#pv-open").href = url.replace("preview=1&", "test=1&").replace("?preview=1", "?test=1");
+  $("#pv-iframe").src = url;
+  fitPreview();
+}
+function startPreview() {
+  if (pvStarted) { fitPreview(); return; }
+  pvStarted = true;
+  loadPreview();
+}
+function updateBridgeState() {
+  $$("[data-pv], #pv-goto-btn").forEach((b) => { b.disabled = !pvReady; });
+  $("#pv-bridge").textContent = pvReady ? "トップページで動かせます" : "トップページを開くと使えます";
+}
+function send(kind, value) {
+  $("#pv-iframe").contentWindow?.postMessage({ kosenPreview: kind, value }, location.origin);
+}
+addEventListener("message", (e) => {
+  if (e.origin !== location.origin || e.source !== $("#pv-iframe").contentWindow || !e.data?.kosenPreviewReady) return;
+  pvReady = true;
+  updateBridgeState();
+  send("fonts", Object.fromEntries($$("[data-pv-font]").map((x) => [x.dataset.pvFont, x.value])));
+});
+addEventListener("resize", () => { if (pvStarted) fitPreview(); });
+["#pv-page", "#pv-sky", "#pv-weather", "#pv-demo", "#pv-urgent"].forEach((id) => $(id).addEventListener("change", loadPreview));
+$$('[name="pv-device"]').forEach((r) => r.addEventListener("change", loadPreview));
+$("#pv-wind").addEventListener("input", (e) => { $("#pv-wind-v").textContent = e.target.value; });
+$("#pv-wind").addEventListener("change", loadPreview);
+$("#pv-time").addEventListener("change", (e) => {
+  if (e.target.value === "__custom") return $("#pv-dt").focus();
+  pvNow = e.target.value;
+  $("#pv-dt").value = pvNow.slice(0, 16);
+  loadPreview();
+});
+$("#pv-dt").addEventListener("change", (e) => {
+  pvNow = e.target.value;
+  $("#pv-time").value = TIMES.some(([, v]) => v === pvNow) ? pvNow : "__custom";
+  loadPreview();
+});
+$$("[data-shift]").forEach((b) => b.addEventListener("click", () => {
+  const base = pvNow ? new Date(`${pvNow}+09:00`) : new Date();
+  const t = new Date(base.getTime() + Number(b.dataset.shift) * 60000);
+  pvNow = new Date(t.getTime() + 9 * 3600000).toISOString().slice(0, 16); // 日本時間の YYYY-MM-DDTHH:MM
+  $("#pv-dt").value = pvNow;
+  $("#pv-time").value = TIMES.some(([, v]) => v === pvNow) ? pvNow : "__custom";
+  loadPreview();
+}));
+$("#pv-fonts").addEventListener("change", () => send("fonts", Object.fromEntries($$("[data-pv-font]").map((x) => [x.dataset.pvFont, x.value]))));
+$$("[data-pv]").forEach((b) => b.addEventListener("click", () => send(b.dataset.pv)));
+$("#pv-goto-btn").addEventListener("click", () => send("goto", $("#pv-goto").value));
+$("#pv-reload").addEventListener("click", loadPreview);
+$("#pv-demo").addEventListener("change", (e) => { $("#pv-urgent").disabled = !e.target.checked; });
+$("#pv-urgent").disabled = true;
+updateBridgeState();
+
+// 全員の画面に出す（本番）
+$("#live-wind").addEventListener("input", (e) => { $("#live-wind-v").textContent = e.target.value; });
+$("#live-fire").addEventListener("click", () => {
+  if (!confirm("いまトップページを開いている人全員の画面に、花火を上げます。よろしいですか？")) return;
+  saveLive("花火を上げました（1分以内に開いている人に出ます）", { fireworks_at: fs.serverTimestamp() });
+});
+$("#live-sky-save").addEventListener("click", () => {
+  const weather = $("#live-weather").value;
+  saveLive("空と天気を全員の画面で固定しました", {
+    sky_override: $("#live-sky").value || null,
+    weather_override: weather || null,
+    wind_override: weather ? Number($("#live-wind").value) : null,
+  });
+});
+$("#live-sky-clear").addEventListener("click", () => {
+  $("#live-sky").value = "";
+  $("#live-weather").value = "";
+  saveLive("空と天気を、いつもどおりに戻しました", { sky_override: null, weather_override: null, wind_override: null });
+});
+function renderLiveEffects() {
+  const l = state.live;
+  if (document.activeElement?.closest?.(".card-live")) return; // 触っている途中は書きかえない
+  $("#live-sky").value = l.sky_override ?? "";
+  $("#live-weather").value = l.weather_override ?? "";
+  $("#live-wind").value = l.wind_override ?? 4;
+  $("#live-wind-v").textContent = $("#live-wind").value;
+}
 
 // ---------- 文章と書体 ----------
 const ROLE_LABEL = { display: "見出し・数字の字", text: "文の字（札・説明）", body: "ふつうの字（そのほか）" };

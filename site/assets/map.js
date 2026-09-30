@@ -1537,7 +1537,7 @@ function postHtml(x, s, { withPlace = false, reply = false } = {}) {
   const cap = x.has_photo ? `${review}${esc(x.text ?? "")}` : ""; // 文字だけの投稿は本文が上にあるので、キャプションは出さない
   return `<li class="v-post ig-post${x.has_photo ? "" : " is-text"}" data-post="${esc(x.id)}">
     <header class="ig-head">${avatar(who)}
-      <div class="ig-who"><b>${esc(who)}</b>${x.official ? '<i class="ig-official">公式</i>' : ""}${p ? `<button type="button" class="ig-loc" data-go="${esc(p.id)}">${esc(titleOf(p))}</button>` : ""}</div>
+      <div class="ig-who"><b>${esc(who)}${x.official ? '<i class="ig-official" title="本部の公式の投稿">公式</i>' : ""}</b>${p ? `<button type="button" class="ig-loc" data-go="${esc(p.id)}">${esc(titleOf(p))}</button>` : ""}</div>
       <button type="button" class="ig-more" data-report="${esc(x.id)}" aria-label="この投稿を本部に報告"${reported(x.id) ? " disabled" : ""}>${I.more}</button>
     </header>
     ${media}
