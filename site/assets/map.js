@@ -275,7 +275,9 @@ export function refreshRally() {
   if (!places.size) return;
   attachRally();
   buildIndex();
-  floorLayer = null; // 描き直す
+  // 地図をもう描いてあれば、いまの階を描き直す（まだなら最初の描画で入る）。
+  // floorLayer を空にするだけだと renderMap が何もしなくなり、そのあと建物を押してもシートが変わらなくなる
+  if (floorLayer) drawFloor();
   renderMap();
 }
 function attachShops() {
@@ -461,9 +463,20 @@ async function toggleFollow() {
   setTimeout(() => { if (follow && heading == null) { setFollow(false); toast("向きがわかりませんでした（センサーがないか、許可されていません）"); } }, 1500);
 }
 
+// 見ている範囲を当てる。動かすだけ（拡大率が同じ）ならすぐ全部。
+// 拡大・縮小が続いているあいだは、地図の範囲だけ毎コマ動かし、字の大きさ（--u）・字の出し入れは 0.16 秒に1回と、止まったあとに（スマホで重くならないように）
+let settleT = 0, settledK = 0, settledAt = 0;
 function applyView() {
   const k = view.k;
   svg().setAttribute("viewBox", `${view.x} ${view.y} ${size.w / k} ${size.h / k}`);
+  clearTimeout(settleT);
+  if (k === settledK || performance.now() - settledAt > 160) settleView();
+  else settleT = setTimeout(settleView, 110);
+}
+function settleView() {
+  const k = view.k;
+  settledK = k;
+  settledAt = performance.now();
   svg().style.setProperty("--u", (1 / k).toFixed(5));
   const far = svg().classList.contains("is-far");
   svg().classList.toggle("is-far", k < (far ? 1.15 : 1.05)); // 遠くから見ているときは小さな印を出さない（境目でちらつかないように少しずらす）

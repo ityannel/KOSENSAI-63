@@ -1170,3 +1170,8 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 /* 本部の公式の投稿の印と、写真の確認中の札（書いた人にだけ見える） */
 .ig-official { display: inline-block; width: max-content; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: linear-gradient(90deg, #3E6BD6, #C8323A); color: #fff; font-style: normal; font-size: .66rem; font-weight: 800; line-height: 1.6; letter-spacing: .04em; vertical-align: 2px; }
 .ig-pending { position: absolute; left: 10px; bottom: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(20, 22, 28, .78); color: #fff; font-size: .72rem; font-weight: 700; }
+
+/* スマホで地図を軽くする：動き続ける地図・流れる投稿の上では、うしろをぼかす効果（backdrop-filter）を使わない
+   （地図を動かすたびに、うしろを毎コマぼかし直すので重い）。そのぶん、下のタブ・上の帯は色をほぼ不透明に */
+.mapapp .m-tabs { background: rgba(255, 251, 242, 0.97); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.mapapp .f-head { background: rgba(255, 246, 230, 0.98); backdrop-filter: none; -webkit-backdrop-filter: none; }
