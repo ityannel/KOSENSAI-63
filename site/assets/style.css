@@ -1380,11 +1380,12 @@ html { scroll-behavior: smooth; }
     height .5s cubic-bezier(.2, .8, .2, 1), padding .5s cubic-bezier(.2, .8, .2, 1), border-radius .5s cubic-bezier(.2, .8, .2, 1),
     background-color .5s, box-shadow .5s;
 }
+/* 最初の画面：絵の下から画面の下までをすき間なくふさぐ四角（後ろのセクションが見えないように、透けない色） */
 body.tabs-docked .site-tabs {
   left: var(--app-x, 0px); right: var(--app-x, 0px); bottom: 0;
-  height: calc(64px + env(safe-area-inset-bottom)); padding: 7px 14px calc(7px + env(safe-area-inset-bottom));
-  border-radius: 22px 22px 0 0; background-color: rgba(255, 251, 242, 0.94);
-  box-shadow: inset 0 1px 0 rgba(99, 74, 46, 0.14), 0 -6px 22px -12px rgba(48, 36, 30, 0.4);
+  height: var(--tabs-h); padding: 8px 14px calc(8px + env(safe-area-inset-bottom));
+  border-radius: 0; background-color: #FFFBF2; backdrop-filter: none; -webkit-backdrop-filter: none;
+  box-shadow: inset 0 1px 0 rgba(99, 74, 46, 0.16);
 }
 @media (prefers-reduced-motion: reduce) { .site-tabs { transition: none; } }
 
