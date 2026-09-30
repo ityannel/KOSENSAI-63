@@ -41,8 +41,7 @@
         <a href="#broadcast" data-nav="broadcast"><svg viewBox="0 0 24 24"><path d="M4 9v6h3l5 4V5L7 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg><span data-short="配信">お知らせ・配信</span></a>
         <a href="#crowd" data-nav="crowd"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.5M17.5 19a5.5 5.5 0 0 0-2.5-4.6"/></svg><span data-short="混雑">混雑・実況</span></a>
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
-        <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店</span></a>
-        <a href="#print" data-nav="print"><svg viewBox="0 0 24 24"><path d="M7 9V3.5h10V9M7 17H4.5v-7a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1v7H17M7 14h10v6.5H7z"/></svg><span data-short="印刷">印刷（QR・チラシ）</span></a>
+        <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店・印刷</span></a>
         <a href="#preview" data-nav="preview"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20M10 8.5l4 2-4 2z"/></svg><span data-short="演出">プレビュー・演出</span></a>
         <a href="#texts" data-nav="texts"><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg><span data-short="文章">文章と書体</span></a>
       </nav>
@@ -176,64 +175,81 @@
         <div class="post-grid" id="post-list"></div>
       </section>
 
-      <!-- ===== 模擬店 ===== -->
-      <section class="view" id="view-shops" data-title="模擬店" data-eyebrow="SHOPS" hidden>
-        <article class="card">
-          <header class="card-head"><h2>お店を足す</h2></header>
-          <p class="muted small" style="margin-top:0">地図に載っているお店（config.js の SHOPS）は、下の一覧に最初から全部出ています。ここでは地図にない企画などを足せます。</p>
-          <form id="shop-add" class="row row-wrap">
-            <label class="field grow"><span>お店の名前</span><input id="shop-name" maxlength="40" required placeholder="例：5SE たこ焼き"></label>
-            <label class="field"><span>ID（半角英数字）</span><input id="shop-id" maxlength="30" pattern="[a-z0-9_\-]+" required placeholder="takoyaki"></label>
-            <label class="field"><span>場所（部屋番号など・任意）</span><input id="shop-room" maxlength="20" placeholder="L103"></label>
-            <button class="btn btn-primary" type="submit">足す</button>
-          </form>
-          <p class="muted small">お店の人には「コード」を渡します。コードの QR を読むと、そのお店の待ち時間だけを変えられるページ（shop.html）が開きます。</p>
-        </article>
-        <article class="card">
-          <header class="card-head"><h2>スタンプラリー</h2><span class="pill" id="rally-state"></span></header>
-          <p class="muted small" style="margin-top:0">お店の「スタンプの対象にする」を押すと、そのお店の QR の鍵（2日とも同じ）ができます。鍵そのものは本部だけが読める所にしまい、サイトには暗号化した値だけが出ます。QR は「印刷」で刷れます。</p>
-          <div class="row row-wrap">
-            <button class="btn btn-primary" type="button" id="rally-all">すべてのお店をスタンプの対象にする</button>
-            <button class="btn btn-ghost" type="button" id="rally-pin-make">引き換えの番号を作る</button>
-            <button class="btn btn-ghost" type="button" id="rally-pin-show">番号を見る</button>
-            <span class="pin-view" id="rally-pin-view" hidden></span>
+      <!-- ===== 模擬店・印刷 ===== -->
+      <!-- 受付の流れ：来たお店を名前で探す →「印刷する」でセット（三角POP＋お店の人用）を刷る → 渡したら「渡した」 -->
+      <section class="view" id="view-shops" data-title="模擬店・印刷" data-eyebrow="SHOPS &amp; PRINT" hidden>
+        <div class="shops-layout">
+          <div class="shops-main">
+            <article class="card desk">
+              <header class="card-head"><h2>受付</h2><span class="pill" id="desk-progress">受付済み 0 / 0店</span></header>
+              <ol class="desk-steps">
+                <li><b>探す</b>来たお店の名前・団体・クラスを入れる</li>
+                <li><b>印刷する</b>三角POP とお店の人用の紙（2枚）が出る。名前を確かめて刷る</li>
+                <li><b>渡した</b>紙を渡したら押す。「まだ」の一覧から消える</li>
+              </ol>
+              <label class="desk-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+                <input id="shop-q" type="search" placeholder="例：たこ焼き・5SE・野球部" autocomplete="off" enterkeyhint="search" aria-label="お店を探す">
+              </label>
+              <div class="row row-wrap desk-filter">
+                <div class="tabs" role="tablist" id="shop-filter" aria-label="表示するお店">
+                  <button role="tab" data-f="todo" aria-selected="true">まだ <b id="count-todo">0</b></button>
+                  <button role="tab" data-f="done" aria-selected="false">受付済み <b id="count-done">0</b></button>
+                  <button role="tab" data-f="all" aria-selected="false">すべて <b id="count-all">0</b></button>
+                </div>
+                <small class="muted" id="shop-hint"></small>
+              </div>
+            </article>
+            <div class="shop-list" id="shop-list"></div>
           </div>
-        </article>
-        <div class="shop-list" id="shop-list"></div>
-      </section>
 
-      <!-- ===== 印刷（QR・チラシ） ===== -->
-      <section class="view" id="view-print" data-title="印刷（QR・チラシ）" data-eyebrow="PRINT" hidden>
-        <div class="pr">
-          <div class="pr-controls">
+          <aside class="shops-side">
             <article class="card">
-              <header class="card-head"><h2>何を刷る？</h2></header>
+              <header class="card-head"><h2>スタンプラリー</h2><span class="pill" id="rally-state"></span></header>
+              <p class="muted small" style="margin-top:0">すべてのお店が対象です。お店の QR（2日とも同じ）は、印刷するときに自動で用意されます。景品と引き換えるには、下の「引き換えの番号」が要ります。</p>
+              <div class="row row-wrap">
+                <button class="btn btn-ghost btn-sm" type="button" id="rally-all">全部のお店の QR を用意する</button>
+                <button class="btn btn-ghost btn-sm" type="button" id="rally-pin-make">引き換えの番号を作る</button>
+                <button class="btn btn-ghost btn-sm" type="button" id="rally-pin-show">番号を見る</button>
+              </div>
+              <span class="pin-view" id="rally-pin-view" hidden></span>
+            </article>
+
+            <article class="card">
+              <header class="card-head"><h2>まとめて印刷</h2></header>
+              <p class="muted small" style="margin-top:0">受付の前に用意しておくときや、予備に。まとめて刷っても「受付済み」にはなりません。</p>
               <div class="stack">
                 <div class="seg seg-col" role="radiogroup" aria-label="印刷するもの">
-                  <label><input type="radio" name="pr-kind" value="shopset" checked><span>模擬店セット<small>店頭の三角POP（3つ折りで縦に立てる。スタンプの QR つき）・お店の人用の QR</small></span></label>
-                  <label><input type="radio" name="pr-kind" value="stamps"><span>スタンプラリーの QR だけ<small>お店ごとのカード・2日とも同じ（6枚で A4 1枚）</small></span></label>
+                  <label><input type="radio" name="pr-kind" value="shopset" checked><span>模擬店セット<small>三角POP（スタンプの QR つき）とお店の人用の紙</small></span></label>
+                  <label><input type="radio" name="pr-kind" value="stamps"><span>スタンプの QR だけ（予備）<small>お店ごとのカード。6枚で A4 1枚</small></span></label>
                   <label><input type="radio" name="pr-kind" value="flyer"><span>来場者向けの案内チラシ<small>日程と、サイト・地図・Enistagram・スタンプの QR</small></span></label>
                 </div>
-                <div class="stack" id="pr-shops-box">
-                  <div class="row"><b class="muted small">お店</b><button class="btn btn-ghost btn-sm" type="button" id="pr-all">全部</button><button class="btn btn-ghost btn-sm" type="button" id="pr-none">外す</button></div>
-                  <div class="pr-shops" id="pr-shops"></div>
+                <div class="seg seg-col" role="radiogroup" aria-label="どのお店の分" id="pr-target-box">
+                  <label><input type="radio" name="pr-target" value="todo" checked><span>まだ渡していないお店<small id="pr-target-todo"></small></span></label>
+                  <label><input type="radio" name="pr-target" value="all"><span>すべてのお店<small id="pr-target-all"></small></span></label>
                 </div>
-                <label class="switch" id="pr-staff-box"><input type="checkbox" id="pr-staff" checked><span class="switch-ui" aria-hidden="true"></span><span>お店の人用の QR も入れる<small>待ち時間を変えるページ。コードがなければ新しく作る。店頭には貼らない</small></span></label>
+                <label class="switch" id="pr-staff-box"><input type="checkbox" id="pr-staff" checked><span class="switch-ui" aria-hidden="true"></span><span>お店の人用の紙も入れる<small>待ち時間を変える QR。店頭には貼らない</small></span></label>
                 <div class="field" id="pr-size-box" hidden><span>大きさ</span>
                   <div class="seg" role="radiogroup" aria-label="チラシの大きさ">
                     <label><input type="radio" name="pr-size" value="a4" checked><span>A4 に1枚</span></label>
-                    <label><input type="radio" name="pr-size" value="a5"><span>A4 に A5 を2枚（切って使う）</span></label>
+                    <label><input type="radio" name="pr-size" value="a5"><span>A5 を2枚</span></label>
                   </div>
                 </div>
-                <div class="row">
-                  <button class="btn btn-ghost" type="button" id="pr-make">作る</button>
-                  <button class="btn btn-primary" type="button" id="pr-print" disabled>印刷する</button>
-                </div>
-                <p class="muted small" id="pr-note">「作る」を押すと右に出ます。印刷のときは「余白なし」「背景のグラフィック：オン」にしてください。</p>
+                <button class="btn btn-ghost" type="button" id="pr-make">作って確かめる</button>
               </div>
             </article>
-          </div>
-          <div class="pr-stage"><div class="print-area" id="print-area"><p class="empty">左で選んで「作る」を押してください。</p></div></div>
+
+            <details class="card side-details">
+              <summary><h2>地図にないお店を足す</h2></summary>
+              <p class="muted small">地図に載っているお店（config.js の SHOPS）は、最初から全部あります。ここでは地図にない企画などを足せます。</p>
+              <form id="shop-add" class="stack">
+                <label class="field"><span>お店の名前</span><input id="shop-name" maxlength="40" required placeholder="例：〇〇部 わたあめ"></label>
+                <label class="field"><span>ID（半角英数字）</span><input id="shop-id" maxlength="30" pattern="[a-z0-9_\-]+" required placeholder="wataame"></label>
+                <label class="field"><span>場所（部屋番号など・任意）</span><input id="shop-room" maxlength="20" placeholder="L103"></label>
+                <button class="btn btn-primary" type="submit">足す</button>
+              </form>
+            </details>
+          </aside>
         </div>
       </section>
 
@@ -344,6 +360,18 @@
     </main>
   </div>
 
+  <!-- 印刷の確かめ（受付の「印刷する」・まとめて印刷）。印刷のときはこの中の紙だけが出る -->
+  <div class="pr-overlay" id="print-overlay" role="dialog" aria-modal="true" aria-labelledby="pr-title" hidden>
+    <header class="pr-bar">
+      <div class="pr-bar-text"><small id="pr-kind-label"></small><h2 id="pr-title"></h2><p id="pr-note"></p></div>
+      <div class="pr-bar-actions">
+        <button class="btn btn-ghost" type="button" id="pr-close">閉じる</button>
+        <button class="btn btn-primary" type="button" id="pr-print">印刷する</button>
+        <button class="btn btn-ok" type="button" id="pr-given" hidden>渡した</button>
+      </div>
+    </header>
+    <div class="pr-stage"><div class="print-area" id="print-area"></div></div>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
