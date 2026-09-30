@@ -613,23 +613,7 @@ async function ensureShopCode(shopId) {
 async function buildShopSet(shops, withStaff) {
   const pages = [];
   for (const s of shops) {
-    const rally = isRallyShop(s.id);
-    pages.push(`
-      <section class="sheet ps-shop">
-        ${head("縁日（模擬店）")}
-        <div class="ps-shop-main">
-          <p class="ps-kicker">いらっしゃいませ！</p>
-          <h2 class="ps-name">${esc(s.name)}</h2>
-          ${s.where ? `<p class="ps-room">場所：${esc(s.where)}</p>` : ""}
-          ${rally ? '<p class="ps-badge">スタンプラリー対象店</p>' : ""}
-        </div>
-        <div class="ps-qrs">
-          ${qrTile(siteUrl("map.html?tab=feed"), "Enistagram で感想を投稿しよう", "写真やレビューを公式サイトに")}
-          ${qrTile(siteUrl("#ennichi"), "待ち時間・ほかのお店", "公式サイトの「縁日」")}
-        </div>
-        ${rally ? `<p class="ps-cut">✂ きりとり（スタンプラリーの QR：店頭に貼ってください。2日とも同じ QR です）</p>
-        <div class="ps-rally">${rallyBody(s)}</div>` : ""}
-      </section>`);
+    pages.push(buildTents([s])); // 店頭の札は三角POP（A4 を3つ折りにして縦に立てる）
     if (withStaff) {
       const code = await ensureShopCode(s.id);
       const url = shopUrl(code, s.id);
@@ -740,7 +724,6 @@ $("#pr-make").addEventListener("click", async () => {
   $("#pr-make").disabled = true;
   try {
     const html = kind === "shopset" ? await buildShopSet(shops, $("#pr-staff").checked)
-      : kind === "tent" ? buildTents(shops)
       : kind === "stamps" ? buildStamps(shops.filter((s) => isRallyShop(s.id)))
       : buildFlyer($('[name="pr-size"]:checked').value);
     $("#print-area").innerHTML = html;

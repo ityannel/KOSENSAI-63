@@ -304,17 +304,11 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .sheet .ps-head b { display: block; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 7mm; }
 .sheet .ps-head small { display: block; font-size: 3.6mm; opacity: .75; }
 .sheet .ps-name { margin: 2mm 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 17mm; line-height: 1.1; word-break: auto-phrase; }
-.ps-shop-main { padding: 10mm 0 6mm; text-align: center; }
-.ps-kicker { margin: 0; font-size: 5mm; color: var(--red); letter-spacing: .2em; }
-.ps-room { margin: 0; font-size: 5mm; }
-.ps-badge { display: inline-block; margin: 3mm 0 0; padding: 1mm 5mm; border-radius: 99mm; background: var(--red); color: #fff; font-size: 4.2mm; }
 .ps-qrs { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
 .ps-qr { display: grid; grid-template-columns: 30mm 1fr; align-items: center; gap: 4mm; margin: 0; padding: 4mm; border: .5mm solid var(--ink); border-radius: 5mm; background: var(--cream); }
 .ps-qr img { width: 30mm; height: 30mm; image-rendering: pixelated; background: #fff; padding: 1.5mm; border-radius: 2mm; }
 .ps-qr b { display: block; font-size: 4.4mm; line-height: 1.35; }
 .ps-qr small { display: block; margin-top: 1mm; font-size: 3.2mm; opacity: .75; font-weight: 500; }
-.ps-cut { margin: 9mm 0 4mm; padding-top: 3mm; border-top: .5mm dashed var(--ink); font-size: 3.4mm; text-align: center; opacity: .8; }
-.ps-stamps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6mm; }
 .ps-stamp { padding: 4mm; border: .6mm solid var(--ink); border-radius: 5mm; background: #fff; text-align: center; }
 .ps-stamp img { width: 44mm; height: 44mm; image-rendering: pixelated; }
 .ps-stamp-top { margin: 0 0 1mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 6mm; color: var(--red); }
@@ -371,9 +365,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .pt-enista { height: 7mm; width: auto; filter: brightness(0); }
 .pt-link-qr { width: 52mm; height: 52mm; image-rendering: pixelated; }
 .pt-rally .pt-face { gap: 8mm; }
-/* 模擬店セットのきりとり：三角POPの3段目と同じ中身を、横に並べる（右に縦書きの文、左に QR） */
-.ps-rally { display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; gap: 16mm; height: 104mm; padding: 6mm 10mm; border: 1.2mm solid var(--ink); border-radius: 6mm; }
-.ps-rally .pt-rally-text { height: 92mm; }
 .pt-rally .pt-face::before { content: ""; position: absolute; inset: 5mm 3mm; border: 1.2mm solid var(--ink); border-radius: 6mm; pointer-events: none; }
 .pt-rally-text { height: 100mm; }
 .pt-rally-text h3 { margin: 0 0 0 4mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 11mm; line-height: 1.2; }
