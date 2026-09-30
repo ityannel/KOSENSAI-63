@@ -47,6 +47,7 @@ function jumpToHash() {
 if (document.readyState === "complete") setTimeout(jumpToHash, 300); else addEventListener("load", () => setTimeout(jumpToHash, 300));
 
 // 少しでも下へスクロールしたら、「SCROLL」の案内を消す
-const onScroll = () => document.body.classList.toggle("scrolled", scrollY > 30);
+let scrolled = null;
+const onScroll = () => { const v = scrollY > 30; if (v !== scrolled) { scrolled = v; document.body.classList.toggle("scrolled", v); } };
 addEventListener("scroll", onScroll, { passive: true });
 onScroll();

@@ -54,7 +54,7 @@ document.body.insertAdjacentHTML("beforeend", `
     ${TZ.map(([x, len, c], i) => `<i class="pc-tz" style="--x:${x}%; --len:${len}px; --c:${COLORS[c]}; --dur:${(4.2 + (i % 3) * 0.9).toFixed(1)}s; --delay:${(-i * 0.7).toFixed(1)}s"></i>`).join("")}
   </div>
   <aside class="pc-side is-left">
-    <a class="pc-logo" href="${onTop ? "#" : "./"}" aria-label="第63回 函館高専祭「縁」トップへ"><span class="pc-logo-in"><img src="assets/img/logo.webp" width="673" height="657" alt=""></span></a>
+    <a class="pc-logo" href="${onTop ? "#" : "./"}" aria-label="第63回 函館高専祭「縁」トップへ"><span class="pc-logo-in"><img src="assets/img/logo.webp" width="673" height="657" alt="" loading="lazy" decoding="async"></span></a>
     <p class="pc-ed">第${esc(FESTIVAL.edition)}回 函館高専祭</p>
     <p class="pc-date">${days.map((d) => `<span><b>${d.md}</b><small>${d.wd}</small></span>`).join('<i aria-hidden="true"></i>')}</p>
   </aside>

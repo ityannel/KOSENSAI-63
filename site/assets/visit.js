@@ -5,8 +5,11 @@ import { VISIT, FESTIVAL, ELECTION } from "./config.js";
 
 const grid = document.getElementById("visit-grid");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const fmt = (iso, o) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", ...o }).format(new Date(iso));
-const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
+// 日時の書き方は、作るのが重いので1回だけ作って使いまわす
+const FMTS = new Map();
+const fmt = (iso, o) => { const k = JSON.stringify(o); if (!FMTS.has(k)) FMTS.set(k, new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", ...o })); return FMTS.get(k).format(new Date(iso)); };
+const HHMM = new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
+const hhmm = (iso) => HHMM.format(new Date(iso));
 const md = (iso) => `${fmt(iso, { month: "numeric" })}.${fmt(iso, { day: "numeric" })}`;
 const fill = (s) => s
   .replace("{hours}", FESTIVAL.days.map((d) => `${md(d.open)} ${fmt(d.open, { weekday: "short" }).toUpperCase()} ${hhmm(d.open)}〜${hhmm(d.close)}`).join("／"))

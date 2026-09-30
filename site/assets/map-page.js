@@ -1,10 +1,10 @@
 // map.html のためのスクリプト。トップページと同じデータ（企画・混雑・スタンプ・お知らせ）を地図に重ねる。
 import "./site-text.js"; // 本部が変えた書体（ほかより先に読む）
-import { rallyReady } from "./rally-data.js";
+import { onRallyChange } from "./rally-data.js";
 import { FESTIVAL, EVENTS, STAGE } from "./config.js";
 import { subscribeCrowd, subscribeLive, subscribeShops } from "./live.js";
 import { stampIds } from "./rally.js";
-import { initMap, renderMap, setNotice } from "./map.js";
+import { initMap, renderMap, setNotice, refreshRally } from "./map.js";
 import { subscribePosts } from "./posts.js";
 import "./offline.js";
 
@@ -34,7 +34,8 @@ const agoText = (ms) => {
 };
 
 let crowd = null, live = null, shops = [], posts = null, postsErr = null; // posts は読みこむまで null
-await rallyReady(1500); // スタンプラリーのお店の場所を地図に結びつけるので、先に読む
+// 地図はすぐ出す（スタンプラリーの場所は、前に読んだもの＝このスマホに覚えたものを先に使い、Firestore から届いたら描き直す）
+onRallyChange(refreshRally);
 await initMap({ getState: () => ({ phase: phase(), now: nowMs(), running: phase() === "during" ? running() : [], crowd, stamps: stampIds(), agoText, shops, posts, postsErr }) });
 subscribeCrowd((data) => { crowd = data; renderMap(); });
 subscribeLive((data) => { live = data; setNotice(live?.notice, live?.notice_level); renderMap(); });

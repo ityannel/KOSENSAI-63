@@ -1598,6 +1598,15 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 @media (min-width: 1000px) and (max-width: 1199px) { .pc-tabs svg { display: none; } } /* 左右がせまいときは、タブを1行におさめる */
 @media (prefers-reduced-motion: reduce) { .pc-tz, .pc-logo { animation: none; } .pc-logo-in { transform: none; } }
 
+/* 画面の外の欄は、見えるまで配置の計算を省く（トップを開いたときに、長いページ全体を計算しない） */
+#pickup, #ennichi, #info, #sponsors { content-visibility: auto; contain-intrinsic-size: auto 900px; }
+
+/* ページの切りかえ（サイト⇔地図⇔Enistagram）：白くちらつかずに、すっと入れかわる。下のタブはその場に残る */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.18s; }
+.site-tabs, .m-tabs { view-transition-name: tabs; }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
+
 /* =====================================================
    スタンプカード（rally.html）：本物のカードのように
    クリーム色の厚紙・赤い枠線・「縁」のロゴとカード番号。はんこは赤い丸の「縁」で、押すとポンッと上から押される。

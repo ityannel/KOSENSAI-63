@@ -27,7 +27,8 @@ const venueName = (id) => {
   const v = VENUES.find((x) => x.id === id);
   return v ? (v.alias ?? v.name) : (id ?? "");
 };
-const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
+const HHMM = new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }); // 1回だけ作る（作るのが重い）
+const hhmm = (iso) => HHMM.format(new Date(iso));
 
 const OPEN = Date.parse(FESTIVAL.days[0].open);
 // 開催中の NOW／NEXT は、ステージを「ステージパフォーマンス」のひとまとまりではなく、出演する団体ごとに出す
@@ -49,8 +50,10 @@ function currentPhase(t = nowMs()) {
 // ---------- 静的セクション ----------
 function renderStatic() {
   // 絵のすぐ下の日付：10.24 SAT ／ 12:00 ~ 16:00
-  const md = (iso) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric" }).format(new Date(iso)).replace("/", ".");
-  const wd = (iso) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", weekday: "short" }).format(new Date(iso)).toUpperCase();
+  const MD = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric" });
+  const WD = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", weekday: "short" });
+  const md = (iso) => MD.format(new Date(iso)).replace("/", ".");
+  const wd = (iso) => WD.format(new Date(iso)).toUpperCase();
   $("#k-days").innerHTML = FESTIVAL.days.map((d) => `
     <p class="k-day"><span class="k-date">${esc(md(d.open))}<small>${esc(wd(d.open))}</small></span><span class="k-time">${hhmm(d.open)} ~ ${hhmm(d.close)}</span></p>`).join("");
 
@@ -155,7 +158,8 @@ function renderDuring() {
       <small class="now-sub">${e.start ? `${hhmm(e.start)} ~ ${e.end ? hhmm(e.end) : ""}` : ""}${e.venue ? ` @ ${esc(venueName(e.venue))}` : ""}${e.kind ? `・${esc(e.kind)}` : ""}${e.internal ? "・学内のみ" : ""}</small>
     </div>`;
   const inHours = FESTIVAL.days.some((d) => Date.parse(d.open) <= t && t < Date.parse(d.close));
-  const sameDay = (a, b) => new Date(a).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" }) === new Date(b).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
+  const DAY = new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo" });
+  const sameDay = (a, b) => DAY.format(new Date(a)) === DAY.format(new Date(b));
   const today = FESTIVAL.days.find((d) => sameDay(t, d.open));
   const beforeOpen = !inHours && today && t < Date.parse(today.open); // 2日目の朝など、開場前
   let html = running.map((e) => row(e, "NOW")).join("");
@@ -550,7 +554,9 @@ const shake = initShake($("#shake-btn"));
 initParallax();
 initWeather($("#weather-fx"), (wx) => { weather = wx; updateSky(); });
 if (FX.presence.enabled) {
-  startPresence(renderLanterns, { windowMinutes: FX.presence.windowMinutes, isOff: () => !!live?.presence_off });
+  // 先に用意しただけのページ（まだ見ていない）では数えない。開かれたら数える
+  const count = () => startPresence(renderLanterns, { windowMinutes: FX.presence.windowMinutes, isOff: () => !!live?.presence_off });
+  if (document.prerendering) document.addEventListener("prerenderingchange", count, { once: true }); else count();
 }
 // 開幕から90秒以内に開いた人にも見せる。?fireworks=1 でいつでも確認できる
 if (params.has("fireworks") || (nowMs() >= OPEN && nowMs() < OPEN + 90000)) {
@@ -559,7 +565,8 @@ if (params.has("fireworks") || (nowMs() >= OPEN && nowMs() < OPEN + 90000)) {
 
 // ---------- 下のタブ：最初の画面では画面の下いっぱい、スクロールすると浮かぶ丸い帯に ----------
 {
-  const dock = () => document.body.classList.toggle("tabs-docked", scrollY < 40);
+  let docked = null;
+  const dock = () => { const d = scrollY < 40; if (d !== docked) { docked = d; document.body.classList.toggle("tabs-docked", d); } };
   let queued = false;
   addEventListener("scroll", () => {
     if (queued) return;

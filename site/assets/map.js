@@ -177,11 +177,7 @@ function buildPlaces(rooms) {
   }
   for (const b of SITE.buildings) if (b.name) places.set(b.id, { id: b.id, kind: "outdoor", outdoor: true, floor: "1F", name: b.name, sub: b.sub ?? "", rect: bbox(b.rects), rects: b.rects });
   attachShops();
-  // スタンプラリーのお店（RALLY.shops の place か room）を、その場所に結びつける（地図に印、シートに一覧）
-  for (const x of RALLY.shops) {
-    const p = x.place ? places.get(x.place) : x.room ? place(x.room) : null;
-    if (p && !(p.shops ?? []).includes(x.id)) p.shops = [...(p.shops ?? []), x.id];
-  }
+  attachRally();
   // L字などは、名前とピンを中に入るいちばん大きい四角に出す（config の labelRect があればそちら）
   for (const p of places.values()) if (!p.zone && !p.labelRect && p.rects?.length > 1) p.labelRect = innerRect(p.rects);
   // 会場の中にある小さな部屋（学食の厨房・売店・トイレなど）は会場の一部にする（地図に出さず、探すと会場が出る）
@@ -266,6 +262,22 @@ function evenToilets() {
 }
 
 // 模擬店を場所につなぐ。教室がわからないものは「〇棟〇階の模擬店」（その階の教室まとめ）にする
+// スタンプラリーの場所（RALLY.shops の place か room）を、その場所に結びつける（地図に印、シートに一覧）
+function attachRally() {
+  for (const p of places.values()) delete p.shops;
+  for (const x of RALLY.shops) {
+    const p = x.place ? places.get(x.place) : x.room ? place(x.room) : null;
+    if (p && !(p.shops ?? []).includes(x.id)) p.shops = [...(p.shops ?? []), x.id];
+  }
+}
+// スタンプラリーの場所が Firestore から届いた・変わったとき（地図は待たずに先に出しておき、あとから印を足す）
+export function refreshRally() {
+  if (!places.size) return;
+  attachRally();
+  buildIndex();
+  floorLayer = null; // 描き直す
+  renderMap();
+}
 function attachShops() {
   for (const sh of SHOPS) {
     const code = sh.room ?? HOMEROOMS[sh.cls];

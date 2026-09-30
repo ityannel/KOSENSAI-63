@@ -33,10 +33,15 @@
   <link rel="modulepreload" href="assets/offline.js">
   <link rel="modulepreload" href="assets/qr-scan.js">
   <link rel="modulepreload" href="assets/side.js">
-  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&family=LINE+Seed+JP:wght@400;700;800&family=Noto+Sans+JP:wght@400;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&family=LINE+Seed+JP:wght@400;700;800&family=Noto+Sans+JP:wght@400;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <!-- 地図・Enistagram はトップと同じ字：短い見出し・ボタンは WDXL Lubrifont、文は Zen Kaku Gothic New。
        場所の名前や投稿はどんな字も出るので、字をしぼらずに読みこむ（Google Fonts が使う字の分だけ小分けにして届ける） -->
-  <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;family=Zen+Kaku+Gothic+New:wght@700;900&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;family=Zen+Kaku+Gothic+New:wght@700;900&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="preload" href="assets/map/rooms.json" as="fetch" crossorigin>
+  <!-- 次に開きそうなページ（下のタブ・同じサイトのリンク）を、押しそうになったら裏で先に用意する（Chrome）。本部用は除く -->
+  <script type="speculationrules">
+  { "prerender": [{ "where": { "and": [{ "href_matches": "/*" }, { "not": { "href_matches": "/*staff/*" } }, { "not": { "href_matches": "*emulator*" } }] }, "eagerness": "moderate" }] }
+  </script>
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/map.css">
   <script src="assets/theme.js"></script><!-- ライト／ダークと差し色（描く前に決める） -->

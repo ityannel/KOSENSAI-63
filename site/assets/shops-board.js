@@ -66,7 +66,9 @@ function render() {
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
 const SPEED = 28; // 1秒に動く px（402px 幅のとき）
 let loopW = 0, visible = false, holdUntil = 0, hover = false, last = 0, pos = 0;
+let running = false;
 function tick(now) {
+  if (!visible) { running = false; last = 0; return; } // 見えていないときは止める（毎フレームの計算をしない）
   requestAnimationFrame(tick);
   const dt = Math.min(64, now - (last || now)); last = now;
   if (!loopW || !visible || hover || calm.matches || document.hidden || Date.now() < holdUntil) { pos = box.scrollLeft; return; }
@@ -83,13 +85,20 @@ if (box && chipsBox) {
     pick = b.dataset.g;
     render();
   });
-  render();
+  // 作るのは、近くまでスクロールしてきたとき（トップを開いたときに、見えない56枚の札を並べて測らない）
+  let built = false;
+  new IntersectionObserver((es, io) => {
+    if (built || !es.some((e) => e.isIntersecting)) return;
+    built = true; io.disconnect(); render();
+  }, { rootMargin: "600px 0px" }).observe(box);
   // さわっている間・はなして3秒は止める。自分ですべらせたら、そこから続きを流す
   for (const ev of ["pointerdown", "touchstart", "wheel", "keydown", "focusin"]) box.addEventListener(ev, hold, { passive: true });
   box.addEventListener("scroll", () => { if (Date.now() < holdUntil) { hold(); if (loopW && box.scrollLeft >= loopW) box.scrollLeft -= loopW; } }, { passive: true });
   box.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") hover = true; });
   box.addEventListener("pointerleave", () => { hover = false; });
-  new IntersectionObserver((es) => { visible = es.some((e) => e.isIntersecting); }).observe(box);
+  new IntersectionObserver((es) => {
+    visible = es.some((e) => e.isIntersecting);
+    if (visible && !running) { running = true; requestAnimationFrame(tick); }
+  }).observe(box);
   wireDetails(box);
-  requestAnimationFrame(tick);
 }
