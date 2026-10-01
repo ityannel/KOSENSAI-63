@@ -37,6 +37,9 @@ function apply(blocks) {
 function markEdges() {
   const shown = order.map(({ id }) => els[id]).filter((el) => !el.hidden && !el.hasAttribute("data-off"));
   Object.values(els).forEach((el) => { el.classList.toggle("is-first-block", el === shown[0]); el.classList.toggle("is-last-block", el === shown.at(-1)); });
+  // PC の右のメニュー（side.js）に、いまの並びを知らせる
+  window.kosenBlocks = order.map(({ id, show }) => ({ id, show, visible: shown.includes(els[id]) }));
+  document.dispatchEvent(new CustomEvent("blocks:order", { detail: window.kosenBlocks }));
 }
 new MutationObserver(markEdges).observe(document.querySelector("main") ?? document.body, { subtree: true, attributes: true, attributeFilter: ["hidden"] });
 

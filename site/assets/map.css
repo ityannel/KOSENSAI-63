@@ -987,7 +987,7 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > :is(.m-heading, .m-compa
    .app-frame に transform をつけると、中の position: fixed（地図・検索・シート・タブ）がその中に収まる。まわりは side.js */
 @media (min-width: 600px) {
   body.mapapp { background: transparent; height: 100dvh; overflow: hidden; } /* うしろは今の空の絵（style.css の .pc-bg） */
-  .app-frame { position: relative; width: 430px; height: 100dvh; margin: 0 auto; overflow: hidden; transform: translateZ(0); background: var(--m-outside); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 60px rgba(0, 0, 0, 0.5); }
+  .app-frame { position: relative; width: 430px; height: 100dvh; margin: 0 auto; overflow: hidden; transform: translateZ(0); background: var(--m-outside); box-shadow: none; }
 }
 /* もっと広い PC では、下のタブは右の案内へ（side.js）。地図の下はタブの分だけ広く */
 @media (min-width: 1000px) {

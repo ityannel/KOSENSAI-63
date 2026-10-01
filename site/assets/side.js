@@ -14,6 +14,7 @@ const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const MENU = [
   ["days", "日程", "SCHEDULE", svg('<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/>')],
   ["message", "学生主事より", "MESSAGE", svg('<path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z"/>')],
+  ["crowd-now", "いまの混雑", "CROWD", svg('<circle cx="8" cy="8" r="2.5"/><circle cx="16.5" cy="9" r="2"/><path d="M3.5 19c0-3 2-5 4.5-5s4.5 2 4.5 5M14 14.5c.8-.6 1.6-.9 2.5-.9 2.2 0 4 1.8 4 4.4"/>')],
   ["pickup", "みどころ", "HIGHLIGHTS", svg('<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.8 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>')],
   ["ennichi", "縁日", "FOOD & FUN", svg('<path d="M3.5 9L5 4h14l1.5 5M3.5 9h17M3.5 9a2.8 2.8 0 0 0 5.6 0 2.9 2.9 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0M5 12v8h14v-8M10 20v-5h4v5"/>')],
   ["info", "ご来場の皆さまへ", "INFO", svg('<path d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>')],
@@ -61,10 +62,27 @@ document.body.insertAdjacentHTML("beforeend", `
   <nav class="pc-side is-right" aria-label="メニュー">
     <div class="pc-tabs">${TABS.map(([id, label, href, icon]) => `<a href="${href}" data-pc-tab="${id}">${icon}<span${id === "feed" ? ' class="e-word"' : ""}>${esc(label)}</span></a>`).join("")}</div>
     <p class="pc-h">MENU</p>
-    <ul class="pc-menu">${MENU.map(([id, ja, en, icon], i) => `<li><a href="${onTop ? "" : "./"}#${id}" data-pc-sec="${id}"><span class="pc-ic" style="--c:${COLORS[i % COLORS.length]}">${icon}</span><span class="pc-txt"><b>${esc(ja)}</b><small>${esc(en)}</small></span></a></li>`).join("")}</ul>
+    <ul class="pc-menu">${MENU.map(([id, ja, en, icon], i) => `<li><a href="${onTop ? "" : "./"}#${id}" data-pc-sec="${id}"><span class="pc-ic" style="--c:${COLORS[i % COLORS.length]}">${icon}</span><span class="pc-txt"><b>${esc(ja)}</b></span></a></li>`).join("")}</ul>
     <p class="pc-h">MORE</p>
-    <ul class="pc-menu">${MORE.map(([href, ja, en, icon], i) => `<li><a href="${href}"${href === `${document.body.dataset.page}.html` ? ' aria-current="true"' : ""}><span class="pc-ic" style="--c:${COLORS[(i + 3) % COLORS.length]}">${icon}</span><span class="pc-txt"><b>${esc(ja)}</b><small>${esc(en)}</small></span></a></li>`).join("")}</ul>
+    <ul class="pc-menu">${MORE.map(([href, ja, en, icon], i) => `<li><a href="${href}"${href === `${document.body.dataset.page}.html` ? ' aria-current="true"' : ""}><span class="pc-ic" style="--c:${COLORS[(i + 3) % COLORS.length]}">${icon}</span><span class="pc-txt"><b>${esc(ja)}</b></span></a></li>`).join("")}</ul>
   </nav>`);
+
+// メニューの順番は、トップページの欄の並びに合わせる（本部コンソールの「サイトの設定」で変わる。blocks.js が知らせる）。出していない欄は、メニューからも消す
+// 日程（いちばん上の絵）はいつも最初。ほかのページでは、前にトップページで読んだ並び（このスマホ・PC に覚えてある）
+const SEC_OF = { message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", info: "info", sponsors: "sponsors" }; // 欄の名前 → メニューの行き先
+function orderMenu(blocks) {
+  if (!Array.isArray(blocks)) return;
+  const ul = document.querySelector(".pc-menu");
+  const li = (sec) => ul.querySelector(`[data-pc-sec="${sec}"]`)?.closest("li");
+  for (const b of blocks) {
+    const item = li(SEC_OF[b?.id]);
+    if (!item) continue;
+    ul.append(item);
+    item.hidden = b.show === false || b.visible === false;
+  }
+}
+try { orderMenu(window.kosenBlocks ?? JSON.parse(localStorage.getItem("kosen63-blocks") ?? "null")); } catch { /* 覚えていない */ }
+document.addEventListener("blocks:order", (e) => orderMenu(e.detail));
 
 // 左の「縁」のロゴで遊ぶ：マウスの方へ3Dで傾いて光が動く。押すと、ぷにっとつぶれて短冊が飛び散る。何回も続けて押すと一回転
 const logo = document.querySelector(".pc-logo");
@@ -128,7 +146,7 @@ if (!onTop && !onMido) {
   const seen = new Map();
   const io = new IntersectionObserver((es) => {
     for (const e of es) seen.set(e.target.id, e.isIntersecting);
-    const cur = MENU.map(([id]) => id).find((id) => seen.get(id));
+    const cur = [...document.querySelectorAll("[data-pc-sec]")].map((a) => a.dataset.pcSec).find((id) => seen.get(id)); // メニューのいまの順で
     links.forEach((a, id) => (id === cur ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
   }, { rootMargin: "-35% 0px -55% 0px" });
   links.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el); });
