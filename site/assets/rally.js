@@ -259,7 +259,7 @@ function renderVote() {
     ${stamped.length ? `<p class="rv-step">行ったお店から、1つ選んでください</p>
       <ul class="rv-list">${stamped.map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}${s.id === pickId ? " is-pick" : ""}" data-pick="${esc(s.id)}" aria-pressed="${s.id === pickId}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : s.id === pickId ? "選択中" : ""}</span></button></li>`).join("")}</ul>
       <button type="button" class="rv-submit" data-submit${!pickId || pickId === mine || voting ? " disabled" : ""}>${mine ? "投票先を変える" : "このお店に投票する"}</button>`
-      : `<p class="rv-empty">模擬店の QR を読むと、そのお店に投票できます。</p>`}
+      : `<p class="rv-empty">まだどこにも行っていません。<br>スタンプカードで QR を読んで、スタンプをためよう。行ったお店に、ここから投票できます。</p>`}
     ${note}
     ${rest.length ? `<details class="rv-rest"><summary>まだ押していないお店 ${rest.length}</summary><ul>${rest.map((s) => `<li>${esc(s.name)}</li>`).join("")}</ul></details>` : ""}`;
 }
@@ -341,6 +341,8 @@ function render() {
   const sorry = $("#rally-sorry");
   if (sorry) sorry.hidden = !prizeOut;
   const flipped = $(".rc")?.getAttribute("aria-pressed") === "true";
+  // スタンプの丸は3つずつ並ぶ。6個をこえたら、段が増える分だけカードを縦に伸ばす
+  $("#rc").style.setProperty("--rc-base", 72 + Math.max(0, Math.ceil(Math.max(RALLY.goal, count) / 3) - 2) * 34);
   const list = shops();
   $("#rc").innerHTML = `
     <button type="button" class="rc" aria-pressed="${flipped}" aria-label="スタンプカード（押すと裏返る）">
@@ -445,7 +447,6 @@ export function initVotePage(getNow = () => Date.now()) {
     if (pick) { pickId = pickId === pick.dataset.pick ? null : pick.dataset.pick; voteNote = null; return renderVote(); }
     if (e.target.closest("[data-submit]") && pickId) castVote(pickId);
   });
-  $("#rally-scan").addEventListener("click", openScan);
   refreshVote();
   takeQrParams();
 }
