@@ -30,6 +30,8 @@ const MORE = [
   ["rally.html", "スタンプカード", "STAMP CARD", svg('<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8.5" cy="12" r="2.3"/><circle cx="15.5" cy="12" r="2.3"/>')],
   ["map.html?list=toilet", "トイレ", "RESTROOMS", svg('<circle cx="7.5" cy="5" r="1.7"/><circle cx="16.5" cy="5" r="1.7"/><path d="M7.5 8.5v11M5 9h5l-.3 5.5M16.5 8.5l-2.8 7h5.6zM16.5 15.5v4"/>')],
 ];
+// MORE の各行が出る条件：トップページの、その欄が出ているとき（"now" は開催中だけ、"*" はいつも）
+const MORE_NEEDS = { "mido.html": "pickup", "map.html?list=now": "now", "map.html?list=food": "ennichi", "vote.html": "vote", "rally.html": "stamp", "map.html?list=toilet": "*" };
 const COLORS = ["var(--sky-1)", "var(--sky-3)", "var(--sun)", "#E7A0A0", "var(--en)"];
 
 // 日付：10.24 SAT
@@ -65,8 +67,8 @@ document.body.insertAdjacentHTML("beforeend", `
     <div class="pc-tabs">${TABS.map(([id, label, href, icon]) => `<a href="${href}" data-pc-tab="${id}">${icon}<span${id === "feed" ? ' class="e-word"' : ""}>${esc(label)}</span></a>`).join("")}</div>
     <p class="pc-h">MENU</p>
     <ul class="pc-menu">${MENU.map(([id, ja, en, icon], i) => `<li><a href="${onTop ? "" : "./"}#${id}" data-pc-sec="${id}"><span class="pc-ic" style="--c:${COLORS[i % COLORS.length]}">${icon}</span><span class="pc-txt"><b>${esc(ja)}</b></span></a></li>`).join("")}</ul>
-    <p class="pc-h">MORE</p>
-    <ul class="pc-menu">${MORE.map(([href, ja, en, icon], i) => `<li><a href="${href}"${href === `${document.body.dataset.page}.html` ? ' aria-current="true"' : ""}><span class="pc-ic" style="--c:${COLORS[(i + 3) % COLORS.length]}">${icon}</span><span class="pc-txt"><b>${esc(ja)}</b></span></a></li>`).join("")}</ul>
+    <p class="pc-h" id="pc-more-h">MORE</p>
+    <ul class="pc-menu" id="pc-more">${MORE.map(([href, ja, en, icon], i) => `<li data-need="${MORE_NEEDS[href] ?? "*"}"><a href="${href}"${href === `${document.body.dataset.page}.html` ? ' aria-current="true"' : ""}><span class="pc-ic" style="--c:${COLORS[(i + 3) % COLORS.length]}">${icon}</span><span class="pc-txt"><b>${esc(ja)}</b></span></a></li>`).join("")}</ul>
   </nav>`);
 
 // メニューの順番は、トップページの欄の並びに合わせる（本部コンソールの「サイトの設定」で変わる。blocks.js が知らせる）。出していない欄は、メニューからも消す
@@ -83,8 +85,25 @@ function orderMenu(blocks) {
     item.hidden = b.show === false || b.visible === false;
   }
 }
-try { orderMenu(window.kosenBlocks ?? JSON.parse(localStorage.getItem("kosen63-blocks") ?? "null")); } catch { /* 覚えていない */ }
-document.addEventListener("blocks:order", (e) => orderMenu(e.detail));
+// MORE：いまトップページに出ている欄だけ。欄を出していなければ、その行きさき（みどころ・模擬店・スタンプなど）の入口も出さない。「いまやっている」は開催中だけ
+function syncMore(blocks) {
+  const on = new Set((Array.isArray(blocks) ? blocks : []).filter((b) => b?.show !== false && b?.visible !== false).map((b) => b.id));
+  const known = Array.isArray(blocks) && blocks.length > 0; // 並びを知らないときは、全部出す
+  const during = (document.body.dataset.phase ?? "") ? document.body.dataset.phase === "during" : Date.now() >= Date.parse(FESTIVAL.days[0].open) && Date.now() <= Date.parse(FESTIVAL.days.at(-1).close);
+  const ul = document.getElementById("pc-more");
+  ul.querySelectorAll("li").forEach((li) => {
+    const need = li.dataset.need;
+    li.hidden = need === "*" ? false : need === "now" ? !during : known && !on.has(need);
+  });
+  const any = [...ul.children].some((li) => !li.hidden);
+  ul.hidden = !any;
+  document.getElementById("pc-more-h").hidden = !any;
+}
+let lastBlocks = null;
+const sync = (blocks) => { lastBlocks = blocks ?? lastBlocks; orderMenu(lastBlocks); syncMore(lastBlocks); };
+try { sync(window.kosenBlocks ?? JSON.parse(localStorage.getItem("kosen63-blocks") ?? "null")); } catch { /* 覚えていない */ }
+document.addEventListener("blocks:order", (e) => sync(e.detail));
+new MutationObserver(() => syncMore(lastBlocks)).observe(document.body, { attributes: true, attributeFilter: ["data-phase"] }); // 開催前 → 開催中に変わったら、「いまやっている」を出す
 
 // 左の「縁」のロゴで遊ぶ：マウスの方へ3Dで傾いて光が動く。押すと、ぷにっとつぶれて短冊が飛び散る。何回も続けて押すと一回転
 const logo = document.querySelector(".pc-logo");
