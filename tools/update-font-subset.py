@@ -36,7 +36,7 @@ SIDE_FIXED = "第回函館高専祭MENUSUNMOTEWDHFRA" + "ほかの見どころ�
 chars = "".join(dict.fromkeys(FIXED + "".join(titles) + "".join(venues) + SIDE_FIXED + "".join(a + b for a, b in side_words)))
 url = "https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap&text=" + urllib.parse.quote(chars)
 
-for page in ["index.html", "mido.html", "rally.html"]:  # map.html は字をしぼらずに読みこむ（場所の名前・投稿はどんな字も出るので）
+for page in ["index.html", "mido.html", "rally.html", "vote.html"]:  # map.html は字をしぼらずに読みこむ（場所の名前・投稿はどんな字も出るので）
     path = SITE / page
     html = path.read_text(encoding="utf-8")
     html, n = re.subn(r'href="https://fonts\.googleapis\.com/css2\?family=WDXL\+Lubrifont\+JP\+N[^"]*"',
@@ -63,7 +63,7 @@ ticket += "本部がリアルタイムで更新たった今分前に更新時間
 ticket += "←サイトにもどるすべていまやっているステージ企画この条件のみどころはありません。【仮】出演者と時間は仮のものです団体名・企画名でさがす学内のみ"
 msg = "".join(dict.fromkeys("".join(re.findall(r'"([^"]+)"', body)) + ticket))
 zen = "https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&display=swap&text=" + urllib.parse.quote(msg)
-for page in ["index.html", "mido.html", "rally.html"]:
+for page in ["index.html", "mido.html", "rally.html", "vote.html"]:
     path = SITE / page
     html = path.read_text(encoding="utf-8")
     html, n = re.subn(r'href="https://fonts\.googleapis\.com/css2\?family=Zen\+Kaku\+Gothic\+New[^"]*"', 'href="' + zen.replace("&", "&amp;") + '"', html)

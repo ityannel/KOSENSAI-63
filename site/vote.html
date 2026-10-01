@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>スタンプカード｜第63回 函館高専祭「縁」</title>
-  <meta name="description" content="第63回 函館高専祭「縁」のスタンプラリーのスタンプカード。模擬店・学科展示・会場の QR を読むと、スタンプが押されます。">
+  <title>模擬店総選挙｜第63回 函館高専祭「縁」</title>
+  <meta name="description" content="第63回 函館高専祭「縁」の模擬店総選挙。スタンプを押した模擬店に、1人1票。">
   <meta name="theme-color" content="#d97638">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
@@ -20,35 +20,26 @@
   <link rel="stylesheet" href="assets/style.css">
   <script src="assets/theme.js"></script><!-- ライト／ダークと差し色（描く前に決める） -->
 </head>
-<!-- スタンプカードのページ：模擬店スタンプラリー（サイトの中の1ページ。下のタブは「サイト」のまま）。
-     みどころのページと同じく、下からシートが出てくる形。右上の × で下へしまって、もとのページへ戻る。
-     お店の QR（rally.html?s=店ID&c=合言葉）を読むと、ここが開いてスタンプが押される -->
-<body class="mido-page rally-page" data-page="rally">
-  <main class="mido mido-full rally-full" id="rally" aria-labelledby="rally-title">
+<body class="mido-page rally-page vote-page" data-page="vote">
+  <main class="mido mido-full rally-full" id="rally" aria-labelledby="vote-title">
     <div class="mido-in">
-      <a class="mido-close" href="./#ennichi" aria-label="とじる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></a>
-      <h1 class="mido-title" id="rally-title">スタンプカード</h1>
-      <p class="rally-lead">模擬店・学科展示・会場に置いてある<b>QR</b>を読むと、スタンプが押されます。はじめの1個は、玄関のインフォメーションで。</p>
-      <!-- カード：押すと、くるっと裏返る（裏はあそびかた） -->
-      <div class="rc-wrap" id="rc"></div>
-      <!-- スタンプを押すのは、お店の QR を読むこのボタンひとつ（スマホのカメラアプリで読んでも押せる） -->
+      <a class="mido-close" href="./" aria-label="とじる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></a>
+      <h1 class="mido-title" id="vote-title">模擬店総選挙</h1>
+      <p class="rally-lead">模擬店の<b>QR</b>を読むと、スタンプが押されて、そのお店に投票できます。</p>
+      <section class="rv" id="rally-vote" aria-labelledby="rv-title"></section>
       <button type="button" class="qr-btn rally-scan" id="rally-scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M8 8h3v3H8zM13 8h3v3h-3zM8 13h3v3H8zM13 13h1.5M16 13v3h-3"/></svg>QR を読む</button>
-      <p class="rally-sorry" id="rally-sorry" hidden><b>おわび</b>スタンプラリーの景品は、すべてなくなりました。たくさん参加していただき、ありがとうございました。スタンプは、このまま集められます。</p>
       <p class="rally-msg" id="rally-msg" role="status"></p>
-      <div id="rally-goal" hidden></div>
-      <!-- 模擬店総選挙のページへ -->
-      <a class="rv-link" id="rally-vote-link" href="vote.html" hidden></a>
+      <a class="rv-link" href="rally.html"><b>スタンプカード</b><span>スタンプの数を見る</span></a>
     </div>
   </main>
 
-  <!-- 下のタブ：サイト・地図・Enistagram（スタンプカードはサイトの中のページ） -->
   <nav class="site-tabs" id="site-tabs" aria-label="切りかえ">
     <a href="./" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg>サイト</a>
     <a href="map.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/></svg>地図</a>
     <a href="map.html?tab=feed"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 5.2A9 9 0 1 0 16.6 18.8L9.5 12z"/><circle cx="9" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="13.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="17.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="21.3" cy="12" r="1.35" fill="currentColor" stroke="none"/></svg><span class="e-word">Enistagram</span></a>
   </nav>
 
-  <script type="module" src="assets/rally-page.js"></script>
+  <script type="module" src="assets/vote-page.js"></script>
   <script type="module" src="assets/side.js"></script>
   <script type="module" src="assets/offline.js"></script>
 </body>

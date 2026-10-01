@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#0B0E14">
+  <meta name="theme-color" content="#F6E8C8">
   <title>本部コンソール｜第63回 函館高専祭「縁」</title>
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Zen+Kaku+Gothic+New:wght@700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="staff.css">
 </head>
 <body>
@@ -19,7 +19,7 @@
       <img class="gate-logo" src="../assets/img/logo-s.webp" width="673" height="657" alt="">
       <p class="eyebrow">KOSENSAI 63 — HQ CONSOLE</p>
       <h1>本部コンソール</h1>
-      <p class="gate-lead">本部の名簿にのっているアカウントでログインしてください。</p>
+      
       <form id="login-form" class="stack">
         <label class="field"><span>メールアドレス</span><input id="email" type="email" autocomplete="username" required></label>
         <label class="field"><span>パスワード</span><input id="password" type="password" autocomplete="current-password" required></label>
@@ -42,7 +42,7 @@
         <a href="#crowd" data-nav="crowd"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.5M17.5 19a5.5 5.5 0 0 0-2.5-4.6"/></svg><span data-short="混雑">混雑・実況</span></a>
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
         <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店・印刷</span></a>
-        <a href="#preview" data-nav="preview"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20M10 8.5l4 2-4 2z"/></svg><span data-short="演出">プレビュー・演出</span></a>
+        <a href="#vote" data-nav="vote"><svg viewBox="0 0 24 24"><path d="M5 20h14M7 20v-6h10v6M12 14V4M12 4l-4 4M12 4l4 4"/></svg><span data-short="総選挙">模擬店総選挙</span></a>
         <a href="#texts" data-nav="texts"><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg><span data-short="文章">文章と書体</span></a>
         <a href="#settings" data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span data-short="設定">サイトの設定</span></a>
       </nav>
@@ -74,15 +74,6 @@
             <header class="card-head"><h2>いまサイトに出ているもの</h2></header>
             <dl class="status-list" id="status-list"></dl>
           </article>
-          <article class="card">
-            <header class="card-head"><h2>すぐやる</h2></header>
-            <div class="quick">
-              <a class="quick-btn" href="#broadcast"><b>緊急のお知らせを出す</b><small>全員の画面の上に赤い帯</small></a>
-              <a class="quick-btn" href="#posts"><b>写真を確認する</b><small id="quick-photos">確認待ちの写真</small></a>
-              <a class="quick-btn" href="#crowd"><b>混雑を変える</b><small>体育館・玄関・講義室</small></a>
-              <a class="quick-btn" href="#broadcast"><b>配信をはじめる</b><small>YouTube の URL を入れる</small></a>
-            </div>
-          </article>
         </div>
       </section>
 
@@ -96,7 +87,7 @@
                 <label><input type="radio" name="notice-level" value="info" checked><span>ふつう</span></label>
                 <label class="seg-danger"><input type="radio" name="notice-level" value="urgent"><span>緊急</span></label>
               </div>
-              <label class="field"><span>文（トップと地図のいちばん上に出る）</span>
+              <label class="field"><span>文</span>
                 <textarea id="notice-text" rows="3" maxlength="200" placeholder="例：14:00から体育館で抽選会の整理券を配ります"></textarea></label>
               <div class="preview-bar" id="notice-preview" hidden></div>
               <div class="row">
@@ -109,11 +100,11 @@
           <article class="card">
             <header class="card-head"><h2>生配信（YouTube）</h2><span class="pill" id="stream-state"></span></header>
             <form id="stream-form" class="stack">
-              <label class="field"><span>YouTube の URL（ライブの URL・youtu.be どちらでも）</span>
+              <label class="field"><span>YouTube の URL</span>
                 <input id="stream-url" type="url" inputmode="url" placeholder="https://www.youtube.com/live/…"></label>
-              <label class="field"><span>見出し（空なら「〇〇 生配信中」）</span>
+              <label class="field"><span>見出し</span>
                 <input id="stream-title" maxlength="40" placeholder="例：模擬店総選挙 結果発表 生配信中"></label>
-              <label class="switch"><input type="checkbox" id="stream-active"><span class="switch-ui" aria-hidden="true"></span><span>いますぐトップに出す<small>切っていても、config.js で live の企画の時間は自動で出る</small></span></label>
+              <label class="switch"><input type="checkbox" id="stream-active"><span class="switch-ui" aria-hidden="true"></span><span>いますぐトップに出す</span></label>
               <div class="embed" id="stream-preview" hidden></div>
               <div class="row">
                 <button class="btn btn-primary" type="submit">保存</button>
@@ -132,7 +123,7 @@
               <label><input type="radio" name="phase" value="during"><span>開催中</span></label>
               <label><input type="radio" name="phase" value="after"><span>終了後</span></label>
             </div>
-            <label class="switch"><input type="checkbox" id="presence-off"><span class="switch-ui" aria-hidden="true"></span><span>電線の灯り（見ている人の数）を止める<small>Firestore の無料枠が危ないとき</small></span></label>
+            <label class="switch"><input type="checkbox" id="presence-off"><span class="switch-ui" aria-hidden="true"></span><span>電線の灯りを止める</span></label>
             <div class="row"><button class="btn btn-primary" type="submit">保存</button></div>
           </form>
         </article>
@@ -143,18 +134,17 @@
         <div class="crowd-grid" id="venues"></div>
         <details class="card side-details cshops" id="cshops-box">
           <summary><h2>模擬店の混みぐあい（待ち時間）</h2><span class="muted small" id="cshops-sum"></span></summary>
-          <p class="muted small">ふだんはお店の人が自分のスマホで変えます。お店から電話などで頼まれたときに、ここから変えてください。「すぐ買える」のときは、地図には何も出ません。</p>
           <label class="desk-search cshops-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="cshops-q" type="search" placeholder="お店・団体・クラスで探す" autocomplete="off" aria-label="お店を探す"></label>
           <div class="cshops-list" id="cshops"></div>
         </details>
         <article class="card">
-          <header class="card-head"><h2>5人の実況</h2><small class="muted">空にすると、いつものセリフに戻る</small></header>
+          <header class="card-head"><h2>5人の実況</h2></header>
           <form id="chatter-form" class="chatter">
-            <label class="field"><span>白いシャツの人（企画案内）</span><input id="c-p1" maxlength="40"></label>
-            <label class="field"><span>パーカーの人（模擬店）</span><input id="c-p2" maxlength="40"></label>
-            <label class="field"><span>走っている人（スタンプラリー）</span><input id="c-p3" maxlength="40"></label>
-            <label class="field"><span>手を伸ばしている人（イベント）</span><input id="c-p4" maxlength="40" placeholder="例：いま体育館、めっちゃ盛り上がってる！"></label>
-            <label class="field"><span>黒い服の人（来場案内）</span><input id="c-p5" maxlength="40"></label>
+            <label class="field"><span>白いシャツの人</span><input id="c-p1" maxlength="40"></label>
+            <label class="field"><span>パーカーの人</span><input id="c-p2" maxlength="40"></label>
+            <label class="field"><span>走っている人</span><input id="c-p3" maxlength="40"></label>
+            <label class="field"><span>手を伸ばしている人</span><input id="c-p4" maxlength="40" placeholder="例：いま体育館、めっちゃ盛り上がってる！"></label>
+            <label class="field"><span>黒い服の人</span><input id="c-p5" maxlength="40"></label>
             <div class="row">
               <button class="btn btn-primary" type="submit">公開する</button>
               <button class="btn btn-ghost" type="button" id="chatter-clear">全部消す</button>
@@ -168,7 +158,7 @@
         <article class="card">
           <header class="card-head"><h2>本部として投稿する</h2><span class="pill pill-brand">公式</span></header>
           <form id="official-form" class="stack">
-            <label class="field"><span>Enistagram に「本部」の名前と、色つきの「公式」の札で出る</span>
+            <label class="field"><span>本部として投稿</span>
               <textarea id="official-text" rows="3" maxlength="400" placeholder="例：ステージ第2部、まもなく始まります！"></textarea></label>
             <div class="row"><button class="btn btn-primary" type="submit">投稿する</button><small class="muted" id="official-count">0 / 400</small></div>
           </form>
@@ -189,11 +179,6 @@
           <div class="shops-main">
             <article class="card desk">
               <header class="card-head"><h2>受付</h2><span class="pill" id="desk-progress">受付済み 0 / 0店</span></header>
-              <ol class="desk-steps">
-                <li><b>探す</b>来たお店・展示の名前、団体、クラスを入れる</li>
-                <li><b>印刷する</b>名前を確かめ、三角POP か貼り紙を選んで刷る（模擬店はお店の人用の紙も）</li>
-                <li><b>渡した</b>紙を渡したら押す。「まだ」の一覧から消える</li>
-              </ol>
               <label class="desk-search">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
                 <input id="shop-q" type="search" placeholder="例：たこ焼き・5SE・野球部・情報" autocomplete="off" enterkeyhint="search" aria-label="お店を探す">
@@ -213,30 +198,28 @@
           <aside class="shops-side">
             <article class="card">
               <header class="card-head"><h2>スタンプラリー</h2><span class="pill" id="rally-state"></span></header>
-              <p class="muted small" style="margin-top:0">模擬店・学科展示・会場（太平洋セメントアリーナ・ZACROS hall）・インフォメーション（本部。はじめの1個を、使い方を教えながら押してもらう）のすべてが対象です。QR（2日とも同じ）は、印刷するときに自動で用意されます。景品と引き換えるには、下の「引き換えの番号」が要ります。</p>
-              <div class="row row-wrap">
+                            <div class="row row-wrap">
                 <button class="btn btn-ghost btn-sm" type="button" id="rally-all">全部の場所の QR を用意する</button>
                 <button class="btn btn-ghost btn-sm" type="button" id="rally-pin-make">引き換えの番号を作る</button>
                 <button class="btn btn-ghost btn-sm" type="button" id="rally-pin-show">番号を見る</button>
               </div>
               <span class="pin-view" id="rally-pin-view" hidden></span>
-              <label class="switch prize-out"><input type="checkbox" id="prize-out"><span class="switch-ui" aria-hidden="true"></span><span>景品がなくなった<small>オンにすると、スタンプカードのページに「景品はすべてなくなりました」とおわびが出ます。スタンプはそのまま集められます</small></span></label>
+              <label class="switch prize-out"><input type="checkbox" id="prize-out"><span class="switch-ui" aria-hidden="true"></span><span>景品がなくなった</span></label>
             </article>
 
             <article class="card">
               <header class="card-head"><h2>まとめて印刷</h2></header>
-              <p class="muted small" style="margin-top:0">受付の前に用意しておくときや、予備に。まとめて刷っても「受付済み」にはなりません。三角POP か貼り紙かは、確かめる画面で選べます。</p>
               <div class="stack">
                 <div class="seg seg-col" role="radiogroup" aria-label="印刷するもの">
-                  <label><input type="radio" name="pr-kind" value="shopset" checked><span>店頭の紙<small>三角POP か貼り紙（スタンプの QR つき）。模擬店はお店の人用の紙も</small></span></label>
-                  <label><input type="radio" name="pr-kind" value="stamps"><span>スタンプの QR だけ（予備）<small>お店ごとのカード。6枚で A4 1枚</small></span></label>
-                  <label><input type="radio" name="pr-kind" value="flyer"><span>来場者向けの案内チラシ<small>日程と、サイト・地図・Enistagram・スタンプの QR</small></span></label>
+                  <label><input type="radio" name="pr-kind" value="shopset" checked><span>店頭の紙</span></label>
+                  <label><input type="radio" name="pr-kind" value="stamps"><span>スタンプの QR だけ</span></label>
+                  <label><input type="radio" name="pr-kind" value="flyer"><span>案内チラシ</span></label>
                 </div>
                 <div class="seg seg-col" role="radiogroup" aria-label="どのお店の分" id="pr-target-box">
                   <label><input type="radio" name="pr-target" value="todo" checked><span>まだ渡していない場所<small id="pr-target-todo"></small></span></label>
                   <label><input type="radio" name="pr-target" value="all"><span>すべての場所<small id="pr-target-all"></small></span></label>
                 </div>
-                <label class="switch" id="pr-staff-box"><input type="checkbox" id="pr-staff" checked><span class="switch-ui" aria-hidden="true"></span><span>お店の人用の紙も入れる<small>待ち時間を変える QR。店頭には貼らない</small></span></label>
+                <label class="switch" id="pr-staff-box"><input type="checkbox" id="pr-staff" checked><span class="switch-ui" aria-hidden="true"></span><span>お店の人用の紙も入れる</span></label>
                 <div class="field" id="pr-size-box" hidden><span>大きさ</span>
                   <div class="seg" role="radiogroup" aria-label="チラシの大きさ">
                     <label><input type="radio" name="pr-size" value="a4" checked><span>A4 に1枚</span></label>
@@ -247,106 +230,7 @@
               </div>
             </article>
 
-            <details class="card side-details">
-              <summary><h2>地図にないお店を足す</h2></summary>
-              <p class="muted small">地図に載っているお店（config.js の SHOPS）は、最初から全部あります。ここでは地図にない企画などを足せます。</p>
-              <form id="shop-add" class="stack">
-                <label class="field"><span>お店の名前</span><input id="shop-name" maxlength="40" required placeholder="例：〇〇部 わたあめ"></label>
-                <label class="field"><span>ID（半角英数字）</span><input id="shop-id" maxlength="30" pattern="[a-z0-9_\-]+" required placeholder="wataame"></label>
-                <label class="field"><span>場所（部屋番号など・任意）</span><input id="shop-room" maxlength="20" placeholder="L103"></label>
-                <button class="btn btn-primary" type="submit">足す</button>
-              </form>
-            </details>
           </aside>
-        </div>
-      </section>
-
-      <!-- ===== プレビュー・演出 ===== -->
-      <section class="view" id="view-preview" data-title="プレビュー・演出" data-eyebrow="PREVIEW" hidden>
-        <div class="pv">
-          <div class="pv-controls">
-            <article class="card card-live">
-              <header class="card-head"><h2>全員の画面に出す</h2><span class="pill is-live">本番</span></header>
-              <div class="stack">
-                <button class="btn btn-primary btn-block" type="button" id="live-fire">花火を今すぐ上げる</button>
-                <small class="muted">押してから1分以内にトップを開いている人の画面に、1回だけ上がる</small>
-                <div class="pv-2">
-                  <label class="field"><span>空を固定</span><select id="live-sky"></select></label>
-                  <label class="field"><span>天気を固定</span><select id="live-weather"></select></label>
-                </div>
-                <label class="field"><span>風（天気を固定したとき）<b id="live-wind-v">4</b> m/s</span><input id="live-wind" type="range" min="0" max="20" value="4"></label>
-                <div class="row">
-                  <button class="btn btn-primary" type="button" id="live-sky-save">保存</button>
-                  <button class="btn btn-ghost" type="button" id="live-sky-clear">いつもどおりに戻す</button>
-                </div>
-              </div>
-            </article>
-
-            <article class="card">
-              <header class="card-head"><h2>プレビュー</h2><small class="muted">この画面の中だけ。来場者には出ない</small></header>
-              <div class="stack">
-                <div class="pv-2">
-                  <label class="field"><span>ページ</span><select id="pv-page"></select></label>
-                  <div class="field"><span>画面</span>
-                    <div class="seg" role="radiogroup" aria-label="画面の大きさ">
-                      <label><input type="radio" name="pv-device" value="sp" checked><span>スマホ</span></label>
-                      <label><input type="radio" name="pv-device" value="pc"><span>PC</span></label>
-                    </div>
-                  </div>
-                </div>
-                <label class="field"><span>時刻</span><select id="pv-time"></select></label>
-                <div class="row row-wrap">
-                  <input class="pv-dt" id="pv-dt" type="datetime-local" aria-label="好きな日時">
-                  <button class="btn btn-ghost btn-sm" type="button" data-shift="-60">−1時間</button>
-                  <button class="btn btn-ghost btn-sm" type="button" data-shift="-10">−10分</button>
-                  <button class="btn btn-ghost btn-sm" type="button" data-shift="10">＋10分</button>
-                  <button class="btn btn-ghost btn-sm" type="button" data-shift="60">＋1時間</button>
-                </div>
-                <div class="pv-2">
-                  <label class="field"><span>空</span><select id="pv-sky"></select></label>
-                  <label class="field"><span>天気</span><select id="pv-weather"></select></label>
-                </div>
-                <label class="field"><span>風 <b id="pv-wind-v">4</b> m/s</span><input id="pv-wind" type="range" min="0" max="20" value="4"></label>
-                <label class="switch"><input type="checkbox" id="pv-demo"><span class="switch-ui" aria-hidden="true"></span><span>デモのデータ<small>お知らせ・配信・食レポ・混雑・実況・灯り・仮のお店</small></span></label>
-                <label class="switch"><input type="checkbox" id="pv-urgent"><span class="switch-ui" aria-hidden="true"></span><span>デモのお知らせを「緊急」にする</span></label>
-              </div>
-            </article>
-
-            <article class="card">
-              <header class="card-head"><h2>書体を試す</h2><small class="muted">保存は「文章と書体」</small></header>
-              <div class="stack" id="pv-fonts"></div>
-            </article>
-
-            <article class="card">
-              <header class="card-head"><h2>演出・スタンプ</h2><small class="muted" id="pv-bridge">トップページで使える</small></header>
-              <div class="pv-btns">
-                <button class="btn btn-ghost btn-sm" type="button" data-pv="fire">花火を上げる</button>
-                <button class="btn btn-ghost btn-sm" type="button" data-pv="intro">最初の演出</button>
-                <button class="btn btn-ghost btn-sm" type="button" data-pv="wake">メニューを出す</button>
-                <button class="btn btn-ghost btn-sm" type="button" data-pv="sleep">メニューをしまう</button>
-                <button class="btn btn-ghost btn-sm" type="button" data-pv="shake">短冊を揺らす</button>
-                <button class="btn btn-ghost btn-sm" type="button" data-pv="stamp1">スタンプ1個</button>
-                <button class="btn btn-ghost btn-sm" type="button" data-pv="stampAll">スタンプをそろえる</button>
-                <button class="btn btn-ghost btn-sm" type="button" data-pv="stampClear">スタンプを全部消す</button>
-                <button class="btn btn-ghost btn-sm" type="button" data-pv="secretReset">隠し縁をリセット</button>
-              </div>
-              <small class="muted small">スタンプと隠し縁は、このブラウザに保存されている分だけが変わる</small>
-              <div class="row" style="margin-top:12px">
-                <select class="pv-select" id="pv-goto" aria-label="トップの場所・パネル"></select>
-                <button class="btn btn-ghost btn-sm" type="button" id="pv-goto-btn">移動</button>
-              </div>
-            </article>
-          </div>
-
-          <div class="pv-stage">
-            <div class="pv-bar">
-              <span class="pv-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span class="pv-url" id="pv-url"></span>
-              <button class="btn btn-ghost btn-sm" type="button" id="pv-reload">読み込み直す</button>
-              <a class="btn btn-ghost btn-sm" id="pv-open" target="_blank" rel="noopener">新しいタブ ↗</a>
-            </div>
-            <div class="pv-frame" id="pv-frame"><iframe id="pv-iframe" title="サイトのプレビュー"></iframe></div>
-          </div>
         </div>
       </section>
 
@@ -354,7 +238,7 @@
       <section class="view" id="view-texts" data-title="文章と書体" data-eyebrow="CONTENT" hidden>
         <form id="texts-form">
           <article class="card">
-            <header class="card-head"><h2>書体</h2><small class="muted">保存すると、開いている人の画面もすぐ変わる</small></header>
+            <header class="card-head"><h2>書体</h2></header>
             <div class="font-grid" id="font-grid"></div>
           </article>
           <div id="text-fields"></div>
@@ -366,16 +250,30 @@
         </form>
       </section>
 
+      <!-- ===== 模擬店総選挙 ===== -->
+      <section class="view" id="view-vote" data-title="模擬店総選挙" data-eyebrow="ELECTION" hidden>
+        <article class="card">
+          <header class="card-head"><h2>いまの票</h2><span class="pill" id="vote-state"></span></header>
+          <div class="stack">
+            <div class="row row-wrap">
+              <button class="btn btn-primary" type="button" id="vote-all-show">数えなおす</button>
+              <a class="btn btn-ghost" href="../vote.html" target="_blank" rel="noopener">投票のページ ↗</a>
+              <button class="btn btn-danger" type="button" id="vote-all-reset">票をリセット</button>
+            </div>
+            <div class="rally-all" id="vote-all"></div>
+          </div>
+        </article>
+      </section>
+
       <!-- ===== サイトの設定 ===== -->
       <section class="view" id="view-settings" data-title="サイトの設定" data-eyebrow="SETTINGS" hidden>
         <div class="grid-2">
           <article class="card">
             <header class="card-head"><h2>トップページの並び</h2><span class="pill" id="blocks-state"></span></header>
             <form id="blocks-form" class="stack">
-              <p class="muted">⠿ をつかんで上下にドラッグすると、トップページの欄の順番が変わります。スイッチをオフにした欄は出しません。いちばん上の欄は、上の絵に重なって上の角が丸くなります（いまの学生主事よりの形）。保存すると、開いている人の画面もすぐ変わります。</p>
               <div class="field"><span>サイトに出す並び</span>
                 <div class="seg" role="radiogroup" aria-label="サイトに出す並び">
-                  <label><input type="radio" name="blocks-mode" value="auto" checked><span>自動<small>（公開の前は開催前・始まったら期間中）</small></span></label>
+                  <label><input type="radio" name="blocks-mode" value="auto" checked><span>自動</span></label>
                   <label><input type="radio" name="blocks-mode" value="before"><span>開催前</span></label>
                   <label><input type="radio" name="blocks-mode" value="during"><span>期間中</span></label>
                 </div></div>
@@ -393,9 +291,8 @@
           </article>
 
           <article class="card">
-            <header class="card-head"><h2>スタンプラリー（全員）</h2><span class="pill">パスワードが必要</span></header>
+            <header class="card-head"><h2>スタンプラリー（全員）</h2></header>
             <div class="stack">
-              <p class="muted">来場者のスマホに入っているスタンプを、全員分まとめて見たり、消したりします。どちらも押すたびにパスワードをたずねます。</p>
               <div class="row row-wrap">
                 <button class="btn btn-ghost" type="button" id="rally-all-show">全員の状況を見る</button>
                 <button class="btn btn-danger" type="button" id="rally-all-reset">全員の履歴をリセット</button>
@@ -404,17 +301,6 @@
             </div>
           </article>
 
-          <article class="card">
-            <header class="card-head"><h2>模擬店総選挙</h2><span class="pill">結果の確認は本部のみ</span></header>
-            <div class="stack">
-              <p class="muted">来場者は、スタンプを押した模擬店に1人1票、サイトの中で投票します（スタンプカードのページ）。ここで票を数えます。リセットは、試しの票を消すときに使います（パスワードが必要）。</p>
-              <div class="row row-wrap">
-                <button class="btn btn-ghost" type="button" id="vote-all-show">いまの票を数える</button>
-                <button class="btn btn-danger" type="button" id="vote-all-reset">票をリセット</button>
-              </div>
-              <div class="rally-all" id="vote-all" hidden></div>
-            </div>
-          </article>
         </div>
       </section>
     </main>

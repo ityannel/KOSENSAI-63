@@ -4,7 +4,7 @@ import {
   NOTICES, GARBAGE, SPONSORS, FX, SECRETS,
 } from "./config.js";
 import { subscribeLive, subscribeCrowd, subscribeChatter, startPresence } from "./live.js";
-import { renderMini } from "./rally.js";
+import { renderMini, renderVoteEntry } from "./rally.js";
 import { initScene, setChatter, say, setAwake } from "./scene.js";
 import { initAsk } from "./ask.js";
 import { createFireworks, initShake, initParallax } from "./fx.js";
@@ -496,6 +496,7 @@ renderStatic();
 onSiteTextChange(() => {
   renderStatic();
   renderMini($("#rally-mini"));
+renderVoteEntry($("#vote-sub"));
 });
 renderLiveContent();
 update();
@@ -511,6 +512,7 @@ setInterval(update, 1000);
 // スタンプラリー：縁日の下の小さなスタンプカード。前に印刷したお店の QR（トップページ ?s=&c=）で来たら、スタンプカードのページへ
 if (params.has("s") && params.has("c")) location.replace(`rally.html${location.search}`);
 renderMini($("#rally-mini"));
+renderVoteEntry($("#vote-sub"));
 initScene(() => {
   const e = phase === "during" ? runningEvents()[0] : null;
   return { phase, nowEvent: e ? { title: e.title, venueName: venueName(e.venue) } : null, prizeOut: !!live?.prize_out };

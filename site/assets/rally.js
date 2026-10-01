@@ -101,6 +101,7 @@ function save() {
 function warnInAppBrowser() {
   if (!/Instagram|FBAN|FBAV|\bLine\//i.test(navigator.userAgent)) return;
   const note = document.getElementById("rally-note");
+  if (!note) return;
   note.dataset.kind = "warn";
   note.innerHTML = "いまアプリの中のブラウザで開いています。<b>スタンプがSafariやChromeと別々になってしまう</b>ので、右上のメニューから「ブラウザで開く」を選んでから集めてください。";
 }
@@ -243,31 +244,45 @@ function voteState() {
 }
 const voteDay = (iso) => new Date(iso).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
 let voting = false, voteNote = null;
+// 模擬店総選挙のページ（vote.html）：スタンプを押した模擬店から1店。押していない模擬店は、下にたたんで並べる
 function renderVote() {
   const el = $("#rally-vote");
   if (!el) return;
   const voters = shops().filter((s) => s.vote);
-  if (!voters.length) { el.hidden = true; return; }
   const phase = voteState();
   const mine = state.vote?.shop ?? null;
-  const cands = stampIds().map(shopOf).filter((s) => s?.vote);
   const mineName = mine ? shopOf(mine)?.name ?? "" : "";
-  el.hidden = false;
-  const note = voteNote ? `<p class="rv-note" data-kind="${voteNote.kind}" role="status">${esc(voteNote.text)}</p>` : "";
+  const title = '<h2 class="rv-title visually-hidden" id="rv-title">模擬店総選挙</h2>';
+  if (!voters.length) { el.innerHTML = `${title}<p class="rv-lead">参加するお店は、決まりしだいここに出ます。</p>`; return; }
   if (phase === "before") {
-    el.innerHTML = `<h2 class="rv-title" id="rv-title">模擬店総選挙</h2><p class="rv-lead">${esc(voteDay(ELECTION.opens))}から。模擬店の QR を読んでスタンプを押すと、そのお店に1票入れられます（1人1票）。</p>`;
+    el.innerHTML = `${title}<p class="rv-lead">${esc(voteDay(ELECTION.opens))}から。模擬店の QR を読んでスタンプを押すと、そのお店に1票入れられます。</p>`;
     return;
   }
   if (phase === "closed") {
-    el.innerHTML = `<h2 class="rv-title" id="rv-title">模擬店総選挙</h2><p class="rv-lead">投票は終わりました。${mineName ? `あなたの1票：<b>${esc(mineName)}</b>。` : ""}結果は、10/25 16:00 から第二体育館で発表です。</p>`;
+    el.innerHTML = `${title}<p class="rv-lead">投票は終わりました。${mineName ? `あなたの1票：<b>${esc(mineName)}</b>` : ""}</p><p class="rv-lead">結果発表は 10/25 16:00 から、第二体育館です。</p>`;
     return;
   }
+  const stamped = voters.filter((s) => state.stamps[s.id]);
+  const rest = voters.filter((s) => !state.stamps[s.id]);
+  const note = voteNote ? `<p class="rv-note" data-kind="${voteNote.kind}" role="status">${esc(voteNote.text)}</p>` : "";
   el.innerHTML = `
-    <h2 class="rv-title" id="rv-title">模擬店総選挙</h2>
-    <p class="rv-lead">${esc(voteDay(ELECTION.closes))}まで。<b>1人1票</b>。スタンプを押した模擬店から選べます。${mine ? "ほかのお店を押すと、投票先を変えられます。" : ""}</p>
-    ${cands.length ? `<ul class="rv-list">${cands.map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}" data-vote="${esc(s.id)}" aria-pressed="${s.id === mine}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : "投票する"}</span></button></li>`).join("")}</ul>`
-      : `<p class="rv-empty">模擬店の QR を読んでスタンプを押すと、ここからそのお店に投票できます。</p>`}
-    ${note}`;
+    ${title}
+    <p class="rv-lead">${esc(voteDay(ELECTION.closes))}まで。<b>1人1票</b>（あとから変えられます）。</p>
+    ${stamped.length ? `<ul class="rv-list">${stamped.map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}" data-vote="${esc(s.id)}" aria-pressed="${s.id === mine}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : "投票する"}</span></button></li>`).join("")}</ul>`
+      : `<p class="rv-empty">模擬店の QR を読むと、そのお店に投票できます。</p>`}
+    ${note}
+    ${rest.length ? `<details class="rv-rest"><summary>まだ押していないお店 ${rest.length}</summary><ul>${rest.map((s) => `<li>${esc(s.name)}</li>`).join("")}</ul></details>` : ""}`;
+}
+// スタンプカードのページの下：投票のページへの入口
+function renderVoteLink() {
+  const el = $("#rally-vote-link");
+  if (!el) return;
+  const phase = voteState();
+  const has = shops().some((s) => s.vote);
+  el.hidden = !has || phase === "before";
+  if (el.hidden) return;
+  const mine = state.vote?.shop ? shopOf(state.vote.shop)?.name : "";
+  el.innerHTML = `<b>模擬店総選挙</b><span>${phase === "closed" ? "投票は終わりました" : mine ? `投票ずみ：${esc(mine)}` : "スタンプを押したお店に、1票"}</span>`;
 }
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 async function castVote(shopId) {
@@ -327,6 +342,8 @@ function slotsHtml() {
 
 function render() {
   renderVote();
+  renderVoteLink();
+  if (!$("#rc")) return; // 投票のページには、カードがない
   const count = stampCount();
   const done = count >= RALLY.goal;
   const sorry = $("#rally-sorry");
@@ -443,32 +460,32 @@ export function initRallyPage(getNow = () => Date.now()) {
     if (v !== prizeOut) { prizeOut = v; render(); }
   })).catch(() => { /* 読めなくても、スタンプは押せる */ });
 
-  $("#rally-vote").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-vote]");
-    if (b) castVote(b.dataset.vote);
-  });
   refreshVote();
   // カードを押すと裏返る
   $("#rc").addEventListener("click", (e) => {
     const b = e.target.closest(".rc");
     if (b) b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
   });
-  // お店の QR を読む（ページの中のカメラ）。読めたら、その QR の鍵でスタンプを押す
-  $("#rally-scan").addEventListener("click", () => openQrScanner({
-    title: "QR を読む",
-    hint: "模擬店・学科展示・会場に置いてある QR を枠に入れてください",
-    wrong: "スタンプラリーの QR ではないようです",
-    noCamera: "スマホのカメラアプリで QR を読んでも、スタンプは押せます",
-    accept: (text) => {
-      try {
-        const q = new URL(text, location.href).searchParams;
-        return q.get("s") && q.get("c") ? { s: q.get("s"), c: q.get("c") } : null;
-      } catch { return null; }
-    },
-    onRead: ({ s, c }) => stamp(c, s),
-  }));
+  $("#rally-scan").addEventListener("click", openScan);
+  takeQrParams();
+}
 
-  // QR から来たとき（?s=店ID&c=QRの鍵）。押したらURLから消して、再読み込みで二重に出ないようにする
+// お店の QR を読む（ページの中のカメラ）。読めたら、その QR の鍵でスタンプを押す
+const openScan = () => openQrScanner({
+  title: "QR を読む",
+  hint: "模擬店・学科展示・会場に置いてある QR を枠に入れてください",
+  wrong: "スタンプラリーの QR ではないようです",
+  noCamera: "スマホのカメラアプリで QR を読んでも、スタンプは押せます",
+  accept: (text) => {
+    try {
+      const q = new URL(text, location.href).searchParams;
+      return q.get("s") && q.get("c") ? { s: q.get("s"), c: q.get("c") } : null;
+    } catch { return null; }
+  },
+  onRead: ({ s, c }) => stamp(c, s),
+});
+// QR から来たとき（?s=店ID&c=QRの鍵）。押したらURLから消して、再読み込みで二重に出ないようにする
+function takeQrParams() {
   const params = new URLSearchParams(location.search);
   if (params.has("s") && params.has("c")) {
     const [s, c] = [params.get("s"), params.get("c")];
@@ -477,6 +494,29 @@ export function initRallyPage(getNow = () => Date.now()) {
     history.replaceState(null, "", location.pathname + (params.size ? `?${params}` : ""));
     stamp(c, s);
   }
+}
+
+// 模擬店総選挙のページ（vote.html）
+export function initVotePage(getNow = () => Date.now()) {
+  nowMs = getNow;
+  warnInAppBrowser();
+  render();
+  onRallyChange(render);
+  changeFns.add(render);
+  $("#rally-vote").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-vote]");
+    if (b) castVote(b.dataset.vote);
+  });
+  $("#rally-scan").addEventListener("click", openScan);
+  refreshVote();
+  takeQrParams();
+}
+
+// トップページの、模擬店総選挙の入口の一言
+export function renderVoteEntry(el) {
+  if (!el) return;
+  const phase = voteState();
+  el.textContent = phase === "before" ? `${voteDay(ELECTION.opens)}から` : phase === "closed" ? "投票は終わりました" : `${voteDay(ELECTION.closes)}まで・スタンプを押したお店に1人1票`;
 }
 
 // トップページの「縁日」の下の、小さなスタンプカード（入口）。押すとスタンプカードのページ
