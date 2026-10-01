@@ -1170,7 +1170,7 @@ body[data-phase="during"] .slot { left: 22%; }
 .now-title.is-long span { animation: marquee var(--dur, 6s) ease-in-out infinite alternate; }
 @keyframes marquee { 0%, 12% { transform: translateX(0); } 88%, 100% { transform: translateX(calc(-1 * var(--over, 0px))); } }
 .now-sub { grid-column: 2; font-family: var(--hud-font); font-size: max(12px, 3.2cqw); color: #ECE6DC; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
-.now-closed { margin: 0 0 1.2cqw; font-family: var(--hud-font); font-size: max(13px, 4.2cqw); color: #ECE6DC; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); }
+.now-closed { margin: 0 0 2.6cqw; font-family: var(--hud-font); font-size: max(13px, 4.2cqw); color: #ECE6DC; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); }
 
 /* 「●開催中！」：白い字と、点滅する赤い点（空の上でも読めるように影） */
 .live-badge {
@@ -1190,7 +1190,7 @@ body.streaming .live-pip { top: calc(11% + env(safe-area-inset-top)); }
   position: absolute; left: 0; right: 0; bottom: 0; height: 32%; pointer-events: none;
   background: linear-gradient(transparent, rgba(12, 12, 16, 0.45) 55%, rgba(12, 12, 16, 0.6));
 }
-.thanks { margin: 0; font-family: var(--hud-font); font-size: 6cqw; color: var(--led); text-shadow: 0 0 0.35em rgba(59, 245, 61, 0.45); }
+.thanks { margin: 0.8cqw 0 0; font-family: var(--hud-font); font-size: 5cqw; line-height: 1.25; white-space: nowrap; color: var(--led); text-shadow: 0 0 0.35em rgba(59, 245, 61, 0.45); }
 
 /* お知らせの帯（本部から） */
 .notice-bar {
