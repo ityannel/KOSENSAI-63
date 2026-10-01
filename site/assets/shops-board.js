@@ -31,6 +31,11 @@ let pick = "すべて";
 const order = SHOPS.map((s) => [Math.random(), s]).sort((a, b) => a[0] - b[0]).map(([, s]) => s);
 const TILTS = [-2.5, 1.8, -1.2, 2.4, -1.8, 1];
 
+// 店名の大きさ：いちばん長い行が、カードのはばに収まる大きさに（長い名前の最後の1字だけ、次の行に落ちないように）
+const nameSize = (name) => {
+  const w = Math.max(...String(name).split(/\r?\n/).map((ln) => [...ln].reduce((a, ch) => a + (ch.charCodeAt(0) < 256 ? 0.58 : 1), 0)));
+  return Math.max(13, Math.min(20, Math.floor((116 / Math.max(w, 1)) * 10) / 10));
+};
 function card(s, i, copy = false) {
   const g = genresOf(s);
   const tint = s.food ? genreColor(g[0]) : "#4f7fa8";
@@ -40,7 +45,7 @@ function card(s, i, copy = false) {
       ? `<img class="en-flyer" src="${esc(s.flyer)}" alt="${esc(s.name)}のチラシ" loading="lazy" decoding="async">`
       : `<span class="en-paper">
           <span class="en-tags">${g.map((x) => `<span>${esc(x)}</span>`).join("")}</span>
-          <b class="en-name">${esc(s.name)}</b>
+          <b class="en-name" style="font-size:calc(${nameSize(s.name)} * var(--u))">${esc(s.name)}</b>
           ${s.note ? `<span class="en-note">${esc(s.note)}</span>` : ""}
           <span class="en-group">${esc(s.group ?? "")}</span>
         </span>`}

@@ -2004,3 +2004,6 @@ body.vote-page { background: var(--grain), linear-gradient(180deg, #2a3a73, #4c3
 .rv-btn { min-width: 0; }
 .rv-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rv-rest li { overflow: hidden; text-overflow: ellipsis; }
+/* 折り返しで、1字だけの行ができにくく（対応しているブラウザ） */
+.en-name { text-wrap: balance; word-break: auto-phrase; overflow-wrap: break-word; }
+.en-note, .dt-copy, .sh-desc { text-wrap: pretty; word-break: auto-phrase; }

@@ -280,6 +280,12 @@ export const SHOPS = [
   { place: "courtyard-shop", group: "ラグビー部", name: "やきとり処清", note: "ラグビー魂で焼く、熱いやきとり！！\n味は塩とタレをご用意しております！", food: true, genre: ["しょっぱい系"] },
   { place: "cafeteria", group: "同窓会", name: "ホームカミングデー", note: "アルバム・写真の展示\n同窓会の活動紹介、同窓生との交流", food: false },
 ];
+// お店の説明文：要項の改行のうち、文の終わり（。！？ ♪ ... など）の改行だけ残す。それ以外は、要項の表のはばで折れていただけなので、つなげる
+// （そのまま出すと、カードのはばで折り返したあとに、要項の改行が重なって「で」だけの行などができる）
+const SENTENCE_END = /(?:[。！？!?♪☆💽🍀🎶✨]|\.\.\.)$/u;
+export const tidyNote = (t) => String(t ?? "").split(/\r?\n/).reduce((out, ln, i) => (i === 0 ? ln : out + (SENTENCE_END.test(out) ? "\n" : "") + ln), "");
+for (const s of SHOPS) if (s.note) s.note = tidyNote(s.note);
+
 
 // みどころ：注目の模擬店・イベント（地図のお店のシートに出る）
 // 例：{ name: "〇〇", group: "〇〇部", venue: "cafeteria", note: "ひとこと" }
