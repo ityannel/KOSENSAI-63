@@ -279,10 +279,10 @@ function renderVoteLink() {
   if (!el) return;
   const phase = voteState();
   const has = shops().some((s) => s.vote);
-  el.hidden = !has || phase === "before";
+  el.hidden = !has;
   if (el.hidden) return;
   const mine = state.vote?.shop ? shopOf(state.vote.shop)?.name : "";
-  el.innerHTML = `<b>模擬店総選挙</b><span>${phase === "closed" ? "投票は終わりました" : mine ? `投票ずみ：${esc(mine)}` : "スタンプを押した模擬店に、一回だけ投票できます<br>気に入ったお店を応援しよう！"}</span>`;
+  el.innerHTML = `<b>模擬店総選挙</b><span>${phase === "closed" ? "投票は終わりました" : phase === "before" ? `${voteDay(ELECTION.opens)}から投票できます` : mine ? `投票ずみ：${esc(mine)}` : "スタンプを押した模擬店に、一回だけ投票できます<br>気に入ったお店を応援しよう！"}</span>`;
 }
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 async function castVote(shopId) {
