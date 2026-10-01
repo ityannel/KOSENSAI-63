@@ -1951,3 +1951,46 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .rally-full #rally-vote-link { flex-direction: column; gap: calc(3 * var(--u)); height: auto; min-height: calc(58 * var(--u)); padding: calc(10 * var(--u)) calc(22 * var(--u)); text-align: center; }
 .rally-full #rally-vote-link span { line-height: 1.5; }
 .rally-full #rally-vote-link[hidden] { display: none; }
+
+/* 達成：スタンプカードが下へぬぅっと伸びて、「引き換える！」が出る。カードの地は、ゆっくり流れるグラデーション。新しいカードは作らない */
+.rc-wrap { position: relative; }
+.rc { transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1.1), aspect-ratio 1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.rc-front { transition: padding-bottom 1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.rc-wrap.is-done .rc { aspect-ratio: 91 / 94; }
+.rc-wrap.is-done .rc-front { padding-bottom: calc(78 * var(--u)); }
+.rc-wrap.is-done .rc-front {
+  background: var(--grain), linear-gradient(120deg, #f6bfd4, #f9cfb0 28%, #fbe3a6 52%, #f7d6e6 76%, #f6bfd4);
+  background-size: auto, 400% 400%; animation: rc-flow 16s ease-in-out infinite;
+}
+@keyframes rc-flow { 0%, 100% { background-position: 0 0, 0% 50%; } 50% { background-position: 0 0, 100% 50%; } }
+.rc-claim {
+  position: absolute; left: calc(24 * var(--u)); right: calc(24 * var(--u)); bottom: calc(18 * var(--u)); height: calc(52 * var(--u)); z-index: 2;
+  display: grid; place-items: center; border: 0; border-radius: 999px; background: var(--grain), #C8323A; color: #FFFBF2;
+  font-family: var(--hud-font); font-size: calc(24 * var(--u)); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: calc(-5 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, 0.5);
+  opacity: 0; translate: 0 calc(14 * var(--u)); pointer-events: none; transition: opacity .5s .55s, translate .5s .55s, box-shadow .12s;
+}
+.rc-wrap.is-done .rc-claim { opacity: 1; translate: 0 0; pointer-events: auto; }
+.rc-wrap.is-done .rc-claim:active { translate: calc(-5 * var(--u)) calc(3 * var(--u)); box-shadow: 0 0 0 rgba(48, 44, 41, 0); transition-delay: 0s; }
+.rc-wrap.is-done .rc[aria-pressed="true"] ~ .rc-claim { opacity: 0; pointer-events: none; transition-delay: 0s; } /* 裏返したときは隠す */
+@media (prefers-reduced-motion: reduce) { .rc, .rc-front, .rc-claim { transition: none; } .rc-wrap.is-done .rc-front { animation: none; } }
+
+/* 模擬店総選挙：スタンプカードの赤〜黄色とは変えて、青〜紫〜青緑の涼しいグラデーション（ページの背景・ボタン）。ざらざら入り */
+body.vote-page { background: var(--grain), linear-gradient(180deg, #2a3a73, #4c3f86 45%, #2c6f7a); }
+.vote-page .mido-full { background: var(--grain), linear-gradient(165deg, #3f5cb3 0%, #7a5cc0 38%, #4aa0b4 74%, #8ed6c4 100%); }
+.rally-full #rally-vote-link { background: var(--grain), linear-gradient(115deg, #3f5cb3 0%, #7a5cc0 45%, #4aa0b4 100%); }
+.rally-full.vote-page .rally-lead b, .vote-page .rally-lead b { color: #D9F6EE; }
+.vote-page .rally-msg[data-kind="ok"] { color: #D9F6EE; }
+/* 選ぶ → 投票する */
+.rv-step { margin: 0 0 calc(8 * var(--u)); font-size: calc(13 * var(--u)); opacity: .85; }
+.rv-btn.is-pick { background: #FFF1A8; border-color: #634A2E; box-shadow: calc(-4 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, 0.45), inset 0 0 0 calc(2 * var(--u)) #634A2E; }
+.rv-btn.is-pick .rv-go { background: #634A2E; color: #FEEBC4; }
+.rv-btn.is-on.is-pick { background: #C8323A; }
+.rv-btn.is-on.is-pick .rv-name { color: #fff; }
+.rv-submit {
+  display: block; width: 100%; height: calc(52 * var(--u)); margin-top: calc(14 * var(--u)); border: 0; border-radius: 999px; background: var(--grain), #634A2E; color: #FEEBC4;
+  font-family: var(--hud-font); font-size: calc(21 * var(--u)); cursor: pointer; box-shadow: calc(-5 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, 0.5); transition: translate .12s, box-shadow .12s, opacity .2s;
+}
+.rv-submit:active:not(:disabled) { translate: calc(-5 * var(--u)) calc(3 * var(--u)); box-shadow: 0 0 0 rgba(48, 44, 41, 0); }
+.rv-submit:disabled { opacity: .4; cursor: default; }
+.rv-go:empty { display: none; }

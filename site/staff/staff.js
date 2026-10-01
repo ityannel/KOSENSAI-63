@@ -618,7 +618,6 @@ $("#shop-list").addEventListener("click", async (e) => {
 // 暗号化のしかたは tools/make-rally-qr.py と同じ（sha256("kosen63:お店:日付:鍵")、スタッフ番号は PBKDF2-SHA256 30万回）
 // QR は2日とも同じもの（鍵の名前は "fest"＝開催日ならどの日でも使える）
 const FEST = "fest";
-const PIN_ITERATIONS = 300000;
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 const sha256 = async (text) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
 const randomKey = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -660,11 +659,9 @@ async function ensureRally() {
 function renderRally() {
   const total = rallySpots().length;
   const missing = rallyMissing().length;
-  const pin = !!state.rally?.staffPin;
   const st = $("#rally-state");
-  st.className = `pill ${!missing && pin ? "is-on" : ""}`;
-  st.textContent = `QR ${total - missing}/${total}・番号${pin ? "あり" : "なし"}`;
-  $("#rally-pin-make").textContent = pin ? "引き換えの番号を作り直す" : "引き換えの番号を作る";
+  st.className = `pill ${!missing ? "is-on" : ""}`;
+  st.textContent = `QR ${total - missing}/${total}`;
   $("#rally-all").disabled = !missing;
   $("#rally-all").textContent = missing ? `${missing}か所の QR を整える` : "全部のお店の QR を用意済み";
 }
@@ -677,30 +674,6 @@ $("#prize-out").addEventListener("change", (e) => {
 });
 // 何個で達成か（「文章と書体」で変えていればそちら）。印刷する紙もこの数にそろえる
 const rallyGoal = () => { const v = Math.round(Number(state.siteText?.texts?.rally_goal)); return v >= 1 ? v : RALLY.goal; };
-$("#rally-pin-make").addEventListener("click", async () => {
-  if (state.rally?.staffPin && !confirm("番号を作り直すと、前の番号では引き換えられなくなります。よろしいですか？")) return;
-  const pin = String(crypto.getRandomValues(new Uint32Array(1))[0] % 100000000).padStart(8, "0");
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveBits"]);
-  const hash = hex(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: PIN_ITERATIONS }, key, 256));
-  const ok = await write("引き換えの番号を作りました", async () => {
-    const batch = fs.writeBatch(db);
-    batch.set(fs.doc(db, "rally_keys", "_pin"), { pin, at: fs.serverTimestamp() });
-    batch.set(fs.doc(db, "rally", "current"), { shops: state.rally?.shops ?? [], staffPin: { salt: hex(salt), iterations: PIN_ITERATIONS, hash }, ...stamp() });
-    await batch.commit();
-  });
-  if (ok) showPin(pin);
-});
-function showPin(pin) {
-  const v = $("#rally-pin-view");
-  v.hidden = false;
-  v.innerHTML = `引き換えの番号：<b>${esc(pin)}</b><small>本部のスタッフだけに伝える</small>`;
-}
-$("#rally-pin-show").addEventListener("click", () => {
-  const pin = state.rallyKeys._pin?.pin;
-  if (!pin) return toast("まだ番号がありません。「引き換えの番号を作る」を押してください", true);
-  showPin(pin);
-});
 
 // ---------- 印刷（QR・チラシ） ----------
 const siteUrl = (path = "") => new URL(`../${path}`, location.href).href;

@@ -5,7 +5,7 @@
 // ・スタンプはこのスマホの中に保存する（名前などの個人情報は集めない）。本部が全員の状況を見られるよう、
 //   押したお店と時刻だけを Firestore の rally_logs/{匿名ログインの印} にも写す（本部だけが読める）
 // ・本部が「全員の履歴をリセット」すると rally_control/current の reset_at が変わり、それより前のスタンプは各スマホで消える
-// ・goal 個たまると達成画面。本部のスタッフが番号を入れると「引き換え済み」になる
+// ・goal 個たまると、カードが下へ伸びて「引き換える！」が出る。押すと「引き換え済み」になる（番号は要らない）
 // ・模擬店総選挙：スタンプを押した模擬店（rally/current の shops で vote: true のもの）に、1人1票。votes/{匿名ログインの印} = { shop }。
 //   押しなおすと、投票先が変わる（票は1つのまま）。受け付けは config.js の ELECTION の opens〜closes
 import { RALLY, FESTIVAL, ELECTION } from "./config.js";
@@ -15,18 +15,6 @@ import { openQrScanner } from "./qr-scan.js";
 const STORE_KEY = "kosen63-rally";
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-
-// スタッフ番号の表記ゆれ（全角数字・空白）をそろえる
-const normalizePin = (s) => String(s).normalize("NFKC").replace(/\s+/g, "");
-
-// スタッフ番号を PBKDF2（SHA-256・何十万回）で混ぜる。ページのソースから番号を総当たりで割り出しにくくするため
-async function pinHash(pin, { salt, iterations }) {
-  if (!globalThis.crypto?.subtle) throw new Error("https で開いてください");
-  const hex = (h) => new Uint8Array(h.match(/../g).map((b) => parseInt(b, 16)));
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(normalizePin(pin)), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: hex(salt), iterations }, key, 256);
-  return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 export async function sha256(text) {
   const bytes = new TextEncoder().encode(text);
@@ -243,7 +231,7 @@ function voteState() {
   return t < Date.parse(ELECTION.opens) ? "before" : t < Date.parse(ELECTION.closes) ? "open" : "closed";
 }
 const voteDay = (iso) => new Date(iso).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
-let voting = false, voteNote = null;
+let voting = false, voteNote = null, pickId = null; // pickId：いま選んでいるお店（まだ送っていない）
 // 模擬店総選挙のページ（vote.html）：スタンプを押した模擬店から1店。押していない模擬店は、下にたたんで並べる
 function renderVote() {
   const el = $("#rally-vote");
@@ -268,7 +256,9 @@ function renderVote() {
   el.innerHTML = `
     ${title}
     <p class="rv-lead">${esc(voteDay(ELECTION.closes))}まで。<b>1人1票</b>（あとから変えられます）。</p>
-    ${stamped.length ? `<ul class="rv-list">${stamped.map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}" data-vote="${esc(s.id)}" aria-pressed="${s.id === mine}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : "投票する"}</span></button></li>`).join("")}</ul>`
+    ${stamped.length ? `<p class="rv-step">行ったお店から、1つ選んでください</p>
+      <ul class="rv-list">${stamped.map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}${s.id === pickId ? " is-pick" : ""}" data-pick="${esc(s.id)}" aria-pressed="${s.id === pickId}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : s.id === pickId ? "選択中" : ""}</span></button></li>`).join("")}</ul>
+      <button type="button" class="rv-submit" data-submit${!pickId || pickId === mine || voting ? " disabled" : ""}>${mine ? "投票先を変える" : "このお店に投票する"}</button>`
       : `<p class="rv-empty">模擬店の QR を読むと、そのお店に投票できます。</p>`}
     ${note}
     ${rest.length ? `<details class="rv-rest"><summary>まだ押していないお店 ${rest.length}</summary><ul>${rest.map((s) => `<li>${esc(s.name)}</li>`).join("")}</ul></details>` : ""}`;
@@ -300,6 +290,7 @@ async function castVote(shopId) {
     }
     state.vote = { shop: shopId, at: nowMs() };
     save();
+    pickId = null;
     voteNote = { kind: "ok", text: `「${s.name}」に投票しました。ありがとうございます！` };
   } catch (err) {
     console.warn("[rally] 投票できませんでした:", err?.code ?? err);
@@ -346,6 +337,7 @@ function render() {
   if (!$("#rc")) return; // 投票のページには、カードがない
   const count = stampCount();
   const done = count >= RALLY.goal;
+  const canClaim = done && !state.claimedAt && !prizeOut;
   const sorry = $("#rally-sorry");
   if (sorry) sorry.hidden = !prizeOut;
   const flipped = $(".rc")?.getAttribute("aria-pressed") === "true";
@@ -372,75 +364,24 @@ function render() {
           <li>スタンプが<em>${RALLY.goal}個</em>たまったら達成</li>
         </ol>
       </span>
-    </button>`;
+    </button>
+    <button type="button" class="rc-claim" tabindex="${canClaim ? 0 : -1}">引き換える！</button>`;
   justStamped = null;
+  // 達成したら、カードが下へぬぅっと伸びて、「引き換える！」が出る（作りなおした直後に class を付けて、伸びる動きにする）
+  const wrap = $("#rc");
+  wrap.classList.remove("is-done");
+  if (canClaim) requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.add("is-done")));
 
-  const goal = $("#rally-goal");
-  goal.hidden = !done;
-  if (!done) return;
-  if (state.claimedAt) {
-    const when = new Date(state.claimedAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
-    goal.innerHTML = `
-      <div class="goal-card is-claimed">
-        <p class="goal-title">引き換え済みです</p>
-        <p>${esc(when)} に引き換えました。ご参加ありがとうございました！</p>
-      </div>`;
-    return;
-  }
-  if (prizeOut) { // 景品がなくなったあと：引き換えの画面のかわりに、おわび
-    goal.innerHTML = `
-      <div class="goal-card is-claimed">
-        <p class="goal-title">達成！</p>
-        <p>ごめんなさい。景品は、すべてなくなりました。<br>最後まで集めてくれて、ありがとうございました！</p>
-      </div>`;
-    return;
-  }
-  // 画面のスクショで使い回せないよう、今の時刻が秒単位で動き、背景も流れ続ける
-  goal.innerHTML = `
-    <div class="goal-card">
-      <p class="goal-title">達成！</p>
-      <p class="goal-clock" id="goal-clock" aria-live="off"></p>
-      <form class="claim-form" id="claim-form">
-        <label for="claim-pin">スタッフ用</label>
-        <input id="claim-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="番号">
-        <button type="submit">引き換える</button>
-      </form>
-      <p class="claim-msg" id="claim-msg" role="status"></p>
-    </div>`;
-  tickClock();
-  $("#claim-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const pin = $("#claim-pin").value;
-    if (!RALLY.staffPin) {
-      $("#claim-msg").textContent = "引き換えの番号がまだ設定されていません（本部に知らせてください）";
-      return;
-    }
-    const button = e.submitter;
-    if (button) button.disabled = true;
-    $("#claim-msg").textContent = "確かめています…";
-    let ok = false;
-    try {
-      ok = await pinHash(pin, RALLY.staffPin) === RALLY.staffPin.hash;
-    } catch (err) {
-      $("#claim-msg").textContent = `確かめられませんでした（${err.message}）`;
-      if (button) button.disabled = false;
-      return;
-    }
-    if (button) button.disabled = false;
-    if (!ok) {
-      $("#claim-msg").textContent = "番号が違います（スタッフが入力します）";
-      return;
-    }
-    state.claimedAt = nowMs();
-    save();
-    syncLog();
-    render();
-  });
 }
 
-function tickClock() {
-  const el = document.getElementById("goal-clock");
-  if (el) el.textContent = new Date(nowMs()).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" });
+// 引き換える：押したら引き換え済み（番号は要らない。まちがえて押さないよう、確かめる）
+function claim() {
+  if (!(stampCount() >= RALLY.goal) || state.claimedAt || prizeOut) return;
+  if (!confirm("景品と引き換えますか？\n押すと「引き換え済み」になります（元に戻せません）")) return;
+  state.claimedAt = nowMs();
+  save();
+  syncLog();
+  render();
 }
 
 // スタンプカードのページ（rally.html）
@@ -450,7 +391,6 @@ export function initRallyPage(getNow = () => Date.now()) {
   render();
   onRallyChange(render);
   changeFns.add(() => { justStamped = null; render(); message("本部がスタンプラリーをリセットしました。", "info"); });
-  setInterval(tickClock, 1000);
   import("./live.js").then(({ subscribeLive }) => subscribeLive((d) => {
     const v = !!d?.prize_out;
     if (v !== prizeOut) { prizeOut = v; render(); }
@@ -459,6 +399,7 @@ export function initRallyPage(getNow = () => Date.now()) {
   refreshVote();
   // カードを押すと裏返る
   $("#rc").addEventListener("click", (e) => {
+    if (e.target.closest(".rc-claim")) return claim();
     const b = e.target.closest(".rc");
     if (b) b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
   });
@@ -500,8 +441,9 @@ export function initVotePage(getNow = () => Date.now()) {
   onRallyChange(render);
   changeFns.add(render);
   $("#rally-vote").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-vote]");
-    if (b) castVote(b.dataset.vote);
+    const pick = e.target.closest("[data-pick]");
+    if (pick) { pickId = pickId === pick.dataset.pick ? null : pick.dataset.pick; voteNote = null; return renderVote(); }
+    if (e.target.closest("[data-submit]") && pickId) castVote(pickId);
   });
   $("#rally-scan").addEventListener("click", openScan);
   refreshVote();

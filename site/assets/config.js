@@ -236,7 +236,7 @@ export const DECOS = {
 export const ELECTION = {
   form: null,     // 例："https://forms.office.com/r/XXXXXXXX"
   prefill: null,  // 例："https://forms.office.com/Pages/ResponsePage.aspx?id=XXXX&rXXXXXXXX={shop}"
-  opens: "2026-10-24T12:00:00+09:00",  // 1日目の公開から
+  opens: "2026-10-01T00:00:00+09:00",  // 【仮】いま試せるよう前倒し。本番は "2026-10-24T12:00:00+09:00"（1日目の公開から）に戻す
   closes: "2026-10-25T15:00:00+09:00", // 締め切り（要項 p.13：10/25 15:00。結果発表は 16:00）
 };
 
