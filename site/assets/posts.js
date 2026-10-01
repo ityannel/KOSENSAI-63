@@ -202,7 +202,7 @@ export function observePhotos(root, missing = (img) => img.remove()) {
 
 // 写真を小さくする（長い辺 960px。WebP で書けるスマホは WebP（同じ見た目で JPEG の6〜7割の大きさ＝読みこみが速い）、
 // 書けなければ JPEG。大きすぎたら画質を下げる）。向き（EXIF）はそろえ、位置情報などは残らない
-async function shrink(file) {
+export async function shrink(file) {
   const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
   const scale = Math.min(1, 960 / Math.max(bmp.width, bmp.height));
   const c = document.createElement("canvas");

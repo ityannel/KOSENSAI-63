@@ -183,12 +183,12 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/users_meta/$(request.auth.uid)).data.last_post == request.time
         && (!exists(/databases/$(database)/documents/users_meta/$(request.auth.uid))
             || get(/databases/$(database)/documents/users_meta/$(request.auth.uid)).data.last_post < request.time - duration.value(60, 's')))
-        // 本部の公式の投稿（管理画面から。写真なし）
+        // 本部の公式の投稿（管理画面から。写真は添えられる。本部の写真は確認なしで公開）
         || (isStaff()
           && data().keys().hasOnly(['kind', 'place', 'shop', 'stars', 'text', 'has_photo', 'photo_status', 'uid', 'created_at', 'reports', 'hidden', 'reply_to', 'official'])
           && data().official == true && data().uid == request.auth.uid && data().kind == 'post'
-          && data().text is string && data().text.size() > 0 && data().text.size() <= 400
-          && data().has_photo == false && data().photo_status == 'none'
+          && data().text is string && data().text.size() <= 400 && (data().text.size() > 0 || data().has_photo == true)
+          && data().has_photo is bool && data().photo_status == (data().has_photo ? 'approved' : 'none')
           && data().created_at == request.time && data().reports == 0 && data().hidden == false);
       // 報告：reports を1つ足すだけ（同じ書き込みで post_reports に自分の報告を作る＝1人1回）
       // いいね：likes を1つ足す（post_likes を作る）か、1つ引く（自分の post_likes を消す）だけ
@@ -213,11 +213,17 @@ service cloud.firestore {
       allow read: if isStaff()
         || (isVisitor() && resource.data.uid == request.auth.uid)
         || get(/databases/$(database)/documents/posts/$(id)).data.photo_status == 'approved';
-      allow create: if isVisitor() && data().keys().hasOnly(['data', 'uid']) && data().uid == request.auth.uid
+      allow create: if (isVisitor() && data().keys().hasOnly(['data', 'uid']) && data().uid == request.auth.uid
         && data().data is string && data().data.size() < 750000
         && data().data.matches('data:image/(jpeg|webp);base64,[A-Za-z0-9+/=]+')
         && getAfter(/databases/$(database)/documents/posts/$(id)).data.uid == request.auth.uid
-        && getAfter(/databases/$(database)/documents/posts/$(id)).data.photo_status == 'pending';
+        && getAfter(/databases/$(database)/documents/posts/$(id)).data.photo_status == 'pending')
+        // 本部の公式の投稿の写真
+        || (isStaff() && data().keys().hasOnly(['data', 'uid']) && data().uid == request.auth.uid
+        && data().data is string && data().data.size() < 750000
+        && data().data.matches('data:image/(jpeg|webp);base64,[A-Za-z0-9+/=]+')
+        && getAfter(/databases/$(database)/documents/posts/$(id)).data.official == true
+        && getAfter(/databases/$(database)/documents/posts/$(id)).data.photo_status == 'approved');
       allow delete: if isStaff();
     }
     match /post_reports/{rid} {

@@ -160,6 +160,10 @@
           <form id="official-form" class="stack">
             <label class="field"><span>本部として投稿</span>
               <textarea id="official-text" rows="3" maxlength="400" placeholder="例：ステージ第2部、まもなく始まります！"></textarea></label>
+            <div class="row row-wrap">
+              <label class="btn btn-ghost">画像をつける<input type="file" id="official-file" accept="image/*" hidden></label>
+              <span class="official-thumb" id="official-thumb" hidden><img id="official-thumb-img" alt=""><button class="btn btn-ghost btn-sm" type="button" id="official-thumb-clear">はずす</button></span>
+            </div>
             <div class="row"><button class="btn btn-primary" type="submit">投稿する</button><small class="muted" id="official-count">0 / 400</small></div>
           </form>
         </article>

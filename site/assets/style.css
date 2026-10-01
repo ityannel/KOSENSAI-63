@@ -1686,7 +1686,7 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .rally-lead b { color: #FFF1A8; }
 .rc-wrap { margin: calc(20 * var(--u)) calc(4 * var(--u)) calc(22 * var(--u)) calc(6 * var(--u)); perspective: 1200px; rotate: -1.2deg; filter: drop-shadow(calc(-7 * var(--u)) calc(5 * var(--u)) 0 rgba(48, 44, 41, 0.55)); }
 .rc {
-  display: grid; width: 100%; aspect-ratio: 91 / 60; padding: 0; border: 0; background: none; color: #634A2E; text-align: left; cursor: pointer;
+  display: grid; width: 100%; aspect-ratio: 91 / 72; padding: 0; border: 0; background: none; color: #634A2E; text-align: left; cursor: pointer;
   transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1.1); -webkit-tap-highlight-color: transparent;
 }
 .rc[aria-pressed="true"] { transform: rotateY(180deg); }
@@ -1707,9 +1707,9 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .rc-no { margin-left: auto; align-self: flex-start; font-family: var(--hud-font); font-size: calc(11 * var(--u)); white-space: nowrap; }
 .rc-no b { margin-left: calc(2 * var(--u)); font-weight: 400; font-size: calc(17 * var(--u)); color: #C8323A; letter-spacing: .06em; }
 /* 表：スタンプの丸 */
-.rc-slots { flex: 1; display: flex; justify-content: space-around; align-items: center; margin: 0; padding: calc(6 * var(--u)) 0 0; list-style: none; }
-.rc-slot { display: grid; justify-items: center; gap: calc(2 * var(--u)); min-width: 0; width: calc(92 * var(--u)); text-align: center; }
-.rc-ring { position: relative; display: grid; place-items: center; width: calc(66 * var(--u)); aspect-ratio: 1; border: calc(2 * var(--u)) dashed rgba(99, 74, 46, .32); border-radius: 50%; }
+.rc-slots { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: calc(8 * var(--u)) 0; margin: 0; padding: calc(8 * var(--u)) 0 0; list-style: none; }
+.rc-slot { display: grid; justify-items: center; gap: calc(2 * var(--u)); min-width: 0; width: calc(100 * var(--u)); text-align: center; }
+.rc-ring { position: relative; display: grid; place-items: center; width: calc(58 * var(--u)); aspect-ratio: 1; border: calc(2 * var(--u)) dashed rgba(99, 74, 46, .32); border-radius: 50%; }
 .rc-ring b { font-family: var(--hud-font); font-weight: 400; font-size: calc(24 * var(--u)); color: rgba(99, 74, 46, .22); }
 .is-stamped .rc-ring { border-color: transparent; }
 /* はんこ：赤い丸に「縁」。少しかすれて、ななめ */
@@ -1936,3 +1936,14 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .rv-rest ul { margin: calc(6 * var(--u)) 0 0; padding-left: 1.2em; columns: 2; }
 .rally-full.vote-page .rv, .vote-page .rally-full .rv { margin: calc(14 * var(--u)) calc(4 * var(--u)) calc(18 * var(--u)) calc(6 * var(--u)); }
 .vote-page .rally-lead { margin-bottom: calc(6 * var(--u)); }
+
+/* スタンプカードのページ：模擬店総選挙は「QR を読む」と同じボタンの形。ノイズ入りのカラフルなグラデーション（ポスターの色） */
+.rally-full #rally-vote-link {
+  display: flex; align-items: center; justify-content: center; gap: calc(10 * var(--u)); width: calc(100% - 10 * var(--u)); height: calc(58 * var(--u)); margin: calc(14 * var(--u)) calc(4 * var(--u)) 0 calc(6 * var(--u)); padding: 0;
+  border-radius: 999px; color: #FFFBF2;
+  background: var(--grain), linear-gradient(115deg, #d8457f 0%, #e2622e 38%, #e3a43a 72%, #dfc27a 100%);
+  box-shadow: calc(-6 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, 0.5); text-shadow: none;
+}
+.rally-full #rally-vote-link:active { translate: calc(-6 * var(--u)) calc(4 * var(--u)); box-shadow: 0 0 0 rgba(48, 44, 41, 0); }
+.rally-full #rally-vote-link b { font-size: calc(21 * var(--u)); }
+.rally-full #rally-vote-link span { font-size: calc(11.5 * var(--u)); opacity: .95; }

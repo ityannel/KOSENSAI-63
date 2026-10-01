@@ -370,10 +370,7 @@ function render() {
         <ol class="rc-rules">
           <li>模擬店・学科展示・会場に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
           <li>スタンプが<em>${RALLY.goal}個</em>たまったら達成</li>
-          <li>${prizeOut ? "景品は終了しました（ごめんなさい）" : `${esc(RALLY.claimPlace)}で、この画面を見せて景品と交換`}</li>
         </ol>
-        <small class="rc-prize">${prizeOut ? "景品は、すべてなくなりました。ごめんなさい。" : esc(RALLY.prize)}</small>
-        <small class="rc-shops">${list.length ? `対象：${list.map((s) => esc(s.name)).join("・")}` : "対象の場所は、決まりしだいここに出ます"}</small>
       </span>
     </button>`;
   justStamped = null;
@@ -402,7 +399,6 @@ function render() {
   goal.innerHTML = `
     <div class="goal-card">
       <p class="goal-title">達成！</p>
-      <p>${esc(RALLY.prize)}。<br>この画面を<b>${esc(RALLY.claimPlace)}</b>で見せてください。</p>
       <p class="goal-clock" id="goal-clock" aria-live="off"></p>
       <form class="claim-form" id="claim-form">
         <label for="claim-pin">スタッフ用</label>

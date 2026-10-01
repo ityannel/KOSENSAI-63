@@ -652,3 +652,5 @@ h1, h2, h3 { font-weight: 400; }
   .nav a { font-size: .75rem; }
   .nav a[aria-current="page"] { border-radius: 14px; }
 }
+.official-thumb { display: inline-flex; align-items: center; gap: 10px; }
+.official-thumb img { width: 64px; height: 64px; object-fit: cover; border: 1.5px solid var(--ink); border-radius: 8px; }

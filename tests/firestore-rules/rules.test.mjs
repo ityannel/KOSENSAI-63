@@ -129,6 +129,23 @@ await t("visitor cannot delete own vote", assertFails(deleteDoc(doc(anon, "votes
 await t("staff reads all votes", assertSucceeds(getDoc(doc(staff, "votes/anon1"))));
 await t("staff resets votes", assertSucceeds(deleteDoc(doc(staff, "votes/anon1"))));
 
+// 本部の公式の投稿に画像：本部だけが、確認なしで公開できる
+const jpg = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+const officialPost = (db, extra = {}) => ({ kind: "post", place: "", shop: null, stars: null, text: "写真つき", has_photo: true, photo_status: "approved", uid: db === staff ? "staff1" : "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null, official: true, ...extra });
+async function officialWithPhoto(db, id, postExtra, photo) {
+  const b = writeBatch(db);
+  b.set(doc(db, `posts/${id}`), officialPost(db, postExtra));
+  b.set(doc(db, `post_photos/${id}`), { data: photo, uid: db === staff ? "staff1" : "anon1" });
+  return b.commit();
+}
+await t("staff posts officially with a photo", assertSucceeds(officialWithPhoto(staff, "op1", {}, jpg)));
+await t("staff photo-only official post (no text)", assertSucceeds(officialWithPhoto(staff, "op2", { text: "" }, jpg)));
+await t("official post cannot be photo_status pending", assertFails(officialWithPhoto(staff, "op3", { photo_status: "pending" }, jpg)));
+await t("official photo must be jpeg/webp data", assertFails(officialWithPhoto(staff, "op4", {}, "data:image/png;base64,AAAA")));
+await t("visitor cannot post as official with a photo", assertFails(officialWithPhoto(anon, "op5", {}, jpg)));
+await t("empty official post without photo rejected", assertFails(setDoc(doc(staff, "posts/op6"), officialPost(staff, { text: "", has_photo: false, photo_status: "none" }))));
+await t("everyone reads the official photo", assertSucceeds(getDoc(doc(nobody, "post_photos/op1"))));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

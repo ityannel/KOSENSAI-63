@@ -4,7 +4,7 @@
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
 import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS } from "../assets/config.js";
 import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
-import { REPORT_HIDE, handleOf } from "../assets/posts.js";
+import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
 
 const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
 const [appMod, auth, fs] = await Promise.all([
@@ -350,16 +350,40 @@ $("#post-list").addEventListener("click", (e) => {
   };
   acts[b.dataset.act]?.();
 });
+// 画像（任意）：選ぶと、下に小さく見える。「はずす」で取りやめ
+function clearOfficialFile() {
+  $("#official-file").value = "";
+  $("#official-thumb").hidden = true;
+  $("#official-thumb-img").removeAttribute("src");
+}
+$("#official-file").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if (!f) return clearOfficialFile();
+  $("#official-thumb-img").src = URL.createObjectURL(f);
+  $("#official-thumb").hidden = false;
+});
+$("#official-thumb-clear").addEventListener("click", clearOfficialFile);
 $("#official-text").addEventListener("input", (e) => { $("#official-count").textContent = `${e.target.value.length} / 400`; });
 $("#official-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = $("#official-text").value.trim();
-  if (!text) return toast("文を入れてください", true);
-  const ok = await write("本部として投稿しました", () => fs.addDoc(fs.collection(db, "posts"), {
-    kind: "post", place: "", shop: null, stars: null, text, has_photo: false, photo_status: "none", uid: a.currentUser.uid,
-    created_at: fs.serverTimestamp(), reports: 0, hidden: false, reply_to: null, official: true,
-  }));
-  if (ok) { $("#official-text").value = ""; $("#official-count").textContent = "0 / 400"; }
+  const file = $("#official-file").files[0];
+  if (!text && !file) return toast("文か画像を入れてください", true);
+  let photo = null;
+  if (file) {
+    try { photo = await shrink(file); } catch (err) { return toast(err.message || "画像を読めませんでした", true); }
+  }
+  const ref = fs.doc(fs.collection(db, "posts"));
+  const ok = await write("本部として投稿しました", () => {
+    const batch = fs.writeBatch(db);
+    batch.set(ref, {
+      kind: "post", place: "", shop: null, stars: null, text, has_photo: !!photo, photo_status: photo ? "approved" : "none", uid: a.currentUser.uid,
+      created_at: fs.serverTimestamp(), reports: 0, hidden: false, reply_to: null, official: true,
+    });
+    if (photo) batch.set(fs.doc(db, "post_photos", ref.id), { data: photo, uid: a.currentUser.uid });
+    return batch.commit();
+  });
+  if (ok) { $("#official-text").value = ""; $("#official-count").textContent = "0 / 400"; clearOfficialFile(); }
 });
 
 // ---------- 模擬店 ----------
