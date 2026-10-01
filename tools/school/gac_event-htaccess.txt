@@ -1,0 +1,3 @@
+# 学校のサーバーの /gac_event/ に置く .htaccess（/gac_event/.htaccess）。サーバーに入れる人が置く
+# 301（恒久）：検索結果の「函館 高専祭」を、新しいサイトへ移すため
+Redirect 301 /gac_event/ https://hakodate-kosensai.pages.dev/
