@@ -6,7 +6,9 @@
 //   押したお店と時刻だけを Firestore の rally_logs/{匿名ログインの印} にも写す（本部だけが読める）
 // ・本部が「全員の履歴をリセット」すると rally_control/current の reset_at が変わり、それより前のスタンプは各スマホで消える
 // ・goal 個たまると達成画面。本部のスタッフが番号を入れると「引き換え済み」になる
-import { RALLY, FESTIVAL } from "./config.js";
+// ・模擬店総選挙：スタンプを押した模擬店（rally/current の shops で vote: true のもの）に、1人1票。votes/{匿名ログインの印} = { shop }。
+//   押しなおすと、投票先が変わる（票は1つのまま）。受け付けは config.js の ELECTION の opens〜closes
+import { RALLY, FESTIVAL, ELECTION } from "./config.js";
 import { rallyReady, onRallyChange } from "./rally-data.js"; // 本部コンソールで作った対象のお店（Firestore）
 import { openQrScanner } from "./qr-scan.js";
 
@@ -106,7 +108,7 @@ function warnInAppBrowser() {
 let state = load();
 // 対象のお店。手元（localhost）で ?demo を付けたときだけ、見た目をたしかめる仮のお店とスタンプ
 const DEMO = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSearchParams(location.search).has("demo");
-const DEMO_SHOPS = [{ id: "d1", name: "5SE たこ焼き" }, { id: "d2", name: "麺屋 つちよし" }, { id: "d3", name: "クッキングミオ♡" }, { id: "d4", name: "やきとり処清" }];
+const DEMO_SHOPS = [{ id: "d1", name: "5SE たこ焼き", vote: true }, { id: "d2", name: "麺屋 つちよし", vote: true }, { id: "d3", name: "クッキングミオ♡", vote: true }, { id: "d4", name: "やきとり処清", vote: true }];
 const shops = () => (DEMO ? DEMO_SHOPS : RALLY.shops);
 if (DEMO) state = { ...state, stamps: { d1: Date.parse("2026-10-24T11:20:00+09:00"), d2: Date.parse("2026-10-24T13:05:00+09:00") } };
 export const stampCount = () => Object.keys(state.stamps).length;
@@ -160,11 +162,13 @@ function firebase() {
   })();
   return fbP;
 }
-let syncing = false;
-async function syncLog() {
-  if (DEMO || syncing || state.synced === signature()) return;
-  if (!Object.keys(state.stamps).length && !state.claimedAt && !state.synced) return; // 何も押していない人は写さない（ログインもしない）
-  syncing = true;
+let syncP = null;
+function syncLog() {
+  if (DEMO || state.synced === signature()) return Promise.resolve();
+  if (!Object.keys(state.stamps).length && !state.claimedAt && !state.synced) return Promise.resolve(); // 何も押していない人は写さない（ログインもしない）
+  return (syncP ??= writeLog().finally(() => { syncP = null; }));
+}
+async function writeLog() {
   try {
     const k = await firebase();
     if (!k.a.currentUser) await k.auth.signInAnonymously(k.a);
@@ -174,8 +178,6 @@ async function syncLog() {
     save();
   } catch (err) {
     console.warn("[rally] 本部へ写せませんでした:", err?.code ?? err);
-  } finally {
-    syncing = false;
   }
 }
 // スタンプが変わったとき（全員リセットで消えたときなど）に描き直すもの
@@ -229,7 +231,84 @@ function celebrate(shop) {
   render();
   $("#rc")?.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   const count = stampCount();
-  message(count >= RALLY.goal ? `「${shop.name}」のスタンプを押しました。達成です！` : `「${shop.name}」のスタンプを押しました！ あと${RALLY.goal - count}個`, "ok");
+  const canVote = shop.vote && voteState() === "open";
+  message((count >= RALLY.goal ? `「${shop.name}」のスタンプを押しました。達成です！` : `「${shop.name}」のスタンプを押しました！ あと${RALLY.goal - count}個`) + (canVote ? "　下から、このお店に投票もできます。" : ""), "ok");
+}
+
+// ---------- 模擬店総選挙 ----------
+// before：まだ／open：受け付け中／closed：終わった。?now= で時刻を動かして試せる（スタンプと同じ）
+function voteState() {
+  const t = nowMs();
+  return t < Date.parse(ELECTION.opens) ? "before" : t < Date.parse(ELECTION.closes) ? "open" : "closed";
+}
+const voteDay = (iso) => new Date(iso).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
+let voting = false, voteNote = null;
+function renderVote() {
+  const el = $("#rally-vote");
+  if (!el) return;
+  const voters = shops().filter((s) => s.vote);
+  if (!voters.length) { el.hidden = true; return; }
+  const phase = voteState();
+  const mine = state.vote?.shop ?? null;
+  const cands = stampIds().map(shopOf).filter((s) => s?.vote);
+  const mineName = mine ? shopOf(mine)?.name ?? "" : "";
+  el.hidden = false;
+  const note = voteNote ? `<p class="rv-note" data-kind="${voteNote.kind}" role="status">${esc(voteNote.text)}</p>` : "";
+  if (phase === "before") {
+    el.innerHTML = `<h2 class="rv-title" id="rv-title">模擬店総選挙</h2><p class="rv-lead">${esc(voteDay(ELECTION.opens))}から。模擬店の QR を読んでスタンプを押すと、そのお店に1票入れられます（1人1票）。</p>`;
+    return;
+  }
+  if (phase === "closed") {
+    el.innerHTML = `<h2 class="rv-title" id="rv-title">模擬店総選挙</h2><p class="rv-lead">投票は終わりました。${mineName ? `あなたの1票：<b>${esc(mineName)}</b>。` : ""}結果は、10/25 16:00 から第二体育館で発表です。</p>`;
+    return;
+  }
+  el.innerHTML = `
+    <h2 class="rv-title" id="rv-title">模擬店総選挙</h2>
+    <p class="rv-lead">${esc(voteDay(ELECTION.closes))}まで。<b>1人1票</b>。スタンプを押した模擬店から選べます。${mine ? "ほかのお店を押すと、投票先を変えられます。" : ""}</p>
+    ${cands.length ? `<ul class="rv-list">${cands.map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}" data-vote="${esc(s.id)}" aria-pressed="${s.id === mine}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : "投票する"}</span></button></li>`).join("")}</ul>`
+      : `<p class="rv-empty">模擬店の QR を読んでスタンプを押すと、ここからそのお店に投票できます。</p>`}
+    ${note}`;
+}
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
+async function castVote(shopId) {
+  const s = shopOf(shopId);
+  if (voting || !s?.vote || !state.stamps[shopId] || voteState() !== "open" || state.vote?.shop === shopId) return;
+  voting = true;
+  voteNote = { kind: "info", text: "送っています…" };
+  renderVote();
+  try {
+    if (!DEMO) {
+      await syncLog(); // 押したスタンプを先に本部へ写す（ルールが「スタンプを押した店だけ」を確かめるため）
+      const k = await firebase();
+      if (!k.a.currentUser) await k.auth.signInAnonymously(k.a);
+      await withTimeout(k.fs.setDoc(k.fs.doc(k.db, "votes", k.a.currentUser.uid), { shop: shopId, updated_at: k.fs.serverTimestamp() }), 12000);
+    }
+    state.vote = { shop: shopId, at: nowMs() };
+    save();
+    voteNote = { kind: "ok", text: `「${s.name}」に投票しました。ありがとうございます！` };
+  } catch (err) {
+    console.warn("[rally] 投票できませんでした:", err?.code ?? err);
+    voteNote = { kind: "warn", text: "投票を送れませんでした。電波を確かめて、もう一度押してください。" };
+  }
+  voting = false;
+  renderVote();
+}
+// 自分の票を、本部の記録と合わせる（本部が投票をリセットしたとき・別の画面で変えたとき）。ページを開くたびに1回だけ読む
+async function refreshVote() {
+  if (DEMO || voteState() === "before" || !Object.keys(state.stamps).length) return;
+  try {
+    const k = await firebase();
+    await k.a.authStateReady?.();
+    const u = k.a.currentUser;
+    if (!u) return;
+    const snap = await k.fs.getDoc(k.fs.doc(k.db, "votes", u.uid));
+    const shop = snap.exists() ? snap.data().shop : null;
+    if (shop !== (state.vote?.shop ?? null)) {
+      state.vote = shop ? { shop, at: snap.data().updated_at?.toMillis?.() ?? nowMs() } : null;
+      save();
+      renderVote();
+    }
+  } catch { /* 読めなくても、投票はできる */ }
 }
 
 function slotsHtml() {
@@ -247,6 +326,7 @@ function slotsHtml() {
 }
 
 function render() {
+  renderVote();
   const count = stampCount();
   const done = count >= RALLY.goal;
   const sorry = $("#rally-sorry");
@@ -271,7 +351,7 @@ function render() {
       <span class="rc-face rc-back">
         <b class="rc-back-title">あそびかた</b>
         <ol class="rc-rules">
-          <li>学科展示・会場に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
+          <li>模擬店・学科展示・会場に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
           <li>スタンプが<em>${RALLY.goal}個</em>たまったら達成</li>
           <li>${prizeOut ? "景品は終了しました（ごめんなさい）" : `${esc(RALLY.claimPlace)}で、この画面を見せて景品と交換`}</li>
         </ol>
@@ -363,6 +443,11 @@ export function initRallyPage(getNow = () => Date.now()) {
     if (v !== prizeOut) { prizeOut = v; render(); }
   })).catch(() => { /* 読めなくても、スタンプは押せる */ });
 
+  $("#rally-vote").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-vote]");
+    if (b) castVote(b.dataset.vote);
+  });
+  refreshVote();
   // カードを押すと裏返る
   $("#rc").addEventListener("click", (e) => {
     const b = e.target.closest(".rc");
@@ -371,7 +456,7 @@ export function initRallyPage(getNow = () => Date.now()) {
   // お店の QR を読む（ページの中のカメラ）。読めたら、その QR の鍵でスタンプを押す
   $("#rally-scan").addEventListener("click", () => openQrScanner({
     title: "QR を読む",
-    hint: "学科展示・会場に置いてある QR を枠に入れてください",
+    hint: "模擬店・学科展示・会場に置いてある QR を枠に入れてください",
     wrong: "スタンプラリーの QR ではないようです",
     noCamera: "スマホのカメラアプリで QR を読んでも、スタンプは押せます",
     accept: (text) => {

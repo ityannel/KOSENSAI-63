@@ -1890,3 +1890,30 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 }
 /* いちばん下の欄：下のタブに隠れないよう、欄の色のまま下を空ける */
 [data-block].is-last-block { padding-bottom: var(--tabs-h); }
+
+/* 模擬店総選挙（スタンプカードのページの下）：スタンプを押した模擬店から1店を選ぶ。紙の札に、こげ茶の字 */
+.rally-full .rv {
+  margin: calc(18 * var(--u)) calc(4 * var(--u)) 0 calc(6 * var(--u)); padding: calc(18 * var(--u)) calc(16 * var(--u)); border-radius: calc(10 * var(--u));
+  background: var(--grain), #FFFBF2; color: #634A2E; font-family: var(--text-font); font-weight: 700; font-size: calc(14 * var(--u)); line-height: 1.6;
+  box-shadow: calc(-6 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, 0.5);
+}
+.rally-full .rv[hidden] { display: none; }
+.rv-title { margin: 0 0 calc(4 * var(--u)); font-family: var(--hud-font); font-weight: 400; font-size: calc(26 * var(--u)); line-height: 1.2; }
+.rv-lead { margin: 0 0 calc(12 * var(--u)); }
+.rv-lead b { color: #C8323A; }
+.rv-list { display: grid; gap: calc(8 * var(--u)); margin: 0; padding: 0; list-style: none; }
+.rv-btn {
+  display: flex; align-items: center; justify-content: space-between; gap: calc(10 * var(--u)); width: 100%; min-height: calc(46 * var(--u)); padding: calc(6 * var(--u)) calc(8 * var(--u)) calc(6 * var(--u)) calc(14 * var(--u));
+  border: 1.5px solid #634A2E; border-radius: 999px; background: #FFFBF2; color: #634A2E; font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: calc(-4 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, 0.45); transition: translate .12s, box-shadow .12s;
+}
+.rv-btn:active:not(:disabled) { translate: calc(-4 * var(--u)) calc(3 * var(--u)); box-shadow: 0 0 0 rgba(48, 44, 41, 0); }
+.rv-btn:disabled { opacity: .6; }
+.rv-name { font-weight: 900; font-size: calc(16 * var(--u)); }
+.rv-go { flex: none; padding: calc(4 * var(--u)) calc(12 * var(--u)); border-radius: 999px; background: #634A2E; color: #FEEBC4; font-family: var(--hud-font); font-weight: 400; font-size: calc(14 * var(--u)); }
+.rv-btn.is-on { background: #C8323A; border-color: #C8323A; color: #fff; }
+.rv-btn.is-on .rv-go { background: #fff; color: #C8323A; }
+.rv-empty { margin: 0; font-size: calc(13 * var(--u)); opacity: .85; }
+.rv-note { margin: calc(10 * var(--u)) 0 0; }
+.rv-note[data-kind="ok"] { color: #1e7a4a; }
+.rv-note[data-kind="warn"] { color: #C8323A; }

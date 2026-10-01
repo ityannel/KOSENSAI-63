@@ -73,7 +73,7 @@ const ANSWERS = {
     return {
       line,
       html: `<div class="answer-rally">${Array.from({ length: g }, (_, i) => `<span class="mini-hanko${i < n ? " on" : ""}">${i < n ? "縁" : ""}</span>`).join("")}
-        <b>${n} / ${g}</b></div><p>${out ? "景品は、すべてなくなりました。ごめんなさい。" : n >= g ? esc(RALLY.prize) : "学科展示・会場の QR を読んでね（はじめの1個は、玄関のインフォメーションで）。"}</p>`,
+        <b>${n} / ${g}</b></div><p>${out ? "景品は、すべてなくなりました。ごめんなさい。" : n >= g ? esc(RALLY.prize) : "模擬店・学科展示・会場の QR を読んでね（はじめの1個は、玄関のインフォメーションで）。"}</p>`,
       actions: [link("#rally", n >= g ? "引き換え画面" : "スタンプカード")],
     };
   },

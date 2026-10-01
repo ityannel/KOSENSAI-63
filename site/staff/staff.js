@@ -618,14 +618,15 @@ const rallyShopIds = () => (state.rally?.shops ?? []).map((s) => s.id);
 const isRallyShop = (id) => rallyShopIds().includes(id);
 const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 
-// スタンプラリーの対象は、インフォメーション・学科展示・会場（太平洋セメントアリーナ、ZACROS hall）（模擬店は対象にしない。混雑・待ち時間の知らせは、これまで通り模擬店ごとに出せる）。
-// 足りない鍵を作り、rally/current を対象の場所にそろえる（模擬店が入っていたら外す。そろっていれば何もしない）
-const rallySpots = () => allSpots().filter((s) => s.kind !== "shop");
+// スタンプラリーの対象は、模擬店・インフォメーション・学科展示・会場（太平洋セメントアリーナ、ZACROS hall）のすべて。
+// 模擬店には vote: true を付ける（スタンプを押した模擬店に、模擬店総選挙で1票入れられる。rally.js）。
+// 足りない鍵を作り、rally/current を対象の場所にそろえる（足りなければ何もしない）
+const rallySpots = () => allSpots();
 function rallyMissing() {
-  const ids = new Set(rallyShopIds());
+  const cur = new Map((state.rally?.shops ?? []).map((s) => [s.id, s]));
   const spots = rallySpots();
-  const extra = rallyShopIds().filter((id) => !spots.some((s) => s.id === id)); // 対象でなくなった場所（模擬店）
-  return [...spots.filter((s) => !ids.has(s.id) || !keysOf(s.id)[FEST]), ...extra.map((id) => ({ id }))];
+  const extra = [...cur.keys()].filter((id) => !spots.some((s) => s.id === id)); // 対象でなくなった場所
+  return [...spots.filter((s) => !cur.has(s.id) || !keysOf(s.id)[FEST] || !!cur.get(s.id).vote !== (s.kind === "shop")), ...extra.map((id) => ({ id }))];
 }
 async function ensureRally() {
   if (!rallyMissing().length) return false;
@@ -640,7 +641,7 @@ async function ensureRally() {
     }
     const codes = { [FEST]: await sha256(`kosen63:${shop.id}:${FEST}:${keys[FEST]}`) };
     const room = shop.catalog ? shop.room : shop.map;
-    shops.push({ id: shop.id, name: shop.name, ...(room ? { room } : {}), ...(shop.place ? { place: shop.place } : {}), codes });
+    shops.push({ id: shop.id, name: shop.name, ...(room ? { room } : {}), ...(shop.place ? { place: shop.place } : {}), ...(shop.kind === "shop" ? { vote: true } : {}), codes });
   }
   const current = { shops, staffPin: state.rally?.staffPin ?? null };
   batch.set(fs.doc(db, "rally", "current"), { ...current, ...stamp() });
@@ -1372,6 +1373,48 @@ function askPassword(title, lead) {
     dlg.addEventListener("cancel", onClose);
   });
 }
+
+// 模擬店総選挙：votes を全部読んで、お店ごとに数える（読むのは本部だけ）。リセットはパスワードが必要
+async function showVotes() {
+  const box = $("#vote-all");
+  box.hidden = false;
+  box.innerHTML = '<p class="muted">読みこんでいます…</p>';
+  try {
+    const snap = await fs.getDocs(fs.collection(db, "votes"));
+    const per = {};
+    let last = 0;
+    snap.forEach((d) => { const v = d.data(); per[v.shop] = (per[v.shop] ?? 0) + 1; last = Math.max(last, toMs(v.updated_at) ?? 0); });
+    const total = snap.size;
+    const name = (id) => allSpots().find((s) => s.id === id)?.name ?? id;
+    const rows = Object.entries(per).sort((a, b) => b[1] - a[1]);
+    const top = rows[0]?.[1] ?? 0;
+    box.innerHTML = `
+      <div class="kpis rally-kpis">
+        <div class="kpi"><small>投票した人</small><b>${total}</b><span>人（1人1票）</span></div>
+        <div class="kpi"><small>票が入ったお店</small><b>${rows.length}</b><span>店</span></div>
+      </div>
+      <h3 class="rally-h">順位</h3>
+      ${rows.length ? `<table class="rally-table"><tbody>${rows.map(([id, n], i) => `<tr><th>${i + 1}位　${esc(name(id))}</th><td><i class="bar" style="--p:${top ? n / top : 0}"></i></td><td class="num">${n}票</td></tr>`).join("")}</tbody></table>` : '<p class="muted">まだ投票はありません</p>'}
+      <p class="muted rally-foot">${last ? `いちばん新しい投票：${time(last)}　` : ""}（${time(Date.now())} に読みこみ）</p>`;
+  } catch (err) {
+    console.warn(err);
+    box.innerHTML = `<p class="muted">読めませんでした（${esc(err.code ?? err.message)}）。firestore.rules に votes を足して公開してあるか確かめてください。</p>`;
+  }
+}
+$("#vote-all-show").addEventListener("click", showVotes);
+$("#vote-all-reset").addEventListener("click", async () => {
+  if (!(await askPassword("投票をリセット", "模擬店総選挙の票を、全部消します。元に戻せません。パスワードを入れてください。"))) return;
+  if (!confirm("本当に、模擬店総選挙の票を全部消しますか？（元に戻せません）")) return;
+  const ok = await write("模擬店総選挙の票を消しました", async () => {
+    const snap = await fs.getDocs(fs.collection(db, "votes"));
+    for (let i = 0; i < snap.docs.length; i += 400) {
+      const batch = fs.writeBatch(db);
+      snap.docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+  });
+  if (ok && !$("#vote-all").hidden) showVotes();
+});
 
 // 全員の状況：rally_logs を全部読んで数える（読むのは本部だけ。firestore.rules）
 const rallyShopName = (id) => (state.rally?.shops ?? RALLY.shops).find((s) => s.id === id)?.name ?? id;

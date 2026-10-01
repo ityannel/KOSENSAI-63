@@ -113,6 +113,22 @@ await t("quiz answers not public", assertFails(getDoc(doc(nobody, "quiz_answers/
 await t("presence ok in current window", assertSucceeds(setDoc(doc(nobody, `presence/${Math.floor(Date.now() / 300000)}`), { n: 1 })));
 await t("presence rejects far window", assertFails(setDoc(doc(nobody, "presence/1"), { n: 1 })));
 
+// 模擬店総選挙：スタンプを押した模擬店にだけ、自分の1票。全員分を読めるのは本部だけ
+await t("visitor logs stamps", assertSucceeds(setDoc(doc(anon, "rally_logs/anon1"), { stamps: { takoyaki: 1 }, claimed_at: null, updated_at: serverTimestamp() })));
+await t("vote for a stamped shop", assertSucceeds(setDoc(doc(anon, "votes/anon1"), { shop: "takoyaki", updated_at: serverTimestamp() })));
+await t("changing the vote is allowed (still one doc)", assertSucceeds(setDoc(doc(anon, "rally_logs/anon1"), { stamps: { takoyaki: 1, udon: 2 }, claimed_at: null, updated_at: serverTimestamp() }).then(() => setDoc(doc(anon, "votes/anon1"), { shop: "udon", updated_at: serverTimestamp() }))));
+await t("cannot vote for a shop without a stamp", assertFails(setDoc(doc(anon, "votes/anon1"), { shop: "curry", updated_at: serverTimestamp() })));
+await t("cannot vote under someone else's id", assertFails(setDoc(doc(anon, "votes/anon2"), { shop: "takoyaki", updated_at: serverTimestamp() })));
+await t("cannot vote without any stamp log", assertFails(setDoc(doc(env.authenticatedContext("anon9", anonTok).firestore(), "votes/anon9"), { shop: "takoyaki", updated_at: serverTimestamp() })));
+await t("vote cannot carry extra fields", assertFails(setDoc(doc(anon, "votes/anon1"), { shop: "udon", weight: 100, updated_at: serverTimestamp() })));
+await t("vote time cannot be faked", assertFails(setDoc(doc(anon, "votes/anon1"), { shop: "udon", updated_at: new Date(2030, 0, 1) })));
+await t("logged-out cannot vote", assertFails(setDoc(doc(nobody, "votes/anon1"), { shop: "udon", updated_at: serverTimestamp() })));
+await t("visitor reads own vote", assertSucceeds(getDoc(doc(anon, "votes/anon1"))));
+await t("visitor cannot read others' votes", assertFails(getDoc(doc(anon, "votes/anon2"))));
+await t("visitor cannot delete own vote", assertFails(deleteDoc(doc(anon, "votes/anon1"))));
+await t("staff reads all votes", assertSucceeds(getDoc(doc(staff, "votes/anon1"))));
+await t("staff resets votes", assertSucceeds(deleteDoc(doc(staff, "votes/anon1"))));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
