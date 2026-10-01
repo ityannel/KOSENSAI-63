@@ -744,6 +744,13 @@ function tap(target, [lx, ly] = [0, 0]) {
     if (i >= 0) focusStep(i); else setFloor(f.dataset.floorGo);
     return;
   }
+  // 投稿の場所を選んでいるとき：お店・会場を押したらそこ
+  if (postPick) {
+    const id = target?.closest?.("[data-id]")?.dataset.id;
+    const p = id && place(id);
+    if (postable(p)) endPostPick(p.id); else toast("お店か会場を押してください");
+    return;
+  }
   // 地図で出発地・目的地を選んでいるとき：部屋や会場を押したらそこ、それ以外（廊下・道・グラウンド）はその点
   if (mapPicking) {
     const id = target?.closest?.("[data-id]")?.dataset.id;
@@ -1613,14 +1620,11 @@ function fillPhotos(root) {
 }
 // 書く画面（どこでも同じ）。placeId：その場所に書く／pickPlace：場所をえらべる（なくてもよい）／replyTo：コメント（返信）
 // Instagram の新規投稿のように：上に「キャンセル・新規投稿・シェア」、大きな四角で写真、キャプション、「場所を追加」
-function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, onDone, onCancel }) {
+function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, draft = null, onPickPlace, onDone, onCancel }) {
   const parent = replyTo && (getState().posts ?? []).find((x) => x.id === replyTo);
-  let pid = placeId ?? parent?.place ?? "";
+  let pid = draft?.place ?? placeId ?? parent?.place ?? "";
   let starsVal = 0, file = null;
   const hp = here && place(here);
-  // えらべる場所：模擬店（教室のお店も）と、会場・展示など
-  const all = [...places.values()].filter((p) => (p.fest || p.shopList?.length) && canPost(p) && !byRoom.has(p.id) && !p.zone);
-  const shopsFirst = [["模擬店", all.filter((p) => p.shopList?.length)], ["会場・展示など", all.filter((p) => !p.shopList?.length)]];
   if (replyTo) {
     // コメント：Instagram のコメント欄のように1行
     root.innerHTML = `<form class="v-form ig-cform">${avatar("enishi_me", true)}
@@ -1629,16 +1633,14 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
       <p class="v-msg" role="status"></p></form>`;
   } else {
     root.innerHTML = `<form class="v-form ig-form">
-      <header class="ig-fhead"><button type="button" class="ig-fbtn" data-cancel>キャンセル</button><b>新規投稿</b><button type="submit" class="ig-fbtn is-share" value="send">シェア</button></header>
+      <header class="ig-fhead"><button type="button" class="ig-fbtn is-icon" data-cancel aria-label="キャンセル">${I.close}</button><b>新規投稿</b><button type="submit" class="ig-fbtn is-share is-icon" value="send" aria-label="シェア">${I.send}</button></header>
       <label class="ig-pick"><input type="file" name="photo" accept="image/*">
-        <span class="ig-pick-empty">${I.camera}<b>写真を追加</b><small>なくても投稿できます</small></span>
+        <span class="ig-pick-empty">${I.camera}<b>写真を追加</b></span>
         <img class="v-preview" alt="えらんだ写真" hidden></label>
       <button type="button" class="v-unphoto" aria-label="写真を外す" hidden>×</button>
       <div class="ig-caprow">${avatar("enishi_me", true)}<textarea name="text" maxlength="${MAX_TEXT}" rows="3" placeholder="キャプションを入力…"></textarea></div>
       <small class="v-count">0 / ${MAX_TEXT}</small>
-      ${pickPlace ? `<label class="ig-row">${I.pin}<span>場所を追加</span><select name="place" aria-label="場所"><option value="">場所なし</option>
-        ${hp && canPost(hp) ? `<option value="${esc(hp.id)}">いまここ：${esc(titleOf(hp))}</option>` : ""}
-        ${shopsFirst.map(([label, ps]) => `<optgroup label="${label}">${ps.map((p) => `<option value="${esc(p.id)}">${esc(titleOf(p))}</option>`).join("")}</optgroup>`).join("")}</select></label>`
+      ${pickPlace ? `<div class="ig-row ig-placerow"><button type="button" class="ig-placebtn" data-pickplace>${I.pin}<span>${pid ? esc(titleOf(place(pid))) : "場所を追加"}</span></button>${pid ? `<button type="button" class="ig-placeclear" aria-label="場所を外す">${I.close}</button>` : ""}</div>`
         : `<p class="ig-row">${I.pin}<span>${esc(titleOf(place(pid)))}</span></p>`}
       <div class="v-shopbox"></div>
       <p class="v-rule">顔や名札が写らないように。悪口・個人情報は書かないでください。すぐ公開され、本部が消すことがあります。</p>
@@ -1661,7 +1663,12 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
     }));
   };
   drawShops();
-  f.place?.addEventListener("change", () => { pid = f.place.value; drawShops(); });
+  if (draft?.stars && box?.querySelector("[data-star]")) { starsVal = draft.stars; box.querySelectorAll("[data-star]").forEach((x) => (x.textContent = Number(x.dataset.star) <= starsVal ? "★" : "☆")); }
+  if (draft?.shop && f.shop) f.shop.value = draft.shop;
+  if (draft?.text) f.text.value = draft.text;
+  // 場所を追加：地図へ移って、地図で場所を選ぶ（書いた文・写真・★はそのまま持っていく）
+  root.querySelector("[data-pickplace]")?.addEventListener("click", () => onPickPlace?.({ text: f.text.value, file, place: pid, stars: starsVal, shop: f.shop?.value ?? null }));
+  root.querySelector(".ig-placeclear")?.addEventListener("click", () => onPickPlace?.({ text: f.text.value, file, place: "", stars: 0, shop: null }, { reopen: true }));
   const count = root.querySelector(".v-count");
   f.text.addEventListener("input", () => {
     if (replyTo) { f.text.style.height = "auto"; f.text.style.height = `${Math.min(120, f.text.scrollHeight)}px`; } // コメント欄は書いた分だけのびる
@@ -1679,6 +1686,8 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
     if (file) pv.src = URL.createObjectURL(file); else pv?.removeAttribute("src");
   };
   f.photo?.addEventListener("change", () => showPhoto(f.photo.files[0] ?? null));
+  if (draft?.file) showPhoto(draft.file);
+  if (draft?.text && count) count.textContent = `${f.text.value.length} / ${MAX_TEXT}`;
   un?.addEventListener("click", () => { f.photo.value = ""; showPhoto(null); });
   root.querySelector("[data-cancel]")?.addEventListener("click", () => onCancel?.());
   f.addEventListener("submit", async (e) => {
@@ -1797,9 +1806,11 @@ function voiceClick(e) {
 const writing = (root) => !!root?.querySelector(".v-replybox:not([hidden]), [data-compose]");
 
 // ---------- みんなの声タブ（タイムライン・写真） ----------
+let settingTabFromPick = false;
 let tab = "map";           // map / feed
 let feedView = "timeline"; // timeline / photos
 function setTab(t) {
+  if (postPick && t === "feed" && !settingTabFromPick) { settingTabFromPick = true; endPostPick(undefined); settingTabFromPick = false; return; }
   tab = t;
   document.body.classList.toggle("is-feed", t === "feed");
   $("#m-feed").hidden = t !== "feed";
@@ -1836,13 +1847,51 @@ function renderFeed(force = false) {
   if (b) sc.scrollTop += b.getBoundingClientRect().top - ay;
   fillPhotos(list);
 }
-function openFeedCompose() {
+function openFeedCompose(draft = null) {
   const box = $("#m-feed-compose");
   const close = () => { box.hidden = true; box.innerHTML = ""; $("#m-feed-post").hidden = false; };
   box.hidden = false;
   $("#m-feed-post").hidden = true;
-  composeForm(box, { pickPlace: true, onDone: () => { close(); feedView = "timeline"; renderFeed(true); toast("ありがとう！公開しました"); }, onCancel: close });
+  composeForm(box, { pickPlace: true, draft, onPickPlace: (d, o) => (o?.reopen ? (close(), openFeedCompose(d)) : startPostPick(d)), onDone: () => { close(); feedView = "timeline"; renderFeed(true); toast("ありがとう！公開しました"); }, onCancel: close });
   box.scrollTop = 0;
+}
+
+// ---------- 投稿の「場所を追加」：地図に移って、地図で選ぶ ----------
+// 投稿できる場所：模擬店（教室のお店も）と、会場・展示など
+const postable = (p) => !!p && (p.fest || p.shopList?.length) && canPost(p) && !byRoom.has(p.id) && !p.zone;
+let postPick = null; // { draft }：地図で場所を選んでいるあいだ
+function startPostPick(draft) {
+  postPick = { draft };
+  const box = $("#m-feed-compose");
+  box.hidden = true; box.innerHTML = ""; $("#m-feed-post").hidden = false;
+  setTab("map");
+  let bar = $("#m-postpick");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "m-postpick";
+    bar.className = "m-postpick";
+    bar.setAttribute("role", "status");
+    bar.innerHTML = `<span>${I.pin}投稿する場所を、地図でえらんでください</span><button type="button" data-pp="none">場所なし</button><button type="button" class="is-x" data-pp="cancel" aria-label="やめる">${I.close}</button>`;
+    bar.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-pp]");
+      if (b) endPostPick(b.dataset.pp === "none" ? "" : undefined);
+    });
+    document.querySelector(".app-frame, #app, body").append(bar);
+  }
+  bar.hidden = false;
+  document.body.classList.add("is-postpick");
+  closeResults();
+}
+// id：えらんだ場所（"" は場所なし）／undefined は、やめる（場所はそのまま）。みんなの声に戻って、書いていた続きを開く
+function endPostPick(id) {
+  if (!postPick) return;
+  const draft = { ...postPick.draft };
+  if (id !== undefined) draft.place = id;
+  postPick = null;
+  $("#m-postpick") && ($("#m-postpick").hidden = true);
+  document.body.classList.remove("is-postpick");
+  setTab("feed");
+  openFeedCompose(draft);
 }
 
 // 開催中：いまやっている企画と、このあと1時間に始まる企画（会場の混み具合つき）。待ち時間の長いお店も
@@ -1986,6 +2035,7 @@ const ROUTE_HINTS = {
 function select(id, { fly = true } = {}) {
   const p = place(id);
   if (!p) return;
+  if (postPick) { if (postable(p)) endPostPick(p.id); else toast("お店か会場を押してください"); return; }
   if (picking) { finishPick(p.id); return; }
   if (mode === "route") {       // 道案内中に部屋を押したら、出発地がまだならそこを出発地に、決まっていれば目的地にする
     if (!rt.from) rt.from = p.id; else rt.to = p.id;
