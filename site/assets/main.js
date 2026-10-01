@@ -182,6 +182,14 @@ function renderDuring() {
 // ---------- 生配信 ----------
 // 本部の管理画面で「配信中にする」（stream_active）か、config.js で live: true の企画の時間なら、トップに出す。
 // 公開時間が終わったあとの配信（総選挙の結果発表など）もあるので、開催中かどうかにかかわらず見る
+// いま配信中なら、その名前（走っている人が「〇〇」を生配信中！と言う）。名前の最後の「生配信中」は取る
+function streamName() {
+  const t = nowMs();
+  const liveEvent = NOW_LIST.find((e) => e.live && Date.parse(e.start) <= t && t < Date.parse(e.end));
+  if (!(live?.stream_url && (live.stream_active || liveEvent))) return null;
+  const raw = (live.stream_title || liveEvent?.title || "").replace(/\s*(生)?配信中\s*$/, "").trim();
+  return raw || "ライブ";
+}
 function renderStream() {
   const t = nowMs();
   const liveEvent = NOW_LIST.find((e) => e.live && Date.parse(e.start) <= t && t < Date.parse(e.end));
@@ -516,7 +524,7 @@ renderMini($("#rally-mini"));
 renderVoteEntry($("#vote-sub"));
 initScene(() => {
   const e = phase === "during" ? runningEvents()[0] : null;
-  return { phase, nowEvent: e ? { title: e.title, venueName: venueName(e.venue) } : null, prizeOut: !!live?.prize_out };
+  return { phase, nowEvent: e ? { title: e.title, venueName: venueName(e.venue) } : null, prizeOut: !!live?.prize_out, stream: streamName() };
 });
 // 5人に聞く：答えを作るのに必要な「今の様子」を渡す
 initAsk({
