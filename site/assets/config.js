@@ -260,7 +260,7 @@ export const SHOPS = [
   { cls: "2SE", bldg: "L", floor: "3F", group: "女子バスケットボール部", name: "まきまきクレープ＆しましまパンケーキ", note: "今年も仮装をしてクレープやミニパンケーキを販売しています！", food: true, genre: ["甘い系"] },
   { cls: "2C", bldg: "L", floor: "3F", group: "男子バスケットボール部", name: "Sip&Chill", note: "おしゃれな雰囲気の中、かっこいい男子学生がとても美味しいドリンクを作っています", food: true, genre: ["ドリンク", "いやし系"] },
   { cls: "2Z", bldg: "B", floor: "1F", group: "モルック愛好会", name: "amazing SPA アメスパ☆", note: "イタリアンレストランやってます♪", food: true, genre: ["がっつり系"] },
-  { cls: "3SM", bldg: "H", floor: "1F", group: "5C", name: "め～どちゅろす", note: "ふわふわのひつじさんとメイドさんがお迎えします。ちょっと特別なカフェタイムを", food: true, genre: ["甘い系", "いやし系"] },
+  { cls: "3SM", bldg: "H", floor: "1F", group: "5C", name: "めぇどちゅろす", note: "ふわふわのひつじさんとメイドさんがお迎えします。ちょっと特別なカフェタイムを", food: true, genre: ["甘い系", "いやし系"] },
   { cls: "3SE", bldg: "C", floor: "2F", group: "珈琲・お茶研究会", name: "喫茶 悦純", note: "お茶・コーヒー・お菓子。他のお店で買った食べ物を持ち込んで食べることもできます！", food: true, genre: ["いやし系", "ドリンク"] },
   { cls: "3SJ", bldg: "B", floor: "2F", group: "陸上競技部", name: "陸部のおにぎり", note: "", food: true, genre: ["しょっぱい系"] },
   { cls: "3C", bldg: "L", floor: "2F", group: "LSQ", name: "Nôteau - tian", note: "業務用マシンの本格ポップコーン！ ロボコン参加生が作った電子部品アクセサリーも", food: true, genre: ["おやつ系"] },
