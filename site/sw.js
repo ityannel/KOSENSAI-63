@@ -8,7 +8,7 @@
 // - 混雑・お知らせ・みんなの声（Firestore）はしまわない（電波がないときは出ないだけ）
 // - staff/（本部用）はしまわない
 // 中身を大きく変えたときは VERSION を上げる（古いしまったものを消す）
-const VERSION = "kosen63-v126";
+const VERSION = "kosen63-v127";
 const CORE = [
   "./", "index.html", "map.html", "mido.html", "rally.html", "favicon.svg", "manifest.webmanifest",
   "assets/style.css", "assets/map.css",
@@ -20,7 +20,7 @@ const SIDE = [/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, /^https:\/\/www\.
 
 self.addEventListener("install", (e) => {
   // 1つ取れなくても全体は止めない
-  e.waitUntil(caches.open(VERSION).then((c) => Promise.all(CORE.map((u) => c.add(new Request(u, { cache: "reload" })).catch(() => {})))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => Promise.all(CORE.map((u) => fetch(new Request(u, { cache: "reload" })).then(async (res) => { if (res.ok) await c.put(u, await plain(res)); }).catch(() => {})))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
@@ -38,11 +38,21 @@ self.addEventListener("fetch", (e) => {
   }
 });
 
+// 置き場所によっては map.html が /map に転送される（Cloudflare Pages）。転送された答えはページとして返せないので、中身だけ取り出してしまう
+async function plain(res) {
+  return res.redirected ? new Response(await res.blob(), { status: res.status, statusText: res.statusText, headers: res.headers }) : res;
+}
+// ページをしまう名前：/ は /index.html、/map は /map.html（? のうしろは見ない）
+function pageKey(pathname) {
+  if (pathname.endsWith("/")) return pathname + "index.html";
+  return /\.[a-z0-9]+$/i.test(pathname) ? pathname : pathname + ".html";
+}
+
 // しまってあるものをすぐ返し、裏で新しくする。ページ（map.html?tab=feed など）は ? のうしろを無視して1つにしまう
 async function fromCache(req, e) {
   const cache = await caches.open(VERSION);
   const page = req.mode === "navigate";
-  const key = page ? new URL(req.url).pathname.replace(/\/$/, "/index.html") : req;
+  const key = page ? pageKey(new URL(req.url).pathname) : req;
   const hit = (await cache.match(key)) ?? (page ? await cache.match(req, { ignoreSearch: true }) : null);
   const net = fetch(req).then((res) => {
     if (res.ok && !res.redirected) cache.put(key, res.clone());

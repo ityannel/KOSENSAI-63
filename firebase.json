@@ -6,7 +6,8 @@
       "**/.*",
       "**/node_modules/**",
       "**/README.md",
-      "**/*.py"
+      "**/*.py",
+      "_headers"
     ],
     "headers": [
       {

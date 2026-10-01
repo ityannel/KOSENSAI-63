@@ -1,6 +1,6 @@
 {
-  "_説明": "サイトを置く場所（URL）。ローカル・確認用・本番でちがうので、ここだけ書きかえる。QR やリンクを貼ったときの画像（OGP）は、選んだ場所の URL で作られる。 いまは Firebase（firebase）を使う。学校のサーバー（production）に置けるようになったら default を production にする。",
-  "default": "firebase",
+  "_説明": "サイトを置く場所（URL）。ローカル・確認用・本番でちがうので、ここだけ書きかえる。QR やリンクを貼ったときの画像（OGP）は、選んだ場所の URL で作られる。 いまは Cloudflare Pages（cloudflare）を使う。混雑・スタンプラリーなどのデータは Firebase のまま。",
+  "default": "cloudflare",
   "environments": {
     "local": {
       "baseUrl": "http://localhost:5173/"
@@ -13,6 +13,9 @@
     },
     "production": {
       "baseUrl": "https://hakodate-ct.jp/gac_event/"
+    },
+    "cloudflare": {
+      "baseUrl": "https://hakodate-kosensai.pages.dev/"
     }
   }
 }
