@@ -154,7 +154,7 @@ export async function subscribeCrowd(callback) {
 // map（なくてもよい）は校内マップのお店との結びつけ：config.js の SHOPS の name・クラス（例 "5SE"）・部屋番号のどれか。
 // ないときは name で探す。pass などほかの項目は読んでも使わない
 const DEMO_SHOPS = [
-  { id: "d1", name: "めぇどちゅろす", status: "10min" },
+  { id: "d1", name: "めぇ～どつろす", status: "10min" },
   { id: "d2", name: "5SE たこ焼き", status: "20min" },
   { id: "d3", name: "やきとり処清", status: "soldout" },
   { id: "d4", name: "5SJ お好み焼き", status: "normal" },

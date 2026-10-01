@@ -73,7 +73,7 @@ async function signedIn() {
 // ?demo=1 のときの見本
 const params = new URLSearchParams(location.search);
 const DEMO = [
-  { id: "demo1", uid: "demo-a", kind: "review", place: "H107", shop: "めぇどちゅろす", stars: 5, text: "【デモ】メイドさんの接客がかわいかった！チュロスも熱々。", has_photo: false, created_at: Date.now() - 5 * 60000, reports: 0, hidden: false, likes: 12 },
+  { id: "demo1", uid: "demo-a", kind: "review", place: "H107", shop: "めぇ～どつろす", stars: 5, text: "【デモ】メイドさんの接客がかわいかった！チュロスも熱々。", has_photo: false, created_at: Date.now() - 5 * 60000, reports: 0, hidden: false, likes: 12 },
   { id: "demo2", uid: "demo-b", kind: "post", place: "gym2", shop: null, stars: null, text: "【デモ】ステージめっちゃ盛り上がってる！", has_photo: false, created_at: Date.now() - 12 * 60000, reports: 0, hidden: false, likes: 4 },
   { id: "demo3", uid: "demo-c", kind: "post", place: "", shop: null, stars: null, text: "【デモ】今年の縁、いい感じ！（場所なしの投稿）", has_photo: false, created_at: Date.now() - 30 * 60000, reports: 0, hidden: false, likes: 1 },
   { id: "demo4", uid: "demo-b", kind: "post", place: "H107", shop: null, stars: null, text: "【デモ】わかる！また行きたい", has_photo: false, created_at: Date.now() - 3 * 60000, reports: 0, hidden: false, likes: 2, reply_to: "demo1" },
