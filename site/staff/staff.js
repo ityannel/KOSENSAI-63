@@ -387,6 +387,11 @@ const CATALOG = SHOPS.map((sh) => {
 // スタンプラリーの場所は、模擬店のほかに、インフォメーション（本部。はじめの1個をここで、使い方を教えながら押してもらう）と学科展示。
 // 社会基盤の5つの展示は、それだけで何個も集まらないように1か所にまとめる（QR は C113 に置く想定）
 const SPOTS = [{ id: "hq", kind: "info", name: "インフォメーション", group: "本部", place: "hq", where: "玄関ホール" }];
+// 会場：太平洋セメントアリーナ（ステージ・大抽選会）と ZACROS hall（企業説明会・企業セミナー）も、スタンプの場所にする
+for (const id of ["gym2", "zacros"]) {
+  const p = MAP.places.find((x) => x.id === id);
+  if (p) SPOTS.push({ id: p.id, kind: "venue", name: p.name, group: p.sub, place: p.id, where: [p.room].flat()[0] ?? "" });
+}
 for (const p of MAP.places.filter((x) => x.kind === "exhibit")) {
   if (p.dept === "社会基盤") {
     if (!SPOTS.some((x) => x.id === "ex-civ")) SPOTS.push({ id: "ex-civ", kind: "exhibit", name: "社会基盤の展示", group: "社会基盤工学科の学科展示", place: p.id, where: "C111〜C118（5つの展示）" });
@@ -396,7 +401,7 @@ for (const p of MAP.places.filter((x) => x.kind === "exhibit")) {
   SPOTS.push({ id: p.id, kind: "exhibit", name: p.name, group: p.sub, place: p.id, where: rooms.length > 1 ? `${rooms[0]} ほか` : rooms[0] ?? "" });
 }
 CATALOG.unshift(...SPOTS.map((x) => ({ ...x, map: x.id, catalog: true })));
-const KIND_TAG = { info: '<i class="tag tag-info">インフォ</i>', exhibit: '<i class="tag tag-ex">学科展示</i>' };
+const KIND_TAG = { info: '<i class="tag tag-info">インフォ</i>', exhibit: '<i class="tag tag-ex">学科展示</i>', venue: '<i class="tag tag-ex">会場</i>' };
 // スタンプの場所すべて（受付・スタンプラリー・印刷）
 function allSpots() {
   const docs = new Map(state.shops.map((d) => [d.id, d]));
@@ -613,7 +618,7 @@ const rallyShopIds = () => (state.rally?.shops ?? []).map((s) => s.id);
 const isRallyShop = (id) => rallyShopIds().includes(id);
 const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 
-// スタンプラリーの対象は、インフォメーションと学科展示（模擬店は対象にしない。混雑・待ち時間の知らせは、これまで通り模擬店ごとに出せる）。
+// スタンプラリーの対象は、インフォメーション・学科展示・会場（太平洋セメントアリーナ、ZACROS hall）（模擬店は対象にしない。混雑・待ち時間の知らせは、これまで通り模擬店ごとに出せる）。
 // 足りない鍵を作り、rally/current を対象の場所にそろえる（模擬店が入っていたら外す。そろっていれば何もしない）
 const rallySpots = () => allSpots().filter((s) => s.kind !== "shop");
 function rallyMissing() {
