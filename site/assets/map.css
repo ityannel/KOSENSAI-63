@@ -1204,3 +1204,4 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 .m-postpick button { flex: none; min-height: 38px; padding: 0 14px; border: 1.5px solid #634A2E; border-radius: 999px; background: #634A2E; color: #FEEBC4; font: inherit; font-weight: 800; cursor: pointer; }
 .m-postpick button.is-x { display: grid; place-items: center; width: 38px; padding: 0; background: #FFFBF2; color: #634A2E; }
 .m-postpick button.is-x svg { width: 18px; height: 18px; }
+.sh-desc, .sh-title { white-space: pre-line; } /* お店の名前・紹介文は原文の改行のまま（要項） */

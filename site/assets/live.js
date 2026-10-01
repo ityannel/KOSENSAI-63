@@ -155,7 +155,7 @@ export async function subscribeCrowd(callback) {
 // ないときは name で探す。pass などほかの項目は読んでも使わない
 const DEMO_SHOPS = [
   { id: "d1", name: "めぇ～どちゅろす", status: "10min" },
-  { id: "d2", name: "5SE たこ焼き", status: "20min" },
+  { id: "d2", name: "5SE", status: "20min" },
   { id: "d3", name: "やきとり処清", status: "soldout" },
   { id: "d4", name: "5SJ お好み焼き", status: "normal" },
 ];

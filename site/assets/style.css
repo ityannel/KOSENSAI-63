@@ -1996,3 +1996,6 @@ body.vote-page { background: var(--grain), linear-gradient(180deg, #2a3a73, #4c3
 .rv-submit:disabled { opacity: .4; cursor: default; }
 .rv-go:empty { display: none; }
 @media (min-width: 1000px) { .pc-h[hidden], .pc-menu[hidden] { display: none; } }
+
+/* お店の名前・紹介文は、要項の原文どおりに折り返す（原文の改行をそのまま出す） */
+.en-name, .en-note, .dt-copy, .dt-title, .sh-desc { white-space: pre-line; }

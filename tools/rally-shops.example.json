@@ -1,5 +1,5 @@
 [
-  { "id": "takoyaki", "name": "5SE たこ焼き", "room": "L103" },
+  { "id": "takoyaki", "name": "5SE", "room": "L103" },
   { "id": "yakitori", "name": "やきとり処清", "place": "cafeteria" },
   { "id": "churros", "name": "めぇ～どちゅろす", "room": "H107" }
 ]

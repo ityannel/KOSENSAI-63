@@ -97,7 +97,7 @@ function warnInAppBrowser() {
 let state = load();
 // 対象のお店。手元（localhost）で ?demo を付けたときだけ、見た目をたしかめる仮のお店とスタンプ
 const DEMO = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSearchParams(location.search).has("demo");
-const DEMO_SHOPS = [{ id: "d1", name: "5SE たこ焼き", vote: true }, { id: "d2", name: "麺屋 つちよし", vote: true }, { id: "d3", name: "クッキングミオ♡", vote: true }, { id: "d4", name: "やきとり処清", vote: true }];
+const DEMO_SHOPS = [{ id: "d1", name: "5SE", vote: true }, { id: "d2", name: "麺屋 つちよし", vote: true }, { id: "d3", name: "クッキングミオ♡", vote: true }, { id: "d4", name: "やきとり処清", vote: true }];
 const shops = () => (DEMO ? DEMO_SHOPS : RALLY.shops);
 if (DEMO) state = { ...state, stamps: { d1: Date.parse("2026-10-24T11:20:00+09:00"), d2: Date.parse("2026-10-24T13:05:00+09:00") } };
 export const stampCount = () => Object.keys(state.stamps).length;
