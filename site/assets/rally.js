@@ -405,7 +405,7 @@ export function renderMini(el) {
   el.innerHTML = `
     <a class="rc-mini" href="rally.html">
       <img class="rc-logo" src="assets/img/logo-s.webp" width="673" height="657" alt="">
-      <span class="rc-mini-txt"><b>スタンプカード</b><small>スタンプラリー</small></span>
+      <span class="rc-mini-txt"><b>スタンプカード</b></span>
       <span class="rc-mini-dots" aria-label="${count} / ${RALLY.goal}">${Array.from({ length: n }, (_, i) => `<i${i < count ? ' class="on"' : ""}>${i < count ? "縁" : ""}</i>`).join("")}</span>
     </a>`;
 }
