@@ -69,12 +69,17 @@ addEventListener("hashchange", route);
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
 // ---------- データ ----------
-const state = { live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
+const state = { visits: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
 }
 function startListening() {
+  listen(fs.collection(db, "visit_counts"), (snap) => {
+    state.visits = {};
+    snap.forEach((d) => { const day = d.id.slice(0, 10); state.visits[day] = (state.visits[day] ?? 0) + (d.data().n ?? 0); });
+    renderOverview();
+  });
   listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; $("#cache-state").textContent = state.live.cache_reset_at ? `${time(toMs(state.live.cache_reset_at))} に指示` : ""; });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
@@ -118,8 +123,13 @@ function renderOverview() {
   const reported = state.posts.filter((p) => p.reports > 0 && !p.hidden).length;
   const soldout = allShops().filter((s) => s.status === "soldout").length;
   const limited = CROWD.venues.filter((v) => state.crowd[v]?.level === 3).length;
+  const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
+  const visitsToday = state.visits[today] ?? 0;
+  const visitsAll = Object.values(state.visits).reduce((a, b) => a + b, 0);
   const kpi = (label, value, sub, color, href) => `<a class="kpi" href="${href}" style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
   $("#kpis").innerHTML = [
+    kpi("きょうの閲覧者", visitsToday, "台（1日1回まで）", "var(--teal)", "#overview"),
+    kpi("これまでの閲覧者", visitsAll, "のべ", "var(--sun)", "#overview"),
     kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts"),
     kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts"),
     kpi("入場制限中の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),
@@ -138,6 +148,7 @@ function renderOverview() {
   const texts = Object.keys(state.siteText?.texts ?? {}).length;
   const row = (dt, dd) => `<div><dt>${dt}</dt><dd>${dd}</dd></div>`;
   $("#status-list").innerHTML = [
+    row("閲覧者（日ごと）", Object.keys(state.visits).length ? Object.entries(state.visits).sort().map(([d, n]) => `${esc(d.slice(5).replace("-", "/"))} ${n}`).join("　") : '<span class="muted">まだ数えていません</span>'),
     row("お知らせ", notice),
     row("生配信", stream),
     row("表示", esc(phase)),

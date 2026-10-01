@@ -74,6 +74,12 @@ service cloud.firestore {
       allow write: if isStaff() && data().keys().hasOnly(['p1', 'p2', 'p3', 'p4', 'p5', 'updated_at']);
     }
     // 見ている人の数：5分ごとの窓（いまの前後だけ）に 1 ずつ足すだけ
+    // visit_counts/{日付}-{0〜9} = { n }：閲覧者数（1台の端末・ブラウザを、1日に1回だけ数える）。数を1つ足すだけ。読めるのは本部だけ（本部コンソールの「ホーム」）
+    match /visit_counts/{id} {
+      allow read: if isStaff();
+      allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]$') && data().keys().hasOnly(['n']) && data().n == 1;
+      allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
+    }
     match /presence/{w} {
       allow read: if true;
       allow create: if w.matches('^[0-9]+$')

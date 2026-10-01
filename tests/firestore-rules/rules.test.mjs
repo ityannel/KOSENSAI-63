@@ -3,7 +3,7 @@
 // 本部（staff の名簿）・来場者（匿名）・模擬店の人・ログインなし、それぞれができること／できないことを確かめる
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
 import { readFileSync } from "node:fs";
-import { doc, setDoc, getDoc, updateDoc, writeBatch, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, writeBatch, serverTimestamp, deleteDoc, increment } from "firebase/firestore";
 
 const env = await initializeTestEnvironment({
   projectId: "enishi-test",
@@ -151,6 +151,16 @@ await t("staff clears everyone's cache", assertSucceeds(setDoc(doc(staff, "site_
 await t("cache reset time cannot be faked", assertFails(setDoc(doc(staff, "site_live/current"), { cache_reset_at: new Date(2030, 0, 1), updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
 await t("other writes keep the cache reset time", assertSucceeds(setDoc(doc(staff, "site_live/current"), { notice: "y", updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
 await t("visitor cannot clear everyone's cache", assertFails(setDoc(doc(anon, "site_live/current"), { cache_reset_at: serverTimestamp(), updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
+
+// 閲覧者数：1つ足すだけ。読めるのは本部だけ
+await t("anyone starts a visit counter at 1", assertSucceeds(setDoc(doc(nobody, "visit_counts/2026-10-24-3"), { n: 1 })));
+await t("counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "visit_counts/2026-10-24-3"), { n: increment(1) }, { merge: true })));
+await t("counter cannot jump", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-3"), { n: 50 }, { merge: true })));
+await t("counter cannot start above 1", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-4"), { n: 9 })));
+await t("counter id must be a date and shard", assertFails(setDoc(doc(nobody, "visit_counts/evil"), { n: 1 })));
+await t("counter doc has only n", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-5"), { n: 1, x: 1 })));
+await t("visitors cannot read counters", assertFails(getDoc(doc(anon, "visit_counts/2026-10-24-3"))));
+await t("staff reads counters", assertSucceeds(getDoc(doc(staff, "visit_counts/2026-10-24-3"))));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();

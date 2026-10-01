@@ -3,7 +3,7 @@ import {
   FESTIVAL, NAV, MESSAGE, ABOUT, VENUES, CROWD, GUIDES, EVENTS, STAGE,
   NOTICES, GARBAGE, SPONSORS, FX, SECRETS,
 } from "./config.js";
-import { subscribeLive, subscribeCrowd, subscribeChatter, startPresence } from "./live.js";
+import { subscribeLive, subscribeCrowd, subscribeChatter, startPresence, countVisit } from "./live.js";
 import { renderMini, renderVoteEntry } from "./rally.js";
 import { initScene, setChatter, say, setAwake } from "./scene.js";
 import { initAsk } from "./ask.js";
@@ -497,6 +497,7 @@ onSiteTextChange(() => {
   renderStatic();
   renderMini($("#rally-mini"));
 renderVoteEntry($("#vote-sub"));
+setTimeout(countVisit, 4000); // 閲覧者数（開いて少したってから）
 });
 renderLiveContent();
 update();

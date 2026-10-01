@@ -258,6 +258,18 @@ export async function subscribeChatter(callback) {
 // 5分ごとの「窓」ごとに presence/{窓の番号} = { n } を +1 する（開いている人が窓ごとに1回だけ）。
 // 表示するのは「前の窓」と「今の窓」の多いほう。書き込みも読み込みも1人5分に数回で済む。
 // 見ていない（別のタブにいる）間は数えない。isOff() が true になったら止まる（本部からの停止スイッチ）。
+// 閲覧者数：このブラウザを、1日に1回だけ数える（日付は日本時間）。同じ文書に書きすぎないよう、10個に分けて数える（本部が合計する）。個人を特定するものは送らない
+export async function countVisit() {
+  if (params.has("demo") || params.has("preview") || ["localhost", "127.0.0.1"].includes(location.hostname)) return;
+  const day = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date()); // 2026-10-24
+  try { if (localStorage.getItem("kosen63-visit") === day) return; } catch { return; }
+  try {
+    const db = await getDb();
+    await fs.setDoc(fs.doc(db, "visit_counts", `${day}-${Math.floor(Math.random() * 10)}`), { n: fs.increment(1) }, { merge: true });
+    localStorage.setItem("kosen63-visit", day);
+  } catch (err) { console.warn("[visit] 数えられませんでした:", err?.code ?? err); }
+}
+
 export async function startPresence(callback, { windowMinutes = 5, isOff = () => false } = {}) {
   if (params.has("demo")) return callback(23);
   const windowMs = windowMinutes * 60 * 1000;

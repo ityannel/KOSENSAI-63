@@ -2,7 +2,7 @@
 import "./site-text.js"; // 本部が変えた書体（ほかより先に読む）
 import { onRallyChange } from "./rally-data.js";
 import { FESTIVAL, EVENTS, STAGE } from "./config.js";
-import { subscribeCrowd, subscribeLive, subscribeShops } from "./live.js";
+import { subscribeCrowd, subscribeLive, subscribeShops, countVisit } from "./live.js";
 import { stampIds } from "./rally.js";
 import { initMap, renderMap, setNotice, refreshRally } from "./map.js";
 import { subscribePosts } from "./posts.js";
@@ -56,3 +56,4 @@ const sheetEl = document.getElementById("m-sheet");
 if (sheetEl) watch.observe(sheetEl, { attributes: true, attributeFilter: ["hidden"] });
 if (needPosts()) wantPosts();
 setInterval(renderMap, 30000);
+setTimeout(countVisit, 4000); // 閲覧者数（地図から入った人も、1日1回だけ数える）
