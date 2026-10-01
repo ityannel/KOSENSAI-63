@@ -182,13 +182,14 @@ function renderDuring() {
 // ---------- 生配信 ----------
 // 本部の管理画面で「配信中にする」（stream_active）か、config.js で live: true の企画の時間なら、トップに出す。
 // 公開時間が終わったあとの配信（総選挙の結果発表など）もあるので、開催中かどうかにかかわらず見る
-// いま配信中なら、その名前（走っている人が「〇〇」を生配信中！と言う）。名前の最後の「生配信中」は取る
+// 動画（配信）が出ているあいだ、その名前と「生」かどうか（走っている人が言う）。名前の最後の「生配信中」「配信中」は取る。
+// 「生」は、config.js で live: true の企画の時間のとき。それ以外（撮ってある動画など）は「生」と言わない
 function streamName() {
   const t = nowMs();
   const liveEvent = NOW_LIST.find((e) => e.live && Date.parse(e.start) <= t && t < Date.parse(e.end));
   if (!(live?.stream_url && (live.stream_active || liveEvent))) return null;
   const raw = (live.stream_title || liveEvent?.title || "").replace(/\s*(生)?配信中\s*$/, "").trim();
-  return raw || "ライブ";
+  return { name: raw || "動画", live: !!liveEvent };
 }
 function renderStream() {
   const t = nowMs();

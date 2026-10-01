@@ -24,7 +24,7 @@ const SPOTS = [
   {
     id: "p3", person: true, box: [698, 1237, 842, 1421], topic: "rally", label: "走っている人に、スタンプラリーのことを聞く",
     lines: (c) => {
-      if (c.stream) return [`「${c.stream}」を生配信中！`]; // 配信中は、走っている人がお知らせする
+      if (c.stream) return [`「${c.stream.name}」を${c.stream.live ? "生" : ""}配信中！`]; // 動画が出ているあいだは、走っている人がお知らせする
       const n = stampCount();
       if (n >= RALLY.goal) return [c.prizeOut ? "スタンプそろった！ 景品は終わっちゃったけど…" : "スタンプそろった！本部行こ！"];
       if (n > 0) return [`スタンプあと${RALLY.goal - n}個！`];
