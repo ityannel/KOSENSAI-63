@@ -1999,3 +1999,8 @@ body.vote-page { background: var(--grain), linear-gradient(180deg, #2a3a73, #4c3
 
 /* お店の名前・紹介文は、要項の原文どおりに折り返す（原文の改行をそのまま出す） */
 .en-name, .en-note, .dt-copy, .dt-title, .sh-desc { white-space: pre-line; }
+/* 決まった大きさをこえたら「…」：店名は3行まで、説明文は5行まで（カード）。投票のボタンの店名は1行 */
+.en-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.rv-btn { min-width: 0; }
+.rv-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-rest li { overflow: hidden; text-overflow: ellipsis; }
