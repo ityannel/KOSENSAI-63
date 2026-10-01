@@ -1295,7 +1295,7 @@ $("#vote-all-reset").addEventListener("click", async () => {
 // 全員の状況：rally_logs を全部読んで数える（読むのは本部だけ。firestore.rules）
 const rallyShopName = (id) => (state.rally?.shops ?? RALLY.shops).find((s) => s.id === id)?.name ?? id;
 async function showRallyAll() {
-  const box = $("#rally-all");
+  const box = $("#rally-all-box");
   box.hidden = false;
   box.innerHTML = '<p class="muted">読みこんでいます…</p>';
   try {
@@ -1346,7 +1346,7 @@ $("#rally-all-reset").addEventListener("click", async () => {
       await batch.commit();
     }
   });
-  if (ok && !$("#rally-all").hidden) showRallyAll();
+  if (ok && !$("#rally-all-box").hidden) showRallyAll();
 });
 
 // ---------- ログイン ----------
