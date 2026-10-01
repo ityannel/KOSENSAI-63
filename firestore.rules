@@ -43,10 +43,13 @@ service cloud.firestore {
       allow write: if isStaff() && stamped()
         && data().keys().hasOnly(['notice', 'notice_level', 'stream_url', 'stream_title', 'stream_active', 'now_events',
                                   'phase_override', 'presence_off', 'food_reports', 'photos', 'updated_at', 'updated_by',
-                                  'fireworks_at', 'sky_override', 'weather_override', 'wind_override', 'prize_out'])
+                                  'fireworks_at', 'sky_override', 'weather_override', 'wind_override', 'prize_out', 'cache_reset_at'])
         // 演出（全員の画面）：花火を上げた時刻は、いま押したときだけ変えられる
         && (!('fireworks_at' in data()) || data().fireworks_at == request.time
             || (resource != null && data().fireworks_at == resource.data.get('fireworks_at', null)))
+        // 全員のキャッシュ削除：指示した時刻は、いま押したときだけ変えられる
+        && (!('cache_reset_at' in data()) || data().cache_reset_at == request.time
+            || (resource != null && data().cache_reset_at == resource.data.get('cache_reset_at', null)))
         && data().get('sky_override', null) in [null, 'dawn', 'day', 'sunset', 'dusk', 'night']
         && data().get('weather_override', null) in [null, 'clear', 'cloudy', 'fog', 'rain', 'snow', 'thunder']
         && (data().get('wind_override', null) == null || (data().wind_override is number && data().wind_override >= 0 && data().wind_override <= 30))

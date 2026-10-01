@@ -75,7 +75,7 @@ function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
 }
 function startListening() {
-  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; });
+  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; $("#cache-state").textContent = state.live.cache_reset_at ? `${time(toMs(state.live.cache_reset_at))} に指示` : ""; });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
     snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: v.level, updated_at: toMs(v.updated_at) }; });
@@ -671,6 +671,11 @@ $("#prize-out").addEventListener("change", (e) => {
   const on = e.target.checked;
   if (!confirm(on ? "「景品はすべてなくなりました」と、スタンプカードのページにおわびを出しますか？" : "景品の受け付けを再開しますか？（おわびを消します）")) { e.target.checked = !on; return; }
   saveLive(on ? "景品の終了を出しました" : "景品の受け付けを再開しました", { prize_out: on });
+});
+// 全員のキャッシュを削除：次に開いたとき（開いている人は、すぐ）、しまってあるページ・部品を消して読みこみなおす。スタンプ・投票の記録は消えない
+$("#cache-reset").addEventListener("click", () => {
+  if (!confirm("全員のキャッシュを削除しますか？（いま開いている人の画面は、読みこみなおされます）")) return;
+  saveLive("全員のキャッシュ削除を指示しました", { cache_reset_at: fs.serverTimestamp() });
 });
 // 何個で達成か（「文章と書体」で変えていればそちら）。印刷する紙もこの数にそろえる
 const rallyGoal = () => { const v = Math.round(Number(state.siteText?.texts?.rally_goal)); return v >= 1 ? v : RALLY.goal; };

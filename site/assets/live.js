@@ -98,13 +98,29 @@ function getDb() {
   return dbPromise;
 }
 
+// 本部が「全員のキャッシュを削除」を押した（site_live/current の cache_reset_at）：この端末のしまってあるページ・部品（Service Worker）を消して、1回だけ読みこみなおす。
+// 初めて来た人（しまってあるものがない）は、何もしない。スタンプ・投票などの記録は消さない
+async function applyCacheReset(t) {
+  if (!t) return;
+  try {
+    const seen = Number(localStorage.getItem("kosen63-cache-reset") ?? 0);
+    if (t <= seen) return;
+    localStorage.setItem("kosen63-cache-reset", String(t));
+    const keys = "caches" in globalThis ? await caches.keys() : [];
+    if (!seen && !keys.length) return;
+    await Promise.all(keys.map((k) => caches.delete(k)));
+    const regs = (await navigator.serviceWorker?.getRegistrations?.()) ?? [];
+    await Promise.all(regs.map((r) => r.unregister()));
+    location.reload();
+  } catch (err) { console.warn("[live] キャッシュを消せませんでした:", err); }
+}
 export async function subscribeLive(callback) {
   if (params.has("demo")) return callback(DEMO);
   try {
     const db = await getDb();
     fs.onSnapshot(
       fs.doc(db, "site_live", "current"),
-      (snap) => callback(snap.exists() ? snap.data() : null),
+      (snap) => { const d = snap.exists() ? snap.data() : null; applyCacheReset(d?.cache_reset_at?.toMillis?.()); callback(d); },
       (err) => console.warn("[live] Firestore を読めませんでした:", err.code),
     );
   } catch (err) {

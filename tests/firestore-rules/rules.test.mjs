@@ -146,6 +146,12 @@ await t("visitor cannot post as official with a photo", assertFails(officialWith
 await t("empty official post without photo rejected", assertFails(setDoc(doc(staff, "posts/op6"), officialPost(staff, { text: "", has_photo: false, photo_status: "none" }))));
 await t("everyone reads the official photo", assertSucceeds(getDoc(doc(nobody, "post_photos/op1"))));
 
+// 全員のキャッシュ削除：本部が、いま押したときだけ
+await t("staff clears everyone's cache", assertSucceeds(setDoc(doc(staff, "site_live/current"), { cache_reset_at: serverTimestamp(), updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
+await t("cache reset time cannot be faked", assertFails(setDoc(doc(staff, "site_live/current"), { cache_reset_at: new Date(2030, 0, 1), updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
+await t("other writes keep the cache reset time", assertSucceeds(setDoc(doc(staff, "site_live/current"), { notice: "y", updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
+await t("visitor cannot clear everyone's cache", assertFails(setDoc(doc(anon, "site_live/current"), { cache_reset_at: serverTimestamp(), updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
