@@ -744,11 +744,13 @@ function tap(target, [lx, ly] = [0, 0]) {
     if (i >= 0) focusStep(i); else setFloor(f.dataset.floorGo);
     return;
   }
-  // 投稿の場所を選んでいるとき：お店・会場を押したらそこ
+  // 投稿の場所を選んでいるとき：部屋や会場を押したらそこ、それ以外（廊下・道・グラウンド）はその点。どこでもよい
   if (postPick) {
     const id = target?.closest?.("[data-id]")?.dataset.id;
     const p = id && place(id);
-    if (postable(p)) endPostPick(p.id); else toast("お店か会場を押してください");
+    if (p && !p.outdoor) { endPostPick(p.id); return; }
+    const x = Math.round(view.x + lx / view.k), y = Math.round(view.y + ly / view.k);
+    endPostPick(pointPlace(`pt-${floor}-${x}-${y}`).id);
     return;
   }
   // 地図で出発地・目的地を選んでいるとき：部屋や会場を押したらそこ、それ以外（廊下・道・グラウンド）はその点
@@ -1568,7 +1570,7 @@ function postHtml(x, s, { withPlace = false, reply = false } = {}) {
       <p class="ig-cmt"><b>${esc(who)}${x.official ? '<i class="ig-official" title="本部の公式の投稿">公式</i>' : ""}</b> ${esc(x.text)}<small><time>${esc(s.agoText(x.created_at))}</time>${n ? `<span data-likes-of="${esc(x.id)}">いいね！${n}件</span>` : `<span data-likes-of="${esc(x.id)}"></span>`}<button type="button" class="ig-report" data-report="${esc(x.id)}"${reported(x.id) ? " disabled" : ""}>${reported(x.id) ? "報告しました" : "報告"}</button></small></p>
       ${heart}</button></li>`;
   }
-  const p = withPlace && x.place && place(x.place);
+  const p = withPlace && x.place && (place(x.place) ?? pointPlace(x.place));
   const reps = repliesOf(s, x.id);
   const review = x.kind === "review" && x.stars ? `${stars(x.stars)}${x.shop && titleOf(place(x.place)) !== x.shop ? `<b class="ig-shop">${esc(x.shop)}</b>` : ""}` : "";
   const len = [...(x.text ?? "")].length;
@@ -1857,8 +1859,6 @@ function openFeedCompose(draft = null) {
 }
 
 // ---------- 投稿の「場所を追加」：地図に移って、地図で選ぶ ----------
-// 投稿できる場所：模擬店（教室のお店も）と、会場・展示など
-const postable = (p) => !!p && (p.fest || p.shopList?.length) && canPost(p) && !byRoom.has(p.id) && !p.zone;
 let postPick = null; // { draft }：地図で場所を選んでいるあいだ
 function startPostPick(draft) {
   postPick = { draft };
@@ -1876,7 +1876,7 @@ function startPostPick(draft) {
       const b = e.target.closest("[data-pp]");
       if (b) endPostPick(b.dataset.pp === "none" ? "" : undefined);
     });
-    document.querySelector(".app-frame, #app, body").append(bar);
+    (document.querySelector(".app-frame") ?? document.body).append(bar);
   }
   bar.hidden = false;
   document.body.classList.add("is-postpick");
@@ -2035,7 +2035,7 @@ const ROUTE_HINTS = {
 function select(id, { fly = true } = {}) {
   const p = place(id);
   if (!p) return;
-  if (postPick) { if (postable(p)) endPostPick(p.id); else toast("お店か会場を押してください"); return; }
+  if (postPick) { endPostPick(p.id); return; }
   if (picking) { finishPick(p.id); return; }
   if (mode === "route") {       // 道案内中に部屋を押したら、出発地がまだならそこを出発地に、決まっていれば目的地にする
     if (!rt.from) rt.from = p.id; else rt.to = p.id;
