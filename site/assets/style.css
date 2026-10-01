@@ -1947,3 +1947,6 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 .rally-full #rally-vote-link:active { translate: calc(-6 * var(--u)) calc(4 * var(--u)); box-shadow: 0 0 0 rgba(48, 44, 41, 0); }
 .rally-full #rally-vote-link b { font-size: calc(21 * var(--u)); }
 .rally-full #rally-vote-link span { font-size: calc(11.5 * var(--u)); opacity: .95; }
+/* スタンプカードのページ：総選挙のボタンは、題の下に説明の文を2行で */
+.rally-full #rally-vote-link { flex-direction: column; gap: calc(3 * var(--u)); height: auto; min-height: calc(58 * var(--u)); padding: calc(10 * var(--u)) calc(22 * var(--u)); text-align: center; }
+.rally-full #rally-vote-link span { line-height: 1.5; }

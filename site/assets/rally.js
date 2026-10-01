@@ -282,7 +282,7 @@ function renderVoteLink() {
   el.hidden = !has || phase === "before";
   if (el.hidden) return;
   const mine = state.vote?.shop ? shopOf(state.vote.shop)?.name : "";
-  el.innerHTML = `<b>模擬店総選挙</b><span>${phase === "closed" ? "投票は終わりました" : mine ? `投票ずみ：${esc(mine)}` : "スタンプを押したお店に、1票"}</span>`;
+  el.innerHTML = `<b>模擬店総選挙</b><span>${phase === "closed" ? "投票は終わりました" : mine ? `投票ずみ：${esc(mine)}` : "スタンプを押した模擬店に、一回だけ投票します。気に入ったお店を応援しよう！"}</span>`;
 }
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 async function castVote(shopId) {
@@ -512,7 +512,7 @@ export function initVotePage(getNow = () => Date.now()) {
 export function renderVoteEntry(el) {
   if (!el) return;
   const phase = voteState();
-  el.textContent = phase === "before" ? `${voteDay(ELECTION.opens)}から` : phase === "closed" ? "投票は終わりました" : `${voteDay(ELECTION.closes)}まで・スタンプを押したお店に1人1票`;
+  el.textContent = phase === "before" ? `${voteDay(ELECTION.opens)}から` : phase === "closed" ? "投票は終わりました" : `スタンプを押した模擬店に、一回だけ投票します。気に入ったお店を応援しよう！`;
 }
 
 // トップページの「縁日」の下の、小さなスタンプカード（入口）。押すとスタンプカードのページ
