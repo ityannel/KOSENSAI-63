@@ -118,10 +118,10 @@ let nowMs = () => Date.now();
 let prizeOut = false; // 景品がなくなった（本部コンソールのスイッチ。site_live/current の prize_out）
 const tokyoDate = () => new Date(nowMs()).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" }); // YYYY-MM-DD
 
-// QR の鍵がそのお店のものかを調べる。codes["fest"] は開催日ならどの日でも使える鍵（本部コンソールが作る。2日とも同じ QR）、
+// QR の鍵がそのお店のものかを調べる。codes["fest"] はいつでも使える鍵（本部コンソールが作る。2日とも同じ QR）、
 // codes["YYYY-MM-DD"] はその日だけの鍵、codes["*"] は日付に関係なくいつでも使える鍵（テスト用のお店だけに使う）
-const isFestDay = () => FESTIVAL.days.some((d) => d.open.startsWith(tokyoDate()));
-const usableDays = () => [tokyoDate(), "*", ...(isFestDay() ? ["fest"] : [])];
+// "fest" の鍵は、開催日でなくても使える（事前に試せる。押したスタンプを全部消すときは、本部コンソールの「全員の履歴をリセット」）
+const usableDays = () => [tokyoDate(), "*", "fest"];
 async function findShop(code, shopId) {
   const shop = RALLY.shops.find((s) => s.id === shopId);
   const key = String(code).trim();
