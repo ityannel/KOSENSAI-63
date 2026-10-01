@@ -88,10 +88,12 @@ function voteUrl(s, now) {
 // お店のいまの様子（待ち時間・休業中）と、お店のひとこと。シートを開いたときに Firestore から読む（トップを開いただけでは読まない）
 const STATUS = { "10min": ["10分待ち", "#e8a317"], "20min": ["20分以上待ち", "#d93025"], soldout: ["売り切れ", "#6b6b6b"], closed: ["休業中", "#4b5a8a"] };
 let liveList = null, liveP = null;
+const liveWatchers = new Set(); // 縁日の札（shops-board.js）など、お店の様子が届くたびに知りたいところ
 function liveShops() {
   liveP ??= import("./live.js").then(({ subscribeShops }) => subscribeShops((list) => {
     liveList = list;
     document.querySelectorAll("[data-live-shop]").forEach(fillLive);
+    liveWatchers.forEach((fn) => fn());
   })).catch(() => {});
   return liveP;
 }
@@ -101,6 +103,9 @@ function docFor(s) {
   const room = s.room ?? HOMEROOMS[s.cls];
   return liveList?.find((d) => (d.map ? [s.name, s.cls, room].filter(Boolean).some((v) => norm(v) === norm(d.map)) : norm(d.name) === norm(s.name))) ?? null;
 }
+// お店の様子を読み始める（縁日の札から）。届くたびに fn を呼ぶ
+export function watchShops(fn) { liveWatchers.add(fn); if (liveList) fn(); liveShops(); }
+export const liveOf = (s) => { const d = docFor(s); const st = d && STATUS[d.status]; return st ? { label: st[0], color: st[1], at: d.updated_at } : null; }; // 待ちなし・情報なしは null
 const ago = (ms) => { const m = Math.floor((Date.now() - ms) / 60000); return m < 1 ? "たった今" : m < 60 ? `${m}分前` : `${Math.floor(m / 60)}時間前`; };
 function fillLive(el) {
   const s = SHOPS[+el.dataset.liveShop];

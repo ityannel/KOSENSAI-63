@@ -610,6 +610,8 @@ body.mido-page { background: linear-gradient(rgba(20, 12, 18, 0.45), rgba(20, 12
 .en-where { position: absolute; left: calc(12 * var(--u)); bottom: calc(9 * var(--u)); font-family: var(--hud-font); font-size: calc(14 * var(--u)); line-height: 1; }
 .en-card.has-flyer .en-where { padding: calc(3 * var(--u)) calc(8 * var(--u)); border-radius: 999px; background: rgba(254, 235, 196, 0.92); }
 /* マスキングテープ */
+.en-live { position: absolute; z-index: 2; right: calc(-6 * var(--u)); top: calc(-10 * var(--u)); padding: calc(3 * var(--u)) calc(9 * var(--u)); border-radius: 999px; background: var(--c); color: #fff; font-family: var(--text-font); font-weight: 900; font-size: calc(12 * var(--u)); line-height: 1.2; }
+.en-live[hidden] { display: none; }
 .en-tape { position: absolute; z-index: 1; top: calc(-9 * var(--u)); left: 50%; width: calc(54 * var(--u)); height: calc(18 * var(--u)); translate: -50% 0; rotate: -4deg; background: rgba(255, 255, 255, 0.55); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
 .ennichi .mido-more { margin-top: calc(18 * var(--u)); }
 

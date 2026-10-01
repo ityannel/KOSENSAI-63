@@ -4,7 +4,7 @@
 // 押すと、そのお店の詳しいシート（detail.js）。地図へはそこから
 // 回転ずしのように、ゆっくり自動で流れ続ける（さわると止まり、はなして3秒で再開。見えていないとき・動きを減らす設定のときは止める）
 import { SHOPS, GENRES, HOMEROOMS, MAP } from "./config.js";
-import { wireDetails } from "./detail.js";
+import { wireDetails, watchShops, liveOf } from "./detail.js";
 
 const box = document.getElementById("ennichi-list");
 const chipsBox = document.getElementById("ennichi-chips");
@@ -44,6 +44,7 @@ function card(s, i, copy = false) {
           ${s.note ? `<span class="en-note">${esc(s.note)}</span>` : ""}
           <span class="en-group">${esc(s.group ?? "")}</span>
         </span>`}
+    <span class="en-live" data-live-card></span>
     <span class="en-where">@${esc(where(s)).replace(/[0-9]+/g, (m) => `<span class="vi-num">${m}</span>`)}</span>
   </a></li>`;
 }
@@ -60,6 +61,18 @@ function render() {
     loopW = box.children[list.length].offsetLeft - first.offsetLeft; // 1周の長さ
   }
   box.scrollLeft = 0;
+  paintLive();
+}
+// お店の人が決めた待ち時間・完売・休業を、札の右上に出す（待ちなし・まだ知らせがないお店は何も出さない）。札を作りなおさず、ようすだけ入れかえる
+function paintLive() {
+  box.querySelectorAll("a[data-shop]").forEach((a) => {
+    const x = liveOf(SHOPS[+a.dataset.shop]);
+    const el = a.querySelector("[data-live-card]");
+    if (!el) return;
+    el.hidden = !x;
+    el.textContent = x?.label ?? "";
+    if (x) el.style.setProperty("--c", x.color);
+  });
 }
 
 // ---------- 自動で流す ----------
@@ -89,7 +102,7 @@ if (box && chipsBox) {
   let built = false;
   new IntersectionObserver((es, io) => {
     if (built || !es.some((e) => e.isIntersecting)) return;
-    built = true; io.disconnect(); render();
+    built = true; io.disconnect(); render(); watchShops(paintLive);
   }, { rootMargin: "600px 0px" }).observe(box);
   // さわっている間・はなして3秒は止める。自分ですべらせたら、そこから続きを流す
   for (const ev of ["pointerdown", "touchstart", "wheel", "keydown", "focusin"]) box.addEventListener(ev, hold, { passive: true });

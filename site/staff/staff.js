@@ -613,16 +613,20 @@ const rallyShopIds = () => (state.rally?.shops ?? []).map((s) => s.id);
 const isRallyShop = (id) => rallyShopIds().includes(id);
 const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 
-// すべてのお店がスタンプラリーの対象。足りない鍵を作り、rally/current をお店全部にそろえる（足りなければ何もしない）
+// スタンプラリーの対象は、インフォメーションと学科展示（模擬店は対象にしない。混雑・待ち時間の知らせは、これまで通り模擬店ごとに出せる）。
+// 足りない鍵を作り、rally/current を対象の場所にそろえる（模擬店が入っていたら外す。そろっていれば何もしない）
+const rallySpots = () => allSpots().filter((s) => s.kind !== "shop");
 function rallyMissing() {
   const ids = new Set(rallyShopIds());
-  return allSpots().filter((s) => !ids.has(s.id) || !keysOf(s.id)[FEST]);
+  const spots = rallySpots();
+  const extra = rallyShopIds().filter((id) => !spots.some((s) => s.id === id)); // 対象でなくなった場所（模擬店）
+  return [...spots.filter((s) => !ids.has(s.id) || !keysOf(s.id)[FEST]), ...extra.map((id) => ({ id }))];
 }
 async function ensureRally() {
   if (!rallyMissing().length) return false;
   const batch = fs.writeBatch(db);
   const shops = [];
-  for (const shop of allSpots()) {
+  for (const shop of rallySpots()) {
     const keys = { ...keysOf(shop.id) };
     if (!keys[FEST]) {
       keys[FEST] = randomKey();
@@ -640,7 +644,7 @@ async function ensureRally() {
   return true;
 }
 function renderRally() {
-  const total = allSpots().length;
+  const total = rallySpots().length;
   const missing = rallyMissing().length;
   const pin = !!state.rally?.staffPin;
   const st = $("#rally-state");
@@ -648,7 +652,7 @@ function renderRally() {
   st.textContent = `QR ${total - missing}/${total}・番号${pin ? "あり" : "なし"}`;
   $("#rally-pin-make").textContent = pin ? "引き換えの番号を作り直す" : "引き換えの番号を作る";
   $("#rally-all").disabled = !missing;
-  $("#rally-all").textContent = missing ? `残り${missing}店の QR を用意する` : "全部のお店の QR を用意済み";
+  $("#rally-all").textContent = missing ? `${missing}か所の QR を整える` : "全部のお店の QR を用意済み";
 }
 $("#rally-all").addEventListener("click", () => write("全部の場所のスタンプの QR を用意しました", ensureRally));
 // 景品がなくなった：スタンプカードのページにおわびを出す（site_live/current の prize_out）

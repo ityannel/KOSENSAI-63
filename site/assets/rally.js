@@ -271,7 +271,7 @@ function render() {
       <span class="rc-face rc-back">
         <b class="rc-back-title">あそびかた</b>
         <ol class="rc-rules">
-          <li>模擬店・学科展示に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
+          <li>学科展示に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
           <li>スタンプが<em>${RALLY.goal}個</em>たまったら達成</li>
           <li>${prizeOut ? "景品は終了しました（ごめんなさい）" : `${esc(RALLY.claimPlace)}で、この画面を見せて景品と交換`}</li>
         </ol>
@@ -371,7 +371,7 @@ export function initRallyPage(getNow = () => Date.now()) {
   // お店の QR を読む（ページの中のカメラ）。読めたら、その QR の鍵でスタンプを押す
   $("#rally-scan").addEventListener("click", () => openQrScanner({
     title: "QR を読む",
-    hint: "模擬店・学科展示に置いてある QR を枠に入れてください",
+    hint: "学科展示に置いてある QR を枠に入れてください",
     wrong: "スタンプラリーの QR ではないようです",
     noCamera: "スマホのカメラアプリで QR を読んでも、スタンプは押せます",
     accept: (text) => {
