@@ -85,7 +85,7 @@ const IC = {
 const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${IC[n] ?? IC.info}</svg>`;
 // 数字は、見出しと同じ字（WDXL Lubrifont）で、少し大きく。文の中の数字（12:15・3分・2F など）を .num で包む
 function numify(root) {
-  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (/\d/.test(n.nodeValue) && !n.parentElement.closest(".num, em[data-n], #bgclock, script, style") ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (/\d/.test(n.nodeValue) && !n.parentElement.closest(".num, em[data-n], #bgclock, .cd, script, style") ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
   const nodes = []; while (walk.nextNode()) nodes.push(walk.currentNode);
   for (const n of nodes) {
     const f = document.createDocumentFragment();
@@ -261,12 +261,15 @@ const slideStage = {
           <h2>${esc(cur.name)}</h2><div class="kind"><span class="chip">${esc(cur.kind)}</span><span class="chip">${esc(cur.mood)}</span></div>
           <p>${esc(cur.copy).replace(/\n/g, "<br>")}</p>
           <div class="barw"><time>${hm(cur.s)}</time><div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div><time>${hm(cur.e)}</time></div></div>`
-      : `<div class="now wait slide-l"><span class="lab">STAGE</span>
-          <h2>${nxt ? "まもなく" : "おやすみ"}</h2>${nxt ? `<p>${hm(nxt.s)}〜　<span class="nm">${esc(nxt.name)}</span></p>` : ""}</div>`;
+      : nxt
+        ? `<div class="now wait slide-l"><span class="lab">NEXT</span>
+          <h2 class="nm">${esc(nxt.name)}</h2><div class="kind"><span class="chip">${esc(nxt.kind)}</span><span class="chip">${esc(nxt.mood)}</span><span class="chip">${hm(nxt.s)}〜${hm(nxt.e)}</span></div>
+          <p>${esc(nxt.copy).replace(/\n/g, "<br>")}</p></div>`
+        : `<div class="now wait slide-l"><span class="lab">STAGE</span><h2>おやすみ</h2></div>`; // 出演がないときだけ
     // このあとの出演を、次の1つだけでなく、どんどん並べる（企画があれば、その分は1つ減らす）
     const row = (small, title, time, sub, hotRow, n) => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} ${hotRow ? "hot" : ""} rise" style="--i:${n}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
-    const later = ACTS.filter((a) => a.s > t).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0)); // 急げ！の帯が出ているときは、場所が狭いので1つ減らす
-    const nx = later.map((a, k) => row(k === 0 ? "NEXT" : "THEN", a.name, hm(a.s), `${a.kind}　${a.mood}`, k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k));
+    const later = ACTS.filter((a) => a.s > t).slice(cur ? 0 : 1).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0)); // 出演中でなければ、次の出演は左のカードに出すので、右には2つ目から // 急げ！の帯が出ているときは、場所が狭いので1つ減らす
+    const nx = later.map((a, k) => row(k === 0 && cur ? "NEXT" : "THEN", a.name, hm(a.s), `${a.kind}　${a.mood}`, k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k));
     if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, hm(nextEv.s), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
     return { dur: hot ? 15000 : 13000, cls: "stage", html: `
@@ -314,7 +317,7 @@ const slideSeminar = {
           <p>${esc(main.title)}</p>
           <div class="kind"${cur ? " hidden" : ""}>${cur ? "" : `<span class="chip">${sameDay ? "" : `${dateEn(main.s)}　`}${hm(main.s)}〜${hm(main.e)}</span>`}</div>
           ${cur ? `<div class="barw"><time>${hm(main.s)}</time><div class="bar"><i style="width:${Math.round(((t - main.s) / (main.e - main.s)) * 100)}%"></i></div><time>${hm(main.e)}</time></div>` : ""}</div>
-        <div class="nxt">${rows.map((x, k) => hr(dayOf(x.s) === dayOf(t) ? (k === 0 ? "NEXT" : "THEN") : dateEn(x.s), x, 2 + k)).join("")}</div>
+        <div class="nxt">${rows.map((x, k) => hr(dayOf(x.s) === dayOf(t) ? (k === 0 && cur ? "NEXT" : "THEN") : dateEn(x.s), x, 2 + k)).join("")}</div>
       </div>` };
   },
 };
@@ -428,20 +431,26 @@ const slideShare = {
 };
 
 // ---------- はじまり ----------
+// 開幕までの時間：日:時:分:秒（1秒ごとに動く）
+const cdText = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return [Math.floor(s / 86400), Math.floor(s / 3600) % 24, Math.floor(s / 60) % 60, s % 60].map((v) => String(v).padStart(2, "0")).join(":"); };
+function tickCountdown(root) {
+  const el = root.querySelector(".cd");
+  if (!el) return;
+  const to = +el.dataset.to, id = setInterval(() => { if (!el.isConnected) return clearInterval(id); el.textContent = cdText(to - now()); }, 250);
+}
 const slideIntro = {
   async build() {
     const t = now(), first = Date.parse(FESTIVAL.days[0].open), last = Date.parse(FESTIVAL.days.at(-1).close);
     let big = "";
     if (t < first) {
-      const m = Math.floor((first - t) / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
-      big = `<div class="big pop" style="--i:5"><span>開幕まで あと</span>${d ? `<b>${d}</b><span>日</span>` : ""}<b>${h}</b><span>時間</span><b>${m % 60}</b><span>分</span></div>`;
+      big = `<div class="big pop" style="--i:5"><span>開幕まで</span><b class="cd" data-to="${first}">${cdText(first - t)}</b></div>`;
     } else if (t >= last) {
       big = `<div class="big pop" style="--i:5"><span>ご来場、ありがとうございました</span></div>`;
     } else {
       const day = FESTIVAL.days.find((x) => t < Date.parse(x.close));
       big = `<div class="big pop" style="--i:5"><span class="d">${dateEn(Date.parse(day.open))}</span><b>${hm(Date.parse(day.open))}</b><span>〜</span><b>${hm(Date.parse(day.close))}</b></div>`;
     }
-    return { dur: 9000, cls: "intro", html: `
+    return { dur: 9000, cls: "intro", after: tickCountdown, html: `
       <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>
       <h1>${chars("ようこそ、縁へ")}</h1>
       <p class="fade" style="--i:4">第63回 函館高専祭</p>${big}` };

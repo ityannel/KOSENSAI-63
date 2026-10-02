@@ -405,3 +405,7 @@ body.is-hurry #slide { bottom: 160px; }
 .now p, .pc-b p, .pc-ph.txt q, .bubble, .nx i, .way li .sy { word-break: auto-phrase; text-wrap: pretty; }
 .ttl { text-wrap: balance; }
 .ttl .lat, .shop h2 .lat { font-size: 1.25em; line-height: .8; } /* 見出しの英字は、日本語より小さく見えるので、大きく */
+/* 開幕までのカウントダウン：白（#FFFFFF）・影なし・WDXL */
+.intro .big .cd { font: 400 150px/1 var(--hud); color: #FFFFFF; text-shadow: none; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.intro .big:has(.cd) { flex-direction: column; align-items: center; gap: 6px; }
+.intro .big:has(.cd) > span { font: 400 54px/1 var(--hud); color: #FFFFFF; }
