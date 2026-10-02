@@ -339,7 +339,7 @@ body.has-notice .m-side { top: calc(160px + env(safe-area-inset-top)); }
 /* たたんでいるときは中を動かさず、上へのスワイプで広げる */
 .m-sheet:not(.is-open) .m-sheet-body { overflow: hidden; }
 .m-sheet[hidden], .m-sheet.is-min .m-sheet-x { display: none; }
-.m-sheet.is-min { max-height: 30px; overflow: hidden; }
+.m-sheet.is-min { max-height: calc(30px + var(--m-tabs-h)); overflow: hidden; }
 .m-sheet.is-min .m-sheet-body { visibility: hidden; transition: visibility 0s 0.3s; }
 .m-sheet.is-min .m-grip { height: 30px; }
 /* 右上の × */
@@ -563,8 +563,9 @@ body.mapapp { --m-tabs-h: calc(72px + env(safe-area-inset-bottom)); }
 .mapapp .m-tabs [data-tab="feed"][aria-selected="true"] .e-word { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: inherit; }
 .mapapp .m-tabs :is(button, a):active { filter: none; scale: 0.96; }
 /* シート・お知らせはタブの上に */
-.m-sheet { bottom: var(--m-tabs-h); }
-.m-toast { bottom: calc(var(--m-sheet-h) + var(--m-tabs-h) + 16px); }
+/* シートは画面の下いっぱいまで（下のタブのうしろも、シートと同じノイズの紙がつづく）。中身がタブに隠れないよう、下をタブの分だけ空ける */
+.m-sheet { bottom: 0; padding-bottom: var(--m-tabs-h); max-height: calc(42dvh + var(--m-tabs-h)); }
+.m-toast { bottom: calc(max(var(--m-sheet-h), var(--m-tabs-h)) + 16px); }
 body.is-feed .m-toast { bottom: calc(var(--m-tabs-h) + 80px); }
 
 /* ---------- みんなの声（タイムライン・写真） ---------- */
@@ -696,7 +697,7 @@ body.mapapp {
 .m-toast { z-index: 10; transition: opacity 0.2s, translate 0.2s; }
 .m-toast.is-off { opacity: 0; translate: -50% 8px; pointer-events: none; }
 /* 広げたシートは、上の検索のバーの下まで（× や見出しが押せるように） */
-.m-sheet.is-open { max-height: min(78dvh, calc(100dvh - var(--m-tabs-h) - var(--m-top-h, 170px) - 8px)); }
+.m-sheet.is-open { max-height: min(calc(78dvh + var(--m-tabs-h)), calc(100dvh - var(--m-top-h, 170px) - 8px)); }
 /* シートが出ているときは、右のボタンは階と QR だけ（シートにかくれるので） */
 body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > :is(.m-heading, .m-compass, .m-tilt, #m-fit) { display: none; }
 /* シートが出てくるとき、下からすっと */
