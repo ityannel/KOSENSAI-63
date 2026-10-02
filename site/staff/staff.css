@@ -663,7 +663,7 @@ h1, h2, h3 { font-weight: 400; }
 
 /* ---------- 投稿の管理：来場者のタイムラインと同じ並び（投稿の下にコメント）。非表示・削除は「…」の中 ---------- */
 .tl { display: grid; gap: 18px; max-width: 640px; margin: 0 auto; width: 100%; }
-.tl-thread { padding: 0; overflow: hidden; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--grain), var(--iro), var(--panel); box-shadow: var(--shadow); }
+.tl-thread { position: relative; padding: 0; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--grain), var(--iro), var(--panel); box-shadow: var(--shadow); }
 .tl-thread.is-off { opacity: .6; }
 .tl-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
 .tl-who { display: grid; min-width: 0; margin-right: auto; line-height: 1.25; }
@@ -707,3 +707,4 @@ h1, h2, h3 { font-weight: 400; }
 .post-reply { padding: 0 14px 14px; border-top: 1px dashed var(--line-2); }
 .tl-replybar { display: flex; align-items: center; gap: 8px; padding-top: 10px; }
 .tl-replybar textarea { flex: 1; min-width: 0; padding: 8px 12px; border: 1.5px solid var(--line-2); border-radius: 999px; background: var(--bg-2); color: var(--ink); font: inherit; font-size: 15px; resize: none; }
+.tl-thread:has(.tl-menu[open]) { z-index: 6; } /* 「…」のメニューが、次の投稿の下にかくれない */
