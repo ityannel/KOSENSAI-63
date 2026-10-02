@@ -211,6 +211,22 @@ export async function subscribeSiteConfig(callback) {
   }
 }
 
+// スケジュールの変更（本部コンソールの「スケジュール」）：site_schedule/current = { changes: { [sid]: { start, end } } }
+export async function subscribeSchedule(callback) {
+  // 確かめるとき：?demo=1&sched={"a202610241215":{"start":"2026-10-24T12:25:00+09:00","end":"2026-10-24T12:45:00+09:00"}}
+  if (params.has("demo")) { try { return callback(JSON.parse(params.get("sched") ?? "{}")); } catch { return callback({}); } }
+  try {
+    const db = await getDb();
+    fs.onSnapshot(
+      fs.doc(db, "site_schedule", "current"),
+      (snap) => callback(snap.exists() ? (snap.data().changes ?? {}) : {}),
+      (err) => console.warn("[site_schedule] Firestore を読めませんでした:", err.code),
+    );
+  } catch (err) {
+    console.warn("[site_schedule] Firebase を読み込めませんでした:", err);
+  }
+}
+
 // スタンプラリーを全員リセットした時刻（rally.js が使う）
 //   rally_control/current = { reset_at }
 export async function subscribeRallyControl(callback) {

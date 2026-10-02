@@ -2,6 +2,7 @@
 // 時間の決まった企画：ステージは出演する団体ごと、ほかは企画ごと。
 // トップの3枚（TICKETS）は学内のみのものを出さない。みどころのページ（タイムテーブルの代わり）は全部（ALL_TICKETS）で、学内のみは札で知らせる
 import { EVENTS, STAGE, VENUES } from "./config.js";
+import { changed } from "./schedule.js";
 
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 export const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
@@ -34,7 +35,7 @@ export function ticketHtml(e, i, t) {
   return `
     <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.photo ? " has-photo" : ""}" href="map.html#${esc(e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
       <div class="tk-shape"><div class="tk-body"><i class="tk-hole" aria-hidden="true"></i>
-        <p class="tk-stub is-${wd.toLowerCase()}"><span class="tk-wd">${wd}</span><b class="tk-day">${dayOf(e)}</b><span class="tk-time">${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}</span></p>
+        <p class="tk-stub is-${wd.toLowerCase()}"><span class="tk-wd">${wd}</span><b class="tk-day">${dayOf(e)}</b><span class="tk-time">${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}</b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}`}</span></p>
         <div class="tk-main">
           ${tags.length ? `<p class="tk-tags">${tags.map((x) => `<span>${esc(x)}</span>`).join("")}</p>` : ""}
           <h3 class="tk-name${[...e.title].length > 8 ? " is-long" : ""}">${esc(e.title)}</h3>
@@ -53,7 +54,7 @@ export function rowHtml(e, t) {
   const tags = [e.internal && "学内のみ", e.kind, e.mood].filter(Boolean).join("・");
   return `
     <a class="tl-row is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}" href="map.html#${esc(e.venue)}">
-      <time>${hhmm(e.start)}<small>〜${hhmm(e.end)}</small></time>
+      <time>${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<small>〜${hhmm(e.end)}</small></b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<small>〜${hhmm(e.end)}</small>`}</time>
       <span class="tl-main"><b>${esc(e.title)}</b><small>${tags ? `${esc(tags)}　` : ""}@${esc(venueName(e.venue))}</small></span>
       ${on ? '<span class="tl-badge">NOW</span>' : ""}
     </a>`;

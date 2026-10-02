@@ -12,6 +12,7 @@ import { initWeather, setWeatherOverride } from "./weather.js";
 import { upcomingTickets, ticketHtml } from "./tickets.js";
 import { drawThread, watchThread } from "./thread.js";
 import { wireDetails } from "./detail.js";
+import { tStart, tRange, watchSchedule } from "./schedule.js";
 import "./offline.js";
 
 // ---------- 時刻（テスト用に ?now=2026-10-24T11:00 / ?phase=during で上書きできる） ----------
@@ -155,7 +156,7 @@ function renderDuring() {
     <div class="now-row${tag === "NOW" ? " is-now" : ""}">
       <span class="now-tag">${tag}</span>
       <b class="now-title"><span>${esc(e.title)}</span></b>
-      <small class="now-sub">${e.start ? `${hhmm(e.start)} ~ ${e.end ? hhmm(e.end) : ""}` : ""}${e.venue ? ` @ ${esc(venueName(e.venue))}` : ""}${e.kind ? `・${esc(e.kind)}` : ""}${e.internal ? "・学内のみ" : ""}</small>
+      <small class="now-sub">${e.start ? tRange(e, " ~ ") : ""}${e.venue ? ` @ ${esc(venueName(e.venue))}` : ""}${e.kind ? `・${esc(e.kind)}` : ""}${e.internal ? "・学内のみ" : ""}</small>
     </div>`;
   const inHours = FESTIVAL.days.some((d) => Date.parse(d.open) <= t && t < Date.parse(d.close));
   const DAY = new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo" });
@@ -327,7 +328,7 @@ function actsOf(day, t) {
   return `<ol class="acts">${acts.map((a) => {
     const now = Date.parse(a.start) <= t && t < Date.parse(a.end);
     const past = Date.parse(a.end) <= t;
-    return `<li class="${now ? "is-now" : ""}${past ? " is-past" : ""}"><time>${hhmm(a.start)}</time><span><b>${esc(a.name)}</b><small>${esc(a.kind)}</small></span></li>`;
+    return `<li class="${now ? "is-now" : ""}${past ? " is-past" : ""}"><time>${tStart(a)}</time><span><b>${esc(a.name)}</b><small>${esc(a.kind)}</small></span></li>`;
   }).join("")}</ol>${STAGE.tentative ? '<p class="acts-note">【仮】出演者と時間は仮のものです</p>' : ""}`;
 }
 
@@ -344,7 +345,7 @@ function renderSchedule() {
         const past = Date.parse(e.end) <= t;
         return `
           <li class="${now ? "is-now" : ""}${past ? " is-past" : ""}">
-            <time>${hhmm(e.start)}</time>
+            <time>${tStart(e)}</time>
             <div><b>${esc(e.title)}${e.internal ? '<em class="tag">学内のみ</em>' : ""}${now ? '<em class="tag">NOW</em>' : ""}</b><a class="to-map" href="map.html#${esc(e.venue)}">@${esc(venueName(e.venue))}</a></div>${e.stage ? actsOf(day, t) : ""}
           </li>`;
       }).join("")}</ol>`;
@@ -650,3 +651,6 @@ if (params.has("test") || params.has("preview")) {
     if (params.has("preview")) initPreviewBridge(hooks);
   });
 }
+
+// スケジュールの変更（本部コンソール）：この端末の表示と違う変更が届いたら、1回だけ読みこみなおす
+setTimeout(() => watchSchedule(), 1500);

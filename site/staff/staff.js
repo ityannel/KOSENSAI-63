@@ -2,7 +2,7 @@
 // お知らせ・緊急のお知らせ・生配信・表示の切りかえ・混雑・5人の実況・投稿（写真の確認・報告・本部の投稿）・模擬店・文章と書体を、ここ1つで変える。
 // だれが使えるかは firestore.rules（staff コレクションにメールアドレスがある人だけ）で決まる。
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
-import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES, ELECTION } from "../assets/config.js";
+import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES, ELECTION, scheduleItems } from "../assets/config.js";
 import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
 import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
 
@@ -94,7 +94,7 @@ async function write(label, fn) {
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
 // ---------- 画面の切りかえ（#overview など） ----------
-const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "print", "texts", "settings"];
+const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "schedule", "print", "texts", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
@@ -111,7 +111,7 @@ addEventListener("hashchange", route);
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
 // ---------- データ ----------
-const state = { myLikes: new Set(), visits: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
+const state = { schedule: {}, myLikes: new Set(), visits: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
@@ -123,6 +123,7 @@ function startListening() {
     renderOverview();
   });
   listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; $("#photo-review").checked = !!state.live.photo_review; $("#cache-state").textContent = state.live.cache_reset_at ? `${time(toMs(state.live.cache_reset_at))} に指示` : ""; });
+  listen(fs.doc(db, "site_schedule", "current"), (snap) => { state.schedule = snap.exists() ? (snap.data().changes ?? {}) : {}; renderSchedule(); });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
     snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: v.level, updated_at: toMs(v.updated_at) }; });
@@ -307,6 +308,75 @@ $("#phase-form").addEventListener("submit", (e) => {
   saveLive("表示を保存しました", { phase_override: phase || null, presence_off: $("#presence-off").checked });
 });
 
+// ---------- スケジュール（出演・企画・企業セミナーの時間を変える） ----------
+// site_schedule/current = { changes: { [sid]: { start, end } } }。サイト・地図・みどころ・会場のディスプレイが読む。もとの時間は config.js
+const SCHED_KIND = { a: "ステージ", e: "企画", s: "企業セミナー" };
+const schedName = ({ kind, item }) => (kind === "a" ? item.name : kind === "s" ? `${item.company}（${item.title}）` : item.title);
+const schedCur = (it) => state.schedule[it.item.sid] ?? { start: it.item.o_start, end: it.item.o_end };
+const hmOf = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false });
+const isoAt = (orig, hhmmText) => `${orig.slice(0, 10)}T${hhmmText}:00+09:00`;
+const saveSchedule = (changes, label) => write(label, () => fs.setDoc(fs.doc(db, "site_schedule", "current"), { changes, ...stamp() }));
+function renderSchedule() {
+  const items = scheduleItems().sort((x, y) => Date.parse(x.item.o_start) - Date.parse(y.item.o_start));
+  const days = [...new Set(items.map((x) => x.item.o_start.slice(0, 10)))];
+  const sel = $("#sh-day"), keep = sel.value;
+  sel.innerHTML = days.map((d) => `<option value="${d}">${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日</option>`).join("");
+  if (keep) sel.value = keep;
+  if ($("#sched-list").contains(document.activeElement) && document.activeElement.matches("input")) return; // 入力中は作りなおさない
+  $("#sched-list").innerHTML = days.map((d) => `
+    <h3 class="sched-day">${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日</h3>
+    ${items.filter((x) => x.item.o_start.startsWith(d)).map((it) => {
+      const c = schedCur(it), chg = c.start !== it.item.o_start || c.end !== it.item.o_end;
+      return `<div class="sched-row${chg ? " is-chg" : ""}">
+        <span class="kind">${SCHED_KIND[it.kind]}</span>
+        <div><b>${esc(schedName(it))}</b><small>もとの時間 ${hmOf(it.item.o_start)}〜${hmOf(it.item.o_end)}${chg ? `　→　<b style="display:inline">${hmOf(c.start)}〜${hmOf(c.end)}</b>` : ""}</small></div>
+        <div class="times"><input type="time" value="${hmOf(c.start)}" data-sid="${esc(it.item.sid)}" data-end="0" aria-label="始まり"> 〜 <input type="time" value="${hmOf(c.end)}" data-sid="${esc(it.item.sid)}" data-end="1" aria-label="終わり"></div>
+        <button class="btn btn-ghost btn-sm" type="button" data-sched-reset="${esc(it.item.sid)}"${chg ? "" : " disabled"}>もとにもどす</button>
+      </div>`;
+    }).join("")}`).join("");
+}
+$("#sched-list").addEventListener("change", (e) => {
+  const inp = e.target.closest("input[data-sid]");
+  if (!inp) return;
+  const it = scheduleItems().find((x) => x.item.sid === inp.dataset.sid);
+  const row = inp.closest(".sched-row"), [a1, a2] = row.querySelectorAll("input[type=time]");
+  if (!a1.value || !a2.value) return toast("時間を入れてください", true);
+  if (a2.value <= a1.value) return toast("終わりは、始まりより後にしてください", true);
+  const start = isoAt(it.item.o_start, a1.value), end = isoAt(it.item.o_end, a2.value);
+  const changes = { ...state.schedule };
+  if (start === it.item.o_start && end === it.item.o_end) delete changes[it.item.sid]; else changes[it.item.sid] = { start, end };
+  saveSchedule(changes, `${schedName(it)}の時間を ${a1.value}〜${a2.value} にしました`);
+});
+$("#sched-list").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-sched-reset]");
+  if (!b) return;
+  const changes = { ...state.schedule };
+  delete changes[b.dataset.schedReset];
+  saveSchedule(changes, "もとの時間にもどしました");
+});
+$("#sched-reset").addEventListener("click", () => {
+  if (!Object.keys(state.schedule).length) return toast("変えたものはありません");
+  if (!confirm("変えた時間を、すべてもとにもどしますか？")) return;
+  saveSchedule({}, "すべてもとの時間にもどしました");
+});
+// 「この時刻から後ろを、◯分ずらす」（遅れたときに、まとめて）
+$("#sched-shift").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const day = $("#sh-day").value, from = $("#sh-from").value, min = Number($("#sh-min").value);
+  if (!from || !Number.isFinite(min) || !min) return toast("時刻とずらす分を入れてください", true);
+  const targets = scheduleItems().filter((x) => x.item.o_start.startsWith(day) && hmOf(schedCur(x).start) >= from);
+  if (!targets.length) return toast("その時刻より後の出演・企画がありません", true);
+  if (!confirm(`${Number(day.slice(5, 7))}月${Number(day.slice(8, 10))}日の ${from} 以降 ${targets.length}件を、${min > 0 ? `${min}分 遅らせ` : `${-min}分 早め`}ますか？`)) return;
+  const changes = { ...state.schedule };
+  for (const x of targets) {
+    const c = schedCur(x);
+    const shift = (iso) => new Date(Date.parse(iso) + min * 60000).toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" }).replace(" ", "T") + "+09:00";
+    const ns = { start: shift(c.start), end: shift(c.end) };
+    if (ns.start === x.item.o_start && ns.end === x.item.o_end) delete changes[x.item.sid]; else changes[x.item.sid] = ns;
+  }
+  saveSchedule(changes, `${targets.length}件の時間を${min > 0 ? `${min}分 遅らせ` : `${-min}分 早め`}ました`);
+});
+
 // ---------- 混雑・実況 ----------
 function renderCrowd() {
   const stale = CROWD.staleMinutes * 60000;
@@ -320,12 +390,31 @@ function renderCrowd() {
         <div class="levels">${CROWD.levels.map((lv, i) => `
           <button type="button" data-venue="${esc(id)}" data-level="${i}" style="--c:${esc(lv.color)}" aria-pressed="${c?.level === i}">${esc(lv.label)}</button>`).join("")}
         </div>
+        <button type="button" class="clear" data-venue="${esc(id)}" data-level="none"${c ? "" : " disabled"}>設定しない（出さない）</button>
       </article>`;
   }).join("");
 }
+// 「設定しない」＝その会場の混雑の文書を消す（サイトには「情報なし」と出る）
+const clearCrowd = (id) => fs.deleteDoc(fs.doc(db, "crowd", id));
+$("#crowd-bulk").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-bulk]");
+  if (!b) return;
+  const none = b.dataset.bulk === "none", level = Number(b.dataset.bulk);
+  const what = none ? "すべての会場を「設定しない」に" : `すべての会場を「${CROWD.levels[level].label}」に`;
+  if (!confirm(`${what}しますか？（${CROWD.venues.length}会場）`)) return;
+  write(`${what}しました`, async () => {
+    const batch = fs.writeBatch(db);
+    for (const id of CROWD.venues) {
+      if (none) batch.delete(fs.doc(db, "crowd", id));
+      else batch.set(fs.doc(db, "crowd", id), { level, updated_at: fs.serverTimestamp() });
+    }
+    await batch.commit();
+  });
+});
 $("#venues").addEventListener("click", (e) => {
   const b = e.target.closest("[data-venue]");
   if (!b) return;
+  if (b.dataset.level === "none") return void write(`${venueName(b.dataset.venue)}を「設定しない」にしました`, () => clearCrowd(b.dataset.venue));
   const level = Number(b.dataset.level);
   write(`${venueName(b.dataset.venue)}を「${CROWD.levels[level].label}」にしました`,
     () => fs.setDoc(fs.doc(db, "crowd", b.dataset.venue), { level, updated_at: fs.serverTimestamp() }));
@@ -527,7 +616,36 @@ $("#official-form").addEventListener("submit", async (e) => {
 const SHOP_STATUS = [
   ["normal", "すぐ買える", "#45D483"], ["10min", "10分待ち", "#F5C451"], ["20min", "20分以上", "#F2A96A"], ["soldout", "完売", "#FF6B7A"],
   ["closed", "休業中", "#8B93C9"], // 混みぐあいとは別（休けい中など）
+  ["none", "設定しない", "#9AA0A6"], // 待ち時間・休業の知らせを消す（サイトには、何も出ない）
 ];
+// 待ち時間の変更：none のときは、状態と更新時刻を消す
+function shopStatusFields(v) {
+  return v === "none" ? { status: fs.deleteField(), updated_at: fs.deleteField() } : { status: v, updated_at: fs.serverTimestamp() };
+}
+function setShopStatus(shop, v) {
+  const label = SHOP_STATUS.find(([k]) => k === v)[1];
+  if (v === "none" && !shop.exists) return toast(`${shop.name}は、もともと設定されていません`);
+  return write(`${shop.name}を「${label}」にしました`, () => shopDocWrite(shop, shopStatusFields(v)));
+}
+// いま出ているお店（探していれば、その結果）を、一斉に変える
+async function bulkShopStatus(v) {
+  const q = kana($("#cshops-q").value);
+  const shops = (q ? allShops().filter((s) => shopHay(s).includes(q)) : allShops()).filter((s) => v !== "none" || (s.exists && s.status));
+  if (!shops.length) return toast("変えるお店がありません");
+  const label = SHOP_STATUS.find(([k]) => k === v)[1];
+  if (!confirm(`${q ? "探しているお店" : "すべてのお店"} ${shops.length}店を「${label}」にしますか？`)) return;
+  write(`${shops.length}店を「${label}」にしました`, async () => {
+    for (let i = 0; i < shops.length; i += 400) {
+      const batch = fs.writeBatch(db);
+      for (const shop of shops.slice(i, i + 400)) {
+        const ref = fs.doc(db, "shops", shop.id), fields = shopStatusFields(v);
+        if (!shop.exists) batch.set(ref, { name: shop.name, map: shop.map, ...fields });
+        else batch.update(ref, { ...fields, ...("pass" in shop ? { pass: fs.deleteField() } : {}) });
+      }
+      await batch.commit();
+    }
+  });
+}
 const shopUrl = (code, shop) => new URL(`../shop.html?shop=${encodeURIComponent(shop)}&code=${encodeURIComponent(code)}`, location.href).href;
 const openCodes = new Set();
 // 地図に載っているお店（config.js の SHOPS）はすべて最初から並べる。shops/{id} の文書は、待ち時間を変えたりコードを渡したりしたときに作る。
@@ -582,13 +700,14 @@ function renderCrowdShops() {
   cshopsHold = false;
   const shops = allShops();
   const busy = shops.filter((s) => s.status && s.status !== "normal").length;
+  $("#cshops-bulk").innerHTML = `<b>いま出ているお店を一斉に：</b>${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-bulk-shop="${v}" style="--c:${c}"${v === "none" ? ' class="clear"' : ""}>${label}</button>`).join("")}`;
   $("#cshops-sum").textContent = `　待ちあり・完売 ${busy}店 / ${shops.length}店`;
   const q = kana($("#cshops-q").value);
   const list = q ? shops.filter((s) => shopHay(s).includes(q)) : shops;
   $("#cshops").innerHTML = list.length ? list.map((s) => `
     <div class="cshop">
       <div class="cshop-name"><b>${esc(s.name)}</b><small>${[s.group, s.where, s.updated_at ? `${hhmm(toMs(s.updated_at))} 更新` : "まだ出していない"].filter(Boolean).map(esc).join("・")}</small></div>
-      <div class="shop-status">${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-shop="${esc(s.id)}" data-status="${v}" style="--c:${c}" aria-pressed="${s.status === v}">${label}</button>`).join("")}</div>
+      <div class="shop-status">${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-shop="${esc(s.id)}" data-status="${v}" style="--c:${c}" aria-pressed="${v === "none" ? !s.status : s.status === v}">${label}</button>`).join("")}</div>
       <form class="cshop-msg" data-msg-shop="${esc(s.id)}">
         <input maxlength="40" value="${esc(s.message ?? "")}" placeholder="お店のひとこと（トップの縁日・地図に出る。40字まで）" aria-label="${esc(s.name)}のひとこと">
         <button class="btn btn-ghost btn-sm" type="submit">のせる</button>
@@ -596,6 +715,7 @@ function renderCrowdShops() {
     </div>`).join("") : '<p class="muted small">見つかりません</p>';
 }
 $("#cshops-q").addEventListener("input", renderCrowdShops);
+$("#cshops-bulk").addEventListener("click", (e) => { const b = e.target.closest("[data-bulk-shop]"); if (b) bulkShopStatus(b.dataset.bulkShop); });
 $("#cshops").addEventListener("focusout", () => setTimeout(() => { if (cshopsHold) renderCrowdShops(); }, 0));
 $("#cshops").addEventListener("submit", (e) => {
   const f = e.target.closest("[data-msg-shop]");
@@ -609,9 +729,7 @@ $("#cshops").addEventListener("submit", (e) => {
 $("#cshops").addEventListener("click", (e) => {
   const st = e.target.closest("[data-status]");
   if (!st) return;
-  const shop = findShop(st.dataset.shop);
-  const label = SHOP_STATUS.find(([v]) => v === st.dataset.status)[1];
-  write(`${shop.name}を「${label}」にしました`, () => shopDocWrite(shop, { status: st.dataset.status, updated_at: fs.serverTimestamp() }));
+  setShopStatus(findShop(st.dataset.shop), st.dataset.status);
 });
 function renderShops() {
   renderCrowdShops();
@@ -644,7 +762,7 @@ function renderShops() {
         </div>
         ${s.kind !== "shop" ? "" : `<details class="shop-more" data-more="${esc(s.id)}"${openMore.has(s.id) ? " open" : ""}>
           <summary>当日の操作<span>待ち時間：${esc(wait(s.status) ?? "まだ出していない")}${s.updated_at ? `（${hhmm(toMs(s.updated_at))}）` : ""}・コード ${codes.length}</span></summary>
-          <div class="shop-status">${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-shop="${esc(s.id)}" data-status="${v}" style="--c:${c}" aria-pressed="${s.status === v}">${label}</button>`).join("")}</div>
+          <div class="shop-status">${SHOP_STATUS.map(([v, label, c]) => `<button type="button" data-shop="${esc(s.id)}" data-status="${v}" style="--c:${c}" aria-pressed="${v === "none" ? !s.status : s.status === v}">${label}</button>`).join("")}</div>
           <div class="shop-codes">
             ${codes.map((c) => `<span class="code-chip">${esc(c.code)}<button class="btn btn-ghost btn-sm" data-qr="${esc(c.code)}">${openCodes.has(c.code) ? "QR を閉じる" : "QR"}</button><button class="btn btn-danger btn-sm" data-revoke="${esc(c.code)}">取り消す</button></span>
               ${openCodes.has(c.code) ? `<div class="qr-box" data-qr-box="${esc(c.code)}" data-qr-shop="${esc(s.id)}"><div class="qr"></div><small>${esc(shopUrl(c.code, s.id))}</small></div>` : ""}`).join("")}
@@ -696,9 +814,7 @@ $("#shop-list").addEventListener("click", async (e) => {
     write(`${shop.name}を「まだ」に戻しました`, () => fs.updateDoc(fs.doc(db, "shops", shop.id), { handed_at: fs.deleteField() }));
   }
   if (st) {
-    const shop = findShop(st.dataset.shop);
-    const label = SHOP_STATUS.find(([v]) => v === st.dataset.status)[1];
-    write(`${shop.name}を「${label}」にしました`, () => shopDocWrite(shop, { status: st.dataset.status, updated_at: fs.serverTimestamp() }));
+    setShopStatus(findShop(st.dataset.shop), st.dataset.status);
   }
   if (issue) {
     const code = newCode();

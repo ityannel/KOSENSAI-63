@@ -175,6 +175,16 @@ await t("staff can switch photo review", assertSucceeds(setDoc(doc(staff, "site_
 await t("visitors cannot switch photo review", assertFails(setDoc(doc(anon, "site_live/current"), { photo_review: false, updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
 await setReview(false);
 
+// 混雑の「設定しない」（削除）と、スケジュールの変更
+await t("staff can delete crowd (unset)", assertSucceeds(deleteDoc(doc(staff, "crowd/gym2"))));
+await t("anonymous cannot delete crowd", assertFails(deleteDoc(doc(anon, "crowd/entrance"))));
+const sched = { changes: { a202610241215: { start: "2026-10-24T12:25:00+09:00", end: "2026-10-24T12:45:00+09:00" } }, updated_at: serverTimestamp(), updated_by: "honbu@example.com" };
+await t("staff can write schedule changes", assertSucceeds(setDoc(doc(staff, "site_schedule/current"), sched)));
+await t("anonymous can read schedule changes", assertSucceeds(getDoc(doc(anon, "site_schedule/current"))));
+await t("anonymous cannot write schedule changes", assertFails(setDoc(doc(anon, "site_schedule/current"), { ...sched, updated_by: null })));
+await t("schedule rejects extra fields", assertFails(setDoc(doc(staff, "site_schedule/current"), { ...sched, secret: 1 })));
+await t("schedule rejects non-map changes", assertFails(setDoc(doc(staff, "site_schedule/current"), { ...sched, changes: "x" })));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

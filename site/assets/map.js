@@ -10,6 +10,7 @@
 import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION } from "./config.js";
 import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES } from "./campus.js";
 import { avatar, VERIFIED } from "./avatar.js";
+import { tStart, tPlain } from "./schedule.js";
 import { findRoute, describe, centerOf, buildingAt } from "./route.js";
 import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
 
@@ -1496,7 +1497,7 @@ function renderSheet() {
     ${events.length ? `<h3 class="sh-h">企画</h3><ul class="sh-events">${events.map((e) => {
       const on = Date.parse(e.start) <= s.now && s.now < Date.parse(e.end);
       const past = Date.parse(e.end) <= s.now;
-      return `<li class="${past ? "is-past" : ""}"><time>${md(e.start)} ${hhmm(e.start)}</time>${esc(e.title)}${e.internal ? "（学内のみ）" : ""}${on ? "<em>NOW</em>" : ""}</li>`;
+      return `<li class="${past ? "is-past" : ""}"><time>${md(e.start)} ${tStart(e)}</time>${esc(e.title)}${e.internal ? "（学内のみ）" : ""}${on ? "<em>NOW</em>" : ""}</li>`;
     }).join("")}</ul>` : ""}
     ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` ${statusPill(w)}` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${msgHtml(x, s)}${x.note ? `<p>${esc(x.note)}</p>` : ""}</li>`).join("")}</ul>` : ""}
     ${p.zone ? `<p class="sh-hint">この階の教室（${esc(p.codes.join("・"))}）のどれかです。どの教室かは、当日は教室の入口の看板を見てください。</p>` : ""}
@@ -1914,7 +1915,7 @@ function renderNowSheet(body, s) {
     .sort((a, b) => b.w.rank - a.w.rank);
   body.innerHTML = `<p class="sh-kind">開催状況（リアルタイム）</p><h2 class="sh-title">開催中</h2>
     ${s.running?.length ? `<ul class="m-list">${s.running.map((e) => venueItem(e, e.end ? `〜${hhmm(e.end)}` : "", true)).join("")}</ul>` : '<p class="sh-hint">いまやっている企画はありません。</p>'}
-    ${soon.length ? `<h3 class="sh-h">このあと1時間</h3><ul class="m-list">${soon.map((e) => venueItem(e, `${hhmm(e.start)}〜`, false)).join("")}</ul>` : ""}
+    ${soon.length ? `<h3 class="sh-h">このあと1時間</h3><ul class="m-list">${soon.map((e) => venueItem(e, `${tPlain(e)}〜`, false)).join("")}</ul>` : ""}
     ${busy.length ? `<h3 class="sh-h">混んでいる・売り切れ・休業中のお店</h3><ul class="m-list">${busy.map(({ p, w }) => itemHtml({ p, sub: `${w.label}・${p.shopList.map((x) => x.name).join("・")}` })).join("")}</ul>` : ""}`;
 }
 // スタンプ：スタンプラリーのお店と、押したかどうか
@@ -2391,11 +2392,11 @@ function buildIndex() {
   }
   for (const e of EVENTS) {
     const p = place(e.venue);
-    if (p) addItem({ p, kind: "event", label: e.title, sub: `${md(e.start)} ${hhmm(e.start)}〜・${titleOf(p)}${e.internal ? "・学内のみ" : ""}`, rank: 0.6 }, e.title, titleOf(p), "企画 ステージ イベント");
+    if (p) addItem({ p, kind: "event", label: e.title, sub: `${md(e.start)} ${tPlain(e)}〜・${titleOf(p)}${e.internal ? "・学内のみ" : ""}`, rank: 0.6 }, e.title, titleOf(p), "企画 ステージ イベント");
   }
   // ステージの出演者（バンド名などでさがせる）
   const sp = place(STAGE.venue);
-  if (sp) for (const a of STAGE.acts) addItem({ p: sp, kind: "event", label: a.name, sub: `${md(a.start)} ${hhmm(a.start)}〜・ステージ・${a.kind}`, rank: 0.6 }, a.name, titleOf(sp), `ステージ 出演 ${a.kind}`);
+  if (sp) for (const a of STAGE.acts) addItem({ p: sp, kind: "event", label: a.name, sub: `${md(a.start)} ${tPlain(a)}〜・ステージ・${a.kind}`, rank: 0.6 }, a.name, titleOf(sp), `ステージ 出演 ${a.kind}`);
 }
 // 2文字ずつのかたまりの重なり（打ち間違い・うろ覚え用）
 const bigrams = (s) => { const out = new Set(); for (let i = 0; i < s.length - 1; i++) out.add(s.slice(i, i + 2)); return out; };

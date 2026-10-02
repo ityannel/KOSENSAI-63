@@ -3,6 +3,7 @@
 // トップページ（main.js・shops-board.js）と、みどころのページ（mido-page.js）で使う
 import { SHOPS, GENRES, HOMEROOMS, MAP, ELECTION } from "./config.js";
 import { ALL_TICKETS, ticketHtml, isOn, isPast, esc, hhmm, venueName } from "./tickets.js";
+import { tRange } from "./schedule.js";
 
 const fmt = (iso, o) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", ...o }).format(new Date(iso));
 const dayText = (iso) => `${fmt(iso, { month: "numeric" })}.${fmt(iso, { day: "numeric" })} ${fmt(iso, { weekday: "short" }).toUpperCase()}`;
@@ -62,7 +63,7 @@ export function openEvent(e, t = Date.now()) {
     <h2 class="dt-title" id="dt-title">${esc(e.title)}${on ? ' <span class="dt-now">NOW</span>' : ""}</h2>
     ${state ? `<p class="dt-state">${esc(state)}</p>` : ""}
     <dl class="dt-facts">
-      <div><dt>日時</dt><dd>${dayText(e.start)}　${hhmm(e.start)}〜${hhmm(e.end)}</dd></div>
+      <div><dt>日時</dt><dd>${dayText(e.start)}　${tRange(e)}</dd></div>
       <div><dt>場所</dt><dd>${esc(venueName(e.venue))}</dd></div>
       ${[e.kind, e.mood].filter(Boolean).length ? `<div><dt>種類</dt><dd>${esc([e.kind, e.mood].filter(Boolean).join("・"))}</dd></div>` : ""}
     </dl>

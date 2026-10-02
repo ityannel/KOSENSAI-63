@@ -6,6 +6,7 @@ import { subscribeCrowd, subscribeLive, subscribeShops, countVisit } from "./liv
 import { stampIds } from "./rally.js";
 import { initMap, renderMap, setNotice, refreshRally } from "./map.js";
 import { subscribePosts } from "./posts.js";
+import { watchSchedule } from "./schedule.js";
 import "./offline.js";
 
 // ?now=2026-10-24T13:30 でその時刻として表示できる（トップページと同じ）
@@ -57,3 +58,4 @@ if (sheetEl) watch.observe(sheetEl, { attributes: true, attributeFilter: ["hidde
 if (needPosts()) wantPosts();
 setInterval(renderMap, 30000);
 setTimeout(countVisit, 4000); // 閲覧者数（地図から入った人も、1日1回だけ数える）
+setTimeout(() => watchSchedule(), 1500); // スケジュールの変更

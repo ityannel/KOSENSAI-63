@@ -6,6 +6,7 @@ import { FESTIVAL } from "./config.js";
 import { ALL_TICKETS as TICKETS, ticketHtml, rowHtml, isOn, isPast, dayOf, esc, venueName } from "./tickets.js";
 import { drawThread, watchThread } from "./thread.js";
 import { wireDetails } from "./detail.js";
+import { watchSchedule } from "./schedule.js";
 
 const params = new URLSearchParams(location.search);
 const nowParam = params.get("now");
@@ -107,3 +108,4 @@ render();
 watchThread(document.getElementById("mido-tickets"));
 wireDetails(document.getElementById("mido-tickets"), nowMs); // チケットを押すと詳しいシート
 setInterval(render, 30000);
+setTimeout(() => watchSchedule(), 1500); // スケジュールの変更

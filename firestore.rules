@@ -67,8 +67,15 @@ service cloud.firestore {
     }
     match /crowd/{venue} {
       allow read: if true;
+      allow delete: if isStaff(); // 「設定しない」（その会場の混雑を、出さない）
       allow write: if isStaff() && data().keys().hasOnly(['level', 'updated_at'])
         && data().level is int && data().level >= 0 && data().level <= 3 && data().updated_at == request.time;
+    }
+    // スケジュールの変更（本部コンソールの「スケジュール」）：site_schedule/current = { changes: { [sid]: { start, end } } }。読むのはだれでも、書くのは本部だけ
+    match /site_schedule/{id} {
+      allow read: if true;
+      allow write: if isStaff() && stamped() && data().keys().hasOnly(['changes', 'updated_at', 'updated_by'])
+        && data().changes is map && data().changes.size() <= 200;
     }
     match /chatter/{id} {
       allow read: if true;

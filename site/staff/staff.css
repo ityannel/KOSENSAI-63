@@ -708,3 +708,23 @@ h1, h2, h3 { font-weight: 400; }
 .tl-replybar { display: flex; align-items: center; gap: 8px; padding-top: 10px; }
 .tl-replybar textarea { flex: 1; min-width: 0; padding: 8px 12px; border: 1.5px solid var(--line-2); border-radius: 999px; background: var(--bg-2); color: var(--ink); font: inherit; font-size: 15px; resize: none; }
 .tl-thread:has(.tl-menu[open]) { z-index: 6; } /* 「…」のメニューが、次の投稿の下にかくれない */
+
+/* 混雑の一斉変更・設定しない */
+.bulk { margin-bottom: 14px; }
+.bulk-levels { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.levels .clear, .shop-status .clear { border-style: dashed; }
+.venue .clear { margin-top: 8px; width: 100%; padding: 8px; border: 1px dashed var(--line); border-radius: 8px; background: transparent; color: var(--muted, #9aa0a6); cursor: pointer; font-weight: 700; }
+.cshops-bulk { margin: 0 0 12px; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; align-items: center; }
+.cshops-bulk b { margin-right: 6px; font-size: .85rem; }
+/* スケジュール */
+.sched-shift { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 10px; }
+.sched-day { margin: 18px 0 8px; font-size: 1.05rem; }
+.sched-row { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 14px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--card, var(--bg-2)); }
+.sched-row.is-chg { border-color: var(--tint, #F2A96A); box-shadow: inset 4px 0 0 var(--tint, #F2A96A); }
+.sched-row .kind { font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: var(--bg-2); text-align: center; }
+.sched-row b { display: block; }
+.sched-row small { color: var(--muted, #9aa0a6); }
+.sched-row .times { display: flex; align-items: center; gap: 6px; }
+.sched-row input[type="time"] { padding: 6px 8px; }
+.sched-row s { opacity: .65; }
+@media (max-width: 760px) { .sched-row { grid-template-columns: 1fr; } }

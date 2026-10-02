@@ -42,6 +42,7 @@
         <a href="#crowd" data-nav="crowd"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.5M17.5 19a5.5 5.5 0 0 0-2.5-4.6"/></svg><span data-short="混雑">混雑・実況</span></a>
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
         <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店</span></a>
+        <a href="#schedule" data-nav="schedule"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span data-short="時間">スケジュール</span></a>
         <a href="#print" data-nav="print"><svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 9h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 19 17h-2M7 14h10v6H7z"/></svg><span data-short="印刷">印刷・スタンプ</span></a>
         <a href="#texts" data-nav="texts"><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg><span data-short="文章">文章と書体</span></a>
         <a href="#settings" data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span data-short="設定">サイトの設定</span></a>
@@ -132,10 +133,15 @@
 
       <!-- ===== 混雑・実況 ===== -->
       <section class="view" id="view-crowd" data-title="混雑・実況" data-eyebrow="CROWD" hidden>
+        <article class="card bulk" id="crowd-bulk">
+          <header class="card-head"><h2>すべての会場を、一斉に変える</h2></header>
+          <div class="levels bulk-levels"><button type="button" data-bulk="0" style="--c:#6CBAB5">すべて「空いています」</button><button type="button" data-bulk="1" style="--c:#F1D08A">すべて「ふつう」</button><button type="button" data-bulk="2" style="--c:#F2A96A">すべて「混雑しています」</button><button type="button" data-bulk="3" style="--c:#E0655A">すべて「入場制限中」</button><button type="button" class="clear" data-bulk="none" style="--c:#9AA0A6">すべて設定しない</button></div>
+        </article>
         <div class="crowd-grid" id="venues"></div>
         <details class="card side-details cshops" id="cshops-box">
           <summary><h2>模擬店の混みぐあい（待ち時間）</h2><span class="muted small" id="cshops-sum"></span></summary>
           <label class="desk-search cshops-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="cshops-q" type="search" placeholder="お店・団体・クラスで探す" autocomplete="off" aria-label="お店を探す"></label>
+          <div class="shop-status cshops-bulk" id="cshops-bulk" aria-label="いま出ているお店を一斉に変える"></div>
           <div class="cshops-list" id="cshops"></div>
         </details>
         <article class="card">
@@ -178,6 +184,22 @@
 
       <!-- ===== 模擬店・印刷 ===== -->
       <!-- 受付の流れ：来たお店を名前で探す →「印刷する」でセット（三角POP＋お店の人用）を刷る → 渡したら「渡した」 -->
+      <!-- ===== スケジュール ===== -->
+      <section class="view" id="view-schedule" data-title="スケジュール" data-eyebrow="SCHEDULE" hidden>
+        <article class="card">
+          <header class="card-head"><h2>時間を変える</h2></header>
+          <p class="muted small">出演・企画・企業セミナーの時間を変えると、トップページ・地図・みどころ・会場のディスプレイにすぐ反映されます。変えたものは「新しい時間」を大きく、「もとの時間」を小さく取り消し線で出します。</p>
+          <form class="sched-shift" id="sched-shift">
+            <label class="field"><span>日</span><select id="sh-day"></select></label>
+            <label class="field"><span>この時刻から後ろを</span><input type="time" id="sh-from" required></label>
+            <label class="field"><span>ずらす分（−は早める）</span><input type="number" id="sh-min" step="5" value="10" required></label>
+            <button class="btn btn-primary" type="submit">まとめてずらす</button>
+            <button class="btn btn-ghost" type="button" id="sched-reset">すべてもとの時間にもどす</button>
+          </form>
+        </article>
+        <div id="sched-list"></div>
+      </section>
+
       <section class="view" id="view-shops" data-title="模擬店" data-eyebrow="SHOPS" hidden>
         <div class="shops-layout">
           <div class="shops-main">

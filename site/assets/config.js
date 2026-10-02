@@ -458,3 +458,26 @@ export const SECRETS = {
   reward: "ポスターの壁紙をどうぞ。見つけてくれてありがとう！",
   wallpaper: "assets/img/wallpaper.jpg",
 };
+
+// ---------- スケジュールの変更（本部コンソールの「スケジュール」で変えた時間） ----------
+// 出演・企画・企業セミナーに、変更を受けつける印（sid）と、もとの時間（o_start・o_end）をつける。
+// 変更は Firestore の site_schedule/current = { changes: { [sid]: { start, end } } }。最後に受けとった変更はこの端末にもしまってあり（SCHEDULE_KEY）、次に開いたときは、読みこんですぐ反映する
+export const SCHEDULE_KEY = "kosen63-schedule";
+const schedItems = () => [["a", STAGE.acts], ["e", EVENTS], ["s", SEMINARS.items]].flatMap(([k, list]) => list.map((x) => [k, x]));
+{
+  const seen = new Map();
+  for (const [k, x] of schedItems()) {
+    const base = `${k}${String(x.start).replace(/\D/g, "").slice(0, 12)}`, n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    x.sid = n ? `${base}_${n}` : base;
+    x.o_start = x.start; x.o_end = x.end;
+  }
+}
+export const scheduleItems = () => schedItems().map(([kind, item]) => ({ kind, item }));
+export function applySchedule(changes) {
+  for (const [, x] of schedItems()) {
+    const c = changes?.[x.sid];
+    x.start = c?.start ?? x.o_start; x.end = c?.end ?? x.o_end;
+  }
+}
+try { applySchedule(JSON.parse(localStorage.getItem(SCHEDULE_KEY) ?? "{}")); } catch { /* 保存できない・読めないときは、もとの時間のまま */ }

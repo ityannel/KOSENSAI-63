@@ -1217,3 +1217,7 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 .ig-verified { display: inline-grid; place-items: center; width: 1.05em; height: 1.05em; margin-left: 5px; border-radius: 50%; background: linear-gradient(135deg, #3d86f0, #1361cc); vertical-align: -0.12em; }
 .ig-verified svg { width: 72%; height: 72%; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
 .ig-av i svg { display: block; width: 84%; height: 84%; }
+
+/* スケジュールの変更（地図）：新しい時間を上に、もとの時間を小さく取り消し線で */
+.t-chg { display: inline-flex; flex-direction: column; line-height: 1.1; vertical-align: top; }
+.t-chg .t-old { display: block; margin-top: .15em; font-size: .62em; font-weight: 400; opacity: .7; text-decoration: line-through; white-space: nowrap; }

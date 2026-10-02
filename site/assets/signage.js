@@ -5,6 +5,7 @@ import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
 import { avatar, VERIFIED } from "./avatar.js";
 import { routeMap } from "./signage-map.js";
+import { watchSchedule, tStart, tEnd, tRange } from "./schedule.js"; // スケジュールの変更（本部コンソール）
 
 const params = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
@@ -236,8 +237,8 @@ const slideCrowd = {
 };
 
 // ---------- ステージ・企画 ----------
-const ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
-const EVS = EVENTS.filter((e) => !e.stage && e.venue !== SEMINARS.venue).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
+let ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
+let EVS = EVENTS.filter((e) => !e.stage && e.venue !== SEMINARS.venue).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
 function stageState(t) {
   const cur = ACTS.find((a) => t >= a.s && t < a.e) ?? null;
   const nxt = ACTS.find((a) => a.s > t) ?? null;
@@ -262,17 +263,17 @@ const slideStage = {
       ? `<div class="now slide-l"><span class="lab">NOW ON STAGE</span><div class="eq">${Array.from({ length: 30 }, (_, k) => `<i style="--k:${k};--h:${30 + Math.round(Math.random() * 55)}%"></i>`).join("")}</div>
           <h2>${esc(cur.name)}</h2><div class="kind"><span class="chip">${esc(cur.kind)}</span><span class="chip">${esc(cur.mood)}</span></div>
           <p>${esc(cur.copy).replace(/\n/g, "<br>")}</p>
-          <div class="barw"><time>${hm(cur.s)}</time><div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div><time>${hm(cur.e)}</time></div></div>`
+          <div class="barw"><time>${tStart(cur)}</time><div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div><time>${tEnd(cur)}</time></div></div>`
       : nxt
         ? `<div class="now wait slide-l"><span class="lab">NEXT</span>
-          <h2 class="nm">${esc(nxt.name)}</h2><div class="kind"><span class="chip">${esc(nxt.kind)}</span><span class="chip">${esc(nxt.mood)}</span><span class="chip">${hm(nxt.s)}〜${hm(nxt.e)}</span></div>
+          <h2 class="nm">${esc(nxt.name)}</h2><div class="kind"><span class="chip">${esc(nxt.kind)}</span><span class="chip">${esc(nxt.mood)}</span><span class="chip">${tRange(nxt)}</span></div>
           <p>${esc(nxt.copy).replace(/\n/g, "<br>")}</p></div>`
         : `<div class="now wait slide-l"><span class="lab">STAGE</span><h2>おやすみ</h2></div>`; // 出演がないときだけ
     // このあとの出演を、次の1つだけでなく、どんどん並べる（企画があれば、その分は1つ減らす）
     const row = (small, title, time, sub, hotRow, n) => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} ${hotRow ? "hot" : ""} rise" style="--i:${n}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
     const later = ACTS.filter((a) => a.s > t).slice(cur ? 0 : 1).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0)); // 出演中でなければ、次の出演は左のカードに出すので、右には2つ目から // 急げ！の帯が出ているときは、場所が狭いので1つ減らす
-    const nx = later.map((a, k) => row(k === 0 && cur ? "NEXT" : "THEN", a.name, hm(a.s), `${a.kind}　${a.mood}`, k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k));
-    if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, hm(nextEv.s), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
+    const nx = later.map((a, k) => row(k === 0 && cur ? "NEXT" : "THEN", a.name, tStart(a), `${a.kind}　${a.mood}`, k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k));
+    if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, tStart(nextEv), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
     return { dur: hot ? 15000 : 13000, cls: "stage", html: `
       <span class="tag slide-l"><i>${ic("mic")}</i>ステージ・企画</span>
@@ -299,7 +300,15 @@ function paintHurry() {
 }
 
 // ---------- 企業セミナー（ZACROS hall） ----------
-const SEM = SEMINARS.items.map((x) => ({ ...x, s: Date.parse(x.start), e: Date.parse(x.end) }));
+let SEM = SEMINARS.items.map((x) => ({ ...x, s: Date.parse(x.start), e: Date.parse(x.end) }));
+// 本部がスケジュールを変えたら、出演・企画・セミナーの一覧を作りなおす（画面は、次に作るときから新しい時間）
+function rebuildSchedule() {
+  ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
+  EVS = EVENTS.filter((e) => !e.stage && e.venue !== SEMINARS.venue).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
+  SEM = SEMINARS.items.map((x) => ({ ...x, s: Date.parse(x.start), e: Date.parse(x.end) }));
+}
+watchSchedule(rebuildSchedule);
+rebuildSchedule();
 const slideSeminar = {
   async build() {
     const t = now(), cur = SEM.find((x) => t >= x.s && t < x.e) ?? null;
@@ -307,7 +316,7 @@ const slideSeminar = {
     const main = cur ?? later.shift();
     if (!main) return null;
     const rows = later.slice(0, 3);
-    const hr = (small, x, n) => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} rise" style="--i:${n}"><span class="t">${hm(x.s)}</span><span class="w"><small>${small}</small><b class="nm">${esc(x.company)}</b><i>${esc(x.title)}</i></span></div>`;
+    const hr = (small, x, n) => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} rise" style="--i:${n}"><span class="t">${tStart(x)}</span><span class="w"><small>${small}</small><b class="nm">${esc(x.company)}</b><i>${esc(x.title)}</i></span></div>`;
     const sameDay = dayOf(main.s) === dayOf(t);
     return { dur: 13000, cls: "stage seminar", html: `
       <span class="tag slide-l"><i>${ic("building")}</i>企業セミナー・製品展示</span>
@@ -317,8 +326,8 @@ const slideSeminar = {
           ${main.logo ? `<div class="lg"><img src="${esc(main.logo)}" alt=""></div>` : ""}
           <h2 class="nm">${esc(main.company)}</h2>
           <p>${esc(main.title)}</p>
-          <div class="kind"${cur ? " hidden" : ""}>${cur ? "" : `<span class="chip">${sameDay ? "" : `${dateEn(main.s)}　`}${hm(main.s)}〜${hm(main.e)}</span>`}</div>
-          ${cur ? `<div class="barw"><time>${hm(main.s)}</time><div class="bar"><i style="width:${Math.round(((t - main.s) / (main.e - main.s)) * 100)}%"></i></div><time>${hm(main.e)}</time></div>` : ""}</div>
+          <div class="kind"${cur ? " hidden" : ""}>${cur ? "" : `<span class="chip">${sameDay ? "" : `${dateEn(main.s)}　`}${tRange(main)}</span>`}</div>
+          ${cur ? `<div class="barw"><time>${tStart(main)}</time><div class="bar"><i style="width:${Math.round(((t - main.s) / (main.e - main.s)) * 100)}%"></i></div><time>${tEnd(main)}</time></div>` : ""}</div>
         <div class="nxt">${rows.map((x, k) => hr(dayOf(x.s) === dayOf(t) ? (k === 0 && cur ? "NEXT" : "THEN") : dateEn(x.s), x, 2 + k)).join("")}</div>
       </div>` };
   },

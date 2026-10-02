@@ -2027,3 +2027,14 @@ body.vote-page { background: var(--grain), linear-gradient(180deg, #2a3a73, #4c3
 /* 模擬店総選挙は Forms：投票のページのボタンは、リンク（a）でも、同じ形 */
 a.rv-btn { text-decoration: none; color: inherit; }
 a.rv-submit { display: grid; place-items: center; text-decoration: none; }
+
+/* スケジュールの変更：新しい時間を大きく上に、もとの時間を小さく取り消し線で下に */
+.t-chg { display: inline-flex; flex-direction: column; align-items: inherit; line-height: 1.1; vertical-align: top; }
+.t-chg .t-new { font-weight: inherit; }
+.t-chg .t-old { display: block; margin-top: .15em; font-size: .62em; font-weight: 400; opacity: .75; text-decoration: line-through; text-decoration-thickness: 1.5px; white-space: nowrap; }
+.t-chg .t-new small { font-size: inherit; }
+/* チケットの左の札：変えた時間（新しい時間を上に、もとの時間を下に小さく） */
+.tk-time .t-chg { display: flex; flex-direction: column; align-items: center; }
+.tk-time .t-new { display: flex; flex-direction: column; align-items: center; font-weight: inherit; }
+.tk-time .t-old { font-size: .62em; }
+.tl-row time .t-chg { align-items: flex-start; }
