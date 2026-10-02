@@ -384,3 +384,5 @@ body.is-hurry #slide { bottom: 160px; }
 .shop .note .num { display: inline; }
 .now p, .pc-b p, .pc-ph.txt q, .bubble, .nx i, .way li .sy { word-break: auto-phrase; text-wrap: pretty; }
 .ttl { text-wrap: balance; }
+/* ようこそ画面の日時：ただの白い字（影なし） */
+.intro .big, .intro .big b, .intro .big span { color: #fff; text-shadow: none; filter: none; }
