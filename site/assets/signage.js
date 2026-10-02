@@ -227,7 +227,7 @@ const slideStage = {
           <p>${esc(cur.copy).replace(/\n/g, "<br>")}</p>
           <div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div></div>`
       : `<div class="now wait slide-l"><span class="lab">STAGE</span>
-          <h2>${nxt ? "つぎの出演まで、もうすこし" : "ステージは、おやすみ中"}</h2>${nxt ? `<p>${hm(nxt.s)} から　${esc(nxt.name)}</p>` : ""}</div>`;
+          <h2>${nxt ? "まもなく" : "おやすみ"}</h2>${nxt ? `<p>${hm(nxt.s)}〜　${esc(nxt.name)}</p>` : ""}</div>`;
     const nx = [];
     if (nxt) nx.push(`<div class="nx ${hot && !cur && hot.s === nxt.s && hot.title === nxt.name ? "hot" : ""} rise" style="--i:2"><small>NEXT</small><b>${esc(nxt.name)}</b><time>${hm(nxt.s)}〜　${esc(nxt.kind)}</time></div>`);
     if (nextEv) nx.push(`<div class="nx ${hot && hot.s === nextEv.s && hot.title === nextEv.title ? "hot" : ""} rise" style="--i:3"><small>${dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画"}</small><b>${esc(nextEv.title)}</b><time>${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)} `}${hm(nextEv.s)}〜　${esc(venueName(nextEv.venue))}${nextEv.internal ? "（学内の方限定）" : ""}</time></div>`);
