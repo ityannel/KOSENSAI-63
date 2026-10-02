@@ -4,6 +4,7 @@ import { FESTIVAL, STAGE, EVENTS, SEMINARS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
 import { avatar, VERIFIED } from "./avatar.js";
+import { routeMap } from "./signage-map.js";
 
 const params = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
@@ -180,9 +181,11 @@ const slideShop = {
     const room = s.room ?? HOMEROOMS[s.cls];
     const where = `${s.bldg ? `${s.bldg}棟` : ""}${s.floor ? String(s.floor).replace(/F$/, "階") : ""}` || s.where || ""; // 場所は「B棟3階」だけ（部屋番号・「場所」の文字は出さない）
     const w = d && WAIT[d.status];
+    // ディスプレイの場所から、そのお店の教室までの道順の地図（場所と、教室の部屋番号がわかるときだけ）
+    const rm = spot && room && !/^pt-/.test(room) ? await routeMap(spot.here, room).catch((e) => { console.warn(e); return null; }) : null;
     const lines = String(s.note ?? "").split(/\n/).filter(Boolean);
     const name = flat(s.name);
-    return { dur: 13000, cls: "shop", html: `
+    return { dur: rm ? 16000 : 13000, cls: "shop", after: (root) => rm?.play(root), html: `
       <span class="tag slide-l"><i>${ic("store")}</i>ピックアップ模擬店</span>
       <div class="body">
         <i class="ghost" aria-hidden="true">${esc(s.group ?? "")}</i>
@@ -193,6 +196,7 @@ const slideShop = {
         </div>
         <div class="side">
           ${where ? `<div class="plate pop" style="--i:5"><b>${esc(where)}</b></div>` : ""}
+          ${rm ? `<div class="mapbox pop" style="--i:6">${rm.html}</div>` : ""}
           ${w ? `<div class="plate live pop" style="--i:6;--c:${w[1]}"><small>いまのようす</small><b>${w[0]}</b>${d.message ? `<q>${esc(d.message)}</q>` : ""}</div>` : ""}
         </div>
       </div>` };
@@ -231,7 +235,7 @@ const slideCrowd = {
 
 // ---------- ステージ・企画 ----------
 const ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
-const EVS = EVENTS.filter((e) => !e.stage).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
+const EVS = EVENTS.filter((e) => !e.stage && e.venue !== SEMINARS.venue).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
 function stageState(t) {
   const cur = ACTS.find((a) => t >= a.s && t < a.e) ?? null;
   const nxt = ACTS.find((a) => a.s > t) ?? null;
@@ -260,7 +264,7 @@ const slideStage = {
       : `<div class="now wait slide-l"><span class="lab">STAGE</span>
           <h2>${nxt ? "まもなく" : "おやすみ"}</h2>${nxt ? `<p>${hm(nxt.s)}〜　<span class="nm">${esc(nxt.name)}</span></p>` : ""}</div>`;
     // このあとの出演を、次の1つだけでなく、どんどん並べる（企画があれば、その分は1つ減らす）
-    const row = (small, title, time, sub, hotRow, n) => `<div class="nx ${hotRow ? "hot" : ""} rise" style="--i:${n}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
+    const row = (small, title, time, sub, hotRow, n) => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} ${hotRow ? "hot" : ""} rise" style="--i:${n}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
     const later = ACTS.filter((a) => a.s > t).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0)); // 急げ！の帯が出ているときは、場所が狭いので1つ減らす
     const nx = later.map((a, k) => row(k === 0 ? "NEXT" : "THEN", a.name, hm(a.s), `${a.kind}　${a.mood}`, k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k));
     if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, hm(nextEv.s), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
@@ -298,7 +302,7 @@ const slideSeminar = {
     const main = cur ?? later.shift();
     if (!main) return null;
     const rows = later.slice(0, 3);
-    const hr = (small, x, n) => `<div class="nx rise" style="--i:${n}"><span class="t">${hm(x.s)}</span><span class="w"><small>${small}</small><b class="nm">${esc(x.company)}</b><i>${esc(x.title)}</i></span></div>`;
+    const hr = (small, x, n) => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} rise" style="--i:${n}"><span class="t">${hm(x.s)}</span><span class="w"><small>${small}</small><b class="nm">${esc(x.company)}</b><i>${esc(x.title)}</i></span></div>`;
     const sameDay = dayOf(main.s) === dayOf(t);
     return { dur: 13000, cls: "stage seminar", html: `
       <span class="tag slide-l"><i>${ic("building")}</i>企業セミナー・製品展示</span>

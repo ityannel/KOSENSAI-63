@@ -322,3 +322,32 @@ body.is-hurry #slide { bottom: 160px; }
 .seminar .now .lg { margin-top: 20px; align-self: flex-start; display: grid; place-items: center; height: 130px; padding: 12px 28px; border-radius: 22px; background: #fff; }
 .seminar .now .lg img { display: block; height: 100%; width: auto; max-width: 520px; object-fit: contain; }
 .seminar .now p { margin-top: 12px; font-size: 38px; }
+/* 模擬店の画面の、道順の地図 */
+.mapbox { position: relative; height: 340px; border-radius: 32px; background: var(--grain), var(--paper); overflow: hidden; box-shadow: none !important; filter: drop-shadow(-14px 10px 0 rgba(48, 44, 41, .55)); }
+.mapbox svg { display: block; width: 100%; height: 100%; }
+.mapbox .bd { fill: #e4cf9f; stroke: #c3a56c; stroke-width: .6; }
+.mapbox .bd.c { fill: #eddcb4; }
+.mapbox .bd.g { opacity: .55; }
+.mapbox .mf { opacity: 0; transition: opacity .5s; }
+.mapbox .mf.on { opacity: 1; }
+.mapbox .dest { fill: #ffd24a; stroke: #d9334f; stroke-width: 1.2; animation: destp 1.4s ease-in-out infinite; }
+@keyframes destp { 50% { fill: #ffb21f; } }
+.mapbox .rc { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; }
+.mapbox .rl { fill: none; stroke: #d9334f; stroke-linecap: round; stroke-linejoin: round; }
+.mapbox .sp { fill: #ff6b5e; stroke: #fff; }
+.mapbox .ring { fill: none; stroke: #ff6b5e; stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: ringp 1.8s ease-out infinite; }
+@keyframes ringp { from { transform: scale(1); opacity: .9; } to { transform: scale(3); opacity: 0; } }
+.mapbox .st text { font-family: var(--hud); fill: var(--ink); stroke: #fff; paint-order: stroke; }
+.mapbox .dot { fill: #d9334f; stroke: #fff; opacity: 0; }
+.mapbox .fl { position: absolute; left: 16px; top: 12px; padding: 4px 18px; border-radius: 999px; background: var(--ink); color: var(--paper); font: 400 34px/1.2 var(--hud); }
+.mapbox .mn { position: absolute; right: 16px; bottom: 12px; padding: 4px 18px; border-radius: 999px; background: #d9334f; color: #fff; font-size: 28px; }
+/* NOW（いちばん目立つ・黄色）→ NEXT（紙の色・ふつう）→ THEN（うすく・小さめ）*/
+.now:not(.wait) { background: var(--grain), #FFD24A; }
+.now:not(.wait) .lab { background: #d9334f; color: #fff; }
+.nx.is-next { background: var(--grain), var(--paper); }
+.nx.is-next small { display: inline-block; justify-self: start; padding: 2px 16px; border-radius: 999px; background: var(--brick); color: #fff; letter-spacing: .12em; }
+.nx.is-then { background: rgba(254, 235, 196, .55); filter: drop-shadow(-8px 6px 0 rgba(48, 44, 41, .35)); padding-block: 12px; }
+.nx.is-then .t { font-size: 46px; color: rgba(99, 74, 46, .75); }
+.nx.is-then b { font-size: 36px; }
+.nx.is-then small { color: rgba(99, 74, 46, .7); }
+.nx.is-then i { font-size: 22px; }
