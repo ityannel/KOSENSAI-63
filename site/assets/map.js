@@ -10,7 +10,7 @@
 import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION } from "./config.js";
 import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES } from "./campus.js";
 import { findRoute, describe, centerOf, buildingAt } from "./route.js";
-import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike, NAMES } from "./posts.js";
+import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike, NAMES, NAME_GROUPS } from "./posts.js";
 
 const HERE_KEY = "kosen63-here";
 const HERE_SEC = 40; // QR を読んでから「いまここ」を出しておく秒数
@@ -1570,16 +1570,21 @@ const ICONS = {
   candyapple: '<rect x="15" y="16" width="2" height="14" rx="1" fill="#d9b38c"/><circle cx="16" cy="13" r="9.5" fill="#e11d48"/><ellipse cx="12.3" cy="9.3" rx="2.2" ry="3.6" fill="#fff" opacity=".55" transform="rotate(30 12.3 9.3)"/><path d="M12.5 4.5q3.5-2.2 7 0" stroke="#7c2d12" stroke-width="1.4" fill="none" stroke-linecap="round"/>',
   takoyaki: '<circle cx="16" cy="17" r="10.5" fill="#cf9552"/><path d="M7.5 15q8.5-8.5 17 0q-8.5 8-17 0z" fill="#6d3b1d"/><path d="M9 15.5l14-2.4M10 18.5l12-2.2" stroke="#fff3d1" stroke-width="1.5" stroke-linecap="round"/><path d="M12 11.5q1.2-1.6 2.4-.4M18 10.8q1.4-1.4 2.6 0M20 16q1.4-1 2.4.4" stroke="#e8c88a" stroke-width="1.3" fill="none" stroke-linecap="round"/>',
   lantern: '<rect x="11" y="3.5" width="10" height="3.5" rx="1.2" fill="#3b3430"/><rect x="11" y="25" width="10" height="3.5" rx="1.2" fill="#3b3430"/><ellipse cx="16" cy="16" rx="8.6" ry="10" fill="#ef4444"/><path d="M16 6v20M10.6 7.5q-3 8.5 0 17M21.4 7.5q3 8.5 0 17" stroke="#b91c1c" stroke-width="1.2" fill="none"/><path d="M16 28.5v2.5" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round"/>',
+  dog: '<ellipse cx="6.5" cy="15" rx="3.6" ry="7" fill="#8a5a3a" transform="rotate(12 6.5 15)"/><ellipse cx="25.5" cy="15" rx="3.6" ry="7" fill="#8a5a3a" transform="rotate(-12 25.5 15)"/><circle cx="16" cy="17.5" r="10" fill="#e8c8a0"/><ellipse cx="16" cy="21.5" rx="5.2" ry="4" fill="#fff4e0"/><circle cx="12.3" cy="15.5" r="1.3" fill="#3b3430"/><circle cx="19.7" cy="15.5" r="1.3" fill="#3b3430"/><ellipse cx="16" cy="19.8" rx="2" ry="1.4" fill="#3b3430"/><path d="M16 21.2v1.6M13.8 23.2q2.2 1.4 4.4 0" stroke="#3b3430" stroke-width="1" fill="none" stroke-linecap="round"/>',
+  chick: '<circle cx="16" cy="18" r="11" fill="#ffd84a"/><path d="M13.5 6.5q2.5-3 5 0q-2.5-.6-5 0z" fill="#ffc21f"/><ellipse cx="6.5" cy="19" rx="2.6" ry="4" fill="#ffc21f" transform="rotate(20 6.5 19)"/><ellipse cx="25.5" cy="19" rx="2.6" ry="4" fill="#ffc21f" transform="rotate(-20 25.5 19)"/><circle cx="12.3" cy="16" r="1.3" fill="#3b3430"/><circle cx="19.7" cy="16" r="1.3" fill="#3b3430"/><path d="M13.6 19.5h4.8L16 22.8z" fill="#f59e0b"/><circle cx="9.5" cy="20.5" r="1.8" fill="#ff9a8a" opacity=".6"/><circle cx="22.5" cy="20.5" r="1.8" fill="#ff9a8a" opacity=".6"/>',
+  frog: '<circle cx="10.5" cy="9.5" r="4.6" fill="#7bd36b"/><circle cx="21.5" cy="9.5" r="4.6" fill="#7bd36b"/><circle cx="16" cy="19" r="11" fill="#7bd36b"/><circle cx="10.5" cy="9.5" r="3" fill="#fff"/><circle cx="21.5" cy="9.5" r="3" fill="#fff"/><circle cx="10.8" cy="9.8" r="1.5" fill="#222"/><circle cx="21.2" cy="9.8" r="1.5" fill="#222"/><path d="M9.5 21q6.5 5 13 0" stroke="#2f6b2a" stroke-width="1.4" fill="none" stroke-linecap="round"/><circle cx="8.5" cy="20" r="1.8" fill="#ff9a8a" opacity=".6"/><circle cx="23.5" cy="20" r="1.8" fill="#ff9a8a" opacity=".6"/>',
+  fish: '<path d="M24 16L31 9.5V22.5z" fill="#ff7a45"/><ellipse cx="14.5" cy="16" rx="11.5" ry="8.2" fill="#ff9f43"/><path d="M12 8.5q3 7.5 0 15" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".85"/><circle cx="7.5" cy="14" r="1.4" fill="#222"/><path d="M5 18.5q2 1.2 3.6 0" stroke="#b45309" stroke-width="1" fill="none" stroke-linecap="round"/>',
+  ladybug: '<circle cx="16" cy="18" r="11" fill="#e53935"/><path d="M16 7v22" stroke="#222" stroke-width="1.4"/><circle cx="16" cy="9" r="5.2" fill="#2b2b2b"/><circle cx="10.5" cy="16" r="1.9" fill="#222"/><circle cx="21.5" cy="16" r="1.9" fill="#222"/><circle cx="11.5" cy="23" r="1.7" fill="#222"/><circle cx="20.5" cy="23" r="1.7" fill="#222"/><path d="M13 4.5q-1.5-2.2-3-2M19 4.5q1.5-2.2 3-2" stroke="#222" stroke-width="1" fill="none" stroke-linecap="round"/>',
   firework: '<g stroke-linecap="round" stroke-width="2.2" fill="none"><path d="M16 4v6" stroke="#ffd23f"/><path d="M16 22v6" stroke="#ff6b9d"/><path d="M4 16h6" stroke="#5bd1ff"/><path d="M22 16h6" stroke="#9b7bff"/><path d="M7.5 7.5l4.2 4.2" stroke="#ff8a3d"/><path d="M20.3 20.3l4.2 4.2" stroke="#5bd1ff"/><path d="M24.5 7.5l-4.2 4.2" stroke="#ff6b9d"/><path d="M11.7 20.3l-4.2 4.2" stroke="#ffd23f"/></g><circle cx="16" cy="16" r="2.4" fill="#fff"/>',
 };
-// 名前（posts.js の NAMES は 50 個ずつ：どうぶつ・おかし・しぜん・おまつり）に合わせて、絵を選ぶ。地の色は、名前ごとにちがう
-const GROUP_ICONS = [["sheep", "kitten", "bunny", "penguin", "bear"], ["cottoncandy", "candyapple", "takoyaki"], ["firework", "lantern"], ["lantern", "firework", "cottoncandy"]];
+// 名前（posts.js の NAME_GROUPS：ねこ・うさぎ・くま…の種類ごと）に合わせて、絵を選ぶ。地の色は、名前ごとにちがう
+const GROUP_ICON = { cat: "kitten", rabbit: "bunny", bear: "bear", sheep: "sheep", dog: "dog", bird: "chick", penguin: "penguin", frog: "frog", fish: "fish", bug: "ladybug" };
+const ICON_OF = Object.fromEntries(Object.entries(NAME_GROUPS).flatMap(([g, list]) => list.map((n) => [n, GROUP_ICON[g]])));
 const avatar = (name, sm = false) => {
   if (name === "enishi") return `<span class="ig-av is-official${sm ? " sm" : ""}" aria-hidden="true"><i><img src="assets/img/logo-s.webp" width="40" height="40" alt="" loading="lazy"></i></span>`; // 公式は「縁」のロゴの丸
   const k = NAMES.indexOf(name);
   if (k < 0) return `<span class="ig-av${sm ? " sm" : ""}" style="--h:${hueOf(name)}" aria-hidden="true"><i>${esc(String(name).replace("enishi_", "").slice(0, 1).toUpperCase())}</i></span>`; // 名前表にない（昔の名前など）は、頭文字
-  const set = GROUP_ICONS[Math.floor(k / 50)];
-  return `<span class="ig-av${sm ? " sm" : ""}" style="--h:${(k * 37) % 360}" aria-hidden="true"><i><svg viewBox="0 0 32 32">${ICONS[set[k % set.length]]}</svg></i></span>`;
+  return `<span class="ig-av${sm ? " sm" : ""}" style="--h:${(k * 37) % 360}" aria-hidden="true"><i><svg viewBox="0 0 32 32">${ICONS[ICON_OF[name]]}</svg></i></span>`;
 };
 // 公式アカウントの認証マーク（名前のよこ）
 const VERIFIED = '<i class="ig-verified" role="img" aria-label="公式アカウント" title="公式アカウント"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l4 4 8-9"/></svg></i>';

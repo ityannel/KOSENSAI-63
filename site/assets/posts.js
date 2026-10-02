@@ -16,12 +16,20 @@ import { FIREBASE_VERSION, firebaseConfig, connectEmulators, firestoreFor } from
 
 export const MAX_TEXT = 140;       // 文字数
 // 投稿した人の名前（ログインの印 uid から作る。本当の名前は集めないので、同じ人は同じ名前になるだけ）。
-// かわいい名前をアルファベットで 200 種類（どうぶつ・おかし・しぜん・おまつりなど 50 個ずつ）。同じ名前の人がいても、べつの人
-const NAMES_ANIMAL = "sheep kitten bunny penguin bear otter panda koala hedgehog puppy fawn owl duckling chick seal whale dolphin turtle frog hamster squirrel fox raccoon deer lamb pony llama alpaca capybara sloth meerkat quokka flamingo parrot swan robin sparrow ladybug butterfly bee snail jellyfish starfish seahorse puffin walrus lemur gecko goldfish tanuki".split(" ");
-const NAMES_SWEETS = "mochi pudding marshmallow cocoa cookie muffin waffle pancake donut cupcake macaron cheesecake tiramisu parfait sundae gelato sorbet popsicle lollipop caramel toffee truffle brownie scone crepe dango daifuku taiyaki dorayaki anmitsu kakigori cottoncandy candyapple takoyaki yakisoba onigiri ramune matcha hojicha latte honey jelly berry strawberry cherry peach melon mango lemon yuzu".split(" ");
-const NAMES_NATURE = "sakura clover daisy tulip lily violet lotus maple willow bamboo fern moss cloud rain snow frost breeze rainbow sunrise sunset moonlight stardust comet meteor aurora ocean wave shell pearl coral pebble meadow forest brook garden blossom petal dew mist twilight acorn pine cedar orchid jasmine lavender peony camellia wisteria hydrangea".split(" ");
-const NAMES_FEST = "lantern firework tanzaku sparkler balloon ribbon confetti carnival festival parade melody harmony rhythm echo whisper wish dream charm lucky bell chime feather button bubble sprinkle glitter pocket teddy origami kite umbrella compass postcard letter thread ember spark sunny candle lamp starlight glow shimmer twinkle jingle buddy pal bloom kiss chestnut".split(" ");
-export const NAMES = [...NAMES_ANIMAL, ...NAMES_SWEETS, ...NAMES_NATURE, ...NAMES_FEST]; // 50 個ずつ、この順（アイコンの絵を選ぶのに使う）
+// どうぶつの名前を、アルファベットで 202 種類（種類ごとに、アイコンの絵が決まる）。同じ名前の人がいても、べつの人
+export const NAME_GROUPS = {
+  cat: "kitten lynx tiger lion cub leopard cheetah jaguar fox kitsune cougar ocelot serval bobcat panther tabby calico siamese persian ragdoll sphynx manx".split(" "),
+  rabbit: "bunny hare hamster mouse gerbil guineapig chinchilla squirrel chipmunk dormouse jerboa pika rabbit cavy vole lemming".split(" "),
+  bear: "bear panda koala raccoon otter beaver badger wolverine hedgehog wombat sloth capybara quokka tanuki meerkat lemur walrus seal weasel ferret mole armadillo anteater orangutan gorilla monkey macaque gibbon marmoset tamarin".split(" "),
+  sheep: "sheep lamb alpaca llama goat donkey pony foal calf deer fawn zebra giraffe camel piglet yak bison reindeer moose antelope gazelle kangaroo joey wallaby".split(" "),
+  dog: "puppy husky corgi poodle beagle shiba dachshund pug terrier spaniel labrador collie maltese pomeranian bulldog akita retriever chihuahua samoyed papillon dalmatian schnauzer".split(" "),
+  bird: "chick duckling owlet gosling cygnet owl swan robin sparrow parrot flamingo pelican toucan peacock canary finch wren dove pigeon crane heron stork ibis kiwi cockatoo lovebird budgie hummingbird bluebird magpie swallow starling lark nightingale quail pheasant seagull".split(" "),
+  penguin: "penguin puffin".split(" "),
+  frog: "frog tadpole gecko chameleon iguana newt salamander turtle tortoise lizard toad axolotl".split(" "),
+  fish: "goldfish clownfish seahorse starfish jellyfish octopus squid crab lobster shrimp shark ray koi trout salmon tuna pufferfish angelfish guppy dolphin whale porpoise narwhal manatee".split(" "),
+  bug: "snail ladybug butterfly bee dragonfly firefly cricket caterpillar ant beetle moth cicada grasshopper".split(" "),
+};
+export const NAMES = Object.values(NAME_GROUPS).flat();
 export function handleOf(uid) {
   let h = 2166136261;
   for (const c of String(uid ?? "")) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
