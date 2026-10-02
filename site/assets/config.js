@@ -91,7 +91,7 @@ export const MAP = {
   places: [
     { id: "gym2", room: "M120", kind: "venue", name: "太平洋セメントアリーナ", sub: "第二体育館", desc: "ステージパフォーマンス・模擬店総選挙の結果発表・大抽選会" },
     { id: "gym1", room: "M111", kind: "venue", name: "東京水道アリーナ", sub: "第一体育館" },
-    { id: "zacros", room: "L107", kind: "venue", name: "ZACROS hall", sub: "第1講義室", desc: "協賛企業の企業セミナー・製品展示（10/24・25 12:00〜16:00）" },
+    { id: "zacros", room: "L107", kind: "venue", name: "ZACROS hall", sub: "第1講義室" },
     { id: "factory", room: ["D102", "D101", "D103", "D104", "D105"], kind: "exhibit", dept: "機械", name: "実習工場見学", sub: "機械の学科展示", desc: "実習工場ミニ見学・実習工場で作った手作りキーホルダーの販売" },
     { id: "ex-c101", room: "C101", extra: [[527, 148, 61.5, 58]], kind: "exhibit", dept: "機械・電気", name: "ラジオ工作と電気の体験", sub: "機械・電気の学科展示", desc: "自分だけのラジオを作ろう（はんだ付け体験）・電気電子の体験展示・おいしい気圧変化実験・輪ゴム銃射的" },
     { id: "ex-info", room: "B101", kind: "exhibit", dept: "情報", name: "ゲームとアプリの展示", sub: "情報の学科展示", desc: "Microbit・C言語チャットアプリ・ゲーム・見てわかるアルゴリズム・ハイスコアを競え！ など" },
@@ -156,9 +156,7 @@ export const GUIDES = [
 // 「R8高専祭要項 ver1」より。要項の中で時刻が食い違っているもの（総選挙の結果発表・大抽選会）は p.4・p.13 の時刻にしている
 export const EVENTS = [
   { title: "ステージパフォーマンス", venue: "gym2", start: "2026-10-24T12:15:00+09:00", end: "2026-10-24T16:00:00+09:00", stage: true },
-  { title: "企業セミナー・製品展示", venue: "zacros", start: "2026-10-24T12:00:00+09:00", end: "2026-10-24T16:00:00+09:00", kind: "展示", copy: "協賛企業のセミナーと製品展示。\nものづくりの最前線をのぞこう。" },
   { title: "ステージパフォーマンス", venue: "gym2", start: "2026-10-25T10:30:00+09:00", end: "2026-10-25T15:00:00+09:00", stage: true },
-  { title: "企業セミナー・製品展示", venue: "zacros", start: "2026-10-25T12:00:00+09:00", end: "2026-10-25T16:00:00+09:00", kind: "展示", copy: "協賛企業のセミナーと製品展示。\nものづくりの最前線をのぞこう。" },
   { title: "模擬店総選挙 結果発表", venue: "gym2", start: "2026-10-25T16:00:00+09:00", end: "2026-10-25T16:15:00+09:00", live: true, kind: "発表", copy: "いちばん人気の模擬店はどこ？\nYouTube でも生配信。" },
   { title: "大抽選会", venue: "gym2", start: "2026-10-25T16:30:00+09:00", end: "2026-10-25T17:30:00+09:00", live: true, internal: true },
   // 花火は学内の方限定（一般公開は16:00まで）。要項 p.4・p.8。飛行機の関係で遅れることがある
@@ -195,33 +193,6 @@ export const STAGE = {
     act("25", "13:50", "14:10", "ラストオーダーズ", "バンド", "甘ずっぱい", "閉店まぎわの一曲を、\nあなたに。"),
     act("25", "14:15", "14:35", "ハウリングス", "ロック", "うるさい", "マイクもアンプも、\nぜんぶ鳴かせます。"),
     act("25", "14:40", "15:00", "フィナーレ合同バンド", "合同バンド", "大団円", "出演者みんなで、最後の一曲。"),
-  ],
-};
-
-// 企業セミナー（ZACROS hall・第1講義室）：会場ディスプレイ（signage.html）の「企業セミナー」の画面に出る
-// 【仮】いまは見た目をたしかめるための、架空の会社と時間（30分ごと）。詳しい日程が決まったら、会社名・題・時間を全部入れかえる（logo はなくてもよい）
-// sem("日", "始まり", "終わり", "会社名", "セミナーの題", "ロゴの画像")
-const sem = (day, start, end, company, title, logo = null) => ({ company, title, logo, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` });
-export const SEMINARS = {
-  venue: "zacros",
-  tentative: true,
-  items: [
-    sem("24", "12:00", "12:30", "NORTHWAVE", "ネットワークの仕事を、のぞいてみよう", "assets/img/sponsors/dummy-northwave.svg"),
-    sem("24", "12:30", "13:00", "はこだて電機", "電気の力で、街を支える", "assets/img/sponsors/dummy-hakodate-denki.svg"),
-    sem("24", "13:00", "13:30", "北海みらい建設", "橋・道・まちが、できるまで", "assets/img/sponsors/dummy-hokkai-kensetsu.svg"),
-    sem("24", "13:30", "14:00", "aurora systems", "ソフトウェア開発の最前線", "assets/img/sponsors/dummy-aurora.svg"),
-    sem("24", "14:00", "14:30", "函館ベイ食品", "おいしさをつくる、ものづくり", "assets/img/sponsors/dummy-bay-foods.svg"),
-    sem("24", "14:30", "15:00", "いさりび通信", "つながる技術と、先輩の話", "assets/img/sponsors/dummy-isaribi.svg"),
-    sem("24", "15:00", "15:30", "TSUGARU MOTORS", "クルマの未来を、設計する", "assets/img/sponsors/dummy-tsugaru-motors.svg"),
-    sem("24", "15:30", "16:00", "五稜精機", "ミクロの精度で、世界へ", "assets/img/sponsors/dummy-goryo-seiki.svg"),
-    sem("25", "12:00", "12:30", "五稜精機", "ミクロの精度で、世界へ", "assets/img/sponsors/dummy-goryo-seiki.svg"),
-    sem("25", "12:30", "13:00", "TSUGARU MOTORS", "クルマの未来を、設計する", "assets/img/sponsors/dummy-tsugaru-motors.svg"),
-    sem("25", "13:00", "13:30", "いさりび通信", "つながる技術と、先輩の話", "assets/img/sponsors/dummy-isaribi.svg"),
-    sem("25", "13:30", "14:00", "函館ベイ食品", "おいしさをつくる、ものづくり", "assets/img/sponsors/dummy-bay-foods.svg"),
-    sem("25", "14:00", "14:30", "aurora systems", "ソフトウェア開発の最前線", "assets/img/sponsors/dummy-aurora.svg"),
-    sem("25", "14:30", "15:00", "北海みらい建設", "橋・道・まちが、できるまで", "assets/img/sponsors/dummy-hokkai-kensetsu.svg"),
-    sem("25", "15:00", "15:30", "はこだて電機", "電気の力で、街を支える", "assets/img/sponsors/dummy-hakodate-denki.svg"),
-    sem("25", "15:30", "16:00", "NORTHWAVE", "ネットワークの仕事を、のぞいてみよう", "assets/img/sponsors/dummy-northwave.svg"),
   ],
 };
 
@@ -429,7 +400,7 @@ export const SIGNAGE = {
   // 行き先の名前（ステージ・企画の会場の id と同じものは、急げ！の案内にも使う）。mark は signage.js のアイコンの名前
   dests: {
     gym2: { name: "ステージ", sub: "太平洋セメントアリーナ（第二体育館）", mark: "mic" },
-    zacros: { name: "企業セミナー・製品展示", sub: "ZACROS hall（第1講義室）", mark: "building" },
+    zacros: { name: "ZACROS hall", sub: "第1講義室", mark: "building" },
     hq: { name: "インフォメーション・本部", sub: "玄関ホール", mark: "info" },
     shops: { name: "模擬店", sub: "各クラスの教室", mark: "store" },
     exhibit: { name: "学科展示", sub: "5学科の研究・作品", mark: "flask" },
@@ -460,10 +431,10 @@ export const SECRETS = {
 };
 
 // ---------- スケジュールの変更（本部コンソールの「スケジュール」で変えた時間） ----------
-// 出演・企画・企業セミナーに、変更を受けつける印（sid）と、もとの時間（o_start・o_end）をつける。
+// 出演・企画に、変更を受けつける印（sid）と、もとの時間（o_start・o_end）をつける。
 // 変更は Firestore の site_schedule/current = { changes: { [sid]: { start, end } } }。最後に受けとった変更はこの端末にもしまってあり（SCHEDULE_KEY）、次に開いたときは、読みこんですぐ反映する
 export const SCHEDULE_KEY = "kosen63-schedule";
-const schedItems = () => [["a", STAGE.acts], ["e", EVENTS], ["s", SEMINARS.items]].flatMap(([k, list]) => list.map((x) => [k, x]));
+const schedItems = () => [["a", STAGE.acts], ["e", EVENTS]].flatMap(([k, list]) => list.map((x) => [k, x]));
 {
   const seen = new Map();
   for (const [k, x] of schedItems()) {

@@ -1,6 +1,6 @@
 // 校内のディスプレイ（signage.html）：Enistagram の最新・人気の投稿、混雑、ピックアップ模擬店、ステージの「いま・次」、道案内、シェアの QR を、
 // 色の帯の「つなぎ」をはさんで、ずっと流す。データは本サイトと同じ Firestore（読むだけ）。使い方は signage.html の先頭に書いてある
-import { FESTIVAL, STAGE, EVENTS, SEMINARS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
+import { FESTIVAL, STAGE, EVENTS, SPONSORS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
 import { avatar, VERIFIED } from "./avatar.js";
@@ -238,7 +238,7 @@ const slideCrowd = {
 
 // ---------- ステージ・企画 ----------
 let ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
-let EVS = EVENTS.filter((e) => !e.stage && e.venue !== SEMINARS.venue).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
+let EVS = EVENTS.filter((e) => !e.stage).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
 function stageState(t) {
   const cur = ACTS.find((a) => t >= a.s && t < a.e) ?? null;
   const nxt = ACTS.find((a) => a.s > t) ?? null;
@@ -299,37 +299,22 @@ function paintHurry() {
   numify(el);
 }
 
-// ---------- 企業セミナー（ZACROS hall） ----------
-let SEM = SEMINARS.items.map((x) => ({ ...x, s: Date.parse(x.start), e: Date.parse(x.end) }));
-// 本部がスケジュールを変えたら、出演・企画・セミナーの一覧を作りなおす（画面は、次に作るときから新しい時間）
+// 本部がスケジュールを変えたら、出演・企画の一覧を作りなおす（画面は、次に作るときから新しい時間）
 function rebuildSchedule() {
   ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
-  EVS = EVENTS.filter((e) => !e.stage && e.venue !== SEMINARS.venue).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
-  SEM = SEMINARS.items.map((x) => ({ ...x, s: Date.parse(x.start), e: Date.parse(x.end) }));
+  EVS = EVENTS.filter((e) => !e.stage).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
 }
 watchSchedule(rebuildSchedule);
 rebuildSchedule();
-const slideSeminar = {
+
+// ---------- Sponsored by（1周に1回、協賛企業のロゴ） ----------
+const slideSponsor = {
   async build() {
-    const t = now(), cur = SEM.find((x) => t >= x.s && t < x.e) ?? null;
-    const later = SEM.filter((x) => x.s > t);
-    const main = cur ?? later.shift();
-    if (!main) return null;
-    const rows = later.slice(0, 3);
-    const hr = (small, x, n) => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} rise" style="--i:${n}"><span class="t">${tStart(x)}</span><span class="w"><small>${small}</small><b class="nm">${esc(x.company)}</b><i>${esc(x.title)}</i></span></div>`;
-    const sameDay = dayOf(main.s) === dayOf(t);
-    return { dur: 13000, cls: "stage seminar", html: `
-      <span class="tag slide-l"><i>${ic("building")}</i>企業セミナー・製品展示</span>
-      <h1 class="ttl">${chars(cur ? "いま、ZACROS hall では" : "このあと、ZACROS hall で")}</h1>
-      <div class="grid">
-        <div class="now slide-l${cur ? "" : " wait"}"><span class="lab">${cur ? "NOW" : "NEXT"}</span>
-          ${main.logo ? `<div class="lg"><img src="${esc(main.logo)}" alt=""></div>` : ""}
-          <h2 class="nm">${esc(main.company)}</h2>
-          <p>${esc(main.title)}</p>
-          <div class="kind"${cur ? " hidden" : ""}>${cur ? "" : `<span class="chip">${sameDay ? "" : `${dateEn(main.s)}　`}${tRange(main)}</span>`}</div>
-          ${cur ? `<div class="barw"><time>${tStart(main)}</time><div class="bar"><i style="width:${Math.round(((t - main.s) / (main.e - main.s)) * 100)}%"></i></div><time>${tEnd(main)}</time></div>` : ""}</div>
-        <div class="nxt">${rows.map((x, k) => hr(dayOf(x.s) === dayOf(t) ? (k === 0 && cur ? "NEXT" : "THEN") : dateEn(x.s), x, 2 + k)).join("")}</div>
-      </div>` };
+    const list = SPONSORS.list.filter((x) => x.logo || x.name).slice(0, 8);
+    if (!list.length) return null;
+    return { dur: 12000, cls: "sponsor", html: `
+      <h1 class="spt">${chars("Sponsored by")}</h1>
+      <div class="sp-grid">${list.map((x, i) => `<div class="sp-tile pop" style="--i:${i + 2}">${x.logo ? `<img src="${esc(x.logo)}" alt="${esc(x.name)}">` : `<b>${esc(x.name)}</b>`}</div>`).join("")}</div>` };
   },
 };
 
@@ -469,9 +454,9 @@ const slideIntro = {
 };
 
 // ---------- 流れ ----------
-const SLIDES = { intro: slideIntro, stage: slideStage, seminar: slideSeminar, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
+const SLIDES = { intro: slideIntro, stage: slideStage, sponsor: slideSponsor, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
 function plan() {
-  const base = ["intro", "stage", "seminar", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
+  const base = ["intro", "stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "sponsor", "share"];
   if (hurryItem(now())) base.splice(5, 0, "stage"); // 急げ！のときは、ステージの画面を多めに
   return base;
 }
@@ -548,7 +533,7 @@ if (params.has("test")) {
   const TIMES = [["いま（本当の時刻）", ""], ["開幕前（11:50）", "2026-10-24T11:50"], ["開催中・出演中（13:20）", "2026-10-24T13:20"], ["出演の合間（急げ！）", "2026-10-24T12:08"],
     ["1日目の夜", "2026-10-24T18:00"], ["2日目の朝", "2026-10-25T08:30"], ["結果発表の直前（15:55）", "2026-10-25T15:55"], ["終了後", "2026-10-26T10:00"]];
   const PLACES = [["なし（道案内は出ない）", ""], ["第1講義室の前", "lecture1"], ["総務課の横の廊下の角", "soumu"], ["インフォメーション前", "info"]];
-  const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["企業セミナー", "seminar"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
+  const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["Sponsored by", "sponsor"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
   const reloadWith = (ch) => { const p = new URLSearchParams(location.search); for (const [k, v] of Object.entries(ch)) { if (v === "" || v == null || v === false) p.delete(k); else p.set(k, v === true ? "1" : v); } p.set("test", "1"); location.search = p; };
   const cur = (k) => params.get(k) ?? "";
   const opt = (list, v) => list.map(([l, x]) => `<option value="${esc(x)}"${x === v ? " selected" : ""}>${esc(l)}</option>`).join("");

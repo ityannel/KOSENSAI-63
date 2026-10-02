@@ -317,11 +317,6 @@ body.is-hurry #slide { bottom: 160px; }
 .nx.hot { background: var(--live); color: #fff; }
 .nx.hot .t, .nx.hot small { color: #fff; }
 .mini { color: var(--paper); text-shadow: -3px 3px 0 rgba(48, 44, 41, .5); }
-/* 企業セミナー：会社のロゴの板 */
-.seminar .now h2 { font-size: 84px; }
-.seminar .now .lg { margin-top: 20px; align-self: flex-start; display: grid; place-items: center; height: 130px; padding: 12px 28px; border-radius: 22px; background: #fff; }
-.seminar .now .lg img { display: block; height: 100%; width: auto; max-width: 520px; object-fit: contain; }
-.seminar .now p { margin-top: 12px; font-size: 38px; }
 /* 模擬店の画面の、道順の地図 */
 .mapbox { position: relative; height: 340px; border-radius: 32px; background: var(--grain), var(--paper); overflow: hidden; box-shadow: none !important; filter: drop-shadow(-14px 10px 0 rgba(48, 44, 41, .55)); }
 .mapbox svg { display: block; width: 100%; height: 100%; }
@@ -422,3 +417,14 @@ body.is-hurry #slide { bottom: 160px; }
 .barw time .t-chg { align-items: center; }
 .nx .t .t-chg .t-old { font-size: 24px; }
 .chip .t-chg .t-old { font-size: .72em; }
+/* Sponsored by：協賛企業のロゴ（8社・1周に1回） */
+.sponsor { align-items: center; justify-content: center; text-align: center; }
+.sponsor .spt { font: 400 128px/1 var(--hud); letter-spacing: .04em; color: #fff; text-shadow: -6px 5px 0 rgba(48, 44, 41, .55); }
+.sponsor .spt .lat { font-size: 1.1em; }
+.sp-grid { margin-top: 64px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 36px 40px; width: 100%; }
+.sp-tile { display: grid; place-items: center; height: 220px; padding: 26px 34px; border-radius: 30px; background: #fff; box-shadow: none !important; filter: drop-shadow(-12px 9px 0 rgba(48, 44, 41, .5)); }
+.sp-tile img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.sp-tile b { font: 400 44px/1.2 var(--hud); color: var(--ink); }
+.go .sp-tile { animation: pop .75s var(--spring) both, spfloat 5s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 130ms + .3s), calc(var(--i, 0) * -0.6s); }
+@keyframes spfloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+.sp-tile img { width: 100%; height: 100%; max-width: none; max-height: none; }

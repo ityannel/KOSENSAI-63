@@ -308,10 +308,10 @@ $("#phase-form").addEventListener("submit", (e) => {
   saveLive("表示を保存しました", { phase_override: phase || null, presence_off: $("#presence-off").checked });
 });
 
-// ---------- スケジュール（出演・企画・企業セミナーの時間を変える） ----------
+// ---------- スケジュール（出演・企画の時間を変える） ----------
 // site_schedule/current = { changes: { [sid]: { start, end } } }。サイト・地図・みどころ・会場のディスプレイが読む。もとの時間は config.js
-const SCHED_KIND = { a: "ステージ", e: "企画", s: "企業セミナー" };
-const schedName = ({ kind, item }) => (kind === "a" ? item.name : kind === "s" ? `${item.company}（${item.title}）` : item.title);
+const SCHED_KIND = { a: "ステージ", e: "企画" };
+const schedName = ({ kind, item }) => (kind === "a" ? item.name : item.title);
 const schedCur = (it) => state.schedule[it.item.sid] ?? { start: it.item.o_start, end: it.item.o_end };
 const hmOf = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false });
 const isoAt = (orig, hhmmText) => `${orig.slice(0, 10)}T${hhmmText}:00+09:00`;
