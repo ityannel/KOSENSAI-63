@@ -10,7 +10,7 @@
 import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION } from "./config.js";
 import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES } from "./campus.js";
 import { findRoute, describe, centerOf, buildingAt } from "./route.js";
-import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
+import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike, NAMES } from "./posts.js";
 
 const HERE_KEY = "kosen63-here";
 const HERE_SEC = 40; // QR を読んでから「いまここ」を出しておく秒数
@@ -1559,9 +1559,27 @@ function likeCount(x) {
 }
 // Instagram のように：名前の丸いアイコン・四角い写真（写真がなければ文字のカード）・♡ 💬 ↗・いいね！n件・コメント
 const hueOf = (name) => [...String(name)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
-const avatar = (name, sm = false) => name === "enishi"
-  ? `<span class="ig-av is-official${sm ? " sm" : ""}" aria-hidden="true"><i><img src="assets/img/logo-s.webp" width="40" height="40" alt="" loading="lazy"></i></span>` // 公式は「縁」のロゴの丸
-  : `<span class="ig-av${sm ? " sm" : ""}" style="--h:${hueOf(name)}" aria-hidden="true"><i>${esc(String(name).replace("enishi_", "").slice(0, 1).toUpperCase())}</i></span>`;
+// 名前（fluffy_sheep など）の「もの」に合わせた、かわいい絵のアイコン。地の色は、形容（fluffy など）ごとに20色
+const ICONS = {
+  sheep: '<circle cx="16" cy="12" r="5.5" fill="#fff"/><circle cx="9.5" cy="15" r="5" fill="#fff"/><circle cx="22.5" cy="15" r="5" fill="#fff"/><circle cx="11.5" cy="21" r="5" fill="#fff"/><circle cx="20.5" cy="21" r="5" fill="#fff"/><ellipse cx="16" cy="18" rx="5.6" ry="6" fill="#4a3f3a"/><circle cx="14" cy="17.5" r="1" fill="#fff"/><circle cx="18" cy="17.5" r="1" fill="#fff"/><ellipse cx="8.6" cy="16.5" rx="2.2" ry="1.3" fill="#4a3f3a" transform="rotate(-20 8.6 16.5)"/><ellipse cx="23.4" cy="16.5" rx="2.2" ry="1.3" fill="#4a3f3a" transform="rotate(20 23.4 16.5)"/>',
+  kitten: '<path d="M6.5 14L7.5 4.5 14 9.5z" fill="#f0b97f"/><path d="M25.5 14L24.5 4.5 18 9.5z" fill="#f0b97f"/><circle cx="16" cy="18.5" r="10.5" fill="#f6c892"/><circle cx="12.2" cy="17.5" r="1.3" fill="#3b3430"/><circle cx="19.8" cy="17.5" r="1.3" fill="#3b3430"/><path d="M14.7 21l1.3 1.2 1.3-1.2z" fill="#e87a90"/><path d="M16 22.2v1.6M13.5 24.4q2.5-1.2 5 0" stroke="#3b3430" stroke-width="1" fill="none" stroke-linecap="round"/>',
+  bunny: '<ellipse cx="11.5" cy="9" rx="3" ry="7.5" fill="#fff"/><ellipse cx="20.5" cy="9" rx="3" ry="7.5" fill="#fff"/><ellipse cx="11.5" cy="9.5" rx="1.4" ry="5" fill="#f9a8c0"/><ellipse cx="20.5" cy="9.5" rx="1.4" ry="5" fill="#f9a8c0"/><circle cx="16" cy="21" r="9.5" fill="#fff"/><circle cx="12.6" cy="20.2" r="1.2" fill="#3b3430"/><circle cx="19.4" cy="20.2" r="1.2" fill="#3b3430"/><ellipse cx="16" cy="23" rx="1.4" ry="1" fill="#f29bb3"/>',
+  penguin: '<ellipse cx="16" cy="18" rx="9.5" ry="11.5" fill="#364a6e"/><ellipse cx="16" cy="20.5" rx="6.3" ry="8.3" fill="#fff"/><circle cx="12.7" cy="14.5" r="1.3" fill="#fff"/><circle cx="19.3" cy="14.5" r="1.3" fill="#fff"/><circle cx="12.9" cy="14.6" r=".6" fill="#222"/><circle cx="19.1" cy="14.6" r=".6" fill="#222"/><path d="M13.6 17h4.8L16 20z" fill="#f59e0b"/><ellipse cx="12" cy="29" rx="3" ry="1.4" fill="#f59e0b"/><ellipse cx="20" cy="29" rx="3" ry="1.4" fill="#f59e0b"/>',
+  bear: '<circle cx="8.5" cy="9" r="4.2" fill="#b07a52"/><circle cx="23.5" cy="9" r="4.2" fill="#b07a52"/><circle cx="8.5" cy="9" r="2" fill="#e8c19b"/><circle cx="23.5" cy="9" r="2" fill="#e8c19b"/><circle cx="16" cy="18.5" r="10.5" fill="#b07a52"/><ellipse cx="16" cy="21.5" rx="4.8" ry="3.6" fill="#efd4b3"/><circle cx="12.3" cy="16.5" r="1.2" fill="#3b3430"/><circle cx="19.7" cy="16.5" r="1.2" fill="#3b3430"/><ellipse cx="16" cy="20.3" rx="1.7" ry="1.2" fill="#3b3430"/>',
+  cottoncandy: '<rect x="15" y="17" width="2" height="13" rx="1" fill="#d9b38c"/><circle cx="16" cy="12" r="8.5" fill="#f7a8cf"/><circle cx="9.5" cy="14" r="5.5" fill="#fbc4de"/><circle cx="22.5" cy="14" r="5.5" fill="#fbc4de"/><circle cx="16" cy="9.5" r="4.5" fill="#fde1ee"/><circle cx="12" cy="14" r="1.1" fill="#fff"/><circle cx="20.5" cy="11" r="1.1" fill="#fff"/>',
+  candyapple: '<rect x="15" y="16" width="2" height="14" rx="1" fill="#d9b38c"/><circle cx="16" cy="13" r="9.5" fill="#e11d48"/><ellipse cx="12.3" cy="9.3" rx="2.2" ry="3.6" fill="#fff" opacity=".55" transform="rotate(30 12.3 9.3)"/><path d="M12.5 4.5q3.5-2.2 7 0" stroke="#7c2d12" stroke-width="1.4" fill="none" stroke-linecap="round"/>',
+  takoyaki: '<circle cx="16" cy="17" r="10.5" fill="#cf9552"/><path d="M7.5 15q8.5-8.5 17 0q-8.5 8-17 0z" fill="#6d3b1d"/><path d="M9 15.5l14-2.4M10 18.5l12-2.2" stroke="#fff3d1" stroke-width="1.5" stroke-linecap="round"/><path d="M12 11.5q1.2-1.6 2.4-.4M18 10.8q1.4-1.4 2.6 0M20 16q1.4-1 2.4.4" stroke="#e8c88a" stroke-width="1.3" fill="none" stroke-linecap="round"/>',
+  lantern: '<rect x="11" y="3.5" width="10" height="3.5" rx="1.2" fill="#3b3430"/><rect x="11" y="25" width="10" height="3.5" rx="1.2" fill="#3b3430"/><ellipse cx="16" cy="16" rx="8.6" ry="10" fill="#ef4444"/><path d="M16 6v20M10.6 7.5q-3 8.5 0 17M21.4 7.5q3 8.5 0 17" stroke="#b91c1c" stroke-width="1.2" fill="none"/><path d="M16 28.5v2.5" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round"/>',
+  firework: '<g stroke-linecap="round" stroke-width="2.2" fill="none"><path d="M16 4v6" stroke="#ffd23f"/><path d="M16 22v6" stroke="#ff6b9d"/><path d="M4 16h6" stroke="#5bd1ff"/><path d="M22 16h6" stroke="#9b7bff"/><path d="M7.5 7.5l4.2 4.2" stroke="#ff8a3d"/><path d="M20.3 20.3l4.2 4.2" stroke="#5bd1ff"/><path d="M24.5 7.5l-4.2 4.2" stroke="#ff6b9d"/><path d="M11.7 20.3l-4.2 4.2" stroke="#ffd23f"/></g><circle cx="16" cy="16" r="2.4" fill="#fff"/>',
+};
+const NOUN_KEYS = Object.keys(ICONS); // posts.js の NAMES は、ものごとに20個ずつ並ぶ（sheep, kitten, bunny, penguin, bear, cottoncandy, candyapple, takoyaki, lantern, firework の順）
+const avatar = (name, sm = false) => {
+  if (name === "enishi") return `<span class="ig-av is-official${sm ? " sm" : ""}" aria-hidden="true"><i><img src="assets/img/logo-s.webp" width="40" height="40" alt="" loading="lazy"></i></span>`; // 公式は「縁」のロゴの丸
+  const k = NAMES.indexOf(name);
+  if (k < 0) return `<span class="ig-av${sm ? " sm" : ""}" style="--h:${hueOf(name)}" aria-hidden="true"><i>${esc(String(name).replace("enishi_", "").slice(0, 1).toUpperCase())}</i></span>`; // 名前表にない（昔の名前など）は、頭文字
+  const icon = ICONS[NOUN_KEYS[Math.floor(k / 20)]];
+  return `<span class="ig-av${sm ? " sm" : ""}" style="--h:${(k % 20) * 18}" aria-hidden="true"><i><svg viewBox="0 0 32 32">${icon}</svg></i></span>`;
+};
 // 公式アカウントの認証マーク（名前のよこ）
 const VERIFIED = '<i class="ig-verified" role="img" aria-label="公式アカウント" title="公式アカウント"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l4 4 8-9"/></svg></i>';
 const openCmts = new Set(); // 「コメントをすべて見る」を開いた投稿
