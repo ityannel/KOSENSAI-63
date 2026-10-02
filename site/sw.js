@@ -8,7 +8,7 @@
 // - 混雑・お知らせ・みんなの声（Firestore）はしまわない（電波がないときは出ないだけ）
 // - staff/（本部用）はしまわない
 // 中身を大きく変えたときは VERSION を上げる（古いしまったものを消す）
-const VERSION = "kosen63-v174";
+const VERSION = "kosen63-v175";
 const CORE = [
   "./", "index.html", "map.html", "mido.html", "rally.html", "vote.html", "favicon.svg", "manifest.webmanifest",
   "assets/style.css", "assets/map.css",
@@ -32,7 +32,12 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (url.origin === location.origin) {
     if (url.pathname.includes("/staff/") || url.pathname.endsWith("/sw.js")) return;
-    e.respondWith(fromCache(req, e));
+    // 会場のディスプレイ（signage）は、しまってある古い版を見せず、いつも新しい版（ネット）を使う
+    e.respondWith((async () => {
+      if (url.pathname.includes("signage")) return fetch(req);
+      const c = e.clientId ? await self.clients.get(e.clientId) : null;
+      return c && c.url.includes("signage") ? fetch(req) : fromCache(req, e);
+    })());
   } else if (SIDE.some((re) => re.test(req.url))) {
     e.respondWith(cacheFirst(req, e));
   }

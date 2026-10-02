@@ -173,7 +173,7 @@ function nextShop() {
     const st = shopDoc(s)?.status;
     if (st !== "soldout" && st !== "closed") return s; // 売り切れ・休業のお店は、ピックアップしない
   }
-  return null;
+  return SHOPS[shopOrder[shopPtr++ % shopOrder.length]]; // 全部が売り切れ・休業のとき（開催前など）も、画面を出す
 }
 const slideShop = {
   async build() {
@@ -182,7 +182,7 @@ const slideShop = {
     const d = shopDoc(s);
     const room = s.room ?? HOMEROOMS[s.cls];
     const where = `${s.bldg ? `${s.bldg}棟` : ""}${s.floor ? String(s.floor).replace(/F$/, "階") : ""}` || s.where || ""; // 場所は「B棟3階」だけ（部屋番号・「場所」の文字は出さない）
-    const w = d && WAIT[d.status];
+    const w = d && d.status !== "closed" && WAIT[d.status]; // 休業中の札は出さない（開催前は、全部が休業中のことがある）
     // ディスプレイの場所から、そのお店の教室までの道順の地図（場所と、教室の部屋番号がわかるときだけ）
     const rm = spot && room && !/^pt-/.test(room) ? await routeMap(spot.here, room).catch((e) => { console.warn(e); return null; }) : null;
     const lines = String(s.note ?? "").split(/\n/).filter(Boolean);
