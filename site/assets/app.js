@@ -1,0 +1,53 @@
+// アプリとして使う（PWA）：ホーム画面に追加するカードと、下のタブ。トップページで読み込む
+// - Android・PC の Chrome / Edge：「追加」でそのまま入れられる（beforeinstallprompt）
+// - iPhone / iPad の Safari：入れ方（共有 → ホーム画面に追加）を出す
+// - もうアプリとして開いているとき・「×」で閉じたあとは出さない
+const card = document.getElementById("install");
+const KEY = "kosen63-install-dismissed";
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const dismissed = () => { try { return !!localStorage.getItem(KEY); } catch { return false; } };
+const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let deferred = null;
+
+function show(mode) {
+  if (!card || standalone || dismissed()) return;
+  card.dataset.mode = mode;
+  card.hidden = false;
+}
+addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; show("prompt"); });
+addEventListener("appinstalled", () => { if (card) card.hidden = true; });
+if (ios) show("ios");
+
+card?.addEventListener("click", async (e) => {
+  if (e.target.closest(".install-x")) {
+    card.hidden = true;
+    try { localStorage.setItem(KEY, "1"); } catch { /* 保存できないブラウザ */ }
+    return;
+  }
+  if (!e.target.closest(".install-btn")) return;
+  if (card.dataset.mode === "ios") { card.classList.toggle("is-howto"); return; }
+  if (!deferred) return;
+  deferred.prompt();
+  const { outcome } = await deferred.userChoice;
+  deferred = null;
+  if (outcome === "accepted") card.hidden = true;
+});
+
+// 下のタブ：いま見ている「サイト」をもう一度押したら、いちばん上へ
+document.querySelector('.site-tabs a[aria-current="page"]')?.addEventListener("click", (e) => {
+  e.preventDefault();
+  scrollTo({ top: 0 });
+});
+
+// URL の #crowd などで来たとき：中身（JS で入れる）が出そろってから、そのセクションへ
+function jumpToHash() {
+  const el = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+  if (el?.matches(".sec, .mido, .visit, .ennichi, .spon, .k-top, .k-msg")) el.scrollIntoView({ block: "start", behavior: "instant" });
+}
+if (document.readyState === "complete") setTimeout(jumpToHash, 300); else addEventListener("load", () => setTimeout(jumpToHash, 300));
+
+// 少しでも下へスクロールしたら、「SCROLL」の案内を消す
+let scrolled = null;
+const onScroll = () => { const v = scrollY > 30; if (v !== scrolled) { scrolled = v; document.body.classList.toggle("scrolled", v); } };
+addEventListener("scroll", onScroll, { passive: true });
+onScroll();

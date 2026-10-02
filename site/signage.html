@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>会場ディスプレイ｜第63回 函館高専祭「縁」</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;family=Zen+Kaku+Gothic+New:wght@700;900&amp;family=DynaPuff:wght@500;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/signage.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+</head>
+<!-- 校内のディスプレイに映すページ（1920×1080 を、画面の大きさに合わせて拡大・縮小）。
+     使い方：ブラウザで全画面（F11・画面をクリック）にして、置く場所をえらぶ
+       signage.html?at=lecture1（第1講義室の前）／?at=soumu（総務課の横の廊下の角）／?at=info（インフォメーション前）
+     確かめるとき：?o=portrait で縦（1080×1920）、?o=landscape で横。決めないときは、画面の形に合わせて自動／?test=1（本ページと同じ、テスト用の操作パネル。時刻・場所・画面・見本データを切りかえる）／?demo=1（見本の投稿・混雑・お店だけ）／&t=2026-10-24T13:20（その時刻として動かす）／&only=posts|popular|shop|crowd|stage|way|share|intro（その画面だけ）
+     スペース・矢印キーで、次・前の画面。ずっと流しっぱなしでよい（3時間ごとに自分で読みこみなおす） -->
+<body>
+  <div id="stage">
+    <div id="bg" aria-hidden="true"><i id="bgphoto"></i><i class="sun"></i><i class="grain"></i><canvas id="fw"></canvas></div>
+    <div id="bgclock" aria-hidden="true"><b id="clock-t">--:--</b><span id="clock-d"></span></div>
+    <main id="slide" aria-live="off"></main>
+    <div id="hurry" hidden></div>
+    <div id="wipe" aria-hidden="true"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i><b>縁</b><div id="wsp"><span>Sponsored by</span><div class="tile"><img alt=""></div></div><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><i class="b2 c1"></i><i class="b2 c2"></i><i class="b2 c3"></i><i class="b2 c4"></i></div>
+  </div>
+  <script type="module" src="assets/signage.js"></script>
+</body>
+</html>

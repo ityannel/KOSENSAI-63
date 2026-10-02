@@ -1,0 +1,21 @@
+{
+  "_説明": "サイトを置く場所（URL）。ローカル・確認用・本番でちがうので、ここだけ書きかえる。QR やリンクを貼ったときの画像（OGP）は、選んだ場所の URL で作られる。 いまは Cloudflare Pages（cloudflare）を使う。混雑・スタンプラリーなどのデータは Firebase のまま。",
+  "default": "cloudflare",
+  "environments": {
+    "local": {
+      "baseUrl": "http://localhost:5173/"
+    },
+    "preview": {
+      "baseUrl": "https://enishi-7f43f--preview-53vzkjwt.web.app/"
+    },
+    "firebase": {
+      "baseUrl": "https://enishi-7f43f.web.app/"
+    },
+    "production": {
+      "baseUrl": "https://hakodate-ct.jp/gac_event/"
+    },
+    "cloudflare": {
+      "baseUrl": "https://hakodate-kosensai.pages.dev/"
+    }
+  }
+}
