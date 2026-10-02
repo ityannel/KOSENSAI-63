@@ -477,8 +477,9 @@ async function cover() {
   await Promise.all(inn.map((a) => a.finished.catch(() => {}))); // 全画面にしたときなどに、動きが取り消されても止まらない
   if (sp) await sleep(1900); // ロゴをしっかり見せる時間（帯がおおったまま、少し止める）
   return () => {
-    seal.animate([{ opacity: 1 }, { opacity: 0, transform: "scale(.8) rotate(-6deg)" }], { duration: 300, fill: "forwards" });
-    wsp?.animate([{ opacity: 1 }, { opacity: 0, transform: "translate(-50%, -30px) scale(.9)" }], { duration: 300, fill: "forwards" });
+    // 次の画面が映るとき、「縁」とロゴは、フェードさせず、そのまま消す（動きを取り消すと、もとの「見えない」状態にもどる）
+    seal.getAnimations().forEach((x) => x.cancel());
+    wsp?.getAnimations({ subtree: true }).forEach((x) => x.cancel());
     return Promise.all(bars.map((b, k) => b.animate([{ transform: "translateX(0) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 560, delay: 240 + k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }).finished.catch(() => {})));
   };
 }
