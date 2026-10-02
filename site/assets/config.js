@@ -399,17 +399,17 @@ export const SIGNAGE = {
       { to: "library", dir: "left", say: "TSKEライブラリーへ", min: 4 },
     ] },
   },
-  // 行き先の名前（ステージ・企画の会場の id と同じものは、急げ！の案内にも使う）
+  // 行き先の名前（ステージ・企画の会場の id と同じものは、急げ！の案内にも使う）。mark は signage.js のアイコンの名前
   dests: {
-    gym2: { name: "ステージ", sub: "太平洋セメントアリーナ（第二体育館）", mark: "🎤" },
-    zacros: { name: "企業セミナー・製品展示", sub: "ZACROS hall（第1講義室）", mark: "🏢" },
-    hq: { name: "インフォメーション・本部", sub: "玄関ホール", mark: "ℹ️" },
-    shops: { name: "模擬店", sub: "各クラスの教室", mark: "🍡" },
-    exhibit: { name: "学科展示", sub: "5学科の研究・作品", mark: "🔬" },
-    cafeteria: { name: "二十一食堂", sub: "学食", mark: "🍚" },
-    courtyard: { name: "中庭", sub: "B棟とC棟のあいだ", mark: "🌿" },
-    library: { name: "TSKEライブラリー", sub: "図書館", mark: "📚" },
-    ground: { name: "総合グラウンド", sub: "花火（学内の方限定）", mark: "🎆" },
+    gym2: { name: "ステージ", sub: "太平洋セメントアリーナ（第二体育館）", mark: "mic" },
+    zacros: { name: "企業セミナー・製品展示", sub: "ZACROS hall（第1講義室）", mark: "building" },
+    hq: { name: "インフォメーション・本部", sub: "玄関ホール", mark: "info" },
+    shops: { name: "模擬店", sub: "各クラスの教室", mark: "store" },
+    exhibit: { name: "学科展示", sub: "5学科の研究・作品", mark: "flask" },
+    cafeteria: { name: "二十一食堂", sub: "学食", mark: "bowl" },
+    courtyard: { name: "中庭", sub: "B棟とC棟のあいだ", mark: "leaf" },
+    library: { name: "TSKEライブラリー", sub: "図書館", mark: "book" },
+    ground: { name: "総合グラウンド", sub: "花火（学内の方限定）", mark: "firework" },
   },
 };
 

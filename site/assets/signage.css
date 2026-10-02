@@ -243,13 +243,39 @@ body.is-hurry #slide { bottom: 160px; }
 .scan .cap { position: absolute; left: 0; right: 0; bottom: -86px; text-align: center; font-size: 38px; letter-spacing: .08em; }
 .float { position: absolute; z-index: -1; font-size: 90px; opacity: .9; animation: floaty 7s ease-in-out infinite; animation-delay: calc(var(--i) * -1.3s); }
 @keyframes floaty { 0%, 100% { transform: translateY(0) rotate(-8deg); } 50% { transform: translateY(-50px) rotate(10deg); } }
-/* 急げ！の帯が出ているときは、画面が狭くなるので、道案内の行を詰める */
-body.is-hurry .way .ttl { font-size: 60px; margin-top: 6px; }
-body.is-hurry .way .body { margin-top: 10px; }
-body.is-hurry .way li { padding-block: 4px; }
-body.is-hurry .way li .mk, body.is-hurry .way li .ar { width: 64px; height: 64px; }
-body.is-hurry .way ul { gap: 10px; }
-/* Enistagram のロゴ（サイトと同じ画像） */
-.elogo { display: inline-block; height: 150px; width: auto; vertical-align: middle; margin: 6px 6px 6px 0; filter: drop-shadow(0 6px 0 rgba(99, 74, 46, .35)); animation: pop .9s var(--spring) both .35s; }
-.elogo-s { height: 40px; width: auto; display: block; }
-.tag:has(.elogo-s) { padding-block: 8px; }
+/* 数字：見出しと同じ字で、大きく */
+.num { font-family: var(--hud); font-weight: 400; font-size: 1.35em; line-height: 1; letter-spacing: .02em; }
+.heart em, .heart em[data-n] { font: 400 56px/1 var(--hud); }
+.pc-b footer time .num { font-size: 1.4em; }
+#hurry .txt .num { font-size: 1.5em; }
+/* 団体名・企画名は、見出しと同じ字 */
+.nm { font-family: var(--hud); font-weight: 400; letter-spacing: .02em; }
+#hurry .txt b .nm { font-size: 1.2em; }
+/* 線の絵のアイコン（絵文字は使わない） */
+.ic { display: block; width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.tag i { font-size: 28px; }
+.way li .mk { font-size: 46px; color: var(--ink); }
+#hurry .run { width: 96px; height: 96px; font-size: 96px; }
+#hurry .run .ic { stroke-width: 1.6; }
+.float { color: rgba(254, 235, 196, .55); }
+/* 影：本サイトと同じ、ぼかさない・ずらした影（左下へ） */
+.pc, .plate, .cv, .now, .way li, .qrbox, .ls, .scan, .nx, .bubble { box-shadow: none !important; filter: drop-shadow(-14px 10px 0 rgba(48, 44, 41, .55)); }
+.tag { box-shadow: none; filter: drop-shadow(-6px 5px 0 rgba(48, 44, 41, .5)); }
+.ttl, .shop h2 { text-shadow: -5px 4px 0 rgba(48, 44, 41, .5); }
+.shop h2 .ch, .ttl .ch { text-shadow: inherit; }
+#hurry { box-shadow: none; filter: drop-shadow(0 -10px 0 rgba(48, 44, 41, .35)); }
+.elogo { filter: brightness(0) invert(1) drop-shadow(-6px 5px 0 rgba(48, 44, 41, .55)); } /* 白ぬき */
+.intro .en img { filter: brightness(0) invert(.95) sepia(.25) drop-shadow(-8px 6px 0 rgba(48, 44, 41, .55)); }
+.crown { box-shadow: none; filter: drop-shadow(-4px 3px 0 rgba(48, 44, 41, .55)); }
+/* 道案内：余白をたっぷり */
+.sl.way { inset: 0 110px; }
+.way .ttl { font-size: 80px; margin-top: 26px; }
+.way .body { margin-top: 44px; gap: 64px; }
+.way ul { gap: 26px; }
+.way li { padding: 18px 48px 18px 26px; gap: 34px; }
+.way li .mk { width: 80px; height: 80px; font-size: 48px; }
+.way li .ar { width: 84px; height: 84px; }
+/* 背景：みどころで使っている、ノイズのかかったピンク → 赤いオレンジ → 黄色のグラデーション（ゆっくり流れる） */
+#bg { background: #d98a2e url("img/mido-bg.webp") center 0 / 100% auto no-repeat; animation: bgflow 90s ease-in-out infinite alternate; }
+@keyframes bgflow { to { background-position: center 100%; } }
+.sun, .grain { display: none; }

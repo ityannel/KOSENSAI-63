@@ -61,6 +61,36 @@ const placeName = (id) => {
 const at = params.get("at");
 const spot = SIGNAGE.spots[at] ?? null;
 // ---------- 小道具 ----------
+// アイコン（絵文字は使わない。線の絵）
+const IC = {
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
+  building: '<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  store: '<path d="M4 9l1.5-5h13L20 9M4 9h16M4 9a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0M5 12v8h14v-8M10 20v-5h4v5"/>',
+  flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 15h9"/>',
+  bowl: '<path d="M3 11h18a9 9 0 0 1-18 0zM8 7c0-2 2-2 2-4M13 7c0-2 2-2 2-4"/>',
+  leaf: '<path d="M5 19C5 10 10 5 20 4c0 10-5 15-14 15zM5 19l8-8"/>',
+  book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h7"/>',
+  firework: '<path d="M12 3v5M12 16v5M3 12h5M16 12h5M5.6 5.6l3.5 3.5M14.9 14.9l3.5 3.5M18.4 5.6l-3.5 3.5M9.1 14.9l-3.5 3.5"/>',
+  people: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6M16 5a3.5 3.5 0 0 1 0 7M18 14c2.5.6 3.5 2.6 3.5 6"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+  heart: '<path d="M12 20s-7-4.3-9-9c-1.4-3.4.6-6.5 3.8-6.5 2 0 3.4 1 4.2 2.5.8-1.5 2.2-2.5 4.2-2.5 3.2 0 5.2 3.1 3.8 6.5-2 4.7-9 9-9 9z"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  spark: '<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>',
+  run: '<circle cx="14" cy="4.5" r="2"/><path d="M12 9l-3 3 3 2-1 5M12 9l4 2 3-1M9 12l-4 1M12 14l4 5"/>',
+};
+const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${IC[n] ?? IC.info}</svg>`;
+// 数字は、見出しと同じ字（WDXL Lubrifont）で、少し大きく。文の中の数字（12:15・3分・2F など）を .num で包む
+function numify(root) {
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (/\d/.test(n.nodeValue) && !n.parentElement.closest(".num, em[data-n], #bgclock, script, style") ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
+  const nodes = []; while (walk.nextNode()) nodes.push(walk.currentNode);
+  for (const n of nodes) {
+    const f = document.createDocumentFragment();
+    n.nodeValue.split(/(\d+(?:[:.,]\d+)*)/).forEach((t, k) => { if (k % 2) { const s = document.createElement("span"); s.className = "num"; s.textContent = t; f.append(s); } else if (t) f.append(t); });
+    n.replaceWith(f);
+  }
+}
 const chars = (text) => [...text].map((c, k) => (c === "\n" ? "<br>" : `<span class="ch" style="--k:${k}">${esc(c)}</span>`)).join("");
 const heart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8 3 4.5 6.5 4.5c2 0 3.6 1.1 4.5 2.7h2c.9-1.6 2.5-2.7 4.5-2.7 3.5 0 5.6 3.5 4.1 7.1C19.5 16.4 12 21 12 21z"/></svg>';
 const ARROW = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M12 50h66M52 22l28 28-28 28" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -111,7 +141,7 @@ const slidePosts = {
     const pick = rot.filter((p) => !p.has_photo || got[p.id]).slice(0, 3); // 写真が読めなかった投稿は、出さない（真っ黒の枠にしない）
     if (!pick.length) return null;
     return { dur: 15000, cls: "posts", after: countUp, html: `
-      <span class="tag slide-l"><i>●</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　最新の投稿</span>
+      <span class="tag slide-l"><i>${ic("image")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　最新の投稿</span>
       <h1 class="ttl">${chars("みんなの「いま」")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got)).join("")}</div>` };
   },
@@ -124,8 +154,8 @@ const slidePopular = {
     const pick = liked.filter((p) => !p.has_photo || got[p.id]).slice(0, 3); // 写真が読めなかった投稿は、出さない
     if (pick.length < 2) return null; // いいねが集まっていないときは出さない（最新の画面があるので）
     return { dur: 14000, cls: "posts popular", after: countUp, html: `
-      <span class="tag slide-l"><i>♥</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　人気の投稿</span>
-      <h1 class="ttl">${chars("いま、いちばん♥されてる")}</h1>
+      <span class="tag slide-l"><i>${ic("heart")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　人気の投稿</span>
+      <h1 class="ttl">${chars("いま、いちばん人気！")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got, i + 1)).join("")}</div>` };
   },
 };
@@ -147,12 +177,12 @@ const slideShop = {
     if (!s) return null;
     const d = shopDoc(s);
     const room = s.room ?? HOMEROOMS[s.cls];
-    const where = [s.bldg ? `${s.bldg}棟` : "", s.floor ?? "", room && !/^pt-/.test(room) ? `（${room}）` : ""].join("") || s.where || "";
+    const where = `${s.bldg ? `${s.bldg}棟` : ""}${s.floor ? String(s.floor).replace(/F$/, "階") : ""}` || s.where || ""; // 場所は「B棟3階」だけ（部屋番号・「場所」の文字は出さない）
     const w = d && WAIT[d.status];
     const lines = String(s.note ?? "").split(/\n/).filter(Boolean);
     const name = flat(s.name);
     return { dur: 13000, cls: "shop", html: `
-      <span class="tag slide-l"><i>🍡</i>ピックアップ模擬店</span>
+      <span class="tag slide-l"><i>${ic("store")}</i>ピックアップ模擬店</span>
       <div class="body">
         <i class="ghost" aria-hidden="true">${esc(s.group ?? "")}</i>
         <div>
@@ -161,7 +191,7 @@ const slideShop = {
           <div class="note">${lines.map((l, i) => `<span class="rise" style="--i:${9 + i}">${esc(l)}</span>`).join("")}</div>
         </div>
         <div class="side">
-          <div class="plate pop" style="--i:5"><small>場所</small><b>${esc(where || "校内")}</b></div>
+          ${where ? `<div class="plate pop" style="--i:5"><b>${esc(where)}</b></div>` : ""}
           ${w ? `<div class="plate live pop" style="--i:6;--c:${w[1]}"><small>いまのようす</small><b>${w[0]}</b>${d.message ? `<q>${esc(d.message)}</q>` : ""}</div>` : ""}
         </div>
       </div>` };
@@ -188,7 +218,7 @@ const slideCrowd = {
     const busy = fresh.filter((d) => d.status === "20min" || d.status === "soldout").slice(0, 5);
     const li = (d) => `<li><span>${esc(flat(d.name))}</span><em style="--c:${WAIT[d.status]?.[1]}">${WAIT[d.status]?.[0]}</em></li>`;
     return { dur: 11000, cls: "crowd", html: `
-      <span class="tag slide-l"><i>👥</i>いまの混雑</span>
+      <span class="tag slide-l"><i>${ic("people")}</i>いまの混雑</span>
       <h1 class="ttl">${chars("人の多さは、どのくらい？")}</h1>
       <div class="row">${cards}</div>
       <div class="lists">
@@ -227,13 +257,13 @@ const slideStage = {
           <p>${esc(cur.copy).replace(/\n/g, "<br>")}</p>
           <div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div></div>`
       : `<div class="now wait slide-l"><span class="lab">STAGE</span>
-          <h2>${nxt ? "まもなく" : "おやすみ"}</h2>${nxt ? `<p>${hm(nxt.s)}〜　${esc(nxt.name)}</p>` : ""}</div>`;
+          <h2>${nxt ? "まもなく" : "おやすみ"}</h2>${nxt ? `<p>${hm(nxt.s)}〜　<span class="nm">${esc(nxt.name)}</span></p>` : ""}</div>`;
     const nx = [];
     if (nxt) nx.push(`<div class="nx ${hot && !cur && hot.s === nxt.s && hot.title === nxt.name ? "hot" : ""} rise" style="--i:2"><small>NEXT</small><b>${esc(nxt.name)}</b><time>${hm(nxt.s)}〜　${esc(nxt.kind)}</time></div>`);
     if (nextEv) nx.push(`<div class="nx ${hot && hot.s === nextEv.s && hot.title === nextEv.title ? "hot" : ""} rise" style="--i:3"><small>${dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画"}</small><b>${esc(nextEv.title)}</b><time>${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)} `}${hm(nextEv.s)}〜　${esc(venueName(nextEv.venue))}${nextEv.internal ? "（学内の方限定）" : ""}</time></div>`);
-    const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em>${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
+    const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
     return { dur: hot ? 15000 : 13000, cls: "stage", html: `
-      <span class="tag slide-l"><i>🎤</i>ステージ・企画</span>
+      <span class="tag slide-l"><i>${ic("mic")}</i>ステージ・企画</span>
       <h1 class="ttl">${chars(hot ? "まもなく、はじまる！" : "いま、ステージでは")}</h1>
       <div class="grid">${main}<div class="nxt">${nx.join("")}${mini}</div></div>` };
   },
@@ -243,16 +273,17 @@ let hurryKey = "";
 function paintHurry() {
   const h = hurryItem(now());
   const el = $("#hurry"), key = h ? `${h.title}|${h.s}` : "";
-  if (key === hurryKey) { if (h) { const m = Math.max(0, Math.ceil((h.s - now()) / 60000)); const mm = el.querySelector("[data-min]"); if (mm) mm.textContent = m ? `あと${m}分` : "まもなく"; } return; }
+  if (key === hurryKey) { if (h) { const m = Math.max(0, Math.ceil((h.s - now()) / 60000)); const mm = el.querySelector("[data-min]"); if (mm) { mm.textContent = m ? `あと${m}分` : "まもなく"; numify(mm); } } return; }
   hurryKey = key;
   document.body.classList.toggle("is-hurry", !!h);
   if (!h) { el.hidden = true; el.innerHTML = ""; return; }
   const d = SIGNAGE.dests[h.venue], r = spot?.routes.find((x) => x.to === h.venue);
   const m = Math.max(0, Math.ceil((h.s - now()) / 60000));
   el.hidden = false;
-  el.innerHTML = `<span class="run">🏃</span><span class="big">急げ！</span>
-    <span class="txt"><b><span data-min>${m ? `あと${m}分` : "まもなく"}</span>で　${esc(h.title)}</b><small>${esc(d?.sub ?? venueName(h.venue))}${r ? `　→　${esc(r.say)}（歩いて${r.min}分）` : ""}</small></span>
+  el.innerHTML = `<span class="run">${ic("run")}</span><span class="big">急げ！</span>
+    <span class="txt"><b><span data-min>${m ? `あと${m}分` : "まもなく"}</span>で　<span class="nm">${esc(h.title)}</span></b><small>${esc(d?.sub ?? venueName(h.venue))}${r ? `　→　${esc(r.say)}（歩いて${r.min}分）` : ""}</small></span>
     ${r ? arrow(r.dir, "arr") : ""}`;
+  numify(el);
 }
 
 // ---------- 道案内 ----------
@@ -261,11 +292,12 @@ const slideWay = {
     if (!spot) return null;
     const url = siteUrl(`map.html?here=${encodeURIComponent(spot.here)}`);
     const t = now(), hot = hurryItem(t)?.venue;
+    const routes = [...spot.routes].sort((x, y) => (y.to === hot) - (x.to === hot)).slice(0, hot ? 4 : 5); // 急げ！の帯が出ているときは、場所が狭いので4つ。行き先の優先は、急ぐ先を上に
     return { dur: 14000, cls: "way", html: `
-      <span class="tag slide-l"><i>🧭</i>道案内</span>
+      <span class="tag slide-l"><i>${ic("compass")}</i>道案内</span>
       <h1 class="ttl">${chars(`${spot.name}から`)}</h1>
       <div class="body">
-        <ul>${spot.routes.map((r, i) => { const d = SIGNAGE.dests[r.to]; return `<li class="slide-l ${r.to === hot ? "hot" : ""}" style="--i:${i}"><span class="mk">${d?.mark ?? "📍"}</span>
+        <ul>${routes.map((r, i) => { const d = SIGNAGE.dests[r.to]; return `<li class="slide-l ${r.to === hot ? "hot" : ""}" style="--i:${i}"><span class="mk">${ic(d?.mark)}</span>
           <span class="nm">${esc(d?.name ?? r.to)}<small>${esc(d?.sub ?? "")}</small></span><span class="sy">${esc(r.say)}<small>歩いて${r.min}分</small></span>${arrow(r.dir)}</li>`; }).join("")}</ul>
         <div class="qrbox pop" style="--i:6"><img src="${qr(url, 320)}" alt=""><b>スマホで道案内</b><small>QR を読みこむと、ここから行き先まで地図で案内</small></div>
       </div>` };
@@ -277,10 +309,10 @@ const slideShare = {
   async build() {
     const url = siteUrl("map.html?tab=feed");
     return { dur: 13000, cls: "share", html: `
-      ${["📷", "🍡", "🎤", "✨", "♥"].map((e, i) => `<span class="float" style="--i:${i};left:${[6, 44, 80, 30, 92][i]}%;top:${[12, 70, 6, 82, 50][i]}%">${e}</span>`).join("")}
+      ${["camera", "store", "mic", "spark", "heart"].map((e, i) => `<span class="float" style="--i:${i};left:${[6, 44, 80, 30, 92][i]}%;top:${[12, 70, 6, 82, 50][i]}%">${ic(e)}</span>`).join("")}
       <div class="wrap">
         <div>
-          <h1>あなたも<br><img class="elogo" src="assets/img/enistagram.webp" alt="Enistagram">で<br>${chars("シェア！")}</h1>
+          <h1>あなたも<br><img class="elogo" src="assets/img/enistagram.webp" alt="Enistagram"><br>${chars("でシェア！")}</h1>
           <div class="how">
             <div class="rise" style="--i:6"><i>1</i>QR を読みこむ</div>
             <div class="rise" style="--i:7"><i>2</i>写真かひとことを書く</div>
@@ -363,6 +395,7 @@ async function show(i, first = false) {
     const [c1, c2] = BG[key] ?? BG.intro;
     stage.style.setProperty("--bg1", c1); stage.style.setProperty("--bg2", c2); stage.style.setProperty("--a", c1);
     const el = slide.firstElementChild;
+    numify(el);
     idx = i;
     if (uncover) { const p = uncover(); await sleep(120); el.classList.add("go"); built.after?.(el); await p; } else { el.classList.add("go"); built.after?.(el); }
     if (!params.get("only")) timer = setTimeout(() => { dir = 1; go(idx + 1); }, built.dur);
