@@ -312,7 +312,7 @@ const slideSeminar = {
           ${main.logo ? `<div class="lg"><img src="${esc(main.logo)}" alt=""></div>` : ""}
           <h2 class="nm">${esc(main.company)}</h2>
           <p>${esc(main.title)}</p>
-          <div class="kind">${cur ? "" : `<span class="chip">${sameDay ? "" : `${dateEn(main.s)}　`}${hm(main.s)}〜${hm(main.e)}</span>`}<span class="chip">${esc(venueName(SEMINARS.venue))}</span></div>
+          <div class="kind"${cur ? " hidden" : ""}>${cur ? "" : `<span class="chip">${sameDay ? "" : `${dateEn(main.s)}　`}${hm(main.s)}〜${hm(main.e)}</span>`}</div>
           ${cur ? `<div class="barw"><time>${hm(main.s)}</time><div class="bar"><i style="width:${Math.round(((t - main.s) / (main.e - main.s)) * 100)}%"></i></div><time>${hm(main.e)}</time></div>` : ""}</div>
         <div class="nxt">${rows.map((x, k) => hr(dayOf(x.s) === dayOf(t) ? (k === 0 ? "NEXT" : "THEN") : dateEn(x.s), x, 2 + k)).join("")}</div>
       </div>` };
