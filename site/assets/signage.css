@@ -351,3 +351,8 @@ body.is-hurry #slide { bottom: 160px; }
 .nx.is-then b { font-size: 36px; }
 .nx.is-then small { color: rgba(99, 74, 46, .7); }
 .nx.is-then i { font-size: 22px; }
+/* 進み具合のバーの両端に、始まり・終わりの時刻 */
+.barw { margin-top: auto; display: flex; align-items: center; gap: 22px; }
+.barw time { flex: none; font: 400 46px/1 var(--hud); color: var(--ink); letter-spacing: .02em; }
+.barw .bar { flex: 1; margin-top: 0; height: 22px; border-radius: 11px; }
+.barw .bar i { border-radius: 11px; }

@@ -258,9 +258,9 @@ const slideStage = {
     const hot = hurryItem(t);
     const main = cur
       ? `<div class="now slide-l"><span class="lab">NOW ON STAGE</span><div class="eq">${[0, 1, 2, 3, 4].map((k) => `<i style="--k:${k}"></i>`).join("")}</div>
-          <h2>${esc(cur.name)}</h2><div class="kind"><span class="chip">${esc(cur.kind)}</span><span class="chip">${esc(cur.mood)}</span><span class="chip">〜${hm(cur.e)}</span></div>
+          <h2>${esc(cur.name)}</h2><div class="kind"><span class="chip">${esc(cur.kind)}</span><span class="chip">${esc(cur.mood)}</span></div>
           <p>${esc(cur.copy).replace(/\n/g, "<br>")}</p>
-          <div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div></div>`
+          <div class="barw"><time>${hm(cur.s)}</time><div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div><time>${hm(cur.e)}</time></div></div>`
       : `<div class="now wait slide-l"><span class="lab">STAGE</span>
           <h2>${nxt ? "まもなく" : "おやすみ"}</h2>${nxt ? `<p>${hm(nxt.s)}〜　<span class="nm">${esc(nxt.name)}</span></p>` : ""}</div>`;
     // このあとの出演を、次の1つだけでなく、どんどん並べる（企画があれば、その分は1つ減らす）
@@ -312,8 +312,8 @@ const slideSeminar = {
           ${main.logo ? `<div class="lg"><img src="${esc(main.logo)}" alt=""></div>` : ""}
           <h2 class="nm">${esc(main.company)}</h2>
           <p>${esc(main.title)}</p>
-          <div class="kind"><span class="chip">${sameDay ? "" : `${dateEn(main.s)}　`}${hm(main.s)}〜${hm(main.e)}</span><span class="chip">${esc(venueName(SEMINARS.venue))}</span></div>
-          ${cur ? `<div class="bar"><i style="width:${Math.round(((t - main.s) / (main.e - main.s)) * 100)}%"></i></div>` : ""}</div>
+          <div class="kind">${cur ? "" : `<span class="chip">${sameDay ? "" : `${dateEn(main.s)}　`}${hm(main.s)}〜${hm(main.e)}</span>`}<span class="chip">${esc(venueName(SEMINARS.venue))}</span></div>
+          ${cur ? `<div class="barw"><time>${hm(main.s)}</time><div class="bar"><i style="width:${Math.round(((t - main.s) / (main.e - main.s)) * 100)}%"></i></div><time>${hm(main.e)}</time></div>` : ""}</div>
         <div class="nxt">${rows.map((x, k) => hr(dayOf(x.s) === dayOf(t) ? (k === 0 ? "NEXT" : "THEN") : dateEn(x.s), x, 2 + k)).join("")}</div>
       </div>` };
   },
