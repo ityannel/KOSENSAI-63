@@ -288,7 +288,7 @@ function paintHurry() {
   const m = Math.max(0, Math.ceil((h.s - now()) / 60000));
   el.hidden = false;
   el.innerHTML = `<span class="run">${ic("run")}</span><span class="big">急げ！</span>
-    <span class="txt"><b><span data-min>${m ? `あと${m}分` : "まもなく"}</span>で　<span class="nm">${esc(h.title)}</span></b><small>${esc(d?.sub ?? venueName(h.venue))}${r ? `　→　${esc(r.say)}（歩いて${r.min}分）` : ""}</small></span>
+    <span class="txt"><b><span data-min>${m ? `あと${m}分` : "まもなく"}</span>で　<span class="nm">${esc(h.title)}</span></b></span>
     ${r ? arrow(r.dir, "arr") : ""}`;
   numify(el);
 }
