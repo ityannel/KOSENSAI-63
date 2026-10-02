@@ -259,9 +259,11 @@ const slideStage = {
           <div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div></div>`
       : `<div class="now wait slide-l"><span class="lab">STAGE</span>
           <h2>${nxt ? "まもなく" : "おやすみ"}</h2>${nxt ? `<p>${hm(nxt.s)}〜　<span class="nm">${esc(nxt.name)}</span></p>` : ""}</div>`;
-    const nx = [];
-    if (nxt) nx.push(`<div class="nx ${hot && !cur && hot.s === nxt.s && hot.title === nxt.name ? "hot" : ""} rise" style="--i:2"><small>NEXT</small><b>${esc(nxt.name)}</b><time>${hm(nxt.s)}〜　${esc(nxt.kind)}</time></div>`);
-    if (nextEv) nx.push(`<div class="nx ${hot && hot.s === nextEv.s && hot.title === nextEv.title ? "hot" : ""} rise" style="--i:3"><small>${dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画"}</small><b>${esc(nextEv.title)}</b><time>${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)} `}${hm(nextEv.s)}〜　${esc(venueName(nextEv.venue))}${nextEv.internal ? "（学内の方限定）" : ""}</time></div>`);
+    // このあとの出演を、次の1つだけでなく、どんどん並べる（企画があれば、その分は1つ減らす）
+    const row = (small, title, time, sub, hotRow, n) => `<div class="nx ${hotRow ? "hot" : ""} rise" style="--i:${n}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
+    const later = ACTS.filter((a) => a.s > t).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0)); // 急げ！の帯が出ているときは、場所が狭いので1つ減らす
+    const nx = later.map((a, k) => row(k === 0 ? "NEXT" : "THEN", a.name, hm(a.s), `${a.kind}　${a.mood}`, k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k));
+    if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, hm(nextEv.s), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
     return { dur: hot ? 15000 : 13000, cls: "stage", html: `
       <span class="tag slide-l"><i>${ic("mic")}</i>ステージ・企画</span>

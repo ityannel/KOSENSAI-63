@@ -306,3 +306,14 @@ body.is-hurry #slide { bottom: 160px; }
 .intro .big b { font: 400 120px/1 var(--hud); color: inherit; text-shadow: inherit; letter-spacing: .02em; }
 .intro .big span { font: 400 58px/1 var(--hud); letter-spacing: .08em; }
 .intro .big .d { font-size: 76px; }
+/* このあとの出演：紙のカードを、どんどん並べる */
+.nxt { gap: 22px; }
+.nx { display: flex; align-items: center; gap: 28px; padding: 16px 32px; border: 0; background: var(--grain), var(--paper); color: var(--ink); }
+.nx .t { flex: none; font: 400 58px/1 var(--hud); color: var(--brick); letter-spacing: .02em; }
+.nx .w { display: grid; gap: 2px; min-width: 0; }
+.nx small { font: 400 24px/1.2 var(--hud); letter-spacing: .14em; color: var(--brick); }
+.nx b { font: 400 44px/1.15 var(--hud); }
+.nx i { font-size: 26px; opacity: .7; }
+.nx.hot { background: var(--live); color: #fff; }
+.nx.hot .t, .nx.hot small { color: #fff; }
+.mini { color: var(--paper); text-shadow: -3px 3px 0 rgba(48, 44, 41, .5); }
