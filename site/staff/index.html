@@ -41,7 +41,8 @@
         <a href="#broadcast" data-nav="broadcast"><svg viewBox="0 0 24 24"><path d="M4 9v6h3l5 4V5L7 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg><span data-short="配信">お知らせ・配信</span></a>
         <a href="#crowd" data-nav="crowd"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.5M17.5 19a5.5 5.5 0 0 0-2.5-4.6"/></svg><span data-short="混雑">混雑・実況</span></a>
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
-        <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店・印刷</span></a>
+        <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店</span></a>
+        <a href="#print" data-nav="print"><svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 9h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 19 17h-2M7 14h10v6H7z"/></svg><span data-short="印刷">印刷・スタンプ</span></a>
         <a href="#texts" data-nav="texts"><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg><span data-short="文章">文章と書体</span></a>
         <a href="#settings" data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span data-short="設定">サイトの設定</span></a>
       </nav>
@@ -176,7 +177,7 @@
 
       <!-- ===== 模擬店・印刷 ===== -->
       <!-- 受付の流れ：来たお店を名前で探す →「印刷する」でセット（三角POP＋お店の人用）を刷る → 渡したら「渡した」 -->
-      <section class="view" id="view-shops" data-title="模擬店・印刷" data-eyebrow="SHOPS &amp; PRINT" hidden>
+      <section class="view" id="view-shops" data-title="模擬店" data-eyebrow="SHOPS" hidden>
         <div class="shops-layout">
           <div class="shops-main">
             <article class="card desk">
@@ -197,7 +198,12 @@
             <div class="shop-list" id="shop-list"></div>
           </div>
 
-          <aside class="shops-side">
+        </div>
+      </section>
+
+      <!-- ===== 印刷・スタンプ ===== -->
+      <section class="view" id="view-print" data-title="印刷・スタンプ" data-eyebrow="PRINT" hidden>
+        <div class="grid-2">
             <article class="card">
               <header class="card-head"><h2>スタンプラリー</h2><span class="pill" id="rally-state"></span></header>
                             <div class="row row-wrap">
@@ -229,9 +235,9 @@
               </div>
             </article>
 
-          </aside>
         </div>
       </section>
+
 
       <!-- ===== 文章と書体 ===== -->
       <section class="view" id="view-texts" data-title="文章と書体" data-eyebrow="CONTENT" hidden>

@@ -657,3 +657,6 @@ h1, h2, h3 { font-weight: 400; }
 .post-reply { display: grid; gap: 8px; padding: 0 14px 14px; }
 .post-reply textarea { width: 100%; padding: 8px 12px; border: 1.5px solid var(--line-2); border-radius: var(--radius-sm); background: var(--bg-2); color: var(--ink); font: inherit; font-size: 15px; resize: vertical; }
 .post-reply[hidden] { display: none; }
+
+/* 模擬店の画面は、受付と一覧だけ（印刷は「印刷・スタンプ」へ分けた） */
+.shops-layout { grid-template-columns: minmax(0, 1fr); }

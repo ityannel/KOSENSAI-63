@@ -50,8 +50,7 @@ async function write(label, fn) {
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
 // ---------- 画面の切りかえ（#overview など） ----------
-const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "texts", "settings"];
-if (location.hash === "#print") history.replaceState(null, "", "#shops"); // 印刷は「模擬店・印刷」にまとめた
+const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "print", "texts", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
