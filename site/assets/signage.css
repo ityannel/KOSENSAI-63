@@ -29,7 +29,7 @@ i, em { font-style: normal; }
 /* ---------- 画面いっぱいに、うっすら時刻 ---------- */
 #bgclock { position: absolute; z-index: 1; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; color: rgba(255, 244, 214, .17); }
 #bgclock b { font: 400 620px/.9 var(--hud); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
-#bgclock span { margin-top: 10px; font: 700 70px var(--txt); letter-spacing: .3em; }
+#bgclock span { margin-top: 10px; font: 400 150px/1 var(--hud); letter-spacing: .12em; }
 
 /* ---------- 画面（スライド） ---------- */
 #slide { position: absolute; z-index: 3; left: 0; right: 0; top: 48px; bottom: 36px; padding: 0 64px; }
@@ -287,3 +287,17 @@ body.is-hurry #slide { bottom: 160px; }
 #bgphoto { -webkit-mask-image: linear-gradient(135deg, transparent 12%, rgba(0, 0, 0, .55) 50%, #000 90%); mask-image: linear-gradient(135deg, transparent 12%, rgba(0, 0, 0, .55) 50%, #000 90%); }
 #bgphoto.on { opacity: .6; }
 .cv .al { min-height: 1.3em; }
+.lists.one { grid-template-columns: 1fr; }
+/* テスト用の操作パネル（?test=1 のときだけ。舞台の外なので、拡大・縮小されない） */
+.tp { position: fixed; z-index: 99; left: 10px; bottom: 10px; display: flex; flex-direction: column-reverse; align-items: flex-start; font: 700 13px/1.4 var(--txt); color: #fff; }
+.tp button, .tp select { font: inherit; }
+.tp-t { padding: 6px 14px; border: 0; border-radius: 999px; background: #634A2E; color: #FEEBC4; cursor: pointer; }
+.tp-b { margin-top: 6px; width: 250px; padding: 12px; border-radius: 14px; background: rgba(48, 44, 41, .92); display: grid; gap: 8px; }
+.tp-b label { display: grid; gap: 2px; }
+.tp-b select { width: 100%; padding: 4px; border-radius: 6px; }
+.tp-b .chk { display: flex; align-items: center; gap: 6px; }
+.tp-s { display: flex; flex-wrap: wrap; gap: 5px; }
+.tp-s button, .tp-n button { padding: 4px 9px; border: 1px solid #FEEBC4; border-radius: 999px; background: transparent; color: #FEEBC4; cursor: pointer; }
+.tp-s button[aria-pressed="true"] { background: #FEEBC4; color: #634A2E; }
+.tp-n { display: flex; gap: 6px; }
+.tp-b { max-height: calc(100vh - 60px); overflow: auto; }
