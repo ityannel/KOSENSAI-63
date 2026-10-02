@@ -140,7 +140,7 @@ const slidePosts = {
     const got = await photos(rot.slice(0, 6));
     const pick = rot.filter((p) => !p.has_photo || got[p.id]).slice(0, 3); // 写真が読めなかった投稿は、出さない（真っ黒の枠にしない）
     if (!pick.length) return null;
-    return { dur: 15000, cls: "posts", after: countUp, html: `
+    return { dur: 15000, cls: "posts", after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
       <span class="tag slide-l"><i>${ic("image")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　最新の投稿</span>
       <h1 class="ttl">${chars("みんなの「いま」")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got)).join("")}</div>` };
@@ -153,7 +153,7 @@ const slidePopular = {
     const got = await photos(liked.slice(0, 6));
     const pick = liked.filter((p) => !p.has_photo || got[p.id]).slice(0, 3); // 写真が読めなかった投稿は、出さない
     if (pick.length < 2) return null; // いいねが集まっていないときは出さない（最新の画面があるので）
-    return { dur: 14000, cls: "posts popular", after: countUp, html: `
+    return { dur: 14000, cls: "posts popular", after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
       <span class="tag slide-l"><i>${ic("heart")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　人気の投稿</span>
       <h1 class="ttl">${chars("いま、いちばん人気！")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got, i + 1)).join("")}</div>` };
@@ -208,7 +208,7 @@ const slideCrowd = {
       const col = lv && !stale ? lv.color : "#9a948c";
       const level = c?.level ?? -1;
       return `<div class="cv rise" style="--i:${i};--c:${col === "#F1D08A" ? "#c99a2e" : col === "#6CBAB5" ? "#2a9d96" : col}">
-        <h3>${esc(v?.name ?? id)}</h3><span class="al">${esc(v?.alias ?? "")}</span>
+        <h3>${esc(v?.name ?? id)}</h3><span class="al">${esc(v?.alias ?? MAP.places.find((p) => p.id === id)?.sub ?? "")}</span>
         <div class="lv">${lv && !stale ? lv.label : "情報なし"}</div>
         <div class="meter">${[0, 1, 2, 3].map((k) => `<i class="${k <= level && !stale ? "on" : ""}" style="--k:${k}"></i>`).join("")}</div>
         <small class="t">${c?.updated_at ? `${ago(c.updated_at)}に更新${stale ? "（古い情報）" : ""}` : "まだ知らせがありません"}</small></div>`;
@@ -396,6 +396,9 @@ async function show(i, first = false) {
     stage.style.setProperty("--bg1", c1); stage.style.setProperty("--bg2", c2); stage.style.setProperty("--a", c1);
     const el = slide.firstElementChild;
     numify(el);
+    // 写真つきの投稿の画面では、その写真を、背景にうっすら重ねる
+    const bp = $("#bgphoto");
+    if (!bp) { /* 古い signage.html（背景の写真の場所がない）のとき */ } else if (built.bgPhoto) { bp.style.backgroundImage = `url("${built.bgPhoto}")`; bp.classList.add("on"); } else bp.classList.remove("on");
     idx = i;
     if (uncover) { const p = uncover(); await sleep(120); el.classList.add("go"); built.after?.(el); await p; } else { el.classList.add("go"); built.after?.(el); }
     if (!params.get("only")) timer = setTimeout(() => { dir = 1; go(idx + 1); }, built.dur);

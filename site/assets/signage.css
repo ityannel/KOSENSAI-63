@@ -279,3 +279,11 @@ body.is-hurry #slide { bottom: 160px; }
 #bg { background: #d98a2e url("img/mido-bg.webp") center 0 / 100% auto no-repeat; animation: bgflow 90s ease-in-out infinite alternate; }
 @keyframes bgflow { to { background-position: center 100%; } }
 .sun, .grain { display: none; }
+/* 写真つきの投稿のときは、写真を背景にうっすら */
+#bgphoto { position: absolute; inset: -60px; background: center / cover no-repeat; filter: blur(16px) saturate(1.1); opacity: 0; transform: scale(1.05); transition: opacity 1.4s ease; animation: bgzoom 20s ease-in-out infinite alternate; }
+#bgphoto.on { opacity: .4; }
+@keyframes bgzoom { to { transform: scale(1.18); } }
+/* 文字が多い左上は透明（透明度100%）、右下へ向かって少しずつ写真が見える（透明度0%へ） */
+#bgphoto { -webkit-mask-image: linear-gradient(135deg, transparent 12%, rgba(0, 0, 0, .55) 50%, #000 90%); mask-image: linear-gradient(135deg, transparent 12%, rgba(0, 0, 0, .55) 50%, #000 90%); }
+#bgphoto.on { opacity: .6; }
+.cv .al { min-height: 1.3em; }
