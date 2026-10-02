@@ -813,14 +813,14 @@ const kanjiNum = (n) => {
 };
 // スタンプラリーのおさそい（三角POPの3段目と、模擬店セットのきりとり）。文は縦書き、下に QR
 function rallyBody(s) {
-  // 模擬店：スタンプは置かない。お店の前の QR から、そのお店を選んだ状態で、模擬店総選挙のページが開く
+  // 模擬店：スタンプも総選挙の紙も置かない。かわりに、高専祭のサイト（待ち時間・校内マップ）の QR
   if (s.kind === "shop") {
     return `
           <div class="pt-v pt-rally-text">
-            <h3>模擬店総選挙、<br>開催中。</h3>
-            <p class="pt-rally-lead">気に入ったら、<br><b>応援の一票</b>を！</p>
+            <h3>高専祭の<br>サイトも、<br>どうぞ。</h3>
+            <p class="pt-rally-lead">待ち時間や、<br><b>校内マップ</b>も<br>見られます。</p>
           </div>
-          <figure class="pt-rally-qr"><img src="${qrDataUrl(ELECTION.prefill ? ELECTION.prefill.replace("{shop}", encodeURIComponent(s.name.replace(/\n/g, " "))) : ELECTION.form ?? siteUrl("vote.html"))}" alt=""><figcaption>↑読み込んで、このお店に投票</figcaption></figure>`;
+          <figure class="pt-rally-qr"><img src="${qrDataUrl(siteUrl(""))}" alt=""><figcaption>↑読み込んで、サイトを見る</figcaption></figure>`;
   }
   const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
   const qr = rally
