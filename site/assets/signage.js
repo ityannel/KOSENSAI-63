@@ -33,7 +33,14 @@ tick(); setInterval(tick, 5000);
 
 // ---------- データ ----------
 let posts = [], crowd = {}, shopDocs = [];
-subscribePosts((list) => { if (list) posts = list; });
+const visibleTop = () => posts.filter((p) => p.visible && !p.reply_to && (p.text.trim() || p.has_photo));
+subscribePosts((list) => {
+  if (!list) return;
+  posts = list;
+  // 写真は、流れる前に先に読んでおく（出す直前に読むと間に合わず、真っ黒の枠になる）。新しい順・いいねの多い順に
+  const top = visibleTop().filter((p) => p.has_photo);
+  [...top.sort((a, b) => b.created_at - a.created_at).slice(0, 24), ...top.sort((a, b) => b.likes - a.likes).slice(0, 12)].forEach((p) => loadPhoto(p.id).catch(() => {}));
+});
 subscribeCrowd((d) => { crowd = d ?? {}; });
 subscribeShops((l) => { shopDocs = l ?? []; });
 subscribeLive(() => {}); // 「全員のキャッシュ削除」を受けとる（live.js の中で、読みこみなおす）
@@ -68,12 +75,11 @@ const qr = (text, size = 440) => {
 const siteUrl = (path) => new URL(path, location.href).href;
 async function photos(list) { // 写真は、出す前に読んでおく（空の枠が出ないように。2.5秒まで待つ）
   const got = {};
-  await Promise.race([Promise.all(list.filter((p) => p.has_photo).map((p) => loadPhoto(p.id).then((s) => { got[p.id] = s; }).catch(() => {}))), sleep(2500)]);
+  await Promise.race([Promise.all(list.filter((p) => p.has_photo).map((p) => loadPhoto(p.id).then((s) => { got[p.id] = s; }).catch(() => {}))), sleep(7000)]);
   return got;
 }
 
 // ---------- 投稿の画面 ----------
-const visibleTop = () => posts.filter((p) => p.visible && !p.reply_to && (p.text.trim() || p.has_photo));
 function postCard(p, i, got, crown) {
   const hue = [...p.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 17);
   const photo = p.has_photo && got[p.id];
@@ -99,11 +105,13 @@ const slidePosts = {
   async build() {
     const all = visibleTop().sort((a, b) => b.created_at - a.created_at).slice(0, 12);
     if (!all.length) return null;
-    const pick = Array.from({ length: Math.min(3, all.length) }, (_, k) => all[(newOffset + k) % all.length]);
+    const rot = all.map((_, k) => all[(newOffset + k) % all.length]);
     newOffset += 3;
-    const got = await photos(pick);
+    const got = await photos(rot.slice(0, 6));
+    const pick = rot.filter((p) => !p.has_photo || got[p.id]).slice(0, 3); // 写真が読めなかった投稿は、出さない（真っ黒の枠にしない）
+    if (!pick.length) return null;
     return { dur: 15000, cls: "posts", after: countUp, html: `
-      <span class="tag slide-l"><i>●</i><span class="e-word">Enistagram</span>　最新の投稿</span>
+      <span class="tag slide-l"><i>●</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　最新の投稿</span>
       <h1 class="ttl">${chars("みんなの「いま」")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got)).join("")}</div>` };
   },
@@ -112,11 +120,11 @@ const slidePopular = {
   async build() {
     const all = visibleTop();
     const liked = all.filter((p) => p.likes > 0).sort((a, b) => b.likes - a.likes || b.created_at - a.created_at);
-    const pick = liked.slice(0, 3);
+    const got = await photos(liked.slice(0, 6));
+    const pick = liked.filter((p) => !p.has_photo || got[p.id]).slice(0, 3); // 写真が読めなかった投稿は、出さない
     if (pick.length < 2) return null; // いいねが集まっていないときは出さない（最新の画面があるので）
-    const got = await photos(pick);
     return { dur: 14000, cls: "posts popular", after: countUp, html: `
-      <span class="tag slide-l"><i>♥</i><span class="e-word">Enistagram</span>　人気の投稿</span>
+      <span class="tag slide-l"><i>♥</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　人気の投稿</span>
       <h1 class="ttl">${chars("いま、いちばん♥されてる")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got, i + 1)).join("")}</div>` };
   },
@@ -272,7 +280,7 @@ const slideShare = {
       ${["📷", "🍡", "🎤", "✨", "♥"].map((e, i) => `<span class="float" style="--i:${i};left:${[6, 44, 80, 30, 92][i]}%;top:${[12, 70, 6, 82, 50][i]}%">${e}</span>`).join("")}
       <div class="wrap">
         <div>
-          <h1>あなたも<br><em>${chars("エニスタ")}</em>で<br>${chars("シェア！")}</h1>
+          <h1>あなたも<br><img class="elogo" src="assets/img/enistagram.webp" alt="Enistagram">で<br>${chars("シェア！")}</h1>
           <div class="how">
             <div class="rise" style="--i:6"><i>1</i>QR を読みこむ</div>
             <div class="rise" style="--i:7"><i>2</i>写真かひとことを書く</div>

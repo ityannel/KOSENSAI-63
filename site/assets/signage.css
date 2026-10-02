@@ -249,3 +249,7 @@ body.is-hurry .way .body { margin-top: 10px; }
 body.is-hurry .way li { padding-block: 4px; }
 body.is-hurry .way li .mk, body.is-hurry .way li .ar { width: 64px; height: 64px; }
 body.is-hurry .way ul { gap: 10px; }
+/* Enistagram のロゴ（サイトと同じ画像） */
+.elogo { display: inline-block; height: 150px; width: auto; vertical-align: middle; margin: 6px 6px 6px 0; filter: drop-shadow(0 6px 0 rgba(99, 74, 46, .35)); animation: pop .9s var(--spring) both .35s; }
+.elogo-s { height: 40px; width: auto; display: block; }
+.tag:has(.elogo-s) { padding-block: 8px; }
