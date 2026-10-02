@@ -457,6 +457,7 @@ const SPON = SPONSORS.list.filter((x) => x.logo).slice(0, 8);
 SPON.forEach((x) => { const im = new Image(); im.src = x.logo; }); // 先に読んでおく
 let wipeN = 0;
 async function cover() {
+  wipe.querySelectorAll("i.b2").forEach((b) => b.getAnimations().forEach((x) => x.cancel())); // 前の切りかえの虹の帯を、もとにもどす
   const wsp = wipe.querySelector("#wsp"), sp = SPON.length ? SPON[wipeN++ % SPON.length] : null;
   if (wsp) wsp.getAnimations({ subtree: true }).forEach((a) => a.cancel());
   if (wsp && sp) {
@@ -464,7 +465,7 @@ async function cover() {
     wsp.animate([{ opacity: 0, transform: "translate(-50%, 70px) scale(.8)" }, { opacity: 1, transform: "translate(-50%, -8px) scale(1.03)", offset: .65 }, { opacity: 1, transform: "translate(-50%, 0) scale(1)" }], { duration: 800, delay: 600, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
     wsp.querySelector(".tile").animate([{ backgroundPosition: "-200% 0" }, { backgroundPosition: "200% 0" }], { duration: 1000, delay: 1500, easing: "ease-in-out" }); // きらっと光る
   }
-  const bars = [...wipe.querySelectorAll("i")], seal = wipe.querySelector("b");
+  const bars = [...wipe.querySelectorAll("i:not(.b2)")], seal = wipe.querySelector("b");
   const inn = bars.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(0) skewX(-14deg)" }], { duration: 520, delay: k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }));
   seal.animate([{ opacity: 0, transform: "scale(2.2) rotate(-14deg)" }, { opacity: 1, transform: "scale(1) rotate(-6deg)", offset: .55 }, { opacity: 1, transform: "scale(1) rotate(-6deg)" }], { duration: 900, delay: 330, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
   // 紙吹雪：はんこが押されるときに、いろいろな色が四方へ散る
@@ -477,10 +478,15 @@ async function cover() {
   await Promise.all(inn.map((a) => a.finished.catch(() => {}))); // 全画面にしたときなどに、動きが取り消されても止まらない
   if (sp) await sleep(1900); // ロゴをしっかり見せる時間（帯がおおったまま、少し止める）
   return () => {
-    // 次の画面が映るとき、「縁」とロゴは、フェードさせず、そのまま消す（動きを取り消すと、もとの「見えない」状態にもどる）
-    seal.getAnimations().forEach((x) => x.cancel());
-    wsp?.getAnimations({ subtree: true }).forEach((x) => x.cancel());
-    return Promise.all(bars.map((b, k) => b.animate([{ transform: "translateX(0) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 560, delay: 240 + k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }).finished.catch(() => {})));
+    // 次の画面が映るとき：「縁」とロゴは、そのまま残し、虹色の帯がその上を通って消していく（帯が全部おおったところで、下のものを片づける）
+    const top = [...wipe.querySelectorAll("i.b2")];
+    const pass = top.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 1100, delay: k * 70, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" }));
+    setTimeout(() => {
+      bars.forEach((b) => b.getAnimations().forEach((x) => x.cancel()));
+      seal.getAnimations().forEach((x) => x.cancel());
+      wsp?.getAnimations({ subtree: true }).forEach((x) => x.cancel());
+    }, 3 * 70 + 560);
+    return Promise.all(pass.map((a) => a.finished.catch(() => {})));
   };
 }
 // 画面ごとの背景（ポスターの空の色。上→下）。差し色はその上の色
