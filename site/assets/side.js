@@ -17,7 +17,6 @@ const MENU = [
   ["crowd-now", "いまの混雑", "CROWD", svg('<circle cx="8" cy="8" r="2.5"/><circle cx="16.5" cy="9" r="2"/><path d="M3.5 19c0-3 2-5 4.5-5s4.5 2 4.5 5M14 14.5c.8-.6 1.6-.9 2.5-.9 2.2 0 4 1.8 4 4.4"/>')],
   ["pickup", "みどころ", "HIGHLIGHTS", svg('<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.8 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>')],
   ["ennichi", "縁日", "FOOD & FUN", svg('<path d="M3.5 9L5 4h14l1.5 5M3.5 9h17M3.5 9a2.8 2.8 0 0 0 5.6 0 2.9 2.9 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0M5 12v8h14v-8M10 20v-5h4v5"/>')],
-  ["vote", "模擬店総選挙", "VOTE", svg('<path d="M5 20h14M7 20v-6h10v6M12 14V4M12 4l-4 4M12 4l4 4"/>')],
   ["info", "ご来場の皆さまへ", "INFO", svg('<path d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>')],
   ["sponsors", "協賛", "SPONSORS", svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>')],
 ].filter(([id]) => !onTop || document.getElementById(id)); // トップページにない場所は出さない
@@ -26,12 +25,11 @@ const MORE = [
   ["mido.html", "みどころを詳しく", "TIMETABLE", svg('<path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="M14.5 7.5v9" stroke-dasharray="1.6 2.2"/>')],
   ["map.html?list=now", "いまやっている", "NOW ON", svg('<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>')],
   ["map.html?list=food", "模擬店をさがす", "FIND FOOD", svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/>')],
-  ["vote.html", "模擬店総選挙に投票", "VOTE", svg('<path d="M5 20h14M7 20v-6h10v6M12 14V4M12 4l-4 4M12 4l4 4"/>')],
   ["rally.html", "スタンプカード", "STAMP CARD", svg('<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8.5" cy="12" r="2.3"/><circle cx="15.5" cy="12" r="2.3"/>')],
   ["map.html?list=toilet", "トイレ", "RESTROOMS", svg('<circle cx="7.5" cy="5" r="1.7"/><circle cx="16.5" cy="5" r="1.7"/><path d="M7.5 8.5v11M5 9h5l-.3 5.5M16.5 8.5l-2.8 7h5.6zM16.5 15.5v4"/>')],
 ];
 // MORE の各行が出る条件：トップページの、その欄が出ているとき（"now" は開催中だけ、"*" はいつも）
-const MORE_NEEDS = { "mido.html": "pickup", "map.html?list=now": "now", "map.html?list=food": "ennichi", "vote.html": "vote", "rally.html": "stamp", "map.html?list=toilet": "*" };
+const MORE_NEEDS = { "mido.html": "pickup", "map.html?list=now": "now", "map.html?list=food": "ennichi", "rally.html": "stamp", "map.html?list=toilet": "*" };
 const COLORS = ["var(--sky-1)", "var(--sky-3)", "var(--sun)", "#E7A0A0", "var(--en)"];
 
 // 日付：10.24 SAT
@@ -73,7 +71,7 @@ document.body.insertAdjacentHTML("beforeend", `
 
 // メニューの順番は、トップページの欄の並びに合わせる（本部コンソールの「サイトの設定」で変わる。blocks.js が知らせる）。出していない欄は、メニューからも消す
 // 日程（いちばん上の絵）はいつも最初。ほかのページでは、前にトップページで読んだ並び（このスマホ・PC に覚えてある）
-const SEC_OF = { message: "message", vote: "vote", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", info: "info", sponsors: "sponsors" }; // 欄の名前 → メニューの行き先
+const SEC_OF = { message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", info: "info", sponsors: "sponsors" }; // 欄の名前 → メニューの行き先
 function orderMenu(blocks) {
   if (!Array.isArray(blocks)) return;
   const ul = document.querySelector(".pc-menu");

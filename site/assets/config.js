@@ -34,7 +34,6 @@ export const NAV = [
 export const TOP_BLOCKS = [
   ["message", "学生主事より", "学生主事のことば（写真つき）"],
   ["stamp", "スタンプカード", "スタンプラリーの入口"],
-  ["vote", "模擬店総選挙", "投票のページへの入口"],
   ["crowd", "いまの混雑", "本部が混雑を入れたときだけ出る"],
   ["pickup", "みどころ", "いま・次の企画のチケット"],
   ["ennichi", "縁日", "模擬店のチラシ"],
@@ -44,8 +43,8 @@ export const TOP_BLOCKS = [
 // 並びのプリセット（本部コンソールで保存したものがなければ、これ）。開催前は学生主事よりが先、期間中はスタンプカード・混雑が先
 const P = (ids) => ids.map((t) => ({ id: t.replace(/^-/, ""), show: !t.startsWith("-") }));
 export const TOP_PRESETS = {
-  before: P(["message", "pickup", "ennichi", "info", "stamp", "-vote", "-crowd", "sponsors"]),
-  during: P(["stamp", "vote", "crowd", "pickup", "ennichi", "info", "message", "sponsors"]),
+  before: P(["message", "pickup", "ennichi", "info", "stamp", "-crowd", "sponsors"]),
+  during: P(["stamp", "crowd", "pickup", "ennichi", "info", "message", "sponsors"]),
 };
 
 export const MESSAGE = {
