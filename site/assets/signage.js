@@ -432,28 +432,86 @@ const slideIntro = {
   },
 };
 
-// ---------- 一般公開の終了（その日の公開時間が終わってから、次の日の開場まで／最後の日が終わってから） ----------
+// ---------- 一般公開の終了（その日の公開時間が終わってから、5分間だけ。そのあとは、ふだんの画面に戻って案内を続ける） ----------
+const CLOSING_MIN = 5;
 function closedState(t) {
-  const days = FESTIVAL.days.map((d) => ({ open: Date.parse(d.open), close: Date.parse(d.close) }));
-  let i = -1;
-  days.forEach((d, k) => { if (t >= d.close) i = k; });
-  if (i < 0 || (i < days.length - 1 && t >= days[i + 1].open)) return null;
-  return { final: i === days.length - 1 };
+  const days = FESTIVAL.days.map((d) => ({ close: Date.parse(d.close) }));
+  const i = days.findIndex((d) => t >= d.close && t < d.close + CLOSING_MIN * 60000);
+  return i < 0 ? null : { final: i === days.length - 1 };
 }
 const slideClosing = {
   async build() {
     const c = closedState(now());
-    return { dur: 120000, cls: "closing", html: `
+    return { dur: 60000, cls: "closing", html: `
       <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>
       <h1 class="rise" style="--i:2">${c?.final === false ? "本日の" : ""}一般公開は終了しました</h1>
       <p class="rise" style="--i:4">ご来場ありがとうございました</p>` };
   },
 };
 
+// ---------- 花火（学内の方限定）：花火の時間は、画面に「花火！」と案内を出し、背景に花火を打ち上げる ----------
+const fwEvent = () => EVENTS.find((e) => e.title === "花火");
+function fireworksNow(t = now()) { const e = fwEvent(); return !!e && t >= Date.parse(e.start) && t < Date.parse(e.end); }
+const slideFireworks = {
+  async build() {
+    const e = fwEvent(), r = spot?.routes.find((x) => x.to === "ground");
+    return { dur: 90000, cls: "fwslide", html: `
+      <h1 class="fwt">${chars("花火！")}</h1>
+      <p class="fwsub rise" style="--i:3"><span class="chip a">学内の方限定</span>${e ? `<span class="fwtime">${tRange(e)}</span>` : ""}</p>
+      <div class="fwguide rise" style="--i:5"><span class="mk">${ic("firework")}</span><span class="nm">総合グラウンド<small>で、打ち上げます</small></span>${r ? `<span class="sy">${esc(r.say)}<small>歩いて${r.min}分</small></span>${arrow(r.dir)}` : ""}</div>` };
+  },
+};
+// 背景の花火：1枚の canvas に、ロケットが昇って開く（花火の時間のあいだだけ動かす）
+const fwCv = $("#fw"), fwCtx = fwCv.getContext("2d");
+let fwOn = false;
+function fwStart() {
+  if (fwOn) return;
+  fwOn = true; fwCv.width = SW; fwCv.height = SH;
+  const rockets = [], parts = [];
+  let last = performance.now(), nextAt = last + 300;
+  const burst = (x, y, hue) => {
+    const n = 90 + Math.floor(Math.random() * 40), ring = Math.random() < 0.35, sp = 260 + Math.random() * 260;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2 + Math.random() * 0.1, v = ring ? sp : sp * (0.25 + Math.random() * 0.75);
+      parts.push({ x, y, px: x, py: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0, max: 1.5 + Math.random() * 0.9, hue: hue + (Math.random() - 0.5) * (ring ? 20 : 70) });
+    }
+  };
+  function frame(now) {
+    if (!fwOn) { fwCtx.clearRect(0, 0, SW, SH); return; }
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (fwCv.width !== SW || fwCv.height !== SH) { fwCv.width = SW; fwCv.height = SH; }
+    if (now >= nextAt) {
+      rockets.push({ x: SW * (0.12 + Math.random() * 0.76), y: SH + 10, vx: (Math.random() - 0.5) * 120, vy: -(SH * (0.9 + Math.random() * 0.35)), ty: SH * (0.14 + Math.random() * 0.34), hue: Math.floor(Math.random() * 360), px: 0, py: 0 });
+      nextAt = now + 300 + Math.random() * 500;
+    }
+    fwCtx.clearRect(0, 0, SW, SH);
+    fwCtx.globalCompositeOperation = "lighter"; fwCtx.lineCap = "round";
+    for (let i = rockets.length - 1; i >= 0; i--) {
+      const r = rockets[i]; r.px = r.x; r.py = r.y; r.x += r.vx * dt; r.y += r.vy * dt;
+      fwCtx.strokeStyle = "rgba(255, 230, 170, .9)"; fwCtx.lineWidth = 5; fwCtx.beginPath(); fwCtx.moveTo(r.px, r.py + 26); fwCtx.lineTo(r.x, r.y); fwCtx.stroke();
+      if (r.y <= r.ty) { burst(r.x, r.y, r.hue); rockets.splice(i, 1); }
+    }
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.life += dt;
+      if (p.life >= p.max) { parts.splice(i, 1); continue; }
+      p.px = p.x; p.py = p.y; p.vx *= 1 - 1.4 * dt; p.vy = p.vy * (1 - 1.4 * dt) + 360 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+      const al = 1 - p.life / p.max;
+      fwCtx.strokeStyle = `hsla(${p.hue}, 100%, 68%, ${al})`; fwCtx.lineWidth = 9 * al + 2;
+      fwCtx.beginPath(); fwCtx.moveTo(p.px, p.py); fwCtx.lineTo(p.x, p.y); fwCtx.stroke();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+const fwStop = () => { fwOn = false; };
+function syncFireworks() { const on = fireworksNow(); document.body.classList.toggle("is-fw", on); on ? fwStart() : fwStop(); }
+setInterval(syncFireworks, 2000); syncFireworks();
+
 // ---------- 流れ ----------
-const SLIDES = { intro: slideIntro, stage: slideStage, closing: slideClosing, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
+const SLIDES = { intro: slideIntro, stage: slideStage, closing: slideClosing, fireworks: slideFireworks, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
 function plan() {
-  if (closedState(now())) return ["closing"]; // 一般公開が終わったあとは、この1枚だけ
+  if (closedState(now())) return ["closing"]; // 一般公開が終わって5分間は、この1枚だけ
+  if (fireworksNow()) return ["fireworks"]; // 花火の時間は、この1枚だけ（背景に花火）
   const base = ["intro", "stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
   if (hurryItem(now())) base.splice(5, 0, "stage"); // 急げ！のときは、ステージの画面を多めに
   return base;
@@ -500,7 +558,7 @@ async function cover() {
 }
 // 画面ごとの背景（ポスターの空の色。上→下）。差し色はその上の色
 const BG = { intro: ["#3f9f99", "#9BD7D0"], posts: ["#2f8fe0", "#9BD7D0"], popular: ["#d9669b", "#F2A96A"], shop: ["#ee7b30", "#efc696"], crowd: ["#3f9f99", "#F1D08A"],
-  stage: ["#ee7b30", "#B5655A"], way: ["#B5655A", "#F2A96A"], share: ["#a061c9", "#2f8fe0"] };
+  stage: ["#ee7b30", "#B5655A"], way: ["#B5655A", "#F2A96A"], share: ["#a061c9", "#2f8fe0"], fireworks: ["#0b1030", "#3a1d5c"], closing: ["#3f9f99", "#9BD7D0"] };
 async function show(i, first = false) {
   if (busy) return;
   busy = true; clearTimeout(timer);
@@ -549,7 +607,7 @@ setInterval(paintHurry, 15000);
 if (params.has("test")) {
   document.documentElement.style.cursor = "auto"; document.body.style.cursor = "auto";
   const TIMES = [["いま（本当の時刻）", ""], ["開幕前（11:50）", "2026-10-24T11:50"], ["開催中・出演中（13:20）", "2026-10-24T13:20"], ["出演の合間（急げ！）", "2026-10-24T12:08"],
-    ["1日目の夜", "2026-10-24T18:00"], ["2日目の朝", "2026-10-25T08:30"], ["結果発表の直前（15:55）", "2026-10-25T15:55"], ["終了後", "2026-10-26T10:00"]];
+    ["1日目の夜", "2026-10-24T18:00"], ["2日目の朝", "2026-10-25T08:30"], ["結果発表の直前（15:55）", "2026-10-25T15:55"], ["一般公開の終了直後（16:02）", "2026-10-25T16:02"], ["終了の5分後（16:06）", "2026-10-25T16:06"], ["花火（18:10）", "2026-10-25T18:10"], ["終了後", "2026-10-26T10:00"]];
   const PLACES = [["なし（道案内は出ない）", ""], ["第1講義室の前", "lecture1"], ["総務課の横の廊下の角", "soumu"], ["インフォメーション前", "info"]];
   const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
   const reloadWith = (ch) => { const p = new URLSearchParams(location.search); for (const [k, v] of Object.entries(ch)) { if (v === "" || v == null || v === false) p.delete(k); else p.set(k, v === true ? "1" : v); } p.set("test", "1"); location.search = p; };

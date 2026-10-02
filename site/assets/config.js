@@ -381,6 +381,7 @@ export const SIGNAGE = {
       { to: "shops", dir: "upleft", say: "L棟の各階へ", min: 1 },
       { to: "exhibit", dir: "up", say: "C棟・D棟へ", min: 3 },
       { to: "cafeteria", dir: "left", say: "二十一食堂へ", min: 4 },
+      { to: "ground", dir: "right", say: "外へ出て、グラウンドへ", min: 6 },
     ] },
     soumu: { name: "総務課の横の廊下の角", here: "h-gate", tentative: true, routes: [
       { to: "gym2", dir: "right", say: "廊下をまっすぐ", min: 3 },
@@ -388,6 +389,7 @@ export const SIGNAGE = {
       { to: "courtyard", dir: "up", say: "中庭へ", min: 2 },
       { to: "exhibit", dir: "upright", say: "各学科の展示へ", min: 2 },
       { to: "library", dir: "left", say: "TSKEライブラリーへ", min: 3 },
+      { to: "ground", dir: "right", say: "外へ出て、グラウンドへ", min: 6 },
     ] },
     info: { name: "インフォメーションの前", here: "h-gate", tentative: true, routes: [
       { to: "gym2", dir: "right", say: "外の通路を、まっすぐ", min: 4 },
@@ -395,6 +397,7 @@ export const SIGNAGE = {
       { to: "shops", dir: "up", say: "模擬店のある棟へ", min: 2 },
       { to: "courtyard", dir: "upright", say: "中庭へ", min: 2 },
       { to: "library", dir: "left", say: "TSKEライブラリーへ", min: 4 },
+      { to: "ground", dir: "right", say: "外の通路を、グラウンドへ", min: 6 },
     ] },
   },
   // 行き先の名前（ステージ・企画の会場の id と同じものは、急げ！の案内にも使う）。mark は signage.js のアイコンの名前
