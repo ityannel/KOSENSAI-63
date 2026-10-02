@@ -93,7 +93,7 @@ function numify(root) {
     n.replaceWith(f);
   }
 }
-const chars = (text) => [...text].map((c, k) => (c === "\n" ? "<br>" : `<span class="ch" style="--k:${k}">${esc(c === " " ? " " : c)}</span>`)).join("");
+const chars = (text) => [...text].map((c, k) => (c === "\n" ? "<br>" : `<span class="ch${/[A-Za-z]/.test(c) ? " lat" : ""}" style="--k:${k}">${esc(c === " " ? " " : c)}</span>`)).join("");
 const heart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8 3 4.5 6.5 4.5c2 0 3.6 1.1 4.5 2.7h2c.9-1.6 2.5-2.7 4.5-2.7 3.5 0 5.6 3.5 4.1 7.1C19.5 16.4 12 21 12 21z"/></svg>';
 const ARROW = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M12 50h66M52 22l28 28-28 28" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ROT = { right: 0, downright: 45, down: 90, downleft: 135, left: 180, upleft: 225, up: 270, upright: 315 };

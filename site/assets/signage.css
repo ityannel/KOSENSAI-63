@@ -386,3 +386,4 @@ body.is-hurry #slide { bottom: 160px; }
 .ttl { text-wrap: balance; }
 /* ようこそ画面の日時：ただの白い字（影なし） */
 .intro .big, .intro .big b, .intro .big span { color: #fff; text-shadow: none; filter: none; }
+.ttl .lat, .shop h2 .lat { font-size: 1.25em; line-height: .8; } /* 見出しの英字は、日本語より小さく見えるので、大きく */
