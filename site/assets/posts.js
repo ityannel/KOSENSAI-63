@@ -16,11 +16,11 @@ import { FIREBASE_VERSION, firebaseConfig, connectEmulators, firestoreFor } from
 
 export const MAX_TEXT = 140;       // 文字数
 // 投稿した人の名前（ログインの印 uid から作る。本当の名前は集めないので、同じ人は同じ名前になるだけ）。
-// かわいい名前を 200 種類（20 の形容 × 10 のもの）。同じ名前の人がいても、べつの人
-const NAME_ADJ = ["ふわふわ", "もちもち", "ぽかぽか", "きらきら", "ころころ", "にこにこ", "のんびり", "わくわく", "ぴかぴか", "ゆらゆら",
-  "すやすや", "ほかほか", "とことこ", "ぷくぷく", "ちいさな", "まんまる", "ひだまり", "おひさま", "ねぼすけ", "いたずら"];
-const NAME_NOUN = ["ひつじ", "こねこ", "うさぎ", "ぺんぎん", "くまさん", "わたあめ", "りんごあめ", "たこやき", "ちょうちん", "はなび"];
-export const NAMES = NAME_NOUN.flatMap((n) => NAME_ADJ.map((a) => `${a}${n}`));
+// かわいい名前をアルファベットで 200 種類（20 の形容 × 10 のもの。例 fluffy_sheep）。同じ名前の人がいても、べつの人
+const NAME_ADJ = ["fluffy", "sleepy", "tiny", "sunny", "happy", "lucky", "cozy", "dreamy", "bouncy", "sparkly",
+  "mellow", "snuggly", "jolly", "breezy", "bubbly", "cheery", "rosy", "dozy", "playful", "cheeky"];
+const NAME_NOUN = ["sheep", "kitten", "bunny", "penguin", "bear", "cottoncandy", "candyapple", "takoyaki", "lantern", "firework"];
+export const NAMES = NAME_NOUN.flatMap((n) => NAME_ADJ.map((a) => `${a}_${n}`));
 export function handleOf(uid) {
   let h = 2166136261;
   for (const c of String(uid ?? "")) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
