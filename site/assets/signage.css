@@ -357,3 +357,8 @@ body.is-hurry #slide { bottom: 160px; }
 .barw .bar { flex: 1; margin-top: 0; height: 22px; border-radius: 11px; }
 .barw .bar i { border-radius: 11px; }
 .now:not(.wait) { background: var(--grain), linear-gradient(135deg, #FFE98A 0%, #FFC93C 48%, #FF9A4D 100%); }
+/* Enistagram のロゴの大きさ */
+.elogo-s { display: block; height: 40px; width: auto; }
+.tag:has(.elogo-s) { padding-block: 9px; gap: 18px; }
+.tag:has(.elogo-s) i { width: 44px; height: 44px; }
+.elogo { display: inline-block; height: 130px; width: auto; vertical-align: middle; margin: 6px 0; }
