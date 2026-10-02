@@ -15,11 +15,16 @@
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators, firestoreFor } from "./live.js";
 
 export const MAX_TEXT = 140;       // 文字数
-// 投稿した人の名前（ログインの印 uid から作る。本当の名前は集めないので、同じ人は同じ名前になるだけ）
+// 投稿した人の名前（ログインの印 uid から作る。本当の名前は集めないので、同じ人は同じ名前になるだけ）。
+// かわいい名前を 200 種類（20 の形容 × 10 のもの）。同じ名前の人がいても、べつの人
+const NAME_ADJ = ["ふわふわ", "もちもち", "ぽかぽか", "きらきら", "ころころ", "にこにこ", "のんびり", "わくわく", "ぴかぴか", "ゆらゆら",
+  "すやすや", "ほかほか", "とことこ", "ぷくぷく", "ちいさな", "まんまる", "ひだまり", "おひさま", "ねぼすけ", "いたずら"];
+const NAME_NOUN = ["ひつじ", "こねこ", "うさぎ", "ぺんぎん", "くまさん", "わたあめ", "りんごあめ", "たこやき", "ちょうちん", "はなび"];
+export const NAMES = NAME_NOUN.flatMap((n) => NAME_ADJ.map((a) => `${a}${n}`));
 export function handleOf(uid) {
   let h = 2166136261;
   for (const c of String(uid ?? "")) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
-  return `enishi_${(h >>> 0).toString(36).slice(-4).padStart(4, "0")}`;
+  return NAMES[(h >>> 0) % NAMES.length];
 }
 export const REPORT_HIDE = 3;      // 報告がこの数になったら隠す
 export const COOLDOWN_SEC = 60;    // 次に書けるまでの秒数
