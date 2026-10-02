@@ -111,7 +111,7 @@ addEventListener("hashchange", route);
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
 // ---------- データ ----------
-const state = { visits: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
+const state = { myLikes: new Set(), visits: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
@@ -129,6 +129,12 @@ function startListening() {
     renderCrowd(); renderOverview();
   });
   listen(fs.doc(db, "chatter", "current"), (snap) => { state.chatter = snap.data() ?? {}; renderChatter(); renderOverview(); });
+  // 本部のログインでいいねした投稿（公式のいいね）。ハートの色に使う
+  listen(fs.query(fs.collection(db, "post_likes"), fs.where("uid", "==", a.currentUser.uid)), (snap) => {
+    state.myLikes = new Set();
+    snap.forEach((d) => state.myLikes.add(d.data().post));
+    renderPosts();
+  });
   let postsReady = false;
   listen(fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(300)), (snap) => {
     // 開いた直後の読みこみでは鳴らさない。そのあとに足された来場者の投稿（本部の公式の投稿・自分の書きこみは除く）で鳴らす
@@ -345,45 +351,74 @@ $("#chatter-clear").addEventListener("click", () => {
 let postFilter = "all";
 const photos = new Map();
 const isOff = (p) => p.hidden || p.reports >= REPORT_HIDE;
+// タイムライン：来場者の画面（Enistagram）と同じ並び。投稿の下にコメントがぶらさがる。いいね・返信は、自動で「公式（enishi）」がしたことになる。
+// 非表示・削除・写真の公開は、各投稿の「…」の中
+const IC = {
+  heart: '<svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3z"/></svg>',
+  reply: '<svg viewBox="0 0 24 24"><path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z"/></svg>',
+  more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9"/></svg>',
+};
+const authorOf = (p) => (p.official ? "enishi" : handleOf(p.uid));
+const avatarHtml = (p, sm = false) => (p.official
+  ? `<span class="tl-av is-official${sm ? " sm" : ""}"><img src="../assets/img/logo-s.webp" alt=""></span>`
+  : `<span class="tl-av${sm ? " sm" : ""}"><i>${esc(authorOf(p).slice(0, 1).toUpperCase())}</i></span>`);
+const nameHtml = (p) => `<b class="tl-name">${esc(authorOf(p))}${p.official ? `<i class="tl-verified" role="img" aria-label="公式アカウント">${IC.check}</i>` : ""}</b>`;
+const placeLabel = (id) => (!id ? "場所なし" : String(id).startsWith("pt-") ? "地図で選んだ場所" : venueName(id));
+const PHOTO_FLAG = { pending: '<span class="tag tag-warn flag">確認待ち</span>', rejected: '<span class="tag tag-danger flag">出さない</span>' };
+function postActions(p, { reply = false } = {}) {
+  const liked = state.myLikes.has(p.id), off = isOff(p);
+  const photoBtns = p.has_photo
+    ? (p.photo_status !== "approved" ? `<button type="button" data-act="approve" data-id="${esc(p.id)}">写真を公開</button>` : "")
+      + (p.photo_status !== "rejected" ? `<button type="button" data-act="reject" data-id="${esc(p.id)}">写真を出さない</button>` : "")
+    : "";
+  return `<div class="tl-acts">
+      <button type="button" class="tl-act${liked ? " is-on" : ""}" data-act="like" data-id="${esc(p.id)}" aria-pressed="${liked}" aria-label="公式でいいね（もう一度押すと取り消し）">${IC.heart}${p.likes ? `<span>${Number(p.likes)}</span>` : ""}</button>
+      ${reply ? "" : `<button type="button" class="tl-act" data-act="replyopen" data-id="${esc(p.id)}" aria-label="公式で返信">${IC.reply}</button>`}
+      <details class="tl-menu"><summary aria-label="操作">${IC.more}</summary>
+        <div class="tl-menu-list">${photoBtns}
+          <button type="button" data-act="${off ? "show" : "hide"}" data-id="${esc(p.id)}">${off ? "表示にもどす" : "非表示にする"}</button>
+          <button type="button" class="is-danger" data-act="delete" data-id="${esc(p.id)}">削除</button>
+        </div></details>
+    </div>`;
+}
+const statusTags = (p) => `${p.reports ? `<span class="tag tag-warn">報告 ${p.reports}</span>` : ""}${isOff(p) ? '<span class="tag tag-danger">非表示</span>' : ""}`;
 function renderPosts() {
   if (document.activeElement?.closest?.(".post-reply")) return; // 公式の返信を書いている途中は、描き直さない
-  const lists = {
-    reported: state.posts.filter((p) => p.reports > 0 && !p.hidden),
-    all: state.posts,
-  };
-  $("#count-all-posts").textContent = lists.all.length;
-  $("#count-reported").textContent = lists.reported.length;
-  const list = lists[postFilter];
-  const photoFlag = { pending: '<span class="tag tag-warn flag">確認待ち</span>', approved: '<span class="tag tag-ok flag">公開中</span>', rejected: '<span class="tag tag-danger flag">出さない</span>' };
-  $("#post-list").innerHTML = list.length ? list.map((p) => {
-    const who = p.official ? '<span class="tag tag-brand">公式</span>' : `<b>${esc(handleOf(p.uid))}</b>`;
-    const kind = p.reply_to ? "返信" : p.kind === "review" ? `${"★".repeat(p.stars ?? 0)} ${esc(p.shop ?? "")}` : "ポスト";
-    const photo = p.has_photo ? `<div class="post-photo"><img data-photo="${esc(p.id)}" alt="投稿の写真"${photos.get(p.id) ? ` src="${photos.get(p.id)}"` : ""}>${photoFlag[p.photo_status] ?? ""}</div>` : "";
-    const photoBtns = p.has_photo
-      ? (p.photo_status !== "approved" ? `<button class="btn btn-ok btn-sm" data-act="approve" data-id="${esc(p.id)}">写真を公開</button>` : "")
-        + (p.photo_status !== "rejected" ? `<button class="btn btn-ghost btn-sm" data-act="reject" data-id="${esc(p.id)}">写真を出さない</button>` : "")
-      : "";
+  const reportedIds = new Set(state.posts.filter((p) => p.reports > 0 && !p.hidden).map((p) => p.id));
+  $("#count-all-posts").textContent = state.posts.length;
+  $("#count-reported").textContent = reportedIds.size;
+  // 投稿（親）ごとに、コメントをまとめる。コメントの親が見つからない（古くて読みこんでいない）ときは、コメントもひとつの投稿として出す
+  const ids = new Set(state.posts.map((p) => p.id));
+  const kids = new Map();
+  state.posts.filter((p) => p.reply_to && ids.has(p.reply_to)).forEach((p) => kids.set(p.reply_to, [...(kids.get(p.reply_to) ?? []), p]));
+  let threads = state.posts.filter((p) => !p.reply_to || !ids.has(p.reply_to)).sort((x, y) => y.created_at - x.created_at);
+  if (postFilter === "reported") threads = threads.filter((p) => reportedIds.has(p.id) || (kids.get(p.id) ?? []).some((c) => reportedIds.has(c.id)));
+  $("#post-list").innerHTML = threads.length ? threads.map((p) => {
+    const comments = (kids.get(p.id) ?? []).sort((x, y) => x.created_at - y.created_at);
+    const photo = p.has_photo ? `<div class="tl-photo"><img data-photo="${esc(p.id)}" alt="投稿の写真"${photos.get(p.id) ? ` src="${photos.get(p.id)}"` : ""}>${PHOTO_FLAG[p.photo_status] ?? ""}</div>` : "";
+    const kind = p.kind === "review" && !p.reply_to ? `<span class="tl-stars">${"★".repeat(p.stars ?? 0)} ${esc(p.shop ?? "")}</span>` : "";
     return `
-      <article class="post${isOff(p) ? " is-off" : ""}">
+      <article class="tl-thread${isOff(p) ? " is-off" : ""}">
+        <header class="tl-head">${avatarHtml(p)}<div class="tl-who">${nameHtml(p)}<small>${IC.pin}${esc(placeLabel(p.place))}</small></div>${statusTags(p)}</header>
         ${photo}
-        <div class="post-body">
-          <p class="post-meta">${who}<span>${kind}</span><span>📍${esc(venueName(p.place) || "場所なし")}</span><span>${time(p.created_at)}</span>
-            ${p.likes ? `<span>♥ ${Number(p.likes)}</span>` : ""}${p.reports ? `<span class="tag tag-warn">報告 ${p.reports}</span>` : ""}${isOff(p) ? '<span class="tag tag-danger">非表示</span>' : ""}</p>
-          ${p.text ? `<p class="post-text">${esc(p.text)}</p>` : ""}
+        <div class="tl-body">
+          ${postActions(p)}
+          ${kind}
+          ${p.text ? `<p class="tl-text">${esc(p.text)}</p>` : ""}
+          <small class="tl-time">${time(p.created_at)}</small>
         </div>
-        <div class="post-actions">
-          ${photoBtns}
-          ${p.reply_to ? "" : `<button class="btn btn-ghost btn-sm" data-act="replyopen" data-id="${esc(p.id)}">公式で返信</button>`}
-          <button class="btn btn-ghost btn-sm" data-act="like" data-id="${esc(p.id)}" title="もう一度押すと取り消し">公式でいいね</button>
-          <button class="btn btn-ghost btn-sm" data-act="${isOff(p) ? "show" : "hide"}" data-id="${esc(p.id)}">${isOff(p) ? "表示にもどす" : "非表示"}</button>
-          <button class="btn btn-danger btn-sm" data-act="delete" data-id="${esc(p.id)}">削除</button>
-        </div>
+        ${comments.length ? `<ul class="tl-comments">${comments.map((c) => `
+          <li class="tl-comment${isOff(c) ? " is-off" : ""}">${avatarHtml(c, true)}
+            <div class="tl-cbody"><p><b class="tl-name">${esc(authorOf(c))}${c.official ? `<i class="tl-verified" role="img" aria-label="公式アカウント">${IC.check}</i>` : ""}</b> ${esc(c.text)}</p>
+              <small class="tl-time">${time(c.created_at)}${c.reports ? ` ・<span class="tag tag-warn">報告 ${c.reports}</span>` : ""}${isOff(c) ? ' <span class="tag tag-danger">非表示</span>' : ""}</small></div>
+            ${postActions(c, { reply: true })}</li>`).join("")}</ul>` : ""}
         <form class="post-reply" data-id="${esc(p.id)}" hidden>
-          <textarea rows="2" maxlength="140" placeholder="公式として返信（140文字まで）" aria-label="公式の返信"></textarea>
-          <div class="row"><button class="btn btn-primary btn-sm" type="submit">返信する</button></div>
+          <div class="tl-replybar">${avatarHtml({ official: true }, true)}<textarea rows="1" maxlength="140" placeholder="公式（enishi）として返信…" aria-label="公式の返信"></textarea><button class="btn btn-primary btn-sm" type="submit">送る</button></div>
         </form>
       </article>`;
-  }).join("") : `<p class="empty">${{ pending: "確認待ちの写真はありません", reported: "報告された投稿はありません", hidden: "非表示の投稿はありません", all: "投稿はまだありません" }[postFilter]}</p>`;
+  }).join("") : `<p class="empty">${{ reported: "報告された投稿はありません", all: "投稿はまだありません" }[postFilter]}</p>`;
   $$("#post-list img[data-photo]:not([src])").forEach(async (img) => {
     try {
       const snap = await fs.getDoc(fs.doc(db, "post_photos", img.dataset.photo));
@@ -403,6 +438,7 @@ $("#post-tabs").addEventListener("click", (e) => {
 $("#post-list").addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]");
   if (!b) return;
+  b.closest("details")?.removeAttribute("open"); // 「…」の中を押したら、閉じる
   const ref = fs.doc(db, "posts", b.dataset.id);
   const post = state.posts.find((p) => p.id === b.dataset.id);
   const acts = {
@@ -418,17 +454,20 @@ $("#post-list").addEventListener("click", (e) => {
         return batch.commit();
       });
     },
-    replyopen: () => { const f = b.closest("article").querySelector(".post-reply"); f.hidden = !f.hidden; if (!f.hidden) f.querySelector("textarea").focus(); },
+    replyopen: () => { const f = b.closest(".tl-thread").querySelector(".post-reply"); f.hidden = !f.hidden; if (!f.hidden) f.querySelector("textarea").focus(); },
     approve: () => write("写真を公開しました", () => fs.updateDoc(ref, { photo_status: "approved" })),
     reject: () => write("写真を出さないことにしました", () => fs.updateDoc(ref, { photo_status: "rejected" })),
     hide: () => write("非表示にしました", () => fs.updateDoc(ref, { hidden: true })),
     // 表示にもどすときは、報告の数も0にもどす（自動で隠れないように）
     show: () => write("表示にもどしました", () => fs.updateDoc(ref, { hidden: false, reports: 0 })),
     delete: () => {
-      if (!confirm("この投稿を削除しますか？（もとにもどせません）")) return;
+      const kids = state.posts.filter((x) => x.reply_to === b.dataset.id);
+      if (!confirm(kids.length ? `この投稿と、コメント${kids.length}件を削除しますか？（もとにもどせません）` : "この投稿を削除しますか？（もとにもどせません）")) return;
       const batch = fs.writeBatch(db);
-      batch.delete(ref);
-      if (post?.has_photo) batch.delete(fs.doc(db, "post_photos", b.dataset.id));
+      [post, ...kids].filter(Boolean).forEach((x) => {
+        batch.delete(fs.doc(db, "posts", x.id));
+        if (x.has_photo) batch.delete(fs.doc(db, "post_photos", x.id));
+      });
       write("削除しました", () => batch.commit());
     },
   };

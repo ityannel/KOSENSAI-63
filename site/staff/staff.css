@@ -660,3 +660,50 @@ h1, h2, h3 { font-weight: 400; }
 
 /* 模擬店の画面は、受付と一覧だけ（印刷は「印刷・スタンプ」へ分けた） */
 .shops-layout { grid-template-columns: minmax(0, 1fr); }
+
+/* ---------- 投稿の管理：来場者のタイムラインと同じ並び（投稿の下にコメント）。非表示・削除は「…」の中 ---------- */
+.tl { display: grid; gap: 18px; max-width: 640px; margin: 0 auto; width: 100%; }
+.tl-thread { padding: 0; overflow: hidden; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--grain), var(--iro), var(--panel); box-shadow: var(--shadow); }
+.tl-thread.is-off { opacity: .6; }
+.tl-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.tl-who { display: grid; min-width: 0; margin-right: auto; line-height: 1.25; }
+.tl-who small { display: flex; align-items: center; gap: 4px; color: var(--sub); font-size: .78rem; }
+.tl-who small svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tl-name { font-family: var(--head); font-weight: 400; font-size: 1.05rem; }
+.tl-av { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #3d86f0, #C8323A); padding: 2px; }
+.tl-av > i, .tl-av > img { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: #FFFBF2; font-style: normal; font-family: var(--head); color: var(--ink); object-fit: contain; }
+.tl-av.sm { width: 28px; height: 28px; }
+.tl-av.is-official > img { padding: 2px; }
+.tl-verified { display: inline-grid; place-items: center; width: 1.05em; height: 1.05em; margin-left: 5px; border-radius: 50%; background: linear-gradient(135deg, #3d86f0, #1361cc); vertical-align: -.12em; }
+.tl-verified svg { width: 72%; height: 72%; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.tl-photo { position: relative; background: repeating-conic-gradient(#efe0bd 0 25%, #f6e8c8 0 50%) 0 0 / 22px 22px; }
+.tl-photo img { display: block; width: 100%; max-height: 520px; object-fit: cover; }
+.tl-photo .flag { position: absolute; left: 10px; top: 10px; }
+.tl-body { padding: 10px 14px 14px; display: grid; gap: 6px; }
+.tl-acts { display: flex; align-items: center; gap: 4px; }
+.tl-act, .tl-menu summary { display: inline-flex; align-items: center; gap: 4px; min-width: 38px; height: 38px; padding: 0 8px; justify-content: center; border: 0; border-radius: 999px; background: none; color: var(--ink); font: inherit; cursor: pointer; list-style: none; }
+.tl-menu summary::-webkit-details-marker { display: none; }
+.tl-act:hover, .tl-menu summary:hover { background: var(--panel-2); }
+.tl-act svg, .tl-menu summary svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.tl-menu summary svg { fill: currentColor; stroke: none; }
+.tl-act.is-on svg { fill: #C8323A; stroke: #C8323A; }
+.tl-menu { position: relative; margin-left: auto; }
+.tl-menu-list { position: absolute; right: 0; top: 40px; z-index: 5; display: grid; min-width: 170px; padding: 6px; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--grain), var(--panel); box-shadow: var(--shadow); }
+.tl-menu-list button { padding: 9px 12px; border: 0; border-radius: 8px; background: none; color: var(--ink); font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
+.tl-menu-list button:hover { background: var(--panel-2); }
+.tl-menu-list .is-danger { color: var(--red); }
+.tl-stars { color: var(--amber); font-weight: 800; }
+.tl-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1rem; }
+.tl-time { color: var(--sub); font-size: .78rem; }
+.tl-comments { list-style: none; margin: 0; padding: 4px 14px 10px; display: grid; gap: 8px; border-top: 1px dashed var(--line-2); }
+.tl-comment { display: flex; align-items: flex-start; gap: 8px; padding-top: 6px; }
+.tl-comment.is-off { opacity: .6; }
+.tl-cbody { flex: 1; min-width: 0; }
+.tl-cbody p { margin: 0; overflow-wrap: anywhere; font-size: .95rem; }
+.tl-comment .tl-name { font-size: .95rem; }
+.tl-comment .tl-acts .tl-act, .tl-comment .tl-menu summary { min-width: 30px; height: 30px; }
+.tl-comment .tl-act svg, .tl-comment .tl-menu summary svg { width: 18px; height: 18px; }
+.tl-comment .tl-menu { margin-left: 0; }
+.post-reply { padding: 0 14px 14px; border-top: 1px dashed var(--line-2); }
+.tl-replybar { display: flex; align-items: center; gap: 8px; padding-top: 10px; }
+.tl-replybar textarea { flex: 1; min-width: 0; padding: 8px 12px; border: 1.5px solid var(--line-2); border-radius: 999px; background: var(--bg-2); color: var(--ink); font: inherit; font-size: 15px; resize: none; }
