@@ -236,7 +236,7 @@ export const DECOS = {
 export const ELECTION = {
   form: null,     // 例："https://forms.office.com/r/XXXXXXXX"
   prefill: null,  // 例："https://forms.office.com/Pages/ResponsePage.aspx?id=XXXX&rXXXXXXXX={shop}"
-  opens: "2026-10-01T00:00:00+09:00",  // 【仮】いま試せるよう前倒し。本番は "2026-10-24T12:00:00+09:00"（1日目の公開から）に戻す
+  opens: "2026-10-24T12:00:00+09:00",  // 1日目の公開から
   closes: "2026-10-25T15:00:00+09:00", // 締め切り（要項 p.13：10/25 15:00。結果発表は 16:00）
 };
 
@@ -362,8 +362,16 @@ export const RALLY = {
   // @rally-generated-end
 };
 
-// スタンプの場所：校内の数か所（学科展示・模擬店には置かない）。hq＝インフォメーション、あとは MAP の会場の id。本部コンソールの「〇か所の QR を整える」が、この場所だけを対象にする
-export const STAMP_PLACES = ["hq", "gym2", "zacros"];
+// スタンプの場所：校内の数か所（学科展示・模擬店には置かない）。place は地図の場所の id（なければ、地図に印は出ない）。
+// 本部コンソールの「〇か所の QR を整える」が、この場所だけを対象にする（ここを直すと、そのあと整えなおす）
+export const STAMP_PLACES = [
+  { id: "gym-n", kind: "venue", name: "体育館入り口", group: "体育館", place: "gym-n" },
+  { id: "hq", kind: "info", name: "インフォメーション", group: "本部", place: "hq", where: "玄関ホール" },
+  { id: "library", kind: "venue", name: "TSKEライブラリー", group: "図書館", place: "library" },
+  { id: "gate", kind: "venue", name: "正門", group: "入口", place: "gate" },
+  { id: "zacros", kind: "venue", name: "ZACROS hall前", group: "第1講義室", place: "zacros" },
+  { id: "noto-lab", kind: "venue", name: "能登研究室前", group: "研究室" },
+];
 // 模擬店の id（本部コンソールと同じ：クラス・部屋番号・場所の名前から作る）。模擬店総選挙の投票先に使う
 export const shopIdOf = (sh) => String(sh.cls ?? sh.room ?? sh.place ?? sh.name).toLowerCase().replace(/[^a-z0-9_-]/g, "");
 

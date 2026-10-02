@@ -249,31 +249,30 @@ function voteState() {
 }
 const voteDay = (iso) => new Date(iso).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).replace("/", "."); // 10.25 15:00
 let voting = false, voteNote = null, pickId = null; // pickId：いま選んでいるお店（まだ送っていない）
-// 模擬店総選挙のページ（vote.html）：模擬店の一覧から、気に入った1店を選んで投票する（スタンプとは関係なく、だれでも）
+// 模擬店総選挙のページ（vote.html）：投票は実行委員会の Forms（config.js の ELECTION）。このページは、Forms への入口
+// ELECTION.prefill（お店の名前の所を {shop} にした URL）があれば、お店ごとに、そのお店を選んだ状態でフォームが開く
 const voteShops = () => SHOPS.map((s) => ({ id: shopIdOf(s), name: String(s.name).replace(/\n/g, " ") }));
 const VOTE_LEAD = "気に入った模擬店に、一回だけ投票できます<br>応援したいお店を選ぼう！";
+const voteUrl = (shop) => (ELECTION.prefill && shop ? ELECTION.prefill.replace("{shop}", encodeURIComponent(shop.name)) : ELECTION.form);
 function renderVote() {
   const el = $("#rally-vote");
   if (!el) return;
   const phase = voteState();
-  const mine = state.vote?.shop ?? null;
-  const mineName = mine ? voteShops().find((v) => v.id === mine)?.name ?? "" : "";
   const title = '<h2 class="rv-title visually-hidden" id="rv-title">模擬店総選挙</h2>';
   if (phase === "before") {
     el.innerHTML = `${title}<p class="rv-lead">${esc(voteDay(ELECTION.opens))}から、気に入った模擬店に投票できます。</p>`;
     return;
   }
   if (phase === "closed") {
-    el.innerHTML = `${title}<p class="rv-lead">投票は終わりました。${mineName ? `あなたの1票：<b>${esc(mineName)}</b>` : ""}</p><p class="rv-lead">結果発表は 10/25 16:00 から、第二体育館です。</p>`;
+    el.innerHTML = `${title}<p class="rv-lead">投票は終わりました。結果発表は 10/25 16:00 から、第二体育館です。</p>`;
     return;
   }
-  const note = voteNote ? `<p class="rv-note" data-kind="${voteNote.kind}" role="status">${esc(voteNote.text)}</p>` : "";
+  if (!ELECTION.form) { el.innerHTML = `${title}<p class="rv-lead">投票のフォームは、準備ができしだい、ここに出ます。</p>`; return; }
   el.innerHTML = `
     ${title}
-    <p class="rv-lead">${esc(voteDay(ELECTION.closes))}まで。投票はいつでも変えられます。</p>
-    <ul class="rv-list">${voteShops().map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}${s.id === pickId ? " is-pick" : ""}" data-pick="${esc(s.id)}" aria-pressed="${s.id === pickId}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : s.id === pickId ? "選択中" : ""}</span></button></li>`).join("")}</ul>
-    <button type="button" class="rv-submit" data-submit${!pickId || pickId === mine || voting ? " disabled" : ""}>${mine ? "投票先を変える" : "このお店に投票する"}</button>
-    ${note}`;
+    <p class="rv-lead">${esc(voteDay(ELECTION.closes))}まで。1人1票です。</p>
+    ${ELECTION.prefill ? `<ul class="rv-list">${voteShops().map((s) => `<li><a class="rv-btn" href="${esc(voteUrl(s))}" target="_blank" rel="noopener"><span class="rv-name">${esc(s.name)}</span><span class="rv-go">投票する</span></a></li>`).join("")}</ul>` : ""}
+    <a class="rv-submit" href="${esc(ELECTION.form)}" target="_blank" rel="noopener">${ELECTION.prefill ? "お店を選ばずに、フォームを開く" : "投票フォームを開く"}</a>`;
 }
 // スタンプカードのページの下：投票のページへの入口
 function renderVoteLink() {
@@ -281,49 +280,7 @@ function renderVoteLink() {
   if (!el) return;
   const phase = voteState();
   el.hidden = false;
-  const mine = state.vote?.shop ? voteShops().find((v) => v.id === state.vote.shop)?.name : "";
-  el.innerHTML = `<b>模擬店総選挙</b><span>${phase === "closed" ? "投票は終わりました" : phase === "before" ? `${voteDay(ELECTION.opens)}から投票できます` : mine ? `投票ずみ：${esc(mine)}` : VOTE_LEAD}</span>`;
-}
-const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
-async function castVote(shopId) {
-  const s = voteShops().find((v) => v.id === shopId);
-  if (voting || !s || voteState() !== "open" || state.vote?.shop === shopId) return;
-  voting = true;
-  voteNote = { kind: "info", text: "送っています…" };
-  renderVote();
-  try {
-    if (!DEMO) {
-      const k = await firebase();
-      if (!k.a.currentUser) await k.auth.signInAnonymously(k.a);
-      await withTimeout(k.fs.setDoc(k.fs.doc(k.db, "votes", k.a.currentUser.uid), { shop: shopId, updated_at: k.fs.serverTimestamp() }), 12000);
-    }
-    state.vote = { shop: shopId, at: nowMs() };
-    save();
-    pickId = null;
-    voteNote = { kind: "ok", text: `「${s.name}」に投票しました。ありがとうございます！` };
-  } catch (err) {
-    console.warn("[rally] 投票できませんでした:", err?.code ?? err);
-    voteNote = { kind: "warn", text: "投票を送れませんでした。電波を確かめて、もう一度押してください。" };
-  }
-  voting = false;
-  renderVote();
-}
-// 自分の票を、本部の記録と合わせる（本部が投票をリセットしたとき・別の画面で変えたとき）。ページを開くたびに1回だけ読む
-async function refreshVote() {
-  if (DEMO || voteState() === "before" || !state.vote) return;
-  try {
-    const k = await firebase();
-    await k.a.authStateReady?.();
-    const u = k.a.currentUser;
-    if (!u) return;
-    const snap = await k.fs.getDoc(k.fs.doc(k.db, "votes", u.uid));
-    const shop = snap.exists() ? snap.data().shop : null;
-    if (shop !== (state.vote?.shop ?? null)) {
-      state.vote = shop ? { shop, at: snap.data().updated_at?.toMillis?.() ?? nowMs() } : null;
-      save();
-      renderVote();
-    }
-  } catch { /* 読めなくても、投票はできる */ }
+  el.innerHTML = `<b>模擬店総選挙</b><span>${phase === "closed" ? "投票は終わりました" : phase === "before" ? `${voteDay(ELECTION.opens)}から投票できます` : VOTE_LEAD}</span>`;
 }
 
 function slotsHtml() {
@@ -406,7 +363,6 @@ export function initRallyPage(getNow = () => Date.now()) {
     if (v !== prizeOut) { prizeOut = v; render(); }
   })).catch(() => { /* 読めなくても、スタンプは押せる */ });
 
-  refreshVote();
   // カードを押すと裏返る
   $("#rc").addEventListener("keydown", (e) => {
     const z = e.target.closest?.("[data-zoom]");
@@ -452,19 +408,12 @@ function takeQrParams() {
 // 模擬店総選挙のページ（vote.html）
 export function initVotePage(getNow = () => Date.now()) {
   nowMs = getNow;
-  warnInAppBrowser();
-  render();
-  onRallyChange(render);
-  changeFns.add(render);
-  $("#rally-vote").addEventListener("click", (e) => {
-    const pick = e.target.closest("[data-pick]");
-    if (pick) { pickId = pickId === pick.dataset.pick ? null : pick.dataset.pick; voteNote = null; return renderVote(); }
-    if (e.target.closest("[data-submit]") && pickId) castVote(pickId);
-  });
-  refreshVote();
-  // お店の前の QR（vote.html?s=お店の id）から来たら、そのお店を選んだ状態にする
+  // お店の前の QR（vote.html?s=お店の id）から来て、投票の受付中で、お店ごとの URL があるときは、そのお店を選んだ状態のフォームへ、すぐ移る
   const s = new URLSearchParams(location.search).get("s");
-  if (s && voteShops().some((v) => v.id === s)) { pickId = s; renderVote(); document.querySelector(`[data-pick="${CSS.escape(s)}"]`)?.scrollIntoView({ block: "center" }); }
+  const shop = s && voteShops().find((v) => v.id === s);
+  if (shop && voteState() === "open" && ELECTION.prefill) { location.replace(voteUrl(shop)); return; }
+  render();
+  changeFns.add(render);
 }
 
 // トップページの、模擬店総選挙の入口の一言

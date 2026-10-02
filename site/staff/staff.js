@@ -2,7 +2,7 @@
 // お知らせ・緊急のお知らせ・生配信・表示の切りかえ・混雑・5人の実況・投稿（写真の確認・報告・本部の投稿）・模擬店・文章と書体を、ここ1つで変える。
 // だれが使えるかは firestore.rules（staff コレクションにメールアドレスがある人だけ）で決まる。
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
-import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES } from "../assets/config.js";
+import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES, ELECTION } from "../assets/config.js";
 import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
 import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
 
@@ -50,7 +50,7 @@ async function write(label, fn) {
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
 // ---------- 画面の切りかえ（#overview など） ----------
-const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "vote", "texts", "settings"];
+const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "texts", "settings"];
 if (location.hash === "#print") history.replaceState(null, "", "#shops"); // 印刷は「模擬店・印刷」にまとめた
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
@@ -61,7 +61,6 @@ function route() {
   $("#page-eyebrow").textContent = view.dataset.eyebrow;
   document.title = `${view.dataset.title}｜本部コンソール`;
   scrollTo({ top: 0 });
-  if (name === "vote") showVotes();
 }
 addEventListener("hashchange", route);
 
@@ -445,24 +444,10 @@ const CATALOG = SHOPS.map((sh) => {
   return { id: shopSlug(sh.cls ?? sh.room ?? sh.place), kind: "shop", name: sh.name, group: sh.group, map: sh.cls ?? sh.room ?? sh.name,
     ...(room ? { room } : {}), ...(sh.place ? { place: sh.place } : {}), where, catalog: true };
 });
-// スタンプラリーの場所は、模擬店のほかに、インフォメーション（本部。はじめの1個をここで、使い方を教えながら押してもらう）と学科展示。
-// 社会基盤の5つの展示は、それだけで何個も集まらないように1か所にまとめる（QR は C113 に置く想定）
-const SPOTS = [{ id: "hq", kind: "info", name: "インフォメーション", group: "本部", place: "hq", where: "玄関ホール" }];
-// 会場：太平洋セメントアリーナ（ステージ・大抽選会）と ZACROS hall（企業説明会・企業セミナー）も、スタンプの場所にする
-for (const id of ["gym2", "zacros"]) {
-  const p = MAP.places.find((x) => x.id === id);
-  if (p) SPOTS.push({ id: p.id, kind: "venue", name: p.name, group: p.sub, place: p.id, where: [p.room].flat()[0] ?? "" });
-}
-for (const p of MAP.places.filter((x) => x.kind === "exhibit")) {
-  if (p.dept === "社会基盤") {
-    if (!SPOTS.some((x) => x.id === "ex-civ")) SPOTS.push({ id: "ex-civ", kind: "exhibit", name: "社会基盤の展示", group: "社会基盤工学科の学科展示", place: p.id, where: "C111〜C118（5つの展示）" });
-    continue;
-  }
-  const rooms = [p.room ?? []].flat();
-  SPOTS.push({ id: p.id, kind: "exhibit", name: p.name, group: p.sub, place: p.id, where: rooms.length > 1 ? `${rooms[0]} ほか` : rooms[0] ?? "" });
-}
+// スタンプラリーの場所は、config.js の STAMP_PLACES（校内の数か所：体育館入り口・インフォメーション・ライブラリー・正門など）。学科展示・模擬店には置かない
+const SPOTS = STAMP_PLACES.map((p) => ({ id: p.id, kind: p.kind ?? "venue", name: p.name, group: p.group ?? "", place: p.place, where: p.where ?? "" }));
 CATALOG.unshift(...SPOTS.map((x) => ({ ...x, map: x.id, catalog: true })));
-const KIND_TAG = { info: '<i class="tag tag-info">インフォ</i>', exhibit: '<i class="tag tag-ex">学科展示</i>', venue: '<i class="tag tag-ex">会場</i>' };
+const KIND_TAG = { info: '<i class="tag tag-info">インフォ</i>', venue: '<i class="tag tag-ex">スタンプ</i>' };
 // スタンプの場所すべて（受付・スタンプラリー・印刷）
 function allSpots() {
   const docs = new Map(state.shops.map((d) => [d.id, d]));
@@ -670,7 +655,7 @@ const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 // スタンプラリーの対象は、模擬店・インフォメーション・学科展示・会場（太平洋セメントアリーナ、ZACROS hall）のすべて。
 // 模擬店には vote: true を付ける（スタンプを押した模擬店に、模擬店総選挙で1票入れられる。rally.js）。
 // 足りない鍵を作り、rally/current を対象の場所にそろえる（足りなければ何もしない）
-const rallySpots = () => allSpots().filter((x) => STAMP_PLACES.includes(x.id)); // スタンプの場所は、config.js の STAMP_PLACES（校内の数か所）だけ
+const rallySpots = () => allSpots().filter((x) => STAMP_PLACES.some((p) => p.id === x.id)); // スタンプの場所は、config.js の STAMP_PLACES（校内の数か所）だけ
 function rallyMissing() {
   const cur = new Map((state.rally?.shops ?? []).map((s) => [s.id, s]));
   const spots = rallySpots();
@@ -836,7 +821,7 @@ function rallyBody(s) {
             <h3>模擬店総選挙、<br>開催中。</h3>
             <p class="pt-rally-lead">気に入ったら、<br><b>応援の一票</b>を！</p>
           </div>
-          <figure class="pt-rally-qr"><img src="${qrDataUrl(siteUrl(`vote.html?s=${encodeURIComponent(s.id)}`))}" alt=""><figcaption>↑読み込んで、このお店に投票</figcaption></figure>`;
+          <figure class="pt-rally-qr"><img src="${qrDataUrl(ELECTION.prefill ? ELECTION.prefill.replace("{shop}", encodeURIComponent(s.name.replace(/\n/g, " "))) : ELECTION.form ?? siteUrl("vote.html"))}" alt=""><figcaption>↑読み込んで、このお店に投票</figcaption></figure>`;
   }
   const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
   const qr = rally
@@ -852,7 +837,7 @@ function rallyBody(s) {
           <figure class="pt-rally-qr"><img src="${qr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>`;
 }
 // サイトの QR（小さく横に2つ）：Enistagram と、公式サイト（模擬店は待ち時間、学科展示は展示の一覧、インフォは校内マップ）
-const SITE_LINK = { shop: ["#ennichi", "で待ち時間をチェック"], exhibit: ["map.html?list=exhibit", "で学科展示を見る"], info: ["map.html", "で校内マップを見る"] };
+const SITE_LINK = { shop: ["#ennichi", "で待ち時間をチェック"], exhibit: ["map.html?list=exhibit", "で学科展示を見る"], info: ["map.html", "で校内マップを見る"], venue: ["map.html", "で校内マップを見る"] };
 function linksHtml(s) {
   const [path, text] = SITE_LINK[s.kind] ?? SITE_LINK.shop;
   return `
@@ -1018,7 +1003,7 @@ $("#pr-make").addEventListener("click", async () => {
       kindLabel: { shopset: "まとめて：店頭の紙", stamps: "まとめて：スタンプの QR（予備）", flyer: "来場者向けの案内チラシ" }[kind],
       title: kind === "flyer" ? "案内チラシ" : `${target === "all" ? "すべての場所" : "まだ渡していない場所"}（${shops.length}か所）`,
       sub: kind === "flyer" ? "" : "まとめて刷っても「受付済み」にはなりません",
-      build: kind === "shopset" ? () => buildShopSet(shops, staff) : kind === "stamps" ? async () => buildStamps(shops) : async () => buildFlyer(size),
+      build: kind === "shopset" ? () => buildShopSet(shops, staff) : kind === "stamps" ? async () => buildStamps(shops.filter((x) => STAMP_PLACES.some((p) => p.id === x.id))) : async () => buildFlyer(size),
       set: kind === "shopset",
     };
     await showPrint();
@@ -1281,49 +1266,6 @@ function askPassword(title, lead) {
     dlg.addEventListener("cancel", onClose);
   });
 }
-
-// 模擬店総選挙：votes を全部読んで、お店ごとに数える（読むのは本部だけ）。リセットはパスワードが必要
-async function showVotes() {
-  const box = $("#vote-all");
-  if (!box.innerHTML) box.innerHTML = '<p class="muted">読みこんでいます…</p>';
-  try {
-    const snap = await fs.getDocs(fs.collection(db, "votes"));
-    const per = {};
-    let last = 0;
-    snap.forEach((d) => { const v = d.data(); per[v.shop] = (per[v.shop] ?? 0) + 1; last = Math.max(last, toMs(v.updated_at) ?? 0); });
-    const total = snap.size;
-    $("#vote-state").textContent = `${total}票`;
-    const name = (id) => allSpots().find((s) => s.id === id)?.name ?? id;
-    const rows = Object.entries(per).sort((a, b) => b[1] - a[1]);
-    const top = rows[0]?.[1] ?? 0;
-    box.innerHTML = `
-      <div class="kpis rally-kpis">
-        <div class="kpi"><small>投票した人</small><b>${total}</b><span>人（1人1票）</span></div>
-        <div class="kpi"><small>票が入ったお店</small><b>${rows.length}</b><span>店</span></div>
-      </div>
-      <h3 class="rally-h">順位</h3>
-      ${rows.length ? `<table class="rally-table"><tbody>${rows.map(([id, n], i) => `<tr><th>${i + 1}位　${esc(name(id))}</th><td><i class="bar" style="--p:${top ? n / top : 0}"></i></td><td class="num">${n}票</td></tr>`).join("")}</tbody></table>` : '<p class="muted">まだ投票はありません</p>'}
-      <p class="muted rally-foot">${last ? `いちばん新しい投票：${time(last)}　` : ""}${time(Date.now())} に数えた</p>`;
-  } catch (err) {
-    console.warn(err);
-    box.innerHTML = `<p class="muted">読めませんでした（${esc(err.code ?? err.message)}）</p>`;
-  }
-}
-$("#vote-all-show").addEventListener("click", showVotes);
-setInterval(() => { if (!$("#view-vote").hidden && !document.hidden) showVotes(); }, 60000); // 開いている間は、1分ごとに数えなおす
-$("#vote-all-reset").addEventListener("click", async () => {
-  if (!(await askPassword("投票をリセット", "模擬店総選挙の票を、全部消します。元に戻せません。パスワードを入れてください。"))) return;
-  if (!confirm("本当に、模擬店総選挙の票を全部消しますか？（元に戻せません）")) return;
-  const ok = await write("模擬店総選挙の票を消しました", async () => {
-    const snap = await fs.getDocs(fs.collection(db, "votes"));
-    for (let i = 0; i < snap.docs.length; i += 400) {
-      const batch = fs.writeBatch(db);
-      snap.docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
-      await batch.commit();
-    }
-  });
-  if (ok) showVotes();
-});
 
 // 全員の状況：rally_logs を全部読んで数える（読むのは本部だけ。firestore.rules）
 const rallyShopName = (id) => (state.rally?.shops ?? RALLY.shops).find((s) => s.id === id)?.name ?? id;

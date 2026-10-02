@@ -2024,3 +2024,6 @@ body.vote-page { background: var(--grain), linear-gradient(180deg, #2a3a73, #4c3
 /* いちばん下の版権表示：色を分けた帯（こげ茶にクリーム色の字）。欄を並べかえても、いつも最後。下のタブの分も空ける */
 .k-foot { container-type: inline-size; position: relative; z-index: 1; background: var(--grain), #3F2F1E; color: #FEEBC4; }
 .k-foot-in { --u: calc(100cqi / 402); margin: 0; padding: calc(34 * var(--u)) calc(20 * var(--u)) calc(34 * var(--u) + var(--tabs-h, 0px)); text-align: center; font-family: -apple-system, "Helvetica Neue", Arial, "Noto Sans", sans-serif; font-weight: 600; font-size: calc(11.5 * var(--u)); line-height: 1.6; letter-spacing: .02em; opacity: .92; }
+/* 模擬店総選挙は Forms：投票のページのボタンは、リンク（a）でも、同じ形 */
+a.rv-btn { text-decoration: none; color: inherit; }
+a.rv-submit { display: grid; place-items: center; text-decoration: none; }

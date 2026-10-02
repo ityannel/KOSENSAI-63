@@ -111,17 +111,6 @@ service cloud.firestore {
         && data().updated_at == request.time;
       allow delete: if isStaff() || (isVisitor() && request.auth.uid == uid);
     }
-    // votes/{来場者の匿名ログインの印} = { shop, updated_at }：模擬店総選挙の1人1票（文書が1つなので、押しなおすと変わるだけ）。
-    // 投票先は、模擬店の id（半角の英数字）。全員分を読めるのは本部だけ（集計・リセットも本部）
-    match /votes/{uid} {
-      allow read: if isStaff() || (isVisitor() && request.auth.uid == uid);
-      allow create, update: if isVisitor() && request.auth.uid == uid
-        && data().keys().hasOnly(['shop', 'updated_at'])
-        && data().shop is string && data().shop.size() > 0 && data().shop.size() <= 60
-        && data().updated_at == request.time
-        && data().shop.matches('^[a-z0-9_-]+$');
-      allow delete: if isStaff();
-    }
     // rally_control/current = { reset_at }：本部が全員の履歴をリセットした時刻（これより前のスタンプは、各スマホで消える）
     match /rally_control/{id} {
       allow read: if true;

@@ -42,7 +42,6 @@
         <a href="#crowd" data-nav="crowd"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.5M17.5 19a5.5 5.5 0 0 0-2.5-4.6"/></svg><span data-short="混雑">混雑・実況</span></a>
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
         <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店・印刷</span></a>
-        <a href="#vote" data-nav="vote"><svg viewBox="0 0 24 24"><path d="M5 20h14M7 20v-6h10v6M12 14V4M12 4l-4 4M12 4l4 4"/></svg><span data-short="総選挙">模擬店総選挙</span></a>
         <a href="#texts" data-nav="texts"><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg><span data-short="文章">文章と書体</span></a>
         <a href="#settings" data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span data-short="設定">サイトの設定</span></a>
       </nav>
@@ -248,21 +247,6 @@
             <button class="btn btn-primary" type="submit">保存して公開</button>
           </div>
         </form>
-      </section>
-
-      <!-- ===== 模擬店総選挙 ===== -->
-      <section class="view" id="view-vote" data-title="模擬店総選挙" data-eyebrow="ELECTION" hidden>
-        <article class="card">
-          <header class="card-head"><h2>いまの票</h2><span class="pill" id="vote-state"></span></header>
-          <div class="stack">
-            <div class="row row-wrap">
-              <button class="btn btn-primary" type="button" id="vote-all-show">数えなおす</button>
-              <a class="btn btn-ghost" href="../vote.html" target="_blank" rel="noopener">投票のページ ↗</a>
-              <button class="btn btn-danger" type="button" id="vote-all-reset">票をリセット</button>
-            </div>
-            <div class="rally-all" id="vote-all"></div>
-          </div>
-        </article>
       </section>
 
       <!-- ===== サイトの設定 ===== -->
