@@ -428,7 +428,7 @@ const slideIntro = {
   async build() {
     return { dur: 7000, cls: "intro", html: `
       <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>
-      <h1>${chars("ようこそ、縁へ")}</h1>` };
+      <h1>${chars("ようこそ")}</h1>` };
   },
 };
 
