@@ -338,14 +338,28 @@ const slideWay = {
 };
 
 // ---------- シェア ----------
+// 絵文字が上からたくさん降ってきて、下に積もる（あとから降るものほど、上に重なる）
+const RAIN = ["📷", "📸", "🍡", "🎤", "✨", "❤️", "🎆", "🍜", "🎵", "🌸", "🍙", "🎉", "⭐", "🏮", "🍧", "🎈", "🍢", "🥁", "🎸", "🍦"];
+function emojiRain(root) {
+  const box = root.querySelector(".rain");
+  if (!box) return;
+  const n = 52;
+  for (let i = 0; i < n; i++) {
+    const e = document.createElement("span"), depth = i / n;
+    const size = 64 + Math.random() * 54, y = 1010 - size - depth * 190 - Math.random() * 36;
+    e.textContent = RAIN[Math.floor(Math.random() * RAIN.length)];
+    e.style.cssText = `--x:${Math.round(Math.random() * 1840)}px;--y:${Math.round(y)}px;--d:${(0.8 + i * 0.2).toFixed(2)}s;--t:${(0.9 + Math.random() * 0.5).toFixed(2)}s;--r:${Math.round(-40 + Math.random() * 80)}deg;font-size:${Math.round(size)}px`;
+    box.append(e);
+  }
+}
 const slideShare = {
   async build() {
     const url = siteUrl("map.html?tab=feed");
-    return { dur: 13000, cls: "share", html: `
-      ${["camera", "store", "mic", "spark", "heart"].map((e, i) => `<span class="float" style="--i:${i};left:${[6, 44, 80, 30, 92][i]}%;top:${[12, 70, 6, 82, 50][i]}%">${ic(e)}</span>`).join("")}
+    return { dur: 15000, cls: "share", after: emojiRain, html: `
+      <div class="rain" aria-hidden="true"></div>
       <div class="wrap">
         <div>
-          <h1>あなたも<br><img class="elogo" src="assets/img/enistagram.webp" alt="Enistagram"><br>${chars("でシェア！")}</h1>
+          <h1>あなたも<br><img class="elogo" src="assets/img/enistagram.webp" alt="Enistagram">${chars("でシェア！")}</h1>
           <div class="how">
             <div class="rise" style="--i:6"><i>1</i>QR を読みこむ</div>
             <div class="rise" style="--i:7"><i>2</i>写真かひとことを書く</div>
