@@ -423,30 +423,12 @@ const slideShare = {
   },
 };
 
-// ---------- はじまり ----------
-// 開幕までの時間：日:時:分:秒（1秒ごとに動く）
-const cdText = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return [Math.floor(s / 86400), Math.floor(s / 3600) % 24, Math.floor(s / 60) % 60, s % 60].map((v) => String(v).padStart(2, "0")).join(":"); };
-function tickCountdown(root) {
-  const el = root.querySelector(".cd");
-  if (!el) return;
-  const to = +el.dataset.to, id = setInterval(() => { if (!el.isConnected) return clearInterval(id); el.textContent = cdText(to - now()); }, 250);
-}
+// ---------- はじまり（「ようこそ」と「縁」のロゴだけ） ----------
 const slideIntro = {
   async build() {
-    const t = now(), first = Date.parse(FESTIVAL.days[0].open), last = Date.parse(FESTIVAL.days.at(-1).close);
-    let big = "";
-    if (t < first) {
-      big = `<div class="big pop" style="--i:5"><span>開幕まで</span><b class="cd" data-to="${first}">${cdText(first - t)}</b></div>`;
-    } else if (t >= last) {
-      big = `<div class="big pop" style="--i:5"><span>ご来場、ありがとうございました</span></div>`;
-    } else {
-      const day = FESTIVAL.days.find((x) => t < Date.parse(x.close));
-      big = `<div class="big pop" style="--i:5"><span class="d">${dateEn(Date.parse(day.open))}</span><b>${hm(Date.parse(day.open))}</b><span>〜</span><b>${hm(Date.parse(day.close))}</b></div>`;
-    }
-    return { dur: 9000, cls: "intro", after: tickCountdown, html: `
+    return { dur: 7000, cls: "intro", html: `
       <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>
-      <h1>${chars("ようこそ、縁へ")}</h1>
-      <p class="fade" style="--i:4">第63回 函館高専祭</p>${big}` };
+      <h1>${chars("ようこそ、縁へ")}</h1>` };
   },
 };
 
