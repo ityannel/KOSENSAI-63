@@ -338,24 +338,80 @@ const slideWay = {
 };
 
 // ---------- シェア ----------
-// 絵文字が上からたくさん降ってきて、下に積もる（あとから降るものほど、上に重なる）
-const RAIN = ["📷", "📸", "🍡", "🎤", "✨", "❤️", "🎆", "🍜", "🎵", "🌸", "🍙", "🎉", "⭐", "🏮", "🍧", "🎈", "🍢", "🥁", "🎸", "🍦"];
+// 顔の絵文字が上からたくさん降ってきて、画面いっぱいに積もっていく（あとから降るものほど、上に重なる）
+const FACES = ["😀", "😃", "😄", "😁", "😆", "🥳", "😍", "🤩", "😎", "😊", "😋", "😜", "🤪", "😂", "🥰", "😇", "🤗", "😺", "😻", "🙌", "😆", "😄", "🤣", "😏", "🥹"];
+const OTHERS = ["📷", "🍡", "🎤", "✨", "❤️", "🎆", "🎵", "🎉", "⭐", "🎈"];
+// 物理：丸い剛体として、重力で落ちて、ぶつかり合って、積もる（重ならない）。シェア画面の間だけ動かす
 function emojiRain(root) {
   const box = root.querySelector(".rain");
   if (!box) return;
-  const n = 52;
-  for (let i = 0; i < n; i++) {
-    const e = document.createElement("span"), depth = i / n;
-    const size = 64 + Math.random() * 54, y = 1010 - size - depth * 190 - Math.random() * 36;
-    e.textContent = RAIN[Math.floor(Math.random() * RAIN.length)];
-    e.style.cssText = `--x:${Math.round(Math.random() * 1840)}px;--y:${Math.round(y)}px;--d:${(0.8 + i * 0.2).toFixed(2)}s;--t:${(0.9 + Math.random() * 0.5).toFixed(2)}s;--r:${Math.round(-40 + Math.random() * 80)}deg;font-size:${Math.round(size)}px`;
-    box.append(e);
+  // 描くのは、1枚の canvas（絵文字を1つずつ DOM にすると、表示の PC によっては重いので）
+  const cv = document.createElement("canvas"), W0 = 1920, H0 = 1080;
+  cv.width = W0; cv.height = H0; cv.className = "rainc";
+  box.append(cv);
+  const ctx = cv.getContext("2d");
+  const W = 1920, FLOOR = 1018, N = 92, G = 2600, DT = 1 / 60;
+  const bodies = [];
+  let spawned = 0, last = performance.now(), nextSpawn = last + 700, calm = 0;
+  function spawn() {
+    const size = 140 + Math.random() * 90, r = size * 0.43;
+    const pool = Math.random() < 0.82 ? FACES : OTHERS; // 主に顔の絵文字
+    const spr = document.createElement("canvas"), s = Math.round(size * 1.25);
+    spr.width = spr.height = s;
+    const g = spr.getContext("2d");
+    g.font = `${Math.round(size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(pool[Math.floor(Math.random() * pool.length)], s / 2, s / 2 + size * 0.06);
+    bodies.push({ spr, s, size, r, x: r + Math.random() * (W - 2 * r), y: -r - 20, vx: (Math.random() - 0.5) * 240, vy: 200 + Math.random() * 200, a: Math.random() * 6.28, av: (Math.random() - 0.5) * 4 });
   }
+  function step() {
+    for (const b of bodies) { b.vy += G * DT; b.x += b.vx * DT; b.y += b.vy * DT; b.a += b.av * DT; }
+    for (let it = 0; it < 6; it++) {
+      for (const b of bodies) { // 壁と床
+        if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * 0.3; }
+        if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx) * 0.3; }
+        if (b.y > FLOOR - b.r) { b.y = FLOOR - b.r; if (b.vy > 0) b.vy = -b.vy * 0.18; b.vx *= 0.94; b.av *= 0.9; }
+      }
+      for (let i = 0; i < bodies.length; i++) {
+        for (let k = i + 1; k < bodies.length; k++) {
+          const p = bodies[i], q = bodies[k], dx = q.x - p.x, dy = q.y - p.y, min = p.r + q.r, d2 = dx * dx + dy * dy;
+          if (d2 >= min * min || d2 === 0) continue;
+          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, over = (min - d) / 2;
+          p.x -= nx * over; p.y -= ny * over; q.x += nx * over; q.y += ny * over; // めりこみを押し戻す
+          const rv = (q.vx - p.vx) * nx + (q.vy - p.vy) * ny; // ぶつかる向きの速さ
+          if (rv < 0) { const j = -rv * 0.6; p.vx -= nx * j; p.vy -= ny * j; q.vx += nx * j; q.vy += ny * j; }
+          const tv = (q.vx - p.vx) * -ny + (q.vy - p.vy) * nx; // 横にこすれる分は、回る向きへ
+          p.av += tv * 0.0016; q.av += tv * 0.0016;
+          p.vx *= 0.995; q.vx *= 0.995;
+        }
+      }
+    }
+    for (const b of bodies) b.av *= 0.985;
+  }
+  let acc = 0;
+  function frame(now) {
+    if (!box.isConnected) return;
+    acc += Math.min(0.05, (now - last) / 1000); last = now;
+    if (spawned < N && now >= nextSpawn) { spawn(); spawned++; nextSpawn = now + 110 + Math.random() * 60; }
+    while (acc >= DT) { step(); acc -= DT; }
+    let fast = 0;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, W0, H0);
+    for (const b of bodies) {
+      const c = Math.cos(b.a), s = Math.sin(b.a);
+      ctx.setTransform(c, s, -s, c, b.x, b.y);
+      ctx.drawImage(b.spr, -b.s / 2, -b.s / 2);
+      fast = Math.max(fast, Math.abs(b.vx) + Math.abs(b.vy));
+    }
+    calm = fast < 12 && spawned >= N ? calm + 1 : 0;
+    if (calm < 60) requestAnimationFrame(frame); // 全部おちついたら止める
+  }
+  requestAnimationFrame(frame);
 }
 const slideShare = {
   async build() {
     const url = siteUrl("map.html?tab=feed");
-    return { dur: 15000, cls: "share", after: emojiRain, html: `
+    return { dur: 16000, cls: "share", after: emojiRain, html: `
       <div class="rain" aria-hidden="true"></div>
       <div class="wrap">
         <div>
@@ -413,10 +469,10 @@ async function cover() {
     d.style.setProperty("--c", COL[k % COL.length]); d.style.setProperty("--s", `${22 + (k % 4) * 8}px`);
     d.animate([{ opacity: 1, transform: "translate(0, 0) scale(.3) rotate(0)" }, { opacity: 1, transform: `translate(${Math.cos(ang) * far}px, ${Math.sin(ang) * far}px) scale(1) rotate(${k * 70}deg)`, offset: .7 }, { opacity: 0, transform: `translate(${Math.cos(ang) * far * 1.15}px, ${Math.sin(ang) * far * 1.15 + 60}px) scale(.8) rotate(${k * 90}deg)` }], { duration: 1000, delay: 480, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
   });
-  await Promise.all(inn.map((a) => a.finished));
+  await Promise.all(inn.map((a) => a.finished.catch(() => {}))); // 全画面にしたときなどに、動きが取り消されても止まらない
   return () => {
     seal.animate([{ opacity: 1 }, { opacity: 0, transform: "scale(.8) rotate(-6deg)" }], { duration: 300, fill: "forwards" });
-    return Promise.all(bars.map((b, k) => b.animate([{ transform: "translateX(0) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 560, delay: 240 + k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }).finished));
+    return Promise.all(bars.map((b, k) => b.animate([{ transform: "translateX(0) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 560, delay: 240 + k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }).finished.catch(() => {})));
   };
 }
 // 画面ごとの背景（ポスターの空の色。上→下）。差し色はその上の色

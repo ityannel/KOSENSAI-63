@@ -383,3 +383,10 @@ body.is-hurry #slide { bottom: 160px; }
 .share h1 .elogo { display: block; margin: 4px 0 0; }
 .share .wrap { position: relative; z-index: 1; }
 .stairs .sd { fill: #d9334f; stroke: #fff; stroke-width: 3; }
+/* 物理で動かす絵文字：位置は JS が transform で決める */
+.share .rain span { left: 0; top: 0; opacity: 1; animation: none; transform: translateY(-400px); display: block; text-align: center; line-height: 1; will-change: transform; }
+.share .rain { left: 0; right: auto; top: 0; bottom: auto; width: 1920px; height: 1080px; margin-left: -64px; margin-top: -48px; }
+.share .rain .rainc { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+/* 絵文字が積もっても読めるように、文字にはっきりした影 */
+.share h1, .share .how div, .share .scan .cap { text-shadow: -5px 4px 0 rgba(48, 44, 41, .65); }
+.share .elogo { filter: brightness(0) invert(1) drop-shadow(-6px 5px 0 rgba(48, 44, 41, .75)); }
