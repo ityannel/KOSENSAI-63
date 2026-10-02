@@ -362,28 +362,15 @@ body.is-hurry #slide { bottom: 160px; }
 .tag:has(.elogo-s) { padding-block: 9px; gap: 18px; }
 .tag:has(.elogo-s) i { width: 44px; height: 44px; }
 .elogo { display: inline-block; height: 130px; width: auto; vertical-align: middle; margin: 6px 0; }
-/* 階段をのぼる（おりる）動き */
-.mapbox .stairs { position: absolute; inset: 0; display: none; place-items: center; align-content: center; gap: 4px; background: rgba(254, 235, 196, .93); }
+/* 階が変わるところ：階段の左下に低い階、右上に高い階（動きはなし） */
+.mapbox .stairs { position: absolute; inset: 0; display: none; place-items: center; background: rgba(254, 235, 196, .94); }
 .mapbox .stairs.on { display: grid; animation: fadein .25s ease both; }
-.stairs svg { width: 230px; height: auto; overflow: visible; }
+.stairs .sq { position: relative; width: 300px; }
+.stairs svg { display: block; width: 100%; height: auto; overflow: visible; }
 .stairs .stp { fill: none; stroke: var(--ink); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
-.stairs .sd { fill: #d9334f; stroke: #fff; stroke-width: 3; }
-.stairs .sw { animation: climb 1.3s cubic-bezier(.4, 0, .3, 1) both; }
-.stairs.down .sw { animation-direction: reverse; }
-@keyframes climb { 0% { transform: translate(0, 0); } 25% { transform: translate(26px, -22px); } 50% { transform: translate(52px, -44px); } 75% { transform: translate(78px, -66px); } 100% { transform: translate(104px, -88px); } }
-.stairs .sl { font: 400 52px/1 var(--hud); color: var(--ink); letter-spacing: .04em; }
-/* 順位の札：「1位」が折り返さないように */
-.crown { display: flex; align-items: baseline; justify-content: center; gap: 4px; white-space: nowrap; height: 78px; min-width: 96px; padding: 0 24px; border-radius: 39px; line-height: 78px; }
-.crown b { font: 400 54px/78px var(--hud); }
-.crown b .num { font-size: 1em; }
-.crown small { font: 700 28px/78px var(--txt); }
-/* 改行：途中で1文字だけ残らないように。長い店名は小さめにして、まとまりで折り返す */
-.shop h2.long { font-size: 84px; line-height: 1.2; text-wrap: balance; word-break: auto-phrase; }
-.shop .note span { display: block; }
-.shop .note { word-break: auto-phrase; text-wrap: pretty; }
-.shop .note .num { display: inline; }
-.now p, .pc-b p, .pc-ph.txt q, .bubble, .nx i, .way li .sy { word-break: auto-phrase; text-wrap: pretty; }
-.ttl { text-wrap: balance; }
-/* ようこそ画面の日時：ただの白い字（影なし） */
-.intro .big, .intro .big b, .intro .big span { color: #fff; text-shadow: none; filter: none; }
-.ttl .lat, .shop h2 .lat { font-size: 1.25em; line-height: .8; } /* 見出しの英字は、日本語より小さく見えるので、大きく */
+.stairs .fp { position: absolute; padding: 4px 18px; border-radius: 999px; background: var(--ink); color: var(--paper); font: 400 40px/1.2 var(--hud); }
+.stairs .lo { left: -86px; bottom: -14px; }
+.stairs .hi { right: -86px; top: -14px; }
+/* 歩く時間は、「C棟2階」のとなりに */
+.plate.wkp { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.plate .wk { flex: none; padding: 6px 22px; border-radius: 999px; background: #d9334f; color: #fff; font-size: 32px; }

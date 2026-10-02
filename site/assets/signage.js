@@ -195,7 +195,7 @@ const slideShop = {
           <div class="note">${lines.map((l, i) => `<span class="rise" style="--i:${9 + i}">${esc(l)}</span>`).join("")}</div>
         </div>
         <div class="side">
-          ${where ? `<div class="plate pop" style="--i:5"><b>${esc(where)}</b></div>` : ""}
+          ${where ? `<div class="plate pop wkp" style="--i:5"><b>${esc(where)}</b>${rm ? `<span class="wk">歩いて約${rm.minutes}分</span>` : ""}</div>` : ""}
           ${rm ? `<div class="mapbox pop" style="--i:6">${rm.html}</div>` : ""}
           ${w ? `<div class="plate live pop" style="--i:6;--c:${w[1]}"><small>いまのようす</small><b>${w[0]}</b>${d.message ? `<q>${esc(d.message)}</q>` : ""}</div>` : ""}
         </div>

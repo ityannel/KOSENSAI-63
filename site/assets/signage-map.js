@@ -63,13 +63,13 @@ export async function routeMap(fromKey, toRoom) {
         <text x="${fx + 12 * s}" y="${fy - 11 * s}" font-size="${23 * s}" stroke-width="${6 * s}">いまここ</text></g>
       <circle class="dot" r="${6.5 * s}" stroke-width="${3 * s}" cx="${fx}" cy="${fy}"/>
     </svg><span class="fl">${from.floor ?? "1F"}</span>
-    <div class="stairs" aria-hidden="true"><svg viewBox="0 0 130 100"><path class="stp" d="M8 90H36V68H62V46H88V24H122"/><g class="sw"><circle class="sd" cx="22" cy="78" r="8"/></g></svg><b class="sl"></b></div><span class="mn">歩いて約${route.minutes}分</span>`;
+    <div class="stairs" aria-hidden="true"><div class="sq"><svg viewBox="0 0 130 100"><path class="stp" d="M8 90H36V68H62V46H88V24H122"/></svg><span class="fp lo"></span><span class="fp hi"></span></div></div>`;
 
   // 線をたどる：階が変わるところは少し止めて、階の表示も切りかえる。終わったら少し見せて、またはじめから
   function play(root) {
     const svg = root.querySelector(".mapbox svg");
     if (!svg) return;
-    const fl = root.querySelector(".mapbox .fl"), dot = svg.querySelector(".dot"), stairs = root.querySelector(".mapbox .stairs"), sl = stairs?.querySelector(".sl");
+    const fl = root.querySelector(".mapbox .fl"), dot = svg.querySelector(".dot"), stairs = root.querySelector(".mapbox .stairs");
     const items = [...svg.querySelectorAll(".lg")].map((g, i) => {
       const d = g.querySelector(".rl"), L = d.getTotalLength();
       g.querySelectorAll("path").forEach((p) => { p.style.strokeDasharray = L; p.style.strokeDashoffset = L; });
@@ -103,7 +103,10 @@ export async function routeMap(fromKey, toRoom) {
       // 階が変わるところ：階段をのぼる（おりる）動き。ほかのときはしまう
       if (stairs) {
         const on = !!climb;
-        if (on && !stairs.classList.contains("on")) { sl.textContent = `${climb.from} → ${climb.to}`; stairs.classList.toggle("down", parseInt(climb.to) < parseInt(climb.from)); }
+        if (on && !stairs.classList.contains("on")) {
+          const [lo, hi] = [climb.from, climb.to].sort((a, b) => parseInt(a) - parseInt(b)); // 低い階は階段の左下、高い階は右上
+          stairs.querySelector(".lo").textContent = lo; stairs.querySelector(".hi").textContent = hi;
+        }
         stairs.classList.toggle("on", on);
       }
       dot.setAttribute("cx", pt.x); dot.setAttribute("cy", pt.y); dot.style.opacity = 1;
