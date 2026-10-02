@@ -382,3 +382,4 @@ body.is-hurry #slide { bottom: 160px; }
 .share h1 { line-height: 1.08; }
 .share h1 .elogo { display: block; margin: 4px 0 0; }
 .share .wrap { position: relative; z-index: 1; }
+.stairs .sd { fill: #d9334f; stroke: #fff; stroke-width: 3; }

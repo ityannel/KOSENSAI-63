@@ -63,7 +63,7 @@ export async function routeMap(fromKey, toRoom) {
         <text x="${fx + 12 * s}" y="${fy - 11 * s}" font-size="${23 * s}" stroke-width="${6 * s}">いまここ</text></g>
       <circle class="dot" r="${6.5 * s}" stroke-width="${3 * s}" cx="${fx}" cy="${fy}"/>
     </svg><span class="fl">${from.floor ?? "1F"}</span>
-    <div class="stairs" aria-hidden="true"><div class="sq"><svg viewBox="0 0 130 100"><path class="stp" d="M8 90H36V68H62V46H88V24H122"/></svg><span class="fp lo"></span><span class="fp hi"></span></div></div>`;
+    <div class="stairs" aria-hidden="true"><div class="sq"><svg viewBox="0 0 130 100"><path class="stp" d="M8 90H36V68H62V46H88V24H122"/><circle class="sd" cx="14" cy="76" r="8"/></svg><span class="fp lo"></span><span class="fp hi"></span></div></div>`;
 
   // 線をたどる：階が変わるところは少し止めて、階の表示も切りかえる。終わったら少し見せて、またはじめから
   function play(root) {
@@ -89,7 +89,7 @@ export async function routeMap(fromKey, toRoom) {
       for (let i = 0; i < items.length; i++) {
         const dur = (items[i].len / total) * MOVE, start = acc + PAUSE * i;
         if (t >= start) cur = { i, k: Math.min(1, dur ? (t - start) / dur : 1) };
-        if (i && t >= start - PAUSE && t < start) climb = { from: items[i - 1].f, to: items[i].f };
+        if (i && t >= start - PAUSE && t < start) climb = { from: items[i - 1].f, to: items[i].f, k: (t - (start - PAUSE)) / PAUSE };
         acc += dur;
       }
       cur ??= { i: 0, k: 0 };
@@ -108,6 +108,11 @@ export async function routeMap(fromKey, toRoom) {
           stairs.querySelector(".lo").textContent = lo; stairs.querySelector(".hi").textContent = hi;
         }
         stairs.classList.toggle("on", on);
+        if (on) { // 赤い点が、階段の上を、なめらかにのぼる（おりるときは逆）
+          const e = climb.k < 0.5 ? 2 * climb.k * climb.k : 1 - (-2 * climb.k + 2) ** 2 / 2, p = parseInt(climb.to) > parseInt(climb.from) ? e : 1 - e;
+          const sd = stairs.querySelector(".sd");
+          sd.setAttribute("cx", 14 + 100 * p); sd.setAttribute("cy", 76 - 66 * p);
+        }
       }
       dot.setAttribute("cx", pt.x); dot.setAttribute("cy", pt.y); dot.style.opacity = 1;
       requestAnimationFrame(frame);
