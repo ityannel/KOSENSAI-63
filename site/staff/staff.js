@@ -526,8 +526,9 @@ function renderShops() {
   const prog = $("#desk-progress");
   prog.textContent = `受付済み ${done} / ${shops.length}`;
   prog.classList.toggle("is-on", done === shops.length && shops.length > 0);
-  $("#pr-target-todo").textContent = `${shops.length - done}か所`;
-  $("#pr-target-all").textContent = `${shops.length}か所`;
+  const shopsOnly = shops.filter((s) => s.kind === "shop");
+  $("#pr-target-todo").textContent = `${shopsOnly.filter((s) => !handedAt(s)).length}店`;
+  $("#pr-target-all").textContent = `${shopsOnly.length}店`;
   const q = $("#shop-q").value.trim();
   const list = visibleShops();
   $("#shop-hint").textContent = q ? `すべてのお店から「${q}」を探しています（${list.length}件）` : "";
@@ -744,9 +745,9 @@ function stampQrDataUrl(text, size = 480) {
 const printKind = () => $('[name="pr-kind"]:checked').value;
 function syncPrintControls() {
   const kind = printKind();
-  $("#pr-target-box").hidden = kind === "flyer";
-  $("#pr-staff-box").hidden = kind !== "shopset";
-  $("#pr-size-box").hidden = kind !== "flyer";
+  $("#pr-target-box").hidden = kind !== "shopstaff"; // お店の人に渡す紙だけ、「まだ渡していない／すべて」をえらぶ
+  $("#pr-staff-box").hidden = true;
+  $("#pr-size-box").hidden = true;
 }
 $$('[name="pr-kind"]').forEach((r) => r.addEventListener("change", syncPrintControls));
 
@@ -772,15 +773,17 @@ async function ensureShopCode(shopId) {
   return code;
 }
 
-// 店頭の紙（三角POP か 貼り紙）と、模擬店ならお店の人用の紙
-async function buildShopSet(shops, withStaff, format = printFormat()) {
+// スタンプラリーの紙（三角POP か 貼り紙）：スタンプの場所に貼る
+async function buildShopSet(places, _withStaff = false, format = printFormat()) {
+  return places.map((s) => (format === "wall" ? buildWall(s) : buildTents([s]))).join("");
+}
+// お店の人に渡す紙：待ち時間を変える QR（店頭には貼らない）
+async function buildStaffPapers(shops) {
   const pages = [];
   for (const s of shops) {
-    pages.push(format === "wall" ? buildWall(s) : buildTents([s]));
-    if (withStaff && s.kind === "shop") {
-      const code = await ensureShopCode(s.id);
-      const url = shopUrl(code, s.id);
-      pages.push(`
+    const code = await ensureShopCode(s.id);
+    const url = shopUrl(code, s.id);
+    pages.push(`
         <section class="sheet ps-staff">
           ${head("お店の人用（店頭には貼らない）")}
           <h2 class="ps-name">${esc(s.name)}</h2>
@@ -796,7 +799,6 @@ async function buildShopSet(shops, withStaff, format = printFormat()) {
           <p class="ps-url">${esc(url)}</p>
           <p class="ps-foot">困ったら本部（${esc(RALLY.claimPlace)}）へ</p>
         </section>`);
-    }
   }
   return pages.join("");
 }
@@ -958,9 +960,10 @@ const KIND_NAME = { shop: "模擬店", exhibit: "学科展示", info: "インフ
 async function printForDesk(shop) {
   toast(`${shop.name}の紙を作っています…`);
   try {
-    await ensureRally();
+    const stamp = STAMP_PLACES.some((p) => p.id === shop.id); // スタンプの場所はスタンプラリーの紙、模擬店はお店の人に渡す紙
+    if (stamp) await ensureRally();
     current = { kindLabel: `受付：${KIND_NAME[shop.kind] ?? "模擬店"}`, title: shop.name, sub: [shop.group, shop.where].filter(Boolean).join("・"),
-      build: () => buildShopSet([shop], true), shop, set: true };
+      build: stamp ? () => buildShopSet([shop]) : () => buildStaffPapers([shop]), shop, set: stamp };
     await showPrint();
   } catch (err) {
     console.warn(err);
@@ -991,22 +994,21 @@ $("#pr-given").addEventListener("click", async () => {
 $("#pr-make").addEventListener("click", async () => {
   const kind = printKind();
   const target = $('[name="pr-target"]:checked').value;
-  const shops = allSpots().filter((s) => target === "all" || !handedAt(s));
-  if (kind !== "flyer" && !shops.length) return toast("刷る場所がありません", true);
-  const staff = $("#pr-staff").checked;
+  const list = kind === "stamp" ? rallySpots() : allShops().filter((x) => target === "all" || !handedAt(x));
+  if (!list.length) return toast("刷る場所がありません", true);
   $("#pr-make").disabled = true;
   try {
-    if (kind !== "flyer") await ensureRally();
-    const size = $('[name="pr-size"]:checked').value;
+    if (kind === "stamp") await ensureRally();
     current = {
-      kindLabel: { shopset: "まとめて：店頭の紙", stamps: "まとめて：スタンプの QR（予備）", flyer: "来場者向けの案内チラシ" }[kind],
-      title: kind === "flyer" ? "案内チラシ" : `${target === "all" ? "すべての場所" : "まだ渡していない場所"}（${shops.length}か所）`,
-      sub: kind === "flyer" ? "" : "まとめて刷っても「受付済み」にはなりません",
-      build: kind === "shopset" ? () => buildShopSet(shops, staff) : kind === "stamps" ? async () => buildStamps(shops.filter((x) => STAMP_PLACES.some((p) => p.id === x.id))) : async () => buildFlyer(size),
-      set: kind === "shopset",
+      kindLabel: kind === "stamp" ? "まとめて：スタンプラリーの紙" : "まとめて：お店の人に渡す紙（待ち時間の変更）",
+      title: kind === "stamp" ? `スタンプの場所（${list.length}か所）` : `${target === "all" ? "すべてのお店" : "まだ渡していないお店"}（${list.length}店）`,
+      sub: "まとめて刷っても「受付済み」にはなりません",
+      build: kind === "stamp" ? () => buildShopSet(list) : () => buildStaffPapers(list),
+      set: kind === "stamp",
     };
     await showPrint();
   } catch (err) {
+    console.warn(err);
     toast(`作れませんでした（${err.message}）`, true);
   } finally {
     $("#pr-make").disabled = false;
