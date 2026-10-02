@@ -548,3 +548,6 @@ body.portrait .pc-b footer { order: 4; margin-top: 0; padding: 10px 28px 16px; }
 body.portrait .pc-ph.txt { padding: 20px 40px; }
 body.portrait .pc-ph.txt q { font-size: 42px; -webkit-line-clamp: 4; }
 body.portrait .crown { left: auto; right: 22px; top: 100px; }
+/* 「このあと」の時刻：変更ありも、なしも、同じ大きさ */
+.nx .t .num, .nx .t .t-chg .num, .nx .t .t-chg .t-new { font-size: 1em; line-height: 1; }
+.nx .t .t-chg { font-size: inherit; }
