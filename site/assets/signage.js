@@ -24,7 +24,15 @@ const ago = (ms) => { const m = Math.max(0, Math.round((Date.now() - ms) / 60000
 
 // ---------- 画面の大きさに合わせる ----------
 const stage = $("#stage");
-const fit = () => { stage.style.transform = `translate(-50%, -50%) scale(${Math.min(innerWidth / 1920, innerHeight / 1080)})`; };
+// 縦のディスプレイ：画面が縦長なら、自動で縦の並び（1080×1920）にする。?o=portrait（縦）／?o=landscape（横）で、決めてもよい
+let SW = 1920, SH = 1080;
+const fit = () => {
+  const o = params.get("o"), portrait = o ? o === "portrait" : innerHeight > innerWidth;
+  SW = portrait ? 1080 : 1920; SH = portrait ? 1920 : 1080;
+  document.body.classList.toggle("portrait", portrait);
+  stage.style.setProperty("--sw", `${SW}px`); stage.style.setProperty("--sh", `${SH}px`);
+  stage.style.transform = `translate(-50%, -50%) scale(${Math.min(innerWidth / SW, innerHeight / SH)})`;
+};
 addEventListener("resize", fit); fit();
 addEventListener("click", () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); });
 navigator.wakeLock?.request?.("screen").catch(() => {});
@@ -334,11 +342,11 @@ function emojiRain(root) {
   const box = root.querySelector(".rain");
   if (!box) return;
   // 描くのは、1枚の canvas（絵文字を1つずつ DOM にすると、表示の PC によっては重いので）
-  const cv = document.createElement("canvas"), W0 = 1920, H0 = 1080;
+  const cv = document.createElement("canvas"), W0 = SW, H0 = SH;
   cv.width = W0; cv.height = H0; cv.className = "rainc";
   box.append(cv);
   const ctx = cv.getContext("2d");
-  const W = 1920, FLOOR = 1018, N = 92, G = 2600, DT = 1 / 60;
+  const W = SW, FLOOR = SH - 62, N = 92, G = 2600, DT = 1 / 60;
   const bodies = [];
   let spawned = 0, last = performance.now(), nextSpawn = last + 700, calm = 0;
   function spawn() {
@@ -552,6 +560,7 @@ if (params.has("test")) {
     <label>時刻<select data-k="t">${opt(TIMES, cur("t"))}</select></label>
     <label>場所<select data-k="at">${opt(PLACES, cur("at"))}</select></label>
     <label class="chk"><input type="checkbox" data-k="demo"${params.has("demo") ? " checked" : ""}>見本の投稿・混雑・お店</label>
+    <label>向き<select data-k="o">${opt([["画面の形に合わせる", ""], ["横（1920×1080）", "landscape"], ["縦（1080×1920）", "portrait"]], cur("o"))}</select></label>
     <div class="tp-s">${SCREENS.map(([l, x]) => `<button type="button" data-only="${x}" aria-pressed="${cur("only") === x}">${l}</button>`).join("")}</div>
     <div class="tp-n"><button type="button" data-step="-1">前へ</button><button type="button" data-step="1">次へ</button></div></div>`;
   document.body.append(box);
