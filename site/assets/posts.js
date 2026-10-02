@@ -114,7 +114,7 @@ export async function subscribePosts(callback) {
           list.push({ id: d.id, kind: v.kind, place: v.place, shop: v.shop ?? null, stars: v.stars ?? null, text,
             has_photo: photo.has_photo, photo_pending: photo.pending && mine.has(d.id), official: !!v.official,
             created_at: v.created_at?.toMillis?.() ?? Date.now(), reports, hidden: !!v.hidden, likes: Number(v.likes ?? 0), reply_to: v.reply_to ?? null,
-            author: v.official ? "本部" : handleOf(v.uid),
+            author: v.official ? "enishi" : handleOf(v.uid), // 本部の公式は「enishi」＋認証マーク
             visible: !v.hidden && reports < REPORT_HIDE && !empty });
         });
         callback(list);

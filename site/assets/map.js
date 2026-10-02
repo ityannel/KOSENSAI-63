@@ -1559,7 +1559,11 @@ function likeCount(x) {
 }
 // Instagram のように：名前の丸いアイコン・四角い写真（写真がなければ文字のカード）・♡ 💬 ↗・いいね！n件・コメント
 const hueOf = (name) => [...String(name)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
-const avatar = (name, sm = false) => `<span class="ig-av${sm ? " sm" : ""}" style="--h:${hueOf(name)}" aria-hidden="true"><i>${esc(String(name).replace("enishi_", "").slice(0, 1).toUpperCase())}</i></span>`;
+const avatar = (name, sm = false) => name === "enishi"
+  ? `<span class="ig-av is-official${sm ? " sm" : ""}" aria-hidden="true"><i><img src="assets/img/logo-s.webp" width="40" height="40" alt="" loading="lazy"></i></span>` // 公式は「縁」のロゴの丸
+  : `<span class="ig-av${sm ? " sm" : ""}" style="--h:${hueOf(name)}" aria-hidden="true"><i>${esc(String(name).replace("enishi_", "").slice(0, 1).toUpperCase())}</i></span>`;
+// 公式アカウントの認証マーク（名前のよこ）
+const VERIFIED = '<i class="ig-verified" role="img" aria-label="公式アカウント" title="公式アカウント"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l4 4 8-9"/></svg></i>';
 const openCmts = new Set(); // 「コメントをすべて見る」を開いた投稿
 function postHtml(x, s, { withPlace = false, reply = false } = {}) {
   const on = liked(x.id), n = likeCount(x);
@@ -1568,7 +1572,7 @@ function postHtml(x, s, { withPlace = false, reply = false } = {}) {
   if (reply) {
     // コメント：名前・本文・時間、右に小さな ♡
     return `<li class="v-post is-reply" data-post="${esc(x.id)}">${avatar(who, true)}
-      <p class="ig-cmt"><b>${esc(who)}${x.official ? '<i class="ig-official" title="本部の公式の投稿">公式</i>' : ""}</b> ${esc(x.text)}<small><time>${esc(s.agoText(x.created_at))}</time>${n ? `<span data-likes-of="${esc(x.id)}">いいね！${n}件</span>` : `<span data-likes-of="${esc(x.id)}"></span>`}<button type="button" class="ig-report" data-report="${esc(x.id)}"${reported(x.id) ? " disabled" : ""}>${reported(x.id) ? "報告しました" : "報告"}</button></small></p>
+      <p class="ig-cmt"><b>${esc(who)}${x.official ? VERIFIED : ""}</b> ${esc(x.text)}<small><time>${esc(s.agoText(x.created_at))}</time>${n ? `<span data-likes-of="${esc(x.id)}">いいね！${n}件</span>` : `<span data-likes-of="${esc(x.id)}"></span>`}${x.official ? "" : `<button type="button" class="ig-report" data-report="${esc(x.id)}"${reported(x.id) ? " disabled" : ""}>${reported(x.id) ? "報告しました" : "報告"}</button>`}</small></p>
       ${heart}</button></li>`;
   }
   const p = withPlace && x.place && (place(x.place) ?? pointPlace(x.place));
@@ -1585,8 +1589,8 @@ function postHtml(x, s, { withPlace = false, reply = false } = {}) {
   const cap = x.has_photo ? `${review}${esc(x.text ?? "")}` : ""; // 文字だけの投稿は本文が上にあるので、キャプションは出さない
   return `<li class="v-post ig-post${x.has_photo ? "" : " is-text"}" data-post="${esc(x.id)}">
     <header class="ig-head">${avatar(who)}
-      <div class="ig-who"><b>${esc(who)}${x.official ? '<i class="ig-official" title="本部の公式の投稿">公式</i>' : ""}</b>${p ? `<button type="button" class="ig-loc" data-go="${esc(p.id)}">${esc(titleOf(p))}</button>` : ""}</div>
-      <button type="button" class="ig-more" data-report="${esc(x.id)}" aria-label="この投稿を本部に報告"${reported(x.id) ? " disabled" : ""}>${I.more}</button>
+      <div class="ig-who"><b>${esc(who)}${x.official ? VERIFIED : ""}</b>${p ? `<button type="button" class="ig-loc" data-go="${esc(p.id)}">${esc(titleOf(p))}</button>` : ""}</div>
+      ${x.official ? "" : `<button type="button" class="ig-more" data-report="${esc(x.id)}" aria-label="この投稿を本部に報告"${reported(x.id) ? " disabled" : ""}>${I.more}</button>`}
     </header>
     ${media}
     <div class="ig-acts">
