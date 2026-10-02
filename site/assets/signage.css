@@ -63,8 +63,11 @@ i, em { font-style: normal; }
 #wipe i:nth-child(1) { background: var(--en); }
 #wipe i:nth-child(2) { background: var(--sun); }
 #wipe i:nth-child(3) { background: var(--brick); }
-#wipe i:nth-child(4) { background: var(--chalk); }
-#wipe b { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; width: 340px; height: 340px; margin: -170px 0 0 -170px; border: 14px solid var(--ink); border-radius: 50%; color: var(--ink); font: 400 220px/1 var(--hud); opacity: 0; transform: scale(2.2) rotate(-14deg); }
+#wipe i:nth-child(4) { background: #a061c9; }
+#wipe b { position: absolute; left: 50%; top: 50%; width: 420px; height: 420px; margin: -210px 0 0 -210px; display: grid; place-items: center; font: 400 400px/1 var(--hud); color: #FEEBC4; opacity: 0; transform: scale(2.2) rotate(-14deg);
+  text-shadow: 10px 10px 0 #d9669b, 20px 20px 0 #2f8fe0, 30px 30px 0 #ffd24a, 40px 40px 0 #ff6b5e; }
+#wipe s { position: absolute; left: 50%; top: 50%; width: var(--s, 30px); height: var(--s, 30px); margin: calc(var(--s, 30px) / -2) 0 0 calc(var(--s, 30px) / -2); border-radius: 50%; background: var(--c); opacity: 0; text-decoration: none; }
+#wipe s:nth-of-type(3n) { border-radius: 6px; } /* 丸だけでなく、四角の紙吹雪も */
 
 /* ---------- 開幕・いま ---------- */
 .intro { align-items: center; justify-content: center; text-align: center; }
