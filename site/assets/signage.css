@@ -390,3 +390,18 @@ body.is-hurry #slide { bottom: 160px; }
 /* 絵文字が積もっても読めるように、文字にはっきりした影 */
 .share h1, .share .how div, .share .scan .cap { text-shadow: -5px 4px 0 rgba(48, 44, 41, .65); }
 .share .elogo { filter: brightness(0) invert(1) drop-shadow(-6px 5px 0 rgba(48, 44, 41, .75)); }
+/* 写真：読み込めたものは、そのまま見せる（以前は、表示の切りかえ用の印がなく、透明のままで真っ黒に見えていた） */
+.pc-ph img { opacity: 1; }
+/* 順位の札：「1位」が折り返さないように */
+.crown { display: flex; align-items: baseline; justify-content: center; gap: 4px; white-space: nowrap; height: 78px; min-width: 96px; padding: 0 24px; border-radius: 39px; line-height: 78px; }
+.crown b { font: 400 54px/78px var(--hud); }
+.crown b .num { font-size: 1em; }
+.crown small { font: 700 28px/78px var(--txt); }
+/* 改行：途中で1文字だけ残らないように。長い店名は小さめにして、まとまりで折り返す */
+.shop h2.long { font-size: 84px; line-height: 1.2; text-wrap: balance; word-break: auto-phrase; }
+.shop .note { word-break: auto-phrase; text-wrap: pretty; }
+.shop .note span { display: block; }
+.shop .note .num { display: inline; }
+.now p, .pc-b p, .pc-ph.txt q, .bubble, .nx i, .way li .sy { word-break: auto-phrase; text-wrap: pretty; }
+.ttl { text-wrap: balance; }
+.ttl .lat, .shop h2 .lat { font-size: 1.25em; line-height: .8; } /* 見出しの英字は、日本語より小さく見えるので、大きく */
