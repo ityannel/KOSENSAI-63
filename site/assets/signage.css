@@ -356,3 +356,4 @@ body.is-hurry #slide { bottom: 160px; }
 .barw time { flex: none; font: 400 46px/1 var(--hud); color: var(--ink); letter-spacing: .02em; }
 .barw .bar { flex: 1; margin-top: 0; height: 22px; border-radius: 11px; }
 .barw .bar i { border-radius: 11px; }
+.now:not(.wait) { background: var(--grain), linear-gradient(135deg, #FFE98A 0%, #FFC93C 48%, #FF9A4D 100%); }
