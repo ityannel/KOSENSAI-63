@@ -362,6 +362,11 @@ export const RALLY = {
   // @rally-generated-end
 };
 
+// スタンプの場所：校内の数か所（学科展示・模擬店には置かない）。hq＝インフォメーション、あとは MAP の会場の id。本部コンソールの「〇か所の QR を整える」が、この場所だけを対象にする
+export const STAMP_PLACES = ["hq", "gym2", "zacros"];
+// 模擬店の id（本部コンソールと同じ：クラス・部屋番号・場所の名前から作る）。模擬店総選挙の投票先に使う
+export const shopIdOf = (sh) => String(sh.cls ?? sh.room ?? sh.place ?? sh.name).toLowerCase().replace(/[^a-z0-9_-]/g, "");
+
 // ---------- 演出 ----------
 export const FX = {
   // 本物の天気を取ってくる場所（函館高専のあたり）。Open-Meteo（無料・登録不要）を使う

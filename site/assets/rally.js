@@ -8,7 +8,7 @@
 // ・goal 個たまると、カードが下へ伸びて「引き換える！」が出る。押すと「引き換え済み」になる（番号は要らない）
 // ・模擬店総選挙：スタンプを押した模擬店（rally/current の shops で vote: true のもの）に、1人1票。votes/{匿名ログインの印} = { shop }。
 //   押しなおすと、投票先が変わる（票は1つのまま）。受け付けは config.js の ELECTION の opens〜closes
-import { RALLY, FESTIVAL, ELECTION } from "./config.js";
+import { RALLY, FESTIVAL, ELECTION, SHOPS, shopIdOf } from "./config.js";
 import { rallyReady, onRallyChange } from "./rally-data.js"; // 本部コンソールで作った対象のお店（Firestore）
 import { openQrScanner } from "./qr-scan.js";
 
@@ -99,6 +99,8 @@ let state = load();
 const DEMO = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSearchParams(location.search).has("demo");
 const DEMO_SHOPS = [{ id: "d1", name: "5SE", vote: true }, { id: "d2", name: "麺屋 つちよし", vote: true }, { id: "d3", name: "クッキングミオ♡", vote: true }, { id: "d4", name: "やきとり処清", vote: true }];
 const shops = () => (DEMO ? DEMO_SHOPS : RALLY.shops);
+// 何個で達成か：決めた数。ただし、スタンプの場所の数をこえない（場所が3か所なら、最大3個）
+export const stampGoal = () => Math.max(1, Math.min(RALLY.goal, shops().length || RALLY.goal));
 if (DEMO) state = { ...state, stamps: { d1: Date.parse("2026-10-24T11:20:00+09:00"), d2: Date.parse("2026-10-24T13:05:00+09:00") } };
 export const stampCount = () => Object.keys(state.stamps).length;
 export const stampIds = () => Object.keys(state.stamps);
@@ -236,8 +238,7 @@ function celebrate(shop) {
   render();
   $("#rc")?.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   const count = stampCount();
-  const canVote = shop.vote && voteState() === "open";
-  message((count >= RALLY.goal ? `「${shop.name}」のスタンプを押しました。達成です！` : `「${shop.name}」のスタンプを押しました！ あと${RALLY.goal - count}個`) + (canVote ? "　下から、このお店に投票もできます。" : ""), "ok");
+  message(count >= stampGoal() ? `「${shop.name}」のスタンプを押しました。達成です！` : `「${shop.name}」のスタンプを押しました！ あと${stampGoal() - count}個`, "ok");
 }
 
 // ---------- 模擬店総選挙 ----------
@@ -248,33 +249,30 @@ function voteState() {
 }
 const voteDay = (iso) => new Date(iso).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).replace("/", "."); // 10.25 15:00
 let voting = false, voteNote = null, pickId = null; // pickId：いま選んでいるお店（まだ送っていない）
-// 模擬店総選挙のページ（vote.html）：スタンプを押した模擬店から1店。押していない模擬店は、下にたたんで並べる
+// 模擬店総選挙のページ（vote.html）：模擬店の一覧から、気に入った1店を選んで投票する（スタンプとは関係なく、だれでも）
+const voteShops = () => SHOPS.map((s) => ({ id: shopIdOf(s), name: String(s.name).replace(/\n/g, " ") }));
+const VOTE_LEAD = "気に入った模擬店に、一回だけ投票できます<br>応援したいお店を選ぼう！";
 function renderVote() {
   const el = $("#rally-vote");
   if (!el) return;
-  const voters = shops().filter((s) => s.vote);
   const phase = voteState();
   const mine = state.vote?.shop ?? null;
-  const mineName = mine ? shopOf(mine)?.name ?? "" : "";
+  const mineName = mine ? voteShops().find((v) => v.id === mine)?.name ?? "" : "";
   const title = '<h2 class="rv-title visually-hidden" id="rv-title">模擬店総選挙</h2>';
-  if (!voters.length) { el.innerHTML = `${title}<p class="rv-lead">参加するお店は、決まりしだいここに出ます。</p>`; return; }
   if (phase === "before") {
-    el.innerHTML = `${title}<p class="rv-lead">${esc(voteDay(ELECTION.opens))}から。模擬店の QR を読んでスタンプを押すと、そのお店に1票入れられます。</p>`;
+    el.innerHTML = `${title}<p class="rv-lead">${esc(voteDay(ELECTION.opens))}から、気に入った模擬店に投票できます。</p>`;
     return;
   }
   if (phase === "closed") {
     el.innerHTML = `${title}<p class="rv-lead">投票は終わりました。${mineName ? `あなたの1票：<b>${esc(mineName)}</b>` : ""}</p><p class="rv-lead">結果発表は 10/25 16:00 から、第二体育館です。</p>`;
     return;
   }
-  const stamped = voters.filter((s) => state.stamps[s.id]);
   const note = voteNote ? `<p class="rv-note" data-kind="${voteNote.kind}" role="status">${esc(voteNote.text)}</p>` : "";
   el.innerHTML = `
     ${title}
     <p class="rv-lead">${esc(voteDay(ELECTION.closes))}まで。投票はいつでも変えられます。</p>
-    ${stamped.length ? `<p class="rv-step">行ったお店から、1つ選んでください</p>
-      <ul class="rv-list">${stamped.map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}${s.id === pickId ? " is-pick" : ""}" data-pick="${esc(s.id)}" aria-pressed="${s.id === pickId}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : s.id === pickId ? "選択中" : ""}</span></button></li>`).join("")}</ul>
-      <button type="button" class="rv-submit" data-submit${!pickId || pickId === mine || voting ? " disabled" : ""}>${mine ? "投票先を変える" : "このお店に投票する"}</button>`
-      : `<p class="rv-empty">まだどこにも行っていません。</p>`}
+    <ul class="rv-list">${voteShops().map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}${s.id === pickId ? " is-pick" : ""}" data-pick="${esc(s.id)}" aria-pressed="${s.id === pickId}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : s.id === pickId ? "選択中" : ""}</span></button></li>`).join("")}</ul>
+    <button type="button" class="rv-submit" data-submit${!pickId || pickId === mine || voting ? " disabled" : ""}>${mine ? "投票先を変える" : "このお店に投票する"}</button>
     ${note}`;
 }
 // スタンプカードのページの下：投票のページへの入口
@@ -282,22 +280,19 @@ function renderVoteLink() {
   const el = $("#rally-vote-link");
   if (!el) return;
   const phase = voteState();
-  const has = shops().some((s) => s.vote);
-  el.hidden = !has;
-  if (el.hidden) return;
-  const mine = state.vote?.shop ? shopOf(state.vote.shop)?.name : "";
-  el.innerHTML = `<b>模擬店総選挙</b><span>${phase === "closed" ? "投票は終わりました" : phase === "before" ? `${voteDay(ELECTION.opens)}から投票できます` : mine ? `投票ずみ：${esc(mine)}` : "スタンプを押した模擬店に、一回だけ投票できます<br>気に入ったお店を応援しよう！"}</span>`;
+  el.hidden = false;
+  const mine = state.vote?.shop ? voteShops().find((v) => v.id === state.vote.shop)?.name : "";
+  el.innerHTML = `<b>模擬店総選挙</b><span>${phase === "closed" ? "投票は終わりました" : phase === "before" ? `${voteDay(ELECTION.opens)}から投票できます` : mine ? `投票ずみ：${esc(mine)}` : VOTE_LEAD}</span>`;
 }
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 async function castVote(shopId) {
-  const s = shopOf(shopId);
-  if (voting || !s?.vote || !state.stamps[shopId] || voteState() !== "open" || state.vote?.shop === shopId) return;
+  const s = voteShops().find((v) => v.id === shopId);
+  if (voting || !s || voteState() !== "open" || state.vote?.shop === shopId) return;
   voting = true;
   voteNote = { kind: "info", text: "送っています…" };
   renderVote();
   try {
     if (!DEMO) {
-      await syncLog(); // 押したスタンプを先に本部へ写す（ルールが「スタンプを押した店だけ」を確かめるため）
       const k = await firebase();
       if (!k.a.currentUser) await k.auth.signInAnonymously(k.a);
       await withTimeout(k.fs.setDoc(k.fs.doc(k.db, "votes", k.a.currentUser.uid), { shop: shopId, updated_at: k.fs.serverTimestamp() }), 12000);
@@ -315,7 +310,7 @@ async function castVote(shopId) {
 }
 // 自分の票を、本部の記録と合わせる（本部が投票をリセットしたとき・別の画面で変えたとき）。ページを開くたびに1回だけ読む
 async function refreshVote() {
-  if (DEMO || voteState() === "before" || !Object.keys(state.stamps).length) return;
+  if (DEMO || voteState() === "before" || !state.vote) return;
   try {
     const k = await firebase();
     await k.a.authStateReady?.();
@@ -333,7 +328,7 @@ async function refreshVote() {
 
 function slotsHtml() {
   const ids = Object.keys(state.stamps).sort((a, b) => state.stamps[a] - state.stamps[b]); // 押した順
-  const n = Math.max(RALLY.goal, ids.length);
+  const n = Math.max(stampGoal(), ids.length);
   return Array.from({ length: n }, (_, i) => {
     const id = ids[i];
     if (!id) return `<li class="rc-slot"><span class="rc-ring" aria-hidden="true"><b>${i + 1}</b></span><span class="visually-hidden">${i + 1}個目：まだ</span></li>`;
@@ -349,13 +344,13 @@ function render() {
   renderVoteLink();
   if (!$("#rc")) return; // 投票のページには、カードがない
   const count = stampCount();
-  const done = count >= RALLY.goal;
+  const done = count >= stampGoal();
   const canClaim = done && !state.claimedAt && !prizeOut;
   const sorry = $("#rally-sorry");
   if (sorry) sorry.hidden = !prizeOut;
   const flipped = $(".rc")?.getAttribute("aria-pressed") === "true";
   // スタンプの丸は3つずつ並ぶ。6個をこえたら、段が増える分だけカードを縦に伸ばす
-  $("#rc").style.setProperty("--rc-base", 72 + Math.max(0, Math.ceil(Math.max(RALLY.goal, count) / 3) - 2) * 34);
+  $("#rc").style.setProperty("--rc-base", 72 + Math.max(0, Math.ceil(Math.max(stampGoal(), count) / 3) - 2) * 34);
   const list = shops();
   $("#rc").innerHTML = `
     <button type="button" class="rc" aria-pressed="${flipped}" aria-label="スタンプカード（押すと裏返る）">
@@ -367,7 +362,7 @@ function render() {
         </span>
         <ol class="rc-slots">${slotsHtml()}</ol>
         <span class="rc-foot">
-          <b class="rc-state">${done ? (state.claimedAt ? "引き換え済み" : prizeOut ? "達成！（景品は終了しました）" : "達成！ 景品と交換できます") : `あと<em>${RALLY.goal - count}</em>個で${prizeOut ? "達成" : "景品"}！`}</b>
+          <b class="rc-state">${done ? (state.claimedAt ? "引き換え済み" : prizeOut ? "達成！（景品は終了しました）" : "達成！ 景品と交換できます") : `あと<em>${stampGoal() - count}</em>個で${prizeOut ? "達成" : "景品"}！`}</b>
           <small class="rc-turn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9M4 5v4h4M4 13a8 8 0 0 0 14.3 4.9M20 19v-4h-4"/></svg>うらを見る</small>
         </span>
         ${state.claimedAt ? '<i class="rc-claimed" aria-hidden="true">引換済</i>' : ""}
@@ -375,8 +370,8 @@ function render() {
       <span class="rc-face rc-back">
         <b class="rc-back-title">あそびかた</b>
         <ol class="rc-rules">
-          <li>模擬店・学科展示・会場に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
-          <li>スタンプが<em>${RALLY.goal}個</em>たまったら達成</li>
+          <li>校内の数か所に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
+          <li>スタンプが<em>${stampGoal()}個</em>たまったら達成</li>
         </ol>
       </span>
     </button>
@@ -391,7 +386,7 @@ function render() {
 
 // 引き換える：押したら引き換え済み（番号は要らない。まちがえて押さないよう、確かめる）
 function claim() {
-  if (!(stampCount() >= RALLY.goal) || state.claimedAt || prizeOut) return;
+  if (!(stampCount() >= stampGoal()) || state.claimedAt || prizeOut) return;
   if (!confirm("景品と引き換えますか？\n押すと「引き換え済み」になります（元に戻せません）")) return;
   state.claimedAt = nowMs();
   save();
@@ -431,7 +426,7 @@ export function initRallyPage(getNow = () => Date.now()) {
 // お店の QR を読む（ページの中のカメラ）。読めたら、その QR の鍵でスタンプを押す
 const openScan = () => openQrScanner({
   title: "QR を読む",
-  hint: "模擬店・学科展示・会場に置いてある QR を枠に入れてください",
+  hint: "校内に置いてある QR を枠に入れてください",
   wrong: "スタンプラリーの QR ではないようです",
   noCamera: "スマホのカメラアプリで QR を読んでも、スタンプは押せます",
   accept: (text) => {
@@ -467,14 +462,16 @@ export function initVotePage(getNow = () => Date.now()) {
     if (e.target.closest("[data-submit]") && pickId) castVote(pickId);
   });
   refreshVote();
-  takeQrParams();
+  // お店の前の QR（vote.html?s=お店の id）から来たら、そのお店を選んだ状態にする
+  const s = new URLSearchParams(location.search).get("s");
+  if (s && voteShops().some((v) => v.id === s)) { pickId = s; renderVote(); document.querySelector(`[data-pick="${CSS.escape(s)}"]`)?.scrollIntoView({ block: "center" }); }
 }
 
 // トップページの、模擬店総選挙の入口の一言
 export function renderVoteEntry(el) {
   if (!el) return;
   const phase = voteState();
-  el.innerHTML = phase === "before" ? `${voteDay(ELECTION.opens)}から` : phase === "closed" ? "投票は終わりました" : `スタンプを押した模擬店に、一回だけ投票できます<br>気に入ったお店を応援しよう！`;
+  el.innerHTML = phase === "before" ? `${voteDay(ELECTION.opens)}から` : phase === "closed" ? "投票は終わりました" : VOTE_LEAD;
 }
 
 // トップページの「縁日」の下の、小さなスタンプカード（入口）。押すとスタンプカードのページ
@@ -484,11 +481,11 @@ export function renderMini(el) {
   if (!miniEl) changeFns.add(() => renderMini(miniEl));
   miniEl = el;
   const count = stampCount();
-  const n = Math.max(RALLY.goal, count);
+  const n = Math.max(stampGoal(), count);
   el.innerHTML = `
     <a class="rc-mini" href="rally.html">
       <img class="rc-logo" src="assets/img/logo-s.webp" width="673" height="657" alt="">
       <span class="rc-mini-txt"><b>スタンプカード</b></span>
-      <span class="rc-mini-dots" aria-label="${count} / ${RALLY.goal}">${Array.from({ length: n }, (_, i) => `<i${i < count ? ' class="on"' : ""}>${i < count ? "縁" : ""}</i>`).join("")}</span>
+      <span class="rc-mini-dots" aria-label="${count} / ${stampGoal()}">${Array.from({ length: n }, (_, i) => `<i${i < count ? ' class="on"' : ""}>${i < count ? "縁" : ""}</i>`).join("")}</span>
     </a>`;
 }

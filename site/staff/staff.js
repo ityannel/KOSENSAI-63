@@ -2,7 +2,7 @@
 // お知らせ・緊急のお知らせ・生配信・表示の切りかえ・混雑・5人の実況・投稿（写真の確認・報告・本部の投稿）・模擬店・文章と書体を、ここ1つで変える。
 // だれが使えるかは firestore.rules（staff コレクションにメールアドレスがある人だけ）で決まる。
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
-import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS } from "../assets/config.js";
+import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES } from "../assets/config.js";
 import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
 import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
 
@@ -670,12 +670,12 @@ const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 // スタンプラリーの対象は、模擬店・インフォメーション・学科展示・会場（太平洋セメントアリーナ、ZACROS hall）のすべて。
 // 模擬店には vote: true を付ける（スタンプを押した模擬店に、模擬店総選挙で1票入れられる。rally.js）。
 // 足りない鍵を作り、rally/current を対象の場所にそろえる（足りなければ何もしない）
-const rallySpots = () => allSpots();
+const rallySpots = () => allSpots().filter((x) => STAMP_PLACES.includes(x.id)); // スタンプの場所は、config.js の STAMP_PLACES（校内の数か所）だけ
 function rallyMissing() {
   const cur = new Map((state.rally?.shops ?? []).map((s) => [s.id, s]));
   const spots = rallySpots();
   const extra = [...cur.keys()].filter((id) => !spots.some((s) => s.id === id)); // 対象でなくなった場所
-  return [...spots.filter((s) => !cur.has(s.id) || !keysOf(s.id)[FEST] || !!cur.get(s.id).vote !== (s.kind === "shop")), ...extra.map((id) => ({ id }))];
+  return [...spots.filter((s) => !cur.has(s.id) || !keysOf(s.id)[FEST]), ...extra.map((id) => ({ id }))];
 }
 async function ensureRally() {
   if (!rallyMissing().length) return false;
@@ -690,7 +690,7 @@ async function ensureRally() {
     }
     const codes = { [FEST]: await sha256(`kosen63:${shop.id}:${FEST}:${keys[FEST]}`) };
     const room = shop.catalog ? shop.room : shop.map;
-    shops.push({ id: shop.id, name: shop.name, ...(room ? { room } : {}), ...(shop.place ? { place: shop.place } : {}), ...(shop.kind === "shop" ? { vote: true } : {}), codes });
+    shops.push({ id: shop.id, name: shop.name, ...(room ? { room } : {}), ...(shop.place ? { place: shop.place } : {}), codes });
   }
   const current = { shops, staffPin: state.rally?.staffPin ?? null };
   batch.set(fs.doc(db, "rally", "current"), { ...current, ...stamp() });
@@ -724,7 +724,7 @@ $("#cache-reset").addEventListener("click", () => {
   saveLive("全員のキャッシュ削除を指示しました", { cache_reset_at: fs.serverTimestamp() });
 });
 // 何個で達成か（「文章と書体」で変えていればそちら）。印刷する紙もこの数にそろえる
-const rallyGoal = () => { const v = Math.round(Number(state.siteText?.texts?.rally_goal)); return v >= 1 ? v : RALLY.goal; };
+const rallyGoal = () => { const v = Math.round(Number(state.siteText?.texts?.rally_goal)); return Math.min(v >= 1 ? v : RALLY.goal, rallySpots().length || RALLY.goal); }; // スタンプの場所の数をこえない
 
 // ---------- 印刷（QR・チラシ） ----------
 const siteUrl = (path = "") => new URL(`../${path}`, location.href).href;
@@ -829,6 +829,15 @@ const kanjiNum = (n) => {
 };
 // スタンプラリーのおさそい（三角POPの3段目と、模擬店セットのきりとり）。文は縦書き、下に QR
 function rallyBody(s) {
+  // 模擬店：スタンプは置かない。お店の前の QR から、そのお店を選んだ状態で、模擬店総選挙のページが開く
+  if (s.kind === "shop") {
+    return `
+          <div class="pt-v pt-rally-text">
+            <h3>模擬店総選挙、<br>開催中。</h3>
+            <p class="pt-rally-lead">気に入ったら、<br><b>応援の一票</b>を！</p>
+          </div>
+          <figure class="pt-rally-qr"><img src="${qrDataUrl(siteUrl(`vote.html?s=${encodeURIComponent(s.id)}`))}" alt=""><figcaption>↑読み込んで、このお店に投票</figcaption></figure>`;
+  }
   const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
   const qr = rally
     ? stampQrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
@@ -838,7 +847,7 @@ function rallyBody(s) {
             <h3>スタンプラリー、<br>はじめました。</h3>
             ${s.kind === "info"
               ? `<p class="pt-rally-lead">まずはここで<b>一個目</b>！<br>スタンプ${kanjiNum(rallyGoal())}個で、景品と交換！</p>`
-              : `<p class="pt-rally-lead">スタンプ<b>${kanjiNum(rallyGoal())}個</b>で、景品と交換！</p>`}
+              : rally ? `<p class="pt-rally-lead">スタンプ<b>${kanjiNum(rallyGoal())}個</b>で、景品と交換！</p>` : `<p class="pt-rally-lead">校内の数か所で、<br>実施中！</p>`}
           </div>
           <figure class="pt-rally-qr"><img src="${qr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>`;
 }

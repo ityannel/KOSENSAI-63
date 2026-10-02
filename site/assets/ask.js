@@ -2,7 +2,7 @@
 // 絵の下の質問ボタン（または絵の中の人）を押すと、担当の人が吹き出しで答えて、
 // 絵の下のほうに答えのカードが出る。カードの「くわしく」で、今までのパネルを開ける。
 import { FESTIVAL, EVENTS, VENUES, CROWD, RALLY, PICKUP_SHOPS } from "./config.js";
-import { stampCount } from "./rally.js";
+import { stampCount, stampGoal } from "./rally.js";
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -67,13 +67,13 @@ const ANSWERS = {
 
   rally(s) {
     const n = stampCount();
-    const g = RALLY.goal;
+    const g = stampGoal();
     const out = !!s?.live?.prize_out; // 景品がなくなった
     const line = n >= g ? (out ? "そろった！ 景品はもう終わっちゃったって…" : `そろった！${RALLY.claimPlace}へ行こう`) : n > 0 ? `スタンプあと${g - n}個！` : "模擬店や学科展示のQRを読むとスタンプがたまるよ";
     return {
       line,
       html: `<div class="answer-rally">${Array.from({ length: g }, (_, i) => `<span class="mini-hanko${i < n ? " on" : ""}">${i < n ? "縁" : ""}</span>`).join("")}
-        <b>${n} / ${g}</b></div><p>${out ? "景品は、すべてなくなりました。ごめんなさい。" : n >= g ? esc(RALLY.prize) : "模擬店・学科展示・会場の QR を読んでね（はじめの1個は、玄関のインフォメーションで）。"}</p>`,
+        <b>${n} / ${g}</b></div><p>${out ? "景品は、すべてなくなりました。ごめんなさい。" : n >= g ? esc(RALLY.prize) : "校内の QR を読んでね（はじめの1個は、玄関のインフォメーションで）。"}</p>`,
       actions: [link("#rally", n >= g ? "引き換え画面" : "スタンプカード")],
     };
   },

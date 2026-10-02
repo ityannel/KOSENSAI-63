@@ -2,7 +2,7 @@
 // ページはスクロールしない。絵の中の人や建物に触ると、その人に質問したことになる（ask.js）。
 // 座標は絵（1215×1845）上のピクセル。[左, 上, 右, 下]
 import { RALLY } from "./config.js";
-import { stampCount } from "./rally.js";
+import { stampCount, stampGoal } from "./rally.js";
 
 const POSTER_W = 1215, POSTER_H = 1845;
 const $ = (sel) => document.querySelector(sel);
@@ -26,8 +26,8 @@ const SPOTS = [
     lines: (c) => {
       if (c.stream) return [`「${c.stream.name}」を${c.stream.live ? "生" : ""}配信中！`]; // 動画が出ているあいだは、走っている人がお知らせする
       const n = stampCount();
-      if (n >= RALLY.goal) return [c.prizeOut ? "スタンプそろった！ 景品は終わっちゃったけど…" : "スタンプそろった！本部行こ！"];
-      if (n > 0) return [`スタンプあと${RALLY.goal - n}個！`];
+      if (n >= stampGoal()) return [c.prizeOut ? "スタンプそろった！ 景品は終わっちゃったけど…" : "スタンプそろった！本部行こ！"];
+      if (n > 0) return [`スタンプあと${stampGoal() - n}個！`];
       return ["スタンプラリー、一緒に回ろ！", "スタンプ集めに走ってる！"];
     },
   },

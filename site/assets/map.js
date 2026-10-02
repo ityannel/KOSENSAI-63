@@ -1950,7 +1950,7 @@ function renderNowSheet(body, s) {
 function renderStampSheet(body, s) {
   const n = s.stamps?.length ?? 0;
   const list = RALLY.shops.map((x) => ({ x, p: [...places.values()].find((p) => p.shops?.includes(x.id)) ?? null, on: s.stamps?.includes(x.id) }));
-  body.innerHTML = `<p class="sh-kind">スタンプラリー</p><h2 class="sh-title">スタンプ ${n} / ${RALLY.goal}</h2>
+  body.innerHTML = `<p class="sh-kind">スタンプラリー</p><h2 class="sh-title">スタンプ ${n} / ${Math.min(RALLY.goal, RALLY.shops.length || RALLY.goal)}</h2>
     ${list.length ? `<ul class="m-list">${list.map(({ x, p, on }) => `<li><button type="button" class="m-item" ${p ? `data-go="${esc(p.id)}"` : "disabled"}>
       <span class="mini-hanko${on ? " on" : ""}">${on ? "縁" : ""}</span><span class="txt"><b>${esc(x.name)}</b><small>${p ? esc(titleOf(p)) : "場所はお店で確認してください"}${on ? "・押した" : ""}</small></span></button></li>`).join("")}</ul>`
       : '<p class="sh-hint">対象のお店は決まりしだいここに出ます。</p>'}

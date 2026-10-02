@@ -118,9 +118,10 @@ await t("presence rejects far window", assertFails(setDoc(doc(nobody, "presence/
 await t("visitor logs stamps", assertSucceeds(setDoc(doc(anon, "rally_logs/anon1"), { stamps: { takoyaki: 1 }, claimed_at: null, updated_at: serverTimestamp() })));
 await t("vote for a stamped shop", assertSucceeds(setDoc(doc(anon, "votes/anon1"), { shop: "takoyaki", updated_at: serverTimestamp() })));
 await t("changing the vote is allowed (still one doc)", assertSucceeds(setDoc(doc(anon, "rally_logs/anon1"), { stamps: { takoyaki: 1, udon: 2 }, claimed_at: null, updated_at: serverTimestamp() }).then(() => setDoc(doc(anon, "votes/anon1"), { shop: "udon", updated_at: serverTimestamp() }))));
-await t("cannot vote for a shop without a stamp", assertFails(setDoc(doc(anon, "votes/anon1"), { shop: "curry", updated_at: serverTimestamp() })));
+await t("any shop id can be voted for (no stamp needed)", assertSucceeds(setDoc(doc(anon, "votes/anon1"), { shop: "curry", updated_at: serverTimestamp() })));
+await t("vote shop id must be plain letters/digits", assertFails(setDoc(doc(anon, "votes/anon1"), { shop: "Bad Shop!", updated_at: serverTimestamp() })));
 await t("cannot vote under someone else's id", assertFails(setDoc(doc(anon, "votes/anon2"), { shop: "takoyaki", updated_at: serverTimestamp() })));
-await t("cannot vote without any stamp log", assertFails(setDoc(doc(env.authenticatedContext("anon9", anonTok).firestore(), "votes/anon9"), { shop: "takoyaki", updated_at: serverTimestamp() })));
+await t("a visitor with no stamps can vote", assertSucceeds(setDoc(doc(env.authenticatedContext("anon9", anonTok).firestore(), "votes/anon9"), { shop: "takoyaki", updated_at: serverTimestamp() })));
 await t("vote cannot carry extra fields", assertFails(setDoc(doc(anon, "votes/anon1"), { shop: "udon", weight: 100, updated_at: serverTimestamp() })));
 await t("vote time cannot be faked", assertFails(setDoc(doc(anon, "votes/anon1"), { shop: "udon", updated_at: new Date(2030, 0, 1) })));
 await t("logged-out cannot vote", assertFails(setDoc(doc(nobody, "votes/anon1"), { shop: "udon", updated_at: serverTimestamp() })));
