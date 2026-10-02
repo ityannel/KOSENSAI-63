@@ -290,6 +290,7 @@ let postFilter = "pending";
 const photos = new Map();
 const isOff = (p) => p.hidden || p.reports >= REPORT_HIDE;
 function renderPosts() {
+  if (document.activeElement?.closest?.(".post-reply")) return; // 公式の返信を書いている途中は、描き直さない
   const lists = {
     pending: state.posts.filter((p) => p.photo_status === "pending" && !p.hidden),
     reported: state.posts.filter((p) => p.reports > 0 && !p.hidden),
@@ -319,9 +320,15 @@ function renderPosts() {
         </div>
         <div class="post-actions">
           ${photoBtns}
+          ${p.reply_to ? "" : `<button class="btn btn-ghost btn-sm" data-act="replyopen" data-id="${esc(p.id)}">公式で返信</button>`}
+          <button class="btn btn-ghost btn-sm" data-act="like" data-id="${esc(p.id)}" title="もう一度押すと取り消し">公式でいいね</button>
           <button class="btn btn-ghost btn-sm" data-act="${isOff(p) ? "show" : "hide"}" data-id="${esc(p.id)}">${isOff(p) ? "表示にもどす" : "非表示"}</button>
           <button class="btn btn-danger btn-sm" data-act="delete" data-id="${esc(p.id)}">削除</button>
         </div>
+        <form class="post-reply" data-id="${esc(p.id)}" hidden>
+          <textarea rows="2" maxlength="140" placeholder="公式として返信（140文字まで）" aria-label="公式の返信"></textarea>
+          <div class="row"><button class="btn btn-primary btn-sm" type="submit">返信する</button></div>
+        </form>
       </article>`;
   }).join("") : `<p class="empty">${{ pending: "確認待ちの写真はありません", reported: "報告された投稿はありません", hidden: "非表示の投稿はありません", all: "投稿はまだありません" }[postFilter]}</p>`;
   $$("#post-list img[data-photo]:not([src])").forEach(async (img) => {
@@ -346,6 +353,19 @@ $("#post-list").addEventListener("click", (e) => {
   const ref = fs.doc(db, "posts", b.dataset.id);
   const post = state.posts.find((p) => p.id === b.dataset.id);
   const acts = {
+    // 公式でいいね：もう一度押すと取り消し（来場者のいいねと同じ仕組み。本部のログインの印で1回）
+    like: async () => {
+      const uid = a.currentUser.uid;
+      const likeRef = fs.doc(db, "post_likes", `${b.dataset.id}_${uid}`);
+      const on = !(await fs.getDoc(likeRef).then((s) => s.exists()).catch(() => false));
+      write(on ? "公式でいいねしました" : "いいねを取り消しました", () => {
+        const batch = fs.writeBatch(db);
+        if (on) batch.set(likeRef, { post: b.dataset.id, uid, at: fs.serverTimestamp() }); else batch.delete(likeRef);
+        batch.update(ref, { likes: fs.increment(on ? 1 : -1) });
+        return batch.commit();
+      });
+    },
+    replyopen: () => { const f = b.closest("article").querySelector(".post-reply"); f.hidden = !f.hidden; if (!f.hidden) f.querySelector("textarea").focus(); },
     approve: () => write("写真を公開しました", () => fs.updateDoc(ref, { photo_status: "approved" })),
     reject: () => write("写真を出さないことにしました", () => fs.updateDoc(ref, { photo_status: "rejected" })),
     hide: () => write("非表示にしました", () => fs.updateDoc(ref, { hidden: true })),
@@ -360,6 +380,20 @@ $("#post-list").addEventListener("click", (e) => {
     },
   };
   acts[b.dataset.act]?.();
+});
+// 公式の返信：その投稿へのコメントとして、「公式」の札つきで出る
+$("#post-list").addEventListener("submit", async (e) => {
+  const f = e.target.closest(".post-reply");
+  if (!f) return;
+  e.preventDefault();
+  const text = f.querySelector("textarea").value.trim();
+  if (!text) return toast("返信の文を入れてください", true);
+  const parent = state.posts.find((p) => p.id === f.dataset.id);
+  const ok = await write("公式として返信しました", () => fs.addDoc(fs.collection(db, "posts"), {
+    kind: "post", place: parent?.place ?? "", shop: null, stars: null, text, has_photo: false, photo_status: "none", uid: a.currentUser.uid,
+    created_at: fs.serverTimestamp(), reports: 0, hidden: false, reply_to: f.dataset.id, official: true,
+  }));
+  if (ok) { f.querySelector("textarea").value = ""; f.hidden = true; }
 });
 // 画像（任意）：選ぶと、下に小さく見える。「はずす」で取りやめ
 function clearOfficialFile() {

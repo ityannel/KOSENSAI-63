@@ -378,6 +378,7 @@ function layoutCam() {
   el.style.setProperty("--brg", `${-cam.bearing}deg`); // 字と印は回さない（いつも読める向き）
   el.classList.toggle("is-3d", !flat);
   $("#m-compass")?.style.setProperty("--north", `${NORTH + cam.bearing}deg`);
+  $("#m-compass")?.toggleAttribute("data-rotated", Math.abs(normDeg(NORTH + cam.bearing)) > 1); // 北が上でなくなったときだけ、北のボタンを出す
   $("#m-tilt")?.setAttribute("aria-pressed", String(cam.tilt > 0));
 }
 // 地図の枠の点 → svg の点（傾いた面との交わりを解く）

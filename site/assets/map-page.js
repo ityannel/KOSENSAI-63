@@ -38,7 +38,7 @@ let crowd = null, live = null, shops = [], posts = null, postsErr = null; // pos
 onRallyChange(refreshRally);
 await initMap({ getState: () => ({ phase: phase(), now: nowMs(), running: phase() === "during" ? running() : [], crowd, stamps: stampIds(), agoText, shops, posts, postsErr }) });
 subscribeCrowd((data) => { crowd = data; renderMap(); });
-subscribeLive((data) => { live = data; setNotice(live?.notice, live?.notice_level); renderMap(); });
+subscribeLive((data) => { live = data; renderMap(); }); // お知らせは、地図の画面には出さない
 subscribeShops((list) => { shops = list; renderMap(); }); // 模擬店の待ち時間・売り切れ
 // Enistagram（ポスト・レビュー・返信）は、Enistagram のタブを開いたときか、場所を押してシートが出たときに初めて読む
 // （地図を見るだけの人の分、Firestore の読みこみを減らす）。一度読みはじめたら、あとはずっと届く

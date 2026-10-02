@@ -195,6 +195,22 @@ if (!DEMO) {
 // 表：「縁」のロゴ・カード番号・スタンプの丸（達成に必要な数）。押したお店の名前と日にちが、はんこの下に入る
 // 裏：あそびかた・景品・引き換える場所・対象のお店。カードを押すと、くるっと裏返る
 const shopOf = (id) => shops().find((s) => s.id === id);
+// スタンプを押すと、大きく見られる（お店の名前と、押した日と時刻）
+let zoomEl = null;
+function openStampZoom(id) {
+  const t = state.stamps[id];
+  if (!t) return;
+  if (!zoomEl) {
+    zoomEl = document.createElement("dialog");
+    zoomEl.className = "rc-zoom";
+    zoomEl.setAttribute("aria-label", "スタンプ");
+    zoomEl.addEventListener("click", () => zoomEl.close());
+    document.body.append(zoomEl);
+  }
+  const when = new Date(t).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).replace("/", ".");
+  zoomEl.innerHTML = `<span class="rc-zoom-ring"><i class="rc-hanko">縁</i></span><b class="rc-zoom-name">${esc(shopOf(id)?.name ?? "")}</b><small class="rc-zoom-date">${esc(when)}</small>`;
+  zoomEl.showModal();
+}
 const md = (t) => new Date(t).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric" }).replace("/", ".");
 const TILTS = [-9, 7, -4, 11, -12, 5];
 let justStamped = null; // いま押したお店（そのはんこだけ、ポンッと押される動き）
@@ -230,7 +246,7 @@ function voteState() {
   const t = nowMs();
   return t < Date.parse(ELECTION.opens) ? "before" : t < Date.parse(ELECTION.closes) ? "open" : "closed";
 }
-const voteDay = (iso) => new Date(iso).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
+const voteDay = (iso) => new Date(iso).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).replace("/", "."); // 10.25 15:00
 let voting = false, voteNote = null, pickId = null; // pickId：いま選んでいるお店（まだ送っていない）
 // 模擬店総選挙のページ（vote.html）：スタンプを押した模擬店から1店。押していない模擬店は、下にたたんで並べる
 function renderVote() {
@@ -251,17 +267,15 @@ function renderVote() {
     return;
   }
   const stamped = voters.filter((s) => state.stamps[s.id]);
-  const rest = voters.filter((s) => !state.stamps[s.id]);
   const note = voteNote ? `<p class="rv-note" data-kind="${voteNote.kind}" role="status">${esc(voteNote.text)}</p>` : "";
   el.innerHTML = `
     ${title}
-    <p class="rv-lead">${esc(voteDay(ELECTION.closes))}まで。<b>1人1票</b>（あとから変えられます）。</p>
+    <p class="rv-lead">${esc(voteDay(ELECTION.closes))}まで。投票はいつでも変えられます。</p>
     ${stamped.length ? `<p class="rv-step">行ったお店から、1つ選んでください</p>
       <ul class="rv-list">${stamped.map((s) => `<li><button type="button" class="rv-btn${s.id === mine ? " is-on" : ""}${s.id === pickId ? " is-pick" : ""}" data-pick="${esc(s.id)}" aria-pressed="${s.id === pickId}"${voting ? " disabled" : ""}><span class="rv-name">${esc(s.name)}</span><span class="rv-go">${s.id === mine ? "投票ずみ" : s.id === pickId ? "選択中" : ""}</span></button></li>`).join("")}</ul>
       <button type="button" class="rv-submit" data-submit${!pickId || pickId === mine || voting ? " disabled" : ""}>${mine ? "投票先を変える" : "このお店に投票する"}</button>`
-      : `<p class="rv-empty">まだどこにも行っていません。<br>スタンプカードで QR を読んで、スタンプをためよう。行ったお店に、ここから投票できます。</p>`}
-    ${note}
-    ${rest.length ? `<details class="rv-rest"><summary>まだ押していないお店 ${rest.length}</summary><ul>${rest.map((s) => `<li>${esc(s.name)}</li>`).join("")}</ul></details>` : ""}`;
+      : `<p class="rv-empty">まだどこにも行っていません。</p>`}
+    ${note}`;
 }
 // スタンプカードのページの下：投票のページへの入口
 function renderVoteLink() {
@@ -325,8 +339,7 @@ function slotsHtml() {
     if (!id) return `<li class="rc-slot"><span class="rc-ring" aria-hidden="true"><b>${i + 1}</b></span><span class="visually-hidden">${i + 1}個目：まだ</span></li>`;
     const s = shopOf(id);
     return `<li class="rc-slot is-stamped${id === justStamped ? " is-new" : ""}" style="--tilt:${TILTS[i % TILTS.length]}deg">
-      <span class="rc-ring" aria-hidden="true"><i class="rc-hanko">縁</i>${id === justStamped ? '<i class="rc-pon">ポンッ</i>' : ""}</span>
-      <span class="rc-shop">${esc(s?.name ?? "")}</span><small class="rc-date">${md(state.stamps[id])}</small>
+      <span class="rc-ring" role="button" tabindex="0" data-zoom="${esc(id)}" aria-label="${esc(s?.name ?? "")}のスタンプを大きく見る"><i class="rc-hanko">縁</i>${id === justStamped ? '<i class="rc-pon">ポンッ</i>' : ""}</span>
     </li>`;
   }).join("");
 }
@@ -400,7 +413,13 @@ export function initRallyPage(getNow = () => Date.now()) {
 
   refreshVote();
   // カードを押すと裏返る
+  $("#rc").addEventListener("keydown", (e) => {
+    const z = e.target.closest?.("[data-zoom]");
+    if (z && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openStampZoom(z.dataset.zoom); }
+  });
   $("#rc").addEventListener("click", (e) => {
+    const z = e.target.closest("[data-zoom]");
+    if (z) return openStampZoom(z.dataset.zoom); // 丸を押すと拡大（カードは裏返さない）
     if (e.target.closest(".rc-claim")) return claim();
     const b = e.target.closest(".rc");
     if (b) b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));

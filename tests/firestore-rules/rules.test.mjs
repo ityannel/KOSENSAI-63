@@ -162,6 +162,12 @@ await t("counter doc has only n", assertFails(setDoc(doc(nobody, "visit_counts/2
 await t("visitors cannot read counters", assertFails(getDoc(doc(anon, "visit_counts/2026-10-24-3"))));
 await t("staff reads counters", assertSucceeds(getDoc(doc(staff, "visit_counts/2026-10-24-3"))));
 
+// 本部の公式が、ほかの投稿にいいね・返信
+await t("staff replies officially to a post", assertSucceeds(setDoc(doc(staff, "posts/reply1"), { kind: "post", place: "", shop: null, stars: null, text: "ありがとう！", has_photo: false, photo_status: "none", uid: "staff1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: "other", official: true })));
+await t("staff likes a post (one like per login)", assertSucceeds((async () => { const b = writeBatch(staff); b.set(doc(staff, "post_likes/other_staff1"), { post: "other", uid: "staff1", at: serverTimestamp() }); b.update(doc(staff, "posts/other"), { likes: increment(1) }); return b.commit(); })()));
+await t("staff cannot like the same post twice", assertFails((async () => { const b = writeBatch(staff); b.set(doc(staff, "post_likes/other_staff1"), { post: "other", uid: "staff1", at: serverTimestamp() }); b.update(doc(staff, "posts/other"), { likes: increment(1) }); return b.commit(); })()));
+await t("staff unlikes", assertSucceeds((async () => { const b = writeBatch(staff); b.delete(doc(staff, "post_likes/other_staff1")); b.update(doc(staff, "posts/other"), { likes: increment(-1) }); return b.commit(); })()));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
