@@ -16,11 +16,12 @@ import { FIREBASE_VERSION, firebaseConfig, connectEmulators, firestoreFor } from
 
 export const MAX_TEXT = 140;       // 文字数
 // 投稿した人の名前（ログインの印 uid から作る。本当の名前は集めないので、同じ人は同じ名前になるだけ）。
-// かわいい名前をアルファベットで 200 種類（20 の形容 × 10 のもの。例 fluffy_sheep）。同じ名前の人がいても、べつの人
-const NAME_ADJ = ["fluffy", "sleepy", "tiny", "sunny", "happy", "lucky", "cozy", "dreamy", "bouncy", "sparkly",
-  "mellow", "snuggly", "jolly", "breezy", "bubbly", "cheery", "rosy", "dozy", "playful", "cheeky"];
-const NAME_NOUN = ["sheep", "kitten", "bunny", "penguin", "bear", "cottoncandy", "candyapple", "takoyaki", "lantern", "firework"];
-export const NAMES = NAME_NOUN.flatMap((n) => NAME_ADJ.map((a) => `${a}_${n}`));
+// かわいい名前をアルファベットで 200 種類（どうぶつ・おかし・しぜん・おまつりなど 50 個ずつ）。同じ名前の人がいても、べつの人
+const NAMES_ANIMAL = "sheep kitten bunny penguin bear otter panda koala hedgehog puppy fawn owl duckling chick seal whale dolphin turtle frog hamster squirrel fox raccoon deer lamb pony llama alpaca capybara sloth meerkat quokka flamingo parrot swan robin sparrow ladybug butterfly bee snail jellyfish starfish seahorse puffin walrus lemur gecko goldfish tanuki".split(" ");
+const NAMES_SWEETS = "mochi pudding marshmallow cocoa cookie muffin waffle pancake donut cupcake macaron cheesecake tiramisu parfait sundae gelato sorbet popsicle lollipop caramel toffee truffle brownie scone crepe dango daifuku taiyaki dorayaki anmitsu kakigori cottoncandy candyapple takoyaki yakisoba onigiri ramune matcha hojicha latte honey jelly berry strawberry cherry peach melon mango lemon yuzu".split(" ");
+const NAMES_NATURE = "sakura clover daisy tulip lily violet lotus maple willow bamboo fern moss cloud rain snow frost breeze rainbow sunrise sunset moonlight stardust comet meteor aurora ocean wave shell pearl coral pebble meadow forest brook garden blossom petal dew mist twilight acorn pine cedar orchid jasmine lavender peony camellia wisteria hydrangea".split(" ");
+const NAMES_FEST = "lantern firework tanzaku sparkler balloon ribbon confetti carnival festival parade melody harmony rhythm echo whisper wish dream charm lucky bell chime feather button bubble sprinkle glitter pocket teddy origami kite umbrella compass postcard letter thread ember spark sunny candle lamp starlight glow shimmer twinkle jingle buddy pal bloom kiss chestnut".split(" ");
+export const NAMES = [...NAMES_ANIMAL, ...NAMES_SWEETS, ...NAMES_NATURE, ...NAMES_FEST]; // 50 個ずつ、この順（アイコンの絵を選ぶのに使う）
 export function handleOf(uid) {
   let h = 2166136261;
   for (const c of String(uid ?? "")) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }

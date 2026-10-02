@@ -1572,13 +1572,14 @@ const ICONS = {
   lantern: '<rect x="11" y="3.5" width="10" height="3.5" rx="1.2" fill="#3b3430"/><rect x="11" y="25" width="10" height="3.5" rx="1.2" fill="#3b3430"/><ellipse cx="16" cy="16" rx="8.6" ry="10" fill="#ef4444"/><path d="M16 6v20M10.6 7.5q-3 8.5 0 17M21.4 7.5q3 8.5 0 17" stroke="#b91c1c" stroke-width="1.2" fill="none"/><path d="M16 28.5v2.5" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round"/>',
   firework: '<g stroke-linecap="round" stroke-width="2.2" fill="none"><path d="M16 4v6" stroke="#ffd23f"/><path d="M16 22v6" stroke="#ff6b9d"/><path d="M4 16h6" stroke="#5bd1ff"/><path d="M22 16h6" stroke="#9b7bff"/><path d="M7.5 7.5l4.2 4.2" stroke="#ff8a3d"/><path d="M20.3 20.3l4.2 4.2" stroke="#5bd1ff"/><path d="M24.5 7.5l-4.2 4.2" stroke="#ff6b9d"/><path d="M11.7 20.3l-4.2 4.2" stroke="#ffd23f"/></g><circle cx="16" cy="16" r="2.4" fill="#fff"/>',
 };
-const NOUN_KEYS = Object.keys(ICONS); // posts.js の NAMES は、ものごとに20個ずつ並ぶ（sheep, kitten, bunny, penguin, bear, cottoncandy, candyapple, takoyaki, lantern, firework の順）
+// 名前（posts.js の NAMES は 50 個ずつ：どうぶつ・おかし・しぜん・おまつり）に合わせて、絵を選ぶ。地の色は、名前ごとにちがう
+const GROUP_ICONS = [["sheep", "kitten", "bunny", "penguin", "bear"], ["cottoncandy", "candyapple", "takoyaki"], ["firework", "lantern"], ["lantern", "firework", "cottoncandy"]];
 const avatar = (name, sm = false) => {
   if (name === "enishi") return `<span class="ig-av is-official${sm ? " sm" : ""}" aria-hidden="true"><i><img src="assets/img/logo-s.webp" width="40" height="40" alt="" loading="lazy"></i></span>`; // 公式は「縁」のロゴの丸
   const k = NAMES.indexOf(name);
   if (k < 0) return `<span class="ig-av${sm ? " sm" : ""}" style="--h:${hueOf(name)}" aria-hidden="true"><i>${esc(String(name).replace("enishi_", "").slice(0, 1).toUpperCase())}</i></span>`; // 名前表にない（昔の名前など）は、頭文字
-  const icon = ICONS[NOUN_KEYS[Math.floor(k / 20)]];
-  return `<span class="ig-av${sm ? " sm" : ""}" style="--h:${(k % 20) * 18}" aria-hidden="true"><i><svg viewBox="0 0 32 32">${icon}</svg></i></span>`;
+  const set = GROUP_ICONS[Math.floor(k / 50)];
+  return `<span class="ig-av${sm ? " sm" : ""}" style="--h:${(k * 37) % 360}" aria-hidden="true"><i><svg viewBox="0 0 32 32">${ICONS[set[k % set.length]]}</svg></i></span>`;
 };
 // 公式アカウントの認証マーク（名前のよこ）
 const VERIFIED = '<i class="ig-verified" role="img" aria-label="公式アカウント" title="公式アカウント"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l4 4 8-9"/></svg></i>';
