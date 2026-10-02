@@ -15,7 +15,7 @@
 @property --bg2 { syntax: "<color>"; inherits: true; initial-value: #9BD7D0; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #15171a; color: var(--chalk); font-family: var(--txt); font-weight: 700; cursor: none; -webkit-font-smoothing: antialiased; }
-#stage { --sx: 64px; position: absolute; left: 50%; top: 50%; width: var(--sw, 1920px); height: var(--sh, 1080px); transform-origin: center; overflow: hidden; background: var(--bg2); transition: --bg1 1.2s, --bg2 1.2s; }
+#stage { --sx: 100px; --st: 88px; --sb: 76px; position: absolute; left: 50%; top: 50%; width: var(--sw, 1920px); height: var(--sh, 1080px); transform-origin: center; overflow: hidden; background: var(--bg2); transition: --bg1 1.2s, --bg2 1.2s; }
 i, em { font-style: normal; }
 [hidden] { display: none !important; }
 
@@ -32,7 +32,7 @@ i, em { font-style: normal; }
 #bgclock span { margin-top: 10px; font: 400 150px/1 var(--hud); letter-spacing: .12em; }
 
 /* ---------- 画面（スライド） ---------- */
-#slide { position: absolute; z-index: 3; left: 0; right: 0; top: 48px; bottom: 36px; padding: 0 var(--sx); }
+#slide { position: absolute; z-index: 3; left: 0; right: 0; top: var(--st); bottom: var(--sb); padding: 0 var(--sx); }
 .sl { position: absolute; inset: 0 var(--sx); display: flex; flex-direction: column; }
 .sl.out { animation: slout .5s ease-in both; }
 @keyframes slout { to { opacity: 0; transform: scale(.97); filter: blur(6px); } }
@@ -370,7 +370,7 @@ body.is-hurry #slide { bottom: 160px; }
 .plate.wkp { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .plate .wk { flex: none; padding: 6px 22px; border-radius: 999px; background: #d9334f; color: #fff; font-size: 32px; }
 /* シェア：絵文字が降ってきて積もる。1・2・3は白 */
-.share .rain { position: absolute; left: calc(-1 * var(--sx)); right: calc(-1 * var(--sx)); top: -48px; bottom: -36px; pointer-events: none; overflow: hidden; }
+.share .rain { position: absolute; left: calc(-1 * var(--sx)); right: calc(-1 * var(--sx)); top: calc(-1 * var(--st)); bottom: calc(-1 * var(--sb)); pointer-events: none; overflow: hidden; }
 .share .rain span { position: absolute; left: var(--x); top: var(--y); line-height: 1; opacity: 0; transform: translateY(-1200px) rotate(0deg); animation: rainfall var(--t) cubic-bezier(.4, 0, .9, .6) var(--d) both; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
 @keyframes rainfall { 0% { opacity: 1; transform: translateY(-1200px) rotate(0deg); } 80% { opacity: 1; transform: translateY(0) rotate(var(--r)); } 90% { transform: translateY(-26px) rotate(var(--r)); } 100% { opacity: 1; transform: translateY(0) rotate(var(--r)); } }
 .share .how i { background: #fff; color: var(--ink); }
@@ -426,10 +426,10 @@ body.is-hurry #slide { bottom: 160px; }
 #wsp .tile img { display: block; width: 100%; height: 100%; object-fit: contain; }
 
 /* ---------- 縦のディスプレイ（1080×1920）：横の画面と同じ作りを、縦に並べなおす ---------- */
-body.portrait #stage { --sx: 48px; }
+body.portrait #stage { --sx: 76px; --st: 96px; --sb: 84px; }
 body.portrait #bgclock b { font-size: 300px; }
 body.portrait #bgclock span { font-size: 96px; }
-body.portrait .share .rain { left: 0; right: auto; top: 0; bottom: auto; width: var(--sw); height: var(--sh); margin-left: calc(-1 * var(--sx)); margin-top: -48px; }
+body.portrait .share .rain { left: 0; right: auto; top: 0; bottom: auto; width: var(--sw); height: var(--sh); margin-left: calc(-1 * var(--sx)); margin-top: calc(-1 * var(--st)); }
 body.portrait .share .rain .rainc { width: var(--sw); height: var(--sh); }
 body.portrait .ttl { font-size: 80px; }
 body.portrait .tag { font-size: 28px; }
@@ -502,3 +502,38 @@ body.portrait .shop .chip { font-size: 34px; }
 body.portrait .shop .note { margin-top: 34px; font-size: 44px; }
 body.portrait .shop .body { padding-bottom: 72px; }
 body.portrait .mapbox { height: 560px; }
+
+/* ---------- 余白をたっぷり（全体を見なおし） ---------- */
+.ttl { margin-top: 28px; }
+.posts .row, .crowd .row, .stage .grid { margin-top: 44px; }
+.posts .row { gap: 48px; }
+.crowd .row { gap: 44px; }
+.stage .grid { gap: 52px; }
+.shop .body { margin-top: 36px; gap: 72px; }
+.way .body { margin-top: 36px; gap: 56px; }
+.pc-ph { flex-basis: 360px; }
+.pc-b { padding: 26px 32px 28px; gap: 12px; }
+.cv { padding: 40px 44px 42px; }
+.now { padding: 52px 60px; }
+.nx { padding: 20px 36px; }
+.nx.is-then { padding-block: 14px; }
+.stage .nxt { gap: 32px; }
+.ls { padding: 30px 38px; }
+.lists { margin-top: 38px; gap: 44px; }
+.way ul { gap: 22px; }
+.way li { padding: 14px 44px 14px 26px; }
+.plate { padding: 32px 40px; }
+.shop .side { gap: 32px; }
+.shop .note { margin-top: 36px; }
+.share .wrap { gap: 96px; }
+.share .how { margin-top: 44px; gap: 20px; }
+body.portrait .posts .row { gap: 36px; margin-top: 40px; }
+body.portrait .crowd .row { gap: 32px; }
+body.portrait .shop .body { gap: 48px; margin-top: 44px; padding-bottom: 96px; }
+body.portrait .way .body { gap: 44px; }
+body.portrait .stage .nxt { gap: 40px; }
+body.portrait .share .wrap { gap: 80px; }
+body.portrait #hurry { padding: 0 52px; }
+body.portrait.is-hurry #slide { bottom: 210px; }
+body.is-hurry #slide { bottom: 176px; }
+#hurry { padding: 0 100px; }
