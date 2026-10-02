@@ -36,9 +36,11 @@ tick(); setInterval(tick, 5000);
 // ---------- データ ----------
 let posts = [], crowd = {}, shopDocs = [];
 const visibleTop = () => posts.filter((p) => p.visible && !p.reply_to && (p.text.trim() || p.has_photo));
+let gotPosts = () => {}; // 最初の投稿が届いたら、流しはじめる（届く前に始めると、投稿の画面が空でとばされる）
+const firstPosts = new Promise((r) => { gotPosts = r; });
 subscribePosts((list) => {
   if (!list) return;
-  posts = list;
+  posts = list; gotPosts();
   // 写真は、流れる前に先に読んでおく（出す直前に読むと間に合わず、真っ黒の枠になる）。新しい順・いいねの多い順に
   const top = visibleTop().filter((p) => p.has_photo);
   [...top.sort((a, b) => b.created_at - a.created_at).slice(0, 24), ...top.sort((a, b) => b.likes - a.likes).slice(0, 12)].forEach((p) => loadPhoto(p.id).catch(() => {}));
@@ -526,7 +528,7 @@ addEventListener("keydown", (e) => {
 setInterval(paintHurry, 15000);
 
 (async () => {
-  await sleep(1800); // データ（投稿・混雑・お店）が届くのを、少し待ってから始める
+  await Promise.race([firstPosts, sleep(7000)]); await sleep(1200); // データ（投稿・混雑・お店）が届くのを待ってから始める
   paintHurry();
   show(0, true);
 })();
