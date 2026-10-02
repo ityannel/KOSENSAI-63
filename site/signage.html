@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>会場ディスプレイ｜第63回 函館高専祭「縁」</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;family=Zen+Kaku+Gothic+New:wght@700;900&amp;family=DynaPuff:wght@500;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/signage.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+</head>
+<!-- 校内のディスプレイに映すページ（1920×1080 を、画面の大きさに合わせて拡大・縮小）。
+     使い方：ブラウザで全画面（F11・画面をクリック）にして、置く場所をえらぶ
+       signage.html?at=lecture1（第1講義室の前）／?at=soumu（総務課の横の廊下の角）／?at=info（インフォメーション前）
+     確かめるとき：?demo=1（見本の投稿・混雑）／&t=2026-10-24T13:20（その時刻として動かす）／&only=posts|popular|shop|crowd|stage|way|share|intro（その画面だけ）
+     スペース・矢印キーで、次・前の画面。ずっと流しっぱなしでよい（3時間ごとに自分で読みこみなおす） -->
+<body>
+  <div id="stage">
+    <div id="bg" aria-hidden="true"><img id="bg-img" alt=""><div class="veil"></div><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i></div>
+    <header id="top">
+      <div class="brand"><img src="assets/img/logo-s.webp" alt="縁"><span>第63回 函館高専祭<small>10.24 SAT・10.25 SUN</small></span></div>
+      <div class="clock"><b id="clock-t">--:--</b><span id="clock-d"></span></div>
+    </header>
+    <main id="slide" aria-live="off"></main>
+    <div id="hurry" hidden></div>
+    <footer id="foot">
+      <span id="where" hidden></span>
+      <ol id="dots" aria-hidden="true"></ol>
+      <span id="warn" hidden>仮</span>
+    </footer>
+    <div id="wipe" aria-hidden="true"><i></i><i></i><i></i><i></i><b>縁</b></div>
+  </div>
+  <script type="module" src="assets/signage.js"></script>
+</body>
+</html>

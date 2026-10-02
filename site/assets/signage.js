@@ -1,0 +1,385 @@
+// 校内のディスプレイ（signage.html）：Enistagram の最新・人気の投稿、混雑、ピックアップ模擬店、ステージの「いま・次」、道案内、シェアの QR を、
+// 色の帯の「つなぎ」をはさんで、ずっと流す。データは本サイトと同じ Firestore（読むだけ）。使い方は signage.html の先頭に書いてある
+import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
+import { subscribePosts, loadPhoto } from "./posts.js";
+import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
+import { avatar, VERIFIED } from "./avatar.js";
+
+const params = new URLSearchParams(location.search);
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ---------- 時刻（?t=2026-10-24T13:20 で、その時刻として動かして確かめられる） ----------
+const T0 = params.get("t") ? Date.parse(params.get("t").includes("+") ? params.get("t") : `${params.get("t")}+09:00`) : null;
+const BOOT = Date.now();
+const now = () => (T0 ? T0 + (Date.now() - BOOT) : Date.now());
+const jp = (ms, o) => new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", ...o }).format(new Date(ms));
+const hm = (ms) => jp(ms, { hour: "2-digit", minute: "2-digit", hour12: false });
+const dayOf = (ms) => jp(ms, { month: "numeric", day: "numeric", weekday: "short" });
+const ago = (ms) => { const m = Math.max(0, Math.round((Date.now() - ms) / 60000)); return m < 1 ? "いま" : m < 60 ? `${m}分前` : `${Math.floor(m / 60)}時間前`; };
+
+// ---------- 画面の大きさに合わせる ----------
+const stage = $("#stage");
+const fit = () => { stage.style.transform = `translate(-50%, -50%) scale(${Math.min(innerWidth / 1920, innerHeight / 1080)})`; };
+addEventListener("resize", fit); fit();
+addEventListener("click", () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); });
+navigator.wakeLock?.request?.("screen").catch(() => {});
+setTimeout(() => location.reload(), 3 * 3600 * 1000); // 長く流しっぱなしでも、新しい版・メモリのために、ときどき読みこみなおす
+
+// ---------- 背景の空（時刻で） ----------
+const skyId = () => {
+  if (params.get("sky")) return params.get("sky");
+  const [h, m] = jp(now(), { hour: "2-digit", minute: "2-digit", hour12: false }).split(":").map(Number);
+  const t = h + m / 60;
+  return t < 5 ? "night" : t < 7 ? "dawn" : t < 15.5 ? "day" : t < 17.5 ? "sunset" : t < 19 ? "dusk" : "night";
+};
+let curSky = "";
+const paintSky = () => { const s = skyId(); if (s !== curSky) { curSky = s; $("#bg-img").src = `assets/img/sky-${s}.webp`; } };
+
+// ---------- 時計 ----------
+const tick = () => { $("#clock-t").textContent = hm(now()); $("#clock-d").textContent = dayOf(now()); paintSky(); };
+tick(); setInterval(tick, 5000);
+
+// ---------- データ ----------
+let posts = [], crowd = {}, shopDocs = [];
+subscribePosts((list) => { if (list) posts = list; });
+subscribeCrowd((d) => { crowd = d ?? {}; });
+subscribeShops((l) => { shopDocs = l ?? []; });
+subscribeLive(() => {}); // 「全員のキャッシュ削除」を受けとる（live.js の中で、読みこみなおす）
+
+const norm = (t) => String(t ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase();
+const flat = (t) => String(t ?? "").replace(/\n/g, " ");
+const shopDoc = (s) => { const room = s.room ?? HOMEROOMS[s.cls]; return shopDocs.find((d) => (d.map ? [s.name, s.cls, room].filter(Boolean).some((v) => norm(v) === norm(d.map)) : norm(d.name) === norm(s.name))) ?? null; };
+const WAIT = { normal: ["待ちなし", "#2f9e6e"], "10min": ["10分待ち", "#e8a317"], "20min": ["20分以上待ち", "#d93025"], soldout: ["売り切れ", "#6b6b6b"], closed: ["休業中", "#4b5a8a"] };
+const venueName = (id) => { const v = VENUES.find((x) => x.id === id); return v ? (v.alias ?? v.name) : id; };
+const placeName = (id) => {
+  if (!id) return "";
+  const v = VENUES.find((x) => x.id === id); if (v) return v.alias ?? v.name;
+  const p = MAP.places.find((x) => x.id === id || [].concat(x.room ?? []).includes(id)); if (p) return p.name;
+  return /^pt-/.test(id) ? "校内" : id;
+};
+
+// ---------- 場所（?at=） ----------
+const at = params.get("at");
+const spot = SIGNAGE.spots[at] ?? null;
+if (spot) {
+  $("#where").hidden = false; $("#where").textContent = `いまここ：${spot.name}`;
+  $("#warn").hidden = !spot.tentative;
+}
+
+// ---------- 小道具 ----------
+const chars = (text) => [...text].map((c, k) => (c === "\n" ? "<br>" : `<span class="ch" style="--k:${k}">${esc(c)}</span>`)).join("");
+const heart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8 3 4.5 6.5 4.5c2 0 3.6 1.1 4.5 2.7h2c.9-1.6 2.5-2.7 4.5-2.7 3.5 0 5.6 3.5 4.1 7.1C19.5 16.4 12 21 12 21z"/></svg>';
+const ARROW = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M12 50h66M52 22l28 28-28 28" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ROT = { right: 0, downright: 45, down: 90, downleft: 135, left: 180, upleft: 225, up: 270, upright: 315 };
+const arrow = (dir, cls = "ar") => `<span class="${cls}" style="--rot:${ROT[dir] ?? 0}deg">${ARROW}</span>`;
+const qr = (text, size = 440) => {
+  if (!window.QRCode) return "";
+  const box = document.createElement("div");
+  new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.M });
+  return box.querySelector("canvas")?.toDataURL("image/png") ?? "";
+};
+const siteUrl = (path) => new URL(path, location.href).href;
+async function photos(list) { // 写真は、出す前に読んでおく（空の枠が出ないように。2.5秒まで待つ）
+  const got = {};
+  await Promise.race([Promise.all(list.filter((p) => p.has_photo).map((p) => loadPhoto(p.id).then((s) => { got[p.id] = s; }).catch(() => {}))), sleep(2500)]);
+  return got;
+}
+
+// ---------- 投稿の画面 ----------
+const visibleTop = () => posts.filter((p) => p.visible && !p.reply_to && (p.text.trim() || p.has_photo));
+function postCard(p, i, got, crown) {
+  const hue = [...p.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 17);
+  const photo = p.has_photo && got[p.id];
+  const place = placeName(p.place || p.shop || "");
+  return `<article class="pc" style="--i:${i}">
+    ${crown ? `<span class="crown" style="--i:${i}">${crown}位</span>` : ""}
+    ${photo ? `<div class="pc-ph"><img src="${photo}" alt=""></div>` : `<div class="pc-ph txt" style="--h:${hue}"><q>${esc(p.text)}</q></div>`}
+    <div class="pc-b">
+      <header>${avatar(p.author)}<b>${esc(p.author)}${p.official ? VERIFIED : ""}</b>${place ? `<span class="pc-pl">${esc(place)}</span>` : ""}</header>
+      ${photo && p.text ? `<p>${esc(p.text)}</p>` : ""}
+      <footer><span class="heart">${heart}<em data-n="${p.likes}">0</em></span><time>${ago(p.created_at)}</time></footer>
+    </div></article>`;
+}
+function countUp(root) {
+  root.querySelectorAll("em[data-n]").forEach((e) => {
+    const n = +e.dataset.n, t0 = performance.now() + 900;
+    const step = (t) => { const k = Math.min(1, Math.max(0, (t - t0) / 900)); e.textContent = Math.round(n * (1 - (1 - k) ** 3)); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+}
+let newOffset = 0;
+const slidePosts = {
+  async build() {
+    const all = visibleTop().sort((a, b) => b.created_at - a.created_at).slice(0, 12);
+    if (!all.length) return null;
+    const pick = Array.from({ length: Math.min(3, all.length) }, (_, k) => all[(newOffset + k) % all.length]);
+    newOffset += 3;
+    const got = await photos(pick);
+    return { dur: 15000, cls: "posts", after: countUp, html: `
+      <span class="tag slide-l"><i>●</i><span class="e-word">Enistagram</span>　最新の投稿</span>
+      <h1 class="ttl">${chars("みんなの「いま」")}</h1>
+      <div class="row">${pick.map((p, i) => postCard(p, i, got)).join("")}</div>` };
+  },
+};
+const slidePopular = {
+  async build() {
+    const all = visibleTop();
+    const liked = all.filter((p) => p.likes > 0).sort((a, b) => b.likes - a.likes || b.created_at - a.created_at);
+    const pick = liked.slice(0, 3);
+    if (pick.length < 2) return null; // いいねが集まっていないときは出さない（最新の画面があるので）
+    const got = await photos(pick);
+    return { dur: 14000, cls: "posts popular", after: countUp, html: `
+      <span class="tag slide-l"><i>♥</i><span class="e-word">Enistagram</span>　人気の投稿</span>
+      <h1 class="ttl">${chars("いま、いちばん♥されてる")}</h1>
+      <div class="row">${pick.map((p, i) => postCard(p, i, got, i + 1)).join("")}</div>` };
+  },
+};
+
+// ---------- ピックアップ模擬店 ----------
+let shopOrder = [], shopPtr = 0;
+function nextShop() {
+  if (!shopOrder.length) shopOrder = SHOPS.map((_, i) => i).sort(() => Math.random() - 0.5);
+  for (let n = 0; n < shopOrder.length; n++) {
+    const s = SHOPS[shopOrder[shopPtr++ % shopOrder.length]];
+    const st = shopDoc(s)?.status;
+    if (st !== "soldout" && st !== "closed") return s; // 売り切れ・休業のお店は、ピックアップしない
+  }
+  return null;
+}
+const slideShop = {
+  async build() {
+    const s = nextShop();
+    if (!s) return null;
+    const d = shopDoc(s);
+    const room = s.room ?? HOMEROOMS[s.cls];
+    const where = [s.bldg ? `${s.bldg}棟` : "", s.floor ?? "", room && !/^pt-/.test(room) ? `（${room}）` : ""].join("") || s.where || "";
+    const w = d && WAIT[d.status];
+    const lines = String(s.note ?? "").split(/\n/).filter(Boolean);
+    const name = flat(s.name);
+    return { dur: 13000, cls: "shop", html: `
+      <span class="tag slide-l"><i>🍡</i>ピックアップ模擬店</span>
+      <div class="body">
+        <i class="ghost" aria-hidden="true">${esc(s.group ?? "")}</i>
+        <div>
+          <h2>${chars(name)}</h2>
+          <div class="grp">${s.group ? `<span class="chip a rise" style="--i:6">${esc(s.group)}</span>` : ""}${(s.genre ?? []).map((g, i) => `<span class="chip rise" style="--i:${7 + i}">${esc(g)}</span>`).join("")}</div>
+          <div class="note">${lines.map((l, i) => `<span class="rise" style="--i:${9 + i}">${esc(l)}</span>`).join("")}</div>
+        </div>
+        <div class="side">
+          <div class="plate pop" style="--i:5"><small>場所</small><b>${esc(where || "校内")}</b></div>
+          ${w ? `<div class="plate live pop" style="--i:6;--c:${w[1]}"><small>いまのようす</small><b>${w[0]}</b>${d.message ? `<q>${esc(d.message)}</q>` : ""}</div>` : ""}
+        </div>
+      </div>` };
+  },
+};
+
+// ---------- 混雑 ----------
+const slideCrowd = {
+  async build() {
+    const cards = CROWD.venues.map((id, i) => {
+      const c = crowd[id], lv = CROWD.levels[c?.level] ?? null;
+      const stale = c?.updated_at && Date.now() - c.updated_at > CROWD.staleMinutes * 60000;
+      const v = VENUES.find((x) => x.id === id);
+      const col = lv && !stale ? lv.color : "#9a948c";
+      const level = c?.level ?? -1;
+      return `<div class="cv rise" style="--i:${i};--c:${col === "#F1D08A" ? "#c99a2e" : col === "#6CBAB5" ? "#2a9d96" : col}">
+        <h3>${esc(v?.name ?? id)}</h3><span class="al">${esc(v?.alias ?? "")}</span>
+        <div class="lv">${lv && !stale ? lv.label : "情報なし"}</div>
+        <div class="meter">${[0, 1, 2, 3].map((k) => `<i class="${k <= level && !stale ? "on" : ""}" style="--k:${k}"></i>`).join("")}</div>
+        <small class="t">${c?.updated_at ? `${ago(c.updated_at)}に更新${stale ? "（古い情報）" : ""}` : "まだ知らせがありません"}</small></div>`;
+    }).join("");
+    const fresh = shopDocs.filter((d) => d.updated_at && Date.now() - d.updated_at < 40 * 60000);
+    const easy = fresh.filter((d) => d.status === "normal").slice(0, 5);
+    const busy = fresh.filter((d) => d.status === "20min" || d.status === "soldout").slice(0, 5);
+    const li = (d) => `<li><span>${esc(flat(d.name))}</span><em style="--c:${WAIT[d.status]?.[1]}">${WAIT[d.status]?.[0]}</em></li>`;
+    return { dur: 11000, cls: "crowd", html: `
+      <span class="tag slide-l"><i>👥</i>いまの混雑</span>
+      <h1 class="ttl">${chars("人の多さは、どのくらい？")}</h1>
+      <div class="row">${cards}</div>
+      <div class="lists">
+        <div class="ls slide-l" style="--i:5"><h4>すぐ買えるお店</h4>${easy.length ? `<ul>${easy.map(li).join("")}</ul>` : "<p>お店からの知らせを待っています</p>"}</div>
+        <div class="ls slide-r" style="--i:5"><h4>待ち時間が長い・売り切れ</h4>${busy.length ? `<ul>${busy.map(li).join("")}</ul>` : "<p>いまのところ、ありません</p>"}</div>
+      </div>` };
+  },
+};
+
+// ---------- ステージ・企画 ----------
+const ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
+const EVS = EVENTS.filter((e) => !e.stage).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
+function stageState(t) {
+  const cur = ACTS.find((a) => t >= a.s && t < a.e) ?? null;
+  const nxt = ACTS.find((a) => a.s > t) ?? null;
+  const onEv = EVS.filter((e) => t >= e.s && t < e.e && !e.internal);
+  const nextEv = EVS.filter((e) => e.s > t).sort((a, b) => a.s - b.s)[0] ?? null;
+  return { cur, nxt, onEv, nextEv };
+}
+// 急げ！：10分以内に始まるもの（ステージの出演は、いまの出演のあいだは出さない）
+function hurryItem(t) {
+  const { cur, nxt, nextEv } = stageState(t);
+  const list = [];
+  if (nxt && !cur && nxt.s - t <= 10 * 60000) list.push({ title: nxt.name, venue: STAGE.venue, s: nxt.s });
+  if (nextEv && nextEv.s - t <= 10 * 60000) list.push({ title: nextEv.title, venue: nextEv.venue, s: nextEv.s });
+  return list.sort((a, b) => a.s - b.s)[0] ?? null;
+}
+const slideStage = {
+  async build() {
+    const t = now(), { cur, nxt, onEv, nextEv } = stageState(t);
+    if (!cur && !nxt && !onEv.length && !nextEv) return null;
+    const hot = hurryItem(t);
+    const main = cur
+      ? `<div class="now slide-l"><span class="lab">NOW ON STAGE</span><div class="eq">${[0, 1, 2, 3, 4].map((k) => `<i style="--k:${k}"></i>`).join("")}</div>
+          <h2>${esc(cur.name)}</h2><div class="kind"><span class="chip">${esc(cur.kind)}</span><span class="chip">${esc(cur.mood)}</span><span class="chip">〜${hm(cur.e)}</span></div>
+          <p>${esc(cur.copy).replace(/\n/g, "<br>")}</p>
+          <div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div></div>`
+      : `<div class="now wait slide-l"><span class="lab">STAGE</span>
+          <h2>${nxt ? "つぎの出演まで、もうすこし" : "ステージは、おやすみ中"}</h2>${nxt ? `<p>${hm(nxt.s)} から　${esc(nxt.name)}</p>` : ""}</div>`;
+    const nx = [];
+    if (nxt) nx.push(`<div class="nx ${hot && !cur && hot.s === nxt.s && hot.title === nxt.name ? "hot" : ""} rise" style="--i:2"><small>NEXT</small><b>${esc(nxt.name)}</b><time>${hm(nxt.s)}〜　${esc(nxt.kind)}</time></div>`);
+    if (nextEv) nx.push(`<div class="nx ${hot && hot.s === nextEv.s && hot.title === nextEv.title ? "hot" : ""} rise" style="--i:3"><small>${dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画"}</small><b>${esc(nextEv.title)}</b><time>${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)} `}${hm(nextEv.s)}〜　${esc(venueName(nextEv.venue))}${nextEv.internal ? "（学内の方限定）" : ""}</time></div>`);
+    const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em>${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
+    return { dur: hot ? 15000 : 13000, cls: "stage", html: `
+      <span class="tag slide-l"><i>🎤</i>ステージ・企画</span>
+      <h1 class="ttl">${chars(hot ? "まもなく、はじまる！" : "いま、ステージでは")}</h1>
+      <div class="grid">${main}<div class="nxt">${nx.join("")}${mini}</div></div>` };
+  },
+};
+// 画面の下の「急げ！」の帯
+let hurryKey = "";
+function paintHurry() {
+  const h = hurryItem(now());
+  const el = $("#hurry"), key = h ? `${h.title}|${h.s}` : "";
+  if (key === hurryKey) { if (h) { const m = Math.max(0, Math.ceil((h.s - now()) / 60000)); const mm = el.querySelector("[data-min]"); if (mm) mm.textContent = m ? `あと${m}分` : "まもなく"; } return; }
+  hurryKey = key;
+  document.body.classList.toggle("is-hurry", !!h);
+  if (!h) { el.hidden = true; el.innerHTML = ""; return; }
+  const d = SIGNAGE.dests[h.venue], r = spot?.routes.find((x) => x.to === h.venue);
+  const m = Math.max(0, Math.ceil((h.s - now()) / 60000));
+  el.hidden = false;
+  el.innerHTML = `<span class="run">🏃</span><span class="big">急げ！</span>
+    <span class="txt"><b><span data-min>${m ? `あと${m}分` : "まもなく"}</span>で　${esc(h.title)}</b><small>${esc(d?.sub ?? venueName(h.venue))}${r ? `　→　${esc(r.say)}（歩いて${r.min}分）` : ""}</small></span>
+    ${r ? arrow(r.dir, "arr") : ""}`;
+}
+
+// ---------- 道案内 ----------
+const slideWay = {
+  async build() {
+    if (!spot) return null;
+    const url = siteUrl(`map.html?here=${encodeURIComponent(spot.here)}`);
+    const t = now(), hot = hurryItem(t)?.venue;
+    return { dur: 14000, cls: "way", html: `
+      <span class="tag slide-l"><i>🧭</i>道案内</span>
+      <h1 class="ttl">${chars(`${spot.name}から`)}</h1>
+      <div class="body">
+        <ul>${spot.routes.map((r, i) => { const d = SIGNAGE.dests[r.to]; return `<li class="slide-l ${r.to === hot ? "hot" : ""}" style="--i:${i}"><span class="mk">${d?.mark ?? "📍"}</span>
+          <span class="nm">${esc(d?.name ?? r.to)}<small>${esc(d?.sub ?? "")}</small></span><span class="sy">${esc(r.say)}<small>歩いて${r.min}分</small></span>${arrow(r.dir)}</li>`; }).join("")}</ul>
+        <div class="qrbox pop" style="--i:6"><img src="${qr(url, 320)}" alt=""><b>スマホで道案内</b><small>QR を読みこむと、ここから行き先まで地図で案内</small></div>
+      </div>` };
+  },
+};
+
+// ---------- シェア ----------
+const slideShare = {
+  async build() {
+    const url = siteUrl("map.html?tab=feed");
+    return { dur: 13000, cls: "share", html: `
+      ${["📷", "🍡", "🎤", "✨", "♥"].map((e, i) => `<span class="float" style="--i:${i};left:${[6, 44, 80, 30, 92][i]}%;top:${[12, 70, 6, 82, 50][i]}%">${e}</span>`).join("")}
+      <div class="wrap">
+        <div>
+          <h1>あなたも<br><em>${chars("エニスタ")}</em>で<br>${chars("シェア！")}</h1>
+          <div class="how">
+            <div class="rise" style="--i:6"><i>1</i>QR を読みこむ</div>
+            <div class="rise" style="--i:7"><i>2</i>写真かひとことを書く</div>
+            <div class="rise" style="--i:8"><i>3</i>場所をえらんで、投稿！</div>
+          </div>
+        </div>
+        <div class="scan pop" style="--i:4"><i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i><img src="${qr(url)}" alt=""><span class="cap">スマホのカメラでピッ</span></div>
+      </div>` };
+  },
+};
+
+// ---------- はじまり ----------
+const slideIntro = {
+  async build() {
+    const t = now(), first = Date.parse(FESTIVAL.days[0].open), last = Date.parse(FESTIVAL.days.at(-1).close);
+    let big = "";
+    if (t < first) {
+      const m = Math.floor((first - t) / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
+      big = `<div class="big pop" style="--i:5"><span>開幕まで あと</span>${d ? `<b>${d}</b><span>日</span>` : ""}<b>${h}</b><span>時間</span><b>${m % 60}</b><span>分</span></div>`;
+    } else if (t >= last) {
+      big = `<div class="big pop" style="--i:5"><span>ご来場、ありがとうございました</span></div>`;
+    } else {
+      const day = FESTIVAL.days.find((x) => t < Date.parse(x.close));
+      big = `<div class="big pop" style="--i:5"><span>${esc(day.label)}</span><b>${hm(Date.parse(day.open))}</b><span>〜</span><b>${hm(Date.parse(day.close))}</b></div>`;
+    }
+    return { dur: 9000, cls: "intro", html: `
+      <i class="ring"></i><i class="ring" style="animation-delay:-2.1s"></i>
+      <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>
+      <h1>${chars("ようこそ、縁へ")}</h1>
+      <p class="fade" style="--i:4">第63回 函館高専祭</p>${big}` };
+  },
+};
+
+// ---------- 流れ ----------
+const SLIDES = { intro: slideIntro, stage: slideStage, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
+function plan() {
+  const base = ["intro", "stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
+  if (hurryItem(now())) base.splice(5, 0, "stage"); // 急げ！のときは、ステージの画面を多めに
+  return base;
+}
+let order = [], idx = -1, timer = null, busy = false, dir = 1;
+const dots = $("#dots"), slide = $("#slide"), wipe = $("#wipe");
+
+async function cover() {
+  const bars = [...wipe.querySelectorAll("i")], seal = wipe.querySelector("b");
+  const inn = bars.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(0) skewX(-14deg)" }], { duration: 520, delay: k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }));
+  seal.animate([{ opacity: 0, transform: "scale(2.2) rotate(-14deg)" }, { opacity: 1, transform: "scale(1) rotate(-6deg)", offset: .55 }, { opacity: 1, transform: "scale(1) rotate(-6deg)" }], { duration: 900, delay: 330, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
+  await Promise.all(inn.map((a) => a.finished));
+  return () => {
+    seal.animate([{ opacity: 1 }, { opacity: 0, transform: "scale(.8) rotate(-6deg)" }], { duration: 300, fill: "forwards" });
+    return Promise.all(bars.map((b, k) => b.animate([{ transform: "translateX(0) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 560, delay: 240 + k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }).finished));
+  };
+}
+const ACCENT = { posts: "#6fa8ff", popular: "#ff6b8a", shop: "#F2A96A", crowd: "#7fd4a8", stage: "#ff8a5c", way: "#ffd24a", share: "#6fa8ff", intro: "#6CBAB5" };
+function paintDots(i, dur) {
+  dots.innerHTML = order.map((_, k) => `<li class="${k < i ? "done" : k === i ? "now" : ""}"${k === i ? ` style="--dur:${dur}ms"` : ""}></li>`).join("");
+}
+async function show(i, first = false) {
+  if (busy) return;
+  busy = true; clearTimeout(timer);
+  try {
+    if (!order.length || i >= order.length) { order = params.get("only") ? [params.get("only")] : plan(); i = 0; }
+    if (i < 0) i = order.length - 1;
+    // 出す中身を先に作る（写真を読む・QR を作る）。作れない（データがない）画面は、とばす
+    let built = null, tries = 0;
+    while (!built && tries++ < order.length) {
+      built = await SLIDES[order[i]].build().catch((e) => { console.warn(e); return null; });
+      if (!built) i = (i + dir + order.length) % order.length;
+    }
+    if (!built) { built = await slideShare.build(); order = ["share"]; i = 0; }
+    const key = order[i];
+    let uncover = null;
+    if (!first) uncover = await cover();
+    slide.innerHTML = `<section class="sl ${built.cls}">${built.html}</section>`;
+    document.documentElement.style.setProperty("--a", ACCENT[key] ?? "#6CBAB5");
+    const el = slide.firstElementChild;
+    idx = i; paintDots(i, built.dur);
+    if (uncover) { const p = uncover(); await sleep(120); el.classList.add("go"); built.after?.(el); await p; } else { el.classList.add("go"); built.after?.(el); }
+    if (!params.get("only")) timer = setTimeout(() => { dir = 1; go(idx + 1); }, built.dur);
+    else timer = setTimeout(() => { dir = 1; go(idx); }, built.dur);
+  } finally { busy = false; }
+}
+function go(i) { const el = slide.firstElementChild; if (el) el.classList.add("out"); return show(i); }
+addEventListener("keydown", (e) => {
+  if (e.key === " " || e.key === "ArrowRight") { dir = 1; go(idx + 1); }
+  else if (e.key === "ArrowLeft") { dir = -1; go(idx - 1); }
+  else if (e.key === "f") document.documentElement.requestFullscreen?.().catch(() => {});
+});
+setInterval(paintHurry, 15000);
+
+(async () => {
+  await sleep(1800); // データ（投稿・混雑・お店）が届くのを、少し待ってから始める
+  paintHurry();
+  show(0, true);
+})();

@@ -371,6 +371,48 @@ export const STAMP_PLACES = [
   { id: "zacros", kind: "venue", name: "ZACROS hall前", group: "第1講義室", place: "zacros" },
   { id: "noto-lab", kind: "venue", name: "能登研究室前", group: "研究室" },
 ];
+// 校内のディスプレイ（signage.html）：置く場所ごとの道案内。表示は signage.html?at=lecture1（第1講義室前）／soumu（総務課の横）／info（インフォメーション前）
+// dir は矢印の向き（up 上・down 下・left 左・right 右・upleft 左上・upright 右上・downleft 左下・downright 右下）。ディスプレイを見ている人から見た向きで書く。
+// say は短い言葉（1行〜2行）。min は歩く分。here は「スマホで道案内」の QR が開く、いまここの場所（map.html?here=…）
+// 【仮】向きと言葉は、実際の廊下を見て直す。直したら tentative を消す（ディスプレイの右上の「仮」が消える）
+export const SIGNAGE = {
+  spots: {
+    lecture1: { name: "第1講義室の前", here: "L107", tentative: true, routes: [
+      { to: "gym2", dir: "right", say: "廊下を出て、まっすぐ", min: 4 },
+      { to: "hq", dir: "up", say: "玄関ホールへ", min: 2 },
+      { to: "shops", dir: "upleft", say: "L棟の各階へ", min: 1 },
+      { to: "exhibit", dir: "up", say: "C棟・D棟へ", min: 3 },
+      { to: "cafeteria", dir: "left", say: "二十一食堂へ", min: 4 },
+    ] },
+    soumu: { name: "総務課の横の廊下の角", here: "h-gate", tentative: true, routes: [
+      { to: "gym2", dir: "right", say: "廊下をまっすぐ", min: 3 },
+      { to: "hq", dir: "down", say: "玄関ホールへ", min: 1 },
+      { to: "courtyard", dir: "up", say: "中庭へ", min: 2 },
+      { to: "exhibit", dir: "upright", say: "各学科の展示へ", min: 2 },
+      { to: "library", dir: "left", say: "TSKEライブラリーへ", min: 3 },
+    ] },
+    info: { name: "インフォメーションの前", here: "h-gate", tentative: true, routes: [
+      { to: "gym2", dir: "right", say: "外の通路を、まっすぐ", min: 4 },
+      { to: "zacros", dir: "down", say: "第1講義室へ", min: 3 },
+      { to: "shops", dir: "up", say: "模擬店のある棟へ", min: 2 },
+      { to: "courtyard", dir: "upright", say: "中庭へ", min: 2 },
+      { to: "library", dir: "left", say: "TSKEライブラリーへ", min: 4 },
+    ] },
+  },
+  // 行き先の名前（ステージ・企画の会場の id と同じものは、急げ！の案内にも使う）
+  dests: {
+    gym2: { name: "ステージ", sub: "太平洋セメントアリーナ（第二体育館）", mark: "🎤" },
+    zacros: { name: "企業セミナー・製品展示", sub: "ZACROS hall（第1講義室）", mark: "🏢" },
+    hq: { name: "インフォメーション・本部", sub: "玄関ホール", mark: "ℹ️" },
+    shops: { name: "模擬店", sub: "各クラスの教室", mark: "🍡" },
+    exhibit: { name: "学科展示", sub: "5学科の研究・作品", mark: "🔬" },
+    cafeteria: { name: "二十一食堂", sub: "学食", mark: "🍚" },
+    courtyard: { name: "中庭", sub: "B棟とC棟のあいだ", mark: "🌿" },
+    library: { name: "TSKEライブラリー", sub: "図書館", mark: "📚" },
+    ground: { name: "総合グラウンド", sub: "花火（学内の方限定）", mark: "🎆" },
+  },
+};
+
 // 模擬店の id（本部コンソールと同じ：クラス・部屋番号・場所の名前から作る）。模擬店総選挙の投票先に使う
 export const shopIdOf = (sh) => String(sh.cls ?? sh.room ?? sh.place ?? sh.name).toLowerCase().replace(/[^a-z0-9_-]/g, "");
 
