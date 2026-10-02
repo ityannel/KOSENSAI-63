@@ -317,3 +317,8 @@ body.is-hurry #slide { bottom: 160px; }
 .nx.hot { background: var(--live); color: #fff; }
 .nx.hot .t, .nx.hot small { color: #fff; }
 .mini { color: var(--paper); text-shadow: -3px 3px 0 rgba(48, 44, 41, .5); }
+/* 企業セミナー：会社のロゴの板 */
+.seminar .now h2 { font-size: 84px; }
+.seminar .now .lg { margin-top: 20px; align-self: flex-start; display: grid; place-items: center; height: 130px; padding: 12px 28px; border-radius: 22px; background: #fff; }
+.seminar .now .lg img { display: block; height: 100%; width: auto; max-width: 520px; object-fit: contain; }
+.seminar .now p { margin-top: 12px; font-size: 38px; }

@@ -198,6 +198,33 @@ export const STAGE = {
   ],
 };
 
+// 企業セミナー（ZACROS hall・第1講義室）：会場ディスプレイ（signage.html）の「企業セミナー」の画面に出る
+// 【仮】いまは見た目をたしかめるための、架空の会社と時間（30分ごと）。詳しい日程が決まったら、会社名・題・時間を全部入れかえる（logo はなくてもよい）
+// sem("日", "始まり", "終わり", "会社名", "セミナーの題", "ロゴの画像")
+const sem = (day, start, end, company, title, logo = null) => ({ company, title, logo, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` });
+export const SEMINARS = {
+  venue: "zacros",
+  tentative: true,
+  items: [
+    sem("24", "12:00", "12:30", "NORTHWAVE", "ネットワークの仕事を、のぞいてみよう", "assets/img/sponsors/dummy-northwave.svg"),
+    sem("24", "12:30", "13:00", "はこだて電機", "電気の力で、街を支える", "assets/img/sponsors/dummy-hakodate-denki.svg"),
+    sem("24", "13:00", "13:30", "北海みらい建設", "橋・道・まちが、できるまで", "assets/img/sponsors/dummy-hokkai-kensetsu.svg"),
+    sem("24", "13:30", "14:00", "aurora systems", "ソフトウェア開発の最前線", "assets/img/sponsors/dummy-aurora.svg"),
+    sem("24", "14:00", "14:30", "函館ベイ食品", "おいしさをつくる、ものづくり", "assets/img/sponsors/dummy-bay-foods.svg"),
+    sem("24", "14:30", "15:00", "いさりび通信", "つながる技術と、先輩の話", "assets/img/sponsors/dummy-isaribi.svg"),
+    sem("24", "15:00", "15:30", "TSUGARU MOTORS", "クルマの未来を、設計する", "assets/img/sponsors/dummy-tsugaru-motors.svg"),
+    sem("24", "15:30", "16:00", "五稜精機", "ミクロの精度で、世界へ", "assets/img/sponsors/dummy-goryo-seiki.svg"),
+    sem("25", "12:00", "12:30", "五稜精機", "ミクロの精度で、世界へ", "assets/img/sponsors/dummy-goryo-seiki.svg"),
+    sem("25", "12:30", "13:00", "TSUGARU MOTORS", "クルマの未来を、設計する", "assets/img/sponsors/dummy-tsugaru-motors.svg"),
+    sem("25", "13:00", "13:30", "いさりび通信", "つながる技術と、先輩の話", "assets/img/sponsors/dummy-isaribi.svg"),
+    sem("25", "13:30", "14:00", "函館ベイ食品", "おいしさをつくる、ものづくり", "assets/img/sponsors/dummy-bay-foods.svg"),
+    sem("25", "14:00", "14:30", "aurora systems", "ソフトウェア開発の最前線", "assets/img/sponsors/dummy-aurora.svg"),
+    sem("25", "14:30", "15:00", "北海みらい建設", "橋・道・まちが、できるまで", "assets/img/sponsors/dummy-hokkai-kensetsu.svg"),
+    sem("25", "15:00", "15:30", "はこだて電機", "電気の力で、街を支える", "assets/img/sponsors/dummy-hakodate-denki.svg"),
+    sem("25", "15:30", "16:00", "NORTHWAVE", "ネットワークの仕事を、のぞいてみよう", "assets/img/sponsors/dummy-northwave.svg"),
+  ],
+};
+
 // 模擬店（「R8高専祭要項 ver1」p.21〜24 の模擬店一覧）
 // cls はお店を出すクラスの教室（1-1 など）。その教室の部屋番号は HOMEROOMS。HOMEROOMS に無いクラスは、
 // 地図では「L棟1階の模擬店」のように、棟と階までを案内する。room は部屋番号がわかっているもの、place は MAP.places の場所

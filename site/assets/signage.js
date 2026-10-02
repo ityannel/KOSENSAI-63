@@ -1,6 +1,6 @@
 // 校内のディスプレイ（signage.html）：Enistagram の最新・人気の投稿、混雑、ピックアップ模擬店、ステージの「いま・次」、道案内、シェアの QR を、
 // 色の帯の「つなぎ」をはさんで、ずっと流す。データは本サイトと同じ Firestore（読むだけ）。使い方は signage.html の先頭に書いてある
-import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
+import { FESTIVAL, STAGE, EVENTS, SEMINARS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
 import { avatar, VERIFIED } from "./avatar.js";
@@ -92,7 +92,7 @@ function numify(root) {
     n.replaceWith(f);
   }
 }
-const chars = (text) => [...text].map((c, k) => (c === "\n" ? "<br>" : `<span class="ch" style="--k:${k}">${esc(c)}</span>`)).join("");
+const chars = (text) => [...text].map((c, k) => (c === "\n" ? "<br>" : `<span class="ch" style="--k:${k}">${esc(c === " " ? " " : c)}</span>`)).join("");
 const heart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8 3 4.5 6.5 4.5c2 0 3.6 1.1 4.5 2.7h2c.9-1.6 2.5-2.7 4.5-2.7 3.5 0 5.6 3.5 4.1 7.1C19.5 16.4 12 21 12 21z"/></svg>';
 const ARROW = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M12 50h66M52 22l28 28-28 28" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ROT = { right: 0, downright: 45, down: 90, downleft: 135, left: 180, upleft: 225, up: 270, upright: 315 };
@@ -289,6 +289,32 @@ function paintHurry() {
   numify(el);
 }
 
+// ---------- 企業セミナー（ZACROS hall） ----------
+const SEM = SEMINARS.items.map((x) => ({ ...x, s: Date.parse(x.start), e: Date.parse(x.end) }));
+const slideSeminar = {
+  async build() {
+    const t = now(), cur = SEM.find((x) => t >= x.s && t < x.e) ?? null;
+    const later = SEM.filter((x) => x.s > t);
+    const main = cur ?? later.shift();
+    if (!main) return null;
+    const rows = later.slice(0, 3);
+    const hr = (small, x, n) => `<div class="nx rise" style="--i:${n}"><span class="t">${hm(x.s)}</span><span class="w"><small>${small}</small><b class="nm">${esc(x.company)}</b><i>${esc(x.title)}</i></span></div>`;
+    const sameDay = dayOf(main.s) === dayOf(t);
+    return { dur: 13000, cls: "stage seminar", html: `
+      <span class="tag slide-l"><i>${ic("building")}</i>企業セミナー・製品展示</span>
+      <h1 class="ttl">${chars(cur ? "いま、ZACROS hall では" : "このあと、ZACROS hall で")}</h1>
+      <div class="grid">
+        <div class="now slide-l${cur ? "" : " wait"}"><span class="lab">${cur ? "NOW" : "NEXT"}</span>
+          ${main.logo ? `<div class="lg"><img src="${esc(main.logo)}" alt=""></div>` : ""}
+          <h2 class="nm">${esc(main.company)}</h2>
+          <p>${esc(main.title)}</p>
+          <div class="kind"><span class="chip">${sameDay ? "" : `${dateEn(main.s)}　`}${hm(main.s)}〜${hm(main.e)}</span><span class="chip">${esc(venueName(SEMINARS.venue))}</span></div>
+          ${cur ? `<div class="bar"><i style="width:${Math.round(((t - main.s) / (main.e - main.s)) * 100)}%"></i></div>` : ""}</div>
+        <div class="nxt">${rows.map((x, k) => hr(dayOf(x.s) === dayOf(t) ? (k === 0 ? "NEXT" : "THEN") : dateEn(x.s), x, 2 + k)).join("")}</div>
+      </div>` };
+  },
+};
+
 // ---------- 道案内 ----------
 const slideWay = {
   async build() {
@@ -349,9 +375,9 @@ const slideIntro = {
 };
 
 // ---------- 流れ ----------
-const SLIDES = { intro: slideIntro, stage: slideStage, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
+const SLIDES = { intro: slideIntro, stage: slideStage, seminar: slideSeminar, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
 function plan() {
-  const base = ["intro", "stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
+  const base = ["intro", "stage", "seminar", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
   if (hurryItem(now())) base.splice(5, 0, "stage"); // 急げ！のときは、ステージの画面を多めに
   return base;
 }
@@ -428,7 +454,7 @@ if (params.has("test")) {
   const TIMES = [["いま（本当の時刻）", ""], ["開幕前（11:50）", "2026-10-24T11:50"], ["開催中・出演中（13:20）", "2026-10-24T13:20"], ["出演の合間（急げ！）", "2026-10-24T12:08"],
     ["1日目の夜", "2026-10-24T18:00"], ["2日目の朝", "2026-10-25T08:30"], ["結果発表の直前（15:55）", "2026-10-25T15:55"], ["終了後", "2026-10-26T10:00"]];
   const PLACES = [["なし（道案内は出ない）", ""], ["第1講義室の前", "lecture1"], ["総務課の横の廊下の角", "soumu"], ["インフォメーション前", "info"]];
-  const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
+  const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["企業セミナー", "seminar"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
   const reloadWith = (ch) => { const p = new URLSearchParams(location.search); for (const [k, v] of Object.entries(ch)) { if (v === "" || v == null || v === false) p.delete(k); else p.set(k, v === true ? "1" : v); } p.set("test", "1"); location.search = p; };
   const cur = (k) => params.get(k) ?? "";
   const opt = (list, v) => list.map(([l, x]) => `<option value="${esc(x)}"${x === v ? " selected" : ""}>${esc(l)}</option>`).join("");
