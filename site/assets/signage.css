@@ -482,3 +482,15 @@ body.portrait .shop .body { flex: 1; align-content: space-between; }
 body.portrait .mapbox { height: 660px; }
 body.portrait .stage .nxt { justify-content: space-between; }
 body.portrait .stage .nx { flex: 1; }
+/* 「このあと」の行（NEXT・THEN）：少し小さく、左寄せ。出演名は大きく、行のあいだにゆとり */
+.stage .nxt { gap: 28px; }
+.nx { padding: 14px 28px; gap: 26px; justify-content: flex-start; text-align: left; }
+.nx .t { font-size: 44px; }
+.nx b { font-size: 54px; line-height: 1.15; }
+.nx small { font-size: 20px; }
+.nx i { font-size: 22px; }
+.nx.is-then { padding-block: 10px; }
+.nx.is-then .t { font-size: 38px; }
+.nx.is-then b { font-size: 48px; }
+body.portrait .stage .nxt { justify-content: flex-start; gap: 34px; }
+body.portrait .stage .nx { flex: none; }
