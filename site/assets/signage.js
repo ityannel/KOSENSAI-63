@@ -432,9 +432,28 @@ const slideIntro = {
   },
 };
 
+// ---------- 一般公開の終了（その日の公開時間が終わってから、次の日の開場まで／最後の日が終わってから） ----------
+function closedState(t) {
+  const days = FESTIVAL.days.map((d) => ({ open: Date.parse(d.open), close: Date.parse(d.close) }));
+  let i = -1;
+  days.forEach((d, k) => { if (t >= d.close) i = k; });
+  if (i < 0 || (i < days.length - 1 && t >= days[i + 1].open)) return null;
+  return { final: i === days.length - 1 };
+}
+const slideClosing = {
+  async build() {
+    const c = closedState(now());
+    return { dur: 120000, cls: "closing", html: `
+      <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>
+      <h1 class="rise" style="--i:2">${c?.final === false ? "本日の" : ""}一般公開は終了しました</h1>
+      <p class="rise" style="--i:4">ご来場ありがとうございました</p>` };
+  },
+};
+
 // ---------- 流れ ----------
-const SLIDES = { intro: slideIntro, stage: slideStage, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
+const SLIDES = { intro: slideIntro, stage: slideStage, closing: slideClosing, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
 function plan() {
+  if (closedState(now())) return ["closing"]; // 一般公開が終わったあとは、この1枚だけ
   const base = ["intro", "stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
   if (hurryItem(now())) base.splice(5, 0, "stage"); // 急げ！のときは、ステージの画面を多めに
   return base;

@@ -551,3 +551,11 @@ body.portrait .crown { left: auto; right: 22px; top: 100px; }
 /* 「このあと」の時刻：変更ありも、なしも、同じ大きさ */
 .nx .t .num, .nx .t .t-chg .num, .nx .t .t-chg .t-new { font-size: 1em; line-height: 1; }
 .nx .t .t-chg { font-size: inherit; }
+/* 一般公開が終わったあと */
+.closing { align-items: center; justify-content: center; text-align: center; }
+.closing .en { display: block; width: 300px; height: 300px; }
+.closing .en img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0) invert(.95) sepia(.25) drop-shadow(-8px 6px 0 rgba(48, 44, 41, .55)); }
+.closing h1 { margin-top: 48px; font: 400 112px/1.2 var(--hud); color: #fff; text-shadow: -6px 5px 0 rgba(48, 44, 41, .55); text-wrap: balance; }
+.closing p { margin-top: 30px; font: 400 64px/1.3 var(--hud); color: #fff; text-shadow: -4px 3px 0 rgba(48, 44, 41, .5); }
+body.portrait .closing h1 { font-size: 88px; }
+body.portrait .closing p { font-size: 52px; }
