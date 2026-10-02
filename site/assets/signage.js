@@ -337,7 +337,7 @@ const slideIntro = {
       big = `<div class="big pop" style="--i:5"><span>ご来場、ありがとうございました</span></div>`;
     } else {
       const day = FESTIVAL.days.find((x) => t < Date.parse(x.close));
-      big = `<div class="big pop" style="--i:5"><span>${esc(day.label)}</span><b>${hm(Date.parse(day.open))}</b><span>〜</span><b>${hm(Date.parse(day.close))}</b></div>`;
+      big = `<div class="big pop" style="--i:5"><span class="d">${dateEn(Date.parse(day.open))}</span><b>${hm(Date.parse(day.open))}</b><span>〜</span><b>${hm(Date.parse(day.close))}</b></div>`;
     }
     return { dur: 9000, cls: "intro", html: `
       <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>

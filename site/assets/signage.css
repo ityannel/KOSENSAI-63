@@ -301,3 +301,8 @@ body.is-hurry #slide { bottom: 160px; }
 .tp-s button[aria-pressed="true"] { background: #FEEBC4; color: #634A2E; }
 .tp-n { display: flex; gap: 6px; }
 .tp-b { max-height: calc(100vh - 60px); overflow: auto; }
+/* ようこそ画面の日時：板をやめて、見出しと同じ字・白・はっきりした影 */
+.intro .big { padding: 0; background: none; border-radius: 0; gap: 28px; align-items: baseline; color: var(--paper); text-shadow: -6px 5px 0 rgba(48, 44, 41, .55); }
+.intro .big b { font: 400 120px/1 var(--hud); color: inherit; text-shadow: inherit; letter-spacing: .02em; }
+.intro .big span { font: 400 58px/1 var(--hud); letter-spacing: .08em; }
+.intro .big .d { font-size: 76px; }
