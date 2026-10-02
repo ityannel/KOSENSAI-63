@@ -62,20 +62,21 @@ export async function routeMap(fromKey, toRoom) {
       <g class="st" data-f="${from.floor ?? "1F"}"><circle class="ring" cx="${fx}" cy="${fy}" r="${9 * s}" style="--r:${26 * s}px"/><circle class="sp" cx="${fx}" cy="${fy}" r="${7 * s}" stroke-width="${3 * s}"/>
         <text x="${fx + 12 * s}" y="${fy - 11 * s}" font-size="${23 * s}" stroke-width="${6 * s}">いまここ</text></g>
       <circle class="dot" r="${6.5 * s}" stroke-width="${3 * s}" cx="${fx}" cy="${fy}"/>
-    </svg><span class="fl">${from.floor ?? "1F"}</span><span class="mn">歩いて約${route.minutes}分</span>`;
+    </svg><span class="fl">${from.floor ?? "1F"}</span>
+    <div class="stairs" aria-hidden="true"><svg viewBox="0 0 130 100"><path class="stp" d="M8 90H36V68H62V46H88V24H122"/><g class="sw"><circle class="sd" cx="22" cy="78" r="8"/></g></svg><b class="sl"></b></div><span class="mn">歩いて約${route.minutes}分</span>`;
 
   // 線をたどる：階が変わるところは少し止めて、階の表示も切りかえる。終わったら少し見せて、またはじめから
   function play(root) {
     const svg = root.querySelector(".mapbox svg");
     if (!svg) return;
-    const fl = root.querySelector(".mapbox .fl"), dot = svg.querySelector(".dot");
+    const fl = root.querySelector(".mapbox .fl"), dot = svg.querySelector(".dot"), stairs = root.querySelector(".mapbox .stairs"), sl = stairs?.querySelector(".sl");
     const items = [...svg.querySelectorAll(".lg")].map((g, i) => {
       const d = g.querySelector(".rl"), L = d.getTotalLength();
       g.querySelectorAll("path").forEach((p) => { p.style.strokeDasharray = L; p.style.strokeDashoffset = L; });
       return { g, d, L, f: g.dataset.f, len: len(route.legs[i].pts) };
     });
     const total = items.reduce((a, x) => a + x.len, 0) || 1;
-    const MOVE = 6200, PAUSE = 700, HOLD = 2600;
+    const MOVE = 6200, PAUSE = 1500, HOLD = 2600; // PAUSE：階が変わるところで、階段をのぼる（おりる）動きを見せる時間
     const span = MOVE + PAUSE * (items.length - 1);
     const showFloor = (f) => { svg.querySelectorAll(".mf").forEach((g) => g.classList.toggle("on", g.dataset.f === f)); svg.querySelectorAll(".st").forEach((g) => (g.style.opacity = g.dataset.f === f ? 1 : 0)); if (fl) fl.textContent = f; };
     let t0 = performance.now() + 1000;
@@ -84,10 +85,11 @@ export async function routeMap(fromKey, toRoom) {
       let t = now - t0;
       if (t > span + HOLD) { t0 = now + 1200; t = -1; }
       if (t < 0) { items.forEach((x) => { x.g.style.display = "none"; x.d.parentNode.querySelectorAll("path").forEach((p) => (p.style.strokeDashoffset = x.L)); }); showFloor(items[0]?.f ?? "1F"); dot.style.opacity = 0; requestAnimationFrame(frame); return; }
-      let acc = 0, cur = null;
+      let acc = 0, cur = null, climb = null;
       for (let i = 0; i < items.length; i++) {
         const dur = (items[i].len / total) * MOVE, start = acc + PAUSE * i;
         if (t >= start) cur = { i, k: Math.min(1, dur ? (t - start) / dur : 1) };
+        if (i && t >= start - PAUSE && t < start) climb = { from: items[i - 1].f, to: items[i].f };
         acc += dur;
       }
       cur ??= { i: 0, k: 0 };
@@ -98,6 +100,12 @@ export async function routeMap(fromKey, toRoom) {
       });
       const it = items[cur.i], e = 1 - (1 - cur.k) ** 2, pt = it.d.getPointAtLength(it.L * e);
       showFloor(it.f);
+      // 階が変わるところ：階段をのぼる（おりる）動き。ほかのときはしまう
+      if (stairs) {
+        const on = !!climb;
+        if (on && !stairs.classList.contains("on")) { sl.textContent = `${climb.from} → ${climb.to}`; stairs.classList.toggle("down", parseInt(climb.to) < parseInt(climb.from)); }
+        stairs.classList.toggle("on", on);
+      }
       dot.setAttribute("cx", pt.x); dot.setAttribute("cy", pt.y); dot.style.opacity = 1;
       requestAnimationFrame(frame);
     };

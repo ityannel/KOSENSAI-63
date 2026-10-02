@@ -117,7 +117,7 @@ function postCard(p, i, got, crown) {
   const photo = p.has_photo && got[p.id];
   const place = placeName(p.place || p.shop || "");
   return `<article class="pc" style="--i:${i}">
-    ${crown ? `<span class="crown" style="--i:${i}">${crown}位</span>` : ""}
+    ${crown ? `<span class="crown" style="--i:${i}"><b>${crown}</b><small>位</small></span>` : ""}
     ${photo ? `<div class="pc-ph"><img src="${photo}" alt=""></div>` : `<div class="pc-ph txt" style="--h:${hue}"><q>${esc(p.text)}</q></div>`}
     <div class="pc-b">
       <header>${avatar(p.author)}<b>${esc(p.author)}${p.official ? VERIFIED : ""}</b>${place ? `<span class="pc-pl">${esc(place)}</span>` : ""}</header>
@@ -190,7 +190,7 @@ const slideShop = {
       <div class="body">
         <i class="ghost" aria-hidden="true">${esc(s.group ?? "")}</i>
         <div>
-          <h2>${chars(name)}</h2>
+          ${[...name].length > 9 ? `<h2 class="long rise" style="--i:1">${esc(name)}</h2>` : `<h2>${chars(name)}</h2>`}
           <div class="grp">${s.group ? `<span class="chip a rise" style="--i:6">${esc(s.group)}</span>` : ""}${(s.genre ?? []).map((g, i) => `<span class="chip rise" style="--i:${7 + i}">${esc(g)}</span>`).join("")}</div>
           <div class="note">${lines.map((l, i) => `<span class="rise" style="--i:${9 + i}">${esc(l)}</span>`).join("")}</div>
         </div>
