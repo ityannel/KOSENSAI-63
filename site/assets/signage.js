@@ -257,7 +257,7 @@ const slideStage = {
     if (!cur && !nxt && !onEv.length && !nextEv) return null;
     const hot = hurryItem(t);
     const main = cur
-      ? `<div class="now slide-l"><span class="lab">NOW ON STAGE</span><div class="eq">${[0, 1, 2, 3, 4].map((k) => `<i style="--k:${k}"></i>`).join("")}</div>
+      ? `<div class="now slide-l"><span class="lab">NOW ON STAGE</span><div class="eq">${Array.from({ length: 30 }, (_, k) => `<i style="--k:${k};--h:${30 + Math.round(Math.random() * 55)}%"></i>`).join("")}</div>
           <h2>${esc(cur.name)}</h2><div class="kind"><span class="chip">${esc(cur.kind)}</span><span class="chip">${esc(cur.mood)}</span></div>
           <p>${esc(cur.copy).replace(/\n/g, "<br>")}</p>
           <div class="barw"><time>${hm(cur.s)}</time><div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div><time>${hm(cur.e)}</time></div></div>`

@@ -409,3 +409,9 @@ body.is-hurry #slide { bottom: 160px; }
 .intro .big .cd { font: 400 150px/1 var(--hud); color: #FFFFFF; text-shadow: none; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
 .intro .big:has(.cd) { flex-direction: column; align-items: center; gap: 6px; }
 .intro .big:has(.cd) > span { font: 400 54px/1 var(--hud); color: #FFFFFF; }
+/* ビートで波打つ棒：右上の小さなものをやめて、カード全体に薄く */
+.now .eq { position: absolute; inset: 0; right: auto; top: auto; width: auto; height: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 0; padding: 0 22px; opacity: .17; pointer-events: none; }
+.now .eq i { flex: 1; margin: 0 4px; width: auto; border-radius: 14px 14px 0 0; background: var(--brick); height: 14%; animation: eqf 1.15s ease-in-out infinite; animation-delay: calc(var(--k) * -.17s); }
+@keyframes eqf { 0%, 100% { height: 10%; } 50% { height: var(--h, 60%); } }
+.now > :not(.eq) { position: relative; z-index: 1; }
+.now .eq { left: 0; right: 0; top: 0; bottom: 0; opacity: .22; }
