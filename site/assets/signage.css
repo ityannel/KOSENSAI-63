@@ -537,3 +537,14 @@ body.portrait #hurry { padding: 0 52px; }
 body.portrait.is-hurry #slide { bottom: 210px; }
 body.is-hurry #slide { bottom: 176px; }
 #hurry { padding: 0 100px; }
+/* 縦の投稿：実際のタイムラインと同じ形（上に名前、まん中に写真か文字のカード、下に♥と文）。3枚が画面におさまるように */
+body.portrait .posts .row { grid-template-columns: 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 30px; flex: 1; min-height: 0; margin-bottom: 8px; }
+body.portrait .pc { flex-direction: column; min-height: 0; }
+body.portrait .pc-b { display: contents; }
+body.portrait .pc-b header { order: 1; padding: 16px 28px 12px; }
+body.portrait .pc-ph { order: 2; flex: 1 1 0; min-height: 0; }
+body.portrait .pc-b p { order: 3; padding: 12px 28px 0; -webkit-line-clamp: 2; }
+body.portrait .pc-b footer { order: 4; margin-top: 0; padding: 10px 28px 16px; }
+body.portrait .pc-ph.txt { padding: 20px 40px; }
+body.portrait .pc-ph.txt q { font-size: 42px; -webkit-line-clamp: 4; }
+body.portrait .crown { left: auto; right: 22px; top: 100px; }
