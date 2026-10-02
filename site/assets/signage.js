@@ -27,18 +27,8 @@ addEventListener("click", () => { if (!document.fullscreenElement) document.docu
 navigator.wakeLock?.request?.("screen").catch(() => {});
 setTimeout(() => location.reload(), 3 * 3600 * 1000); // 長く流しっぱなしでも、新しい版・メモリのために、ときどき読みこみなおす
 
-// ---------- 背景の空（時刻で） ----------
-const skyId = () => {
-  if (params.get("sky")) return params.get("sky");
-  const [h, m] = jp(now(), { hour: "2-digit", minute: "2-digit", hour12: false }).split(":").map(Number);
-  const t = h + m / 60;
-  return t < 5 ? "night" : t < 7 ? "dawn" : t < 15.5 ? "day" : t < 17.5 ? "sunset" : t < 19 ? "dusk" : "night";
-};
-let curSky = "";
-const paintSky = () => { const s = skyId(); if (s !== curSky) { curSky = s; $("#bg-img").src = `assets/img/sky-${s}.webp`; } };
-
 // ---------- 時計 ----------
-const tick = () => { $("#clock-t").textContent = hm(now()); $("#clock-d").textContent = dayOf(now()); paintSky(); };
+const tick = () => { $("#clock-t").textContent = hm(now()); $("#clock-d").textContent = dayOf(now()); };
 tick(); setInterval(tick, 5000);
 
 // ---------- データ ----------
@@ -63,11 +53,6 @@ const placeName = (id) => {
 // ---------- 場所（?at=） ----------
 const at = params.get("at");
 const spot = SIGNAGE.spots[at] ?? null;
-if (spot) {
-  $("#where").hidden = false; $("#where").textContent = `いまここ：${spot.name}`;
-  $("#warn").hidden = !spot.tentative;
-}
-
 // ---------- 小道具 ----------
 const chars = (text) => [...text].map((c, k) => (c === "\n" ? "<br>" : `<span class="ch" style="--k:${k}">${esc(c)}</span>`)).join("");
 const heart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8 3 4.5 6.5 4.5c2 0 3.6 1.1 4.5 2.7h2c.9-1.6 2.5-2.7 4.5-2.7 3.5 0 5.6 3.5 4.1 7.1C19.5 16.4 12 21 12 21z"/></svg>';
@@ -314,7 +299,6 @@ const slideIntro = {
       big = `<div class="big pop" style="--i:5"><span>${esc(day.label)}</span><b>${hm(Date.parse(day.open))}</b><span>〜</span><b>${hm(Date.parse(day.close))}</b></div>`;
     }
     return { dur: 9000, cls: "intro", html: `
-      <i class="ring"></i><i class="ring" style="animation-delay:-2.1s"></i>
       <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>
       <h1>${chars("ようこそ、縁へ")}</h1>
       <p class="fade" style="--i:4">第63回 函館高専祭</p>${big}` };
@@ -329,7 +313,7 @@ function plan() {
   return base;
 }
 let order = [], idx = -1, timer = null, busy = false, dir = 1;
-const dots = $("#dots"), slide = $("#slide"), wipe = $("#wipe");
+const slide = $("#slide"), wipe = $("#wipe");
 
 async function cover() {
   const bars = [...wipe.querySelectorAll("i")], seal = wipe.querySelector("b");
@@ -341,10 +325,9 @@ async function cover() {
     return Promise.all(bars.map((b, k) => b.animate([{ transform: "translateX(0) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 560, delay: 240 + k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }).finished));
   };
 }
-const ACCENT = { posts: "#6fa8ff", popular: "#ff6b8a", shop: "#F2A96A", crowd: "#7fd4a8", stage: "#ff8a5c", way: "#ffd24a", share: "#6fa8ff", intro: "#6CBAB5" };
-function paintDots(i, dur) {
-  dots.innerHTML = order.map((_, k) => `<li class="${k < i ? "done" : k === i ? "now" : ""}"${k === i ? ` style="--dur:${dur}ms"` : ""}></li>`).join("");
-}
+// 画面ごとの背景（ポスターの空の色。上→下）。差し色はその上の色
+const BG = { intro: ["#3f9f99", "#9BD7D0"], posts: ["#2f8fe0", "#9BD7D0"], popular: ["#d9669b", "#F2A96A"], shop: ["#ee7b30", "#efc696"], crowd: ["#3f9f99", "#F1D08A"],
+  stage: ["#ee7b30", "#B5655A"], way: ["#B5655A", "#F2A96A"], share: ["#a061c9", "#2f8fe0"] };
 async function show(i, first = false) {
   if (busy) return;
   busy = true; clearTimeout(timer);
@@ -362,9 +345,10 @@ async function show(i, first = false) {
     let uncover = null;
     if (!first) uncover = await cover();
     slide.innerHTML = `<section class="sl ${built.cls}">${built.html}</section>`;
-    document.documentElement.style.setProperty("--a", ACCENT[key] ?? "#6CBAB5");
+    const [c1, c2] = BG[key] ?? BG.intro;
+    stage.style.setProperty("--bg1", c1); stage.style.setProperty("--bg2", c2); stage.style.setProperty("--a", c1);
     const el = slide.firstElementChild;
-    idx = i; paintDots(i, built.dur);
+    idx = i;
     if (uncover) { const p = uncover(); await sleep(120); el.classList.add("go"); built.after?.(el); await p; } else { el.classList.add("go"); built.after?.(el); }
     if (!params.get("only")) timer = setTimeout(() => { dir = 1; go(idx + 1); }, built.dur);
     else timer = setTimeout(() => { dir = 1; go(idx); }, built.dur);
