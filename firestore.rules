@@ -43,7 +43,7 @@ service cloud.firestore {
       allow write: if isStaff() && stamped()
         && data().keys().hasOnly(['notice', 'notice_level', 'stream_url', 'stream_title', 'stream_active', 'now_events',
                                   'phase_override', 'presence_off', 'food_reports', 'photos', 'updated_at', 'updated_by',
-                                  'fireworks_at', 'sky_override', 'weather_override', 'wind_override', 'prize_out', 'cache_reset_at'])
+                                  'fireworks_at', 'sky_override', 'weather_override', 'wind_override', 'prize_out', 'cache_reset_at', 'photo_review'])
         // 演出（全員の画面）：花火を上げた時刻は、いま押したときだけ変えられる
         && (!('fireworks_at' in data()) || data().fireworks_at == request.time
             || (resource != null && data().fireworks_at == resource.data.get('fireworks_at', null)))
@@ -56,6 +56,7 @@ service cloud.firestore {
         && (!('notice_level' in data()) || data().notice_level in ['info', 'urgent'])
         // スタンプラリーの景品がなくなった（スタンプカードのページにおわびを出す）
         && (!('prize_out' in data()) || data().prize_out is bool)
+        && (!('photo_review' in data()) || data().photo_review is bool)
         && (!('stream_url' in data()) || (data().stream_url is string && data().stream_url.size() <= 300));
     }
     // 文章と書体
@@ -186,7 +187,8 @@ service cloud.firestore {
         && (data().kind == 'post' || (data().stars is int && data().stars >= 1 && data().stars <= 5))
         && (data().shop == null || (data().shop is string && data().shop.size() <= 60))
         && data().has_photo is bool
-        && data().photo_status == (data().has_photo ? 'pending' : 'none')
+        // 写真は、ふつうはそのまま公開（approved）。本部が「写真を確認してから出す」（site_live の photo_review）をオンにしているあいだだけ、確認待ち（pending）
+        && data().photo_status == (data().has_photo ? ((exists(/databases/$(database)/documents/site_live/current) && get(/databases/$(database)/documents/site_live/current).data.get('photo_review', false) == true) ? 'pending' : 'approved') : 'none')
         && data().created_at == request.time
         && data().reports == 0 && data().hidden == false
         && getAfter(/databases/$(database)/documents/users_meta/$(request.auth.uid)).data.last_post == request.time
@@ -226,7 +228,7 @@ service cloud.firestore {
         && data().data is string && data().data.size() < 750000
         && data().data.matches('data:image/(jpeg|webp);base64,[A-Za-z0-9+/=]+')
         && getAfter(/databases/$(database)/documents/posts/$(id)).data.uid == request.auth.uid
-        && getAfter(/databases/$(database)/documents/posts/$(id)).data.photo_status == 'pending')
+        && getAfter(/databases/$(database)/documents/posts/$(id)).data.photo_status in ['pending', 'approved'])
         // 本部の公式の投稿の写真
         || (isStaff() && data().keys().hasOnly(['data', 'uid']) && data().uid == request.auth.uid
         && data().data is string && data().data.size() < 750000

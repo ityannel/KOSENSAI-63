@@ -168,11 +168,10 @@
           </form>
         </article>
         <div class="tabs" role="tablist" id="post-tabs">
-          <button role="tab" data-f="pending" aria-selected="true">写真の確認待ち <b id="count-pending">0</b></button>
+          <button role="tab" data-f="all" aria-selected="true">すべて <b id="count-all-posts">0</b></button>
           <button role="tab" data-f="reported" aria-selected="false">報告あり <b id="count-reported">0</b></button>
-          <button role="tab" data-f="hidden" aria-selected="false">非表示 <b id="count-hidden">0</b></button>
-          <button role="tab" data-f="all" aria-selected="false">すべて</button>
         </div>
+        <label class="switch"><input type="checkbox" id="photo-review"><span class="switch-ui" aria-hidden="true"></span><span>写真を確認してから出す<small>ふだんはオフ（写真は、そのまま公開）</small></span></label>
         <div class="post-grid" id="post-list"></div>
       </section>
 

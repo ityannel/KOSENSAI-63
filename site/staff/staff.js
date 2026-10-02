@@ -80,7 +80,7 @@ function startListening() {
     snap.forEach((d) => { const day = d.id.slice(0, 10); state.visits[day] = (state.visits[day] ?? 0) + (d.data().n ?? 0); });
     renderOverview();
   });
-  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; $("#cache-state").textContent = state.live.cache_reset_at ? `${time(toMs(state.live.cache_reset_at))} に指示` : ""; });
+  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; $("#photo-review").checked = !!state.live.photo_review; $("#cache-state").textContent = state.live.cache_reset_at ? `${time(toMs(state.live.cache_reset_at))} に指示` : ""; });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
     snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: v.level, updated_at: toMs(v.updated_at) }; });
@@ -286,20 +286,17 @@ $("#chatter-clear").addEventListener("click", () => {
 });
 
 // ---------- 投稿 ----------
-let postFilter = "pending";
+let postFilter = "all";
 const photos = new Map();
 const isOff = (p) => p.hidden || p.reports >= REPORT_HIDE;
 function renderPosts() {
   if (document.activeElement?.closest?.(".post-reply")) return; // 公式の返信を書いている途中は、描き直さない
   const lists = {
-    pending: state.posts.filter((p) => p.photo_status === "pending" && !p.hidden),
     reported: state.posts.filter((p) => p.reports > 0 && !p.hidden),
-    hidden: state.posts.filter(isOff),
     all: state.posts,
   };
-  $("#count-pending").textContent = lists.pending.length;
+  $("#count-all-posts").textContent = lists.all.length;
   $("#count-reported").textContent = lists.reported.length;
-  $("#count-hidden").textContent = lists.hidden.length;
   const list = lists[postFilter];
   const photoFlag = { pending: '<span class="tag tag-warn flag">確認待ち</span>', approved: '<span class="tag tag-ok flag">公開中</span>', rejected: '<span class="tag tag-danger flag">出さない</span>' };
   $("#post-list").innerHTML = list.length ? list.map((p) => {
@@ -716,6 +713,10 @@ $("#prize-out").addEventListener("change", (e) => {
   const on = e.target.checked;
   if (!confirm(on ? "「景品はすべてなくなりました」と、スタンプカードのページにおわびを出しますか？" : "景品の受け付けを再開しますか？（おわびを消します）")) { e.target.checked = !on; return; }
   saveLive(on ? "景品の終了を出しました" : "景品の受け付けを再開しました", { prize_out: on });
+});
+// 写真を確認してから出す：ふだんはオフ（来場者の写真は、そのまま公開）。オンのあいだだけ、確認待ちになる
+$("#photo-review").addEventListener("change", (e) => {
+  saveLive(e.target.checked ? "写真を、確認してから出すようにしました" : "写真を、そのまま公開にしました", { photo_review: e.target.checked });
 });
 // 全員のキャッシュを削除：次に開いたとき（開いている人は、すぐ）、しまってあるページ・部品を消して読みこみなおす。スタンプ・投票の記録は消えない
 $("#cache-reset").addEventListener("click", () => {

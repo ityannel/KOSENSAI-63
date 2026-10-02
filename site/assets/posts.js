@@ -240,10 +240,13 @@ export async function submitPost({ kind, place = "", shop = null, stars = null, 
   }
   const { fs, db, a } = await signedIn();
   const uid = a.currentUser.uid;
+  // 写真は、ふつうはそのまま公開。本部が「写真を確認してから出す」をオンにしているあいだだけ、確認待ち
+  let review = false;
+  if (photo) { try { review = (await fs.getDoc(fs.doc(db, "site_live", "current"))).data()?.photo_review === true; } catch { /* 読めなければ公開の形で送る */ } }
   const ref = fs.doc(fs.collection(db, "posts"));
   const b = fs.writeBatch(db);
   b.set(ref, { kind, place: place ?? "", shop: kind === "review" ? shop : null, stars: kind === "review" ? stars : null, text, has_photo: !!photo, uid,
-    photo_status: photo ? "pending" : "none",
+    photo_status: photo ? (review ? "pending" : "approved") : "none",
     created_at: fs.serverTimestamp(), reports: 0, hidden: false, reply_to: replyTo ?? null });
   if (photo) b.set(fs.doc(db, "post_photos", ref.id), { data: photo, uid });
   b.set(fs.doc(db, "users_meta", uid), { last_post: fs.serverTimestamp() });

@@ -58,11 +58,12 @@ function visitorPost(db, id, extra = {}) {
 }
 await t("visitor text post", assertSucceeds(visitorPost(anon, "p1")));
 await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), "users_meta/anon1"), { last_post: new Date(Date.now() - 120000) }));
-await t("visitor cannot self-approve photo", assertFails(visitorPost(anon, "p2", { has_photo: true, photo_status: "approved" })));
+await t("visitor photo post publishes immediately (review off)", assertSucceeds(visitorPost(anon, "p2", { has_photo: true, photo_status: "approved" })));
+await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), "users_meta/anon1"), { last_post: new Date(Date.now() - 120000) }));
 await t("visitor cannot post as official", assertFails(visitorPost(anon, "p3", { official: true })));
-await t("visitor photo post starts pending", assertSucceeds((() => {
+await t("visitor photo post is published (approved)", assertSucceeds((() => {
   const b = writeBatch(anon);
-  b.set(doc(anon, "posts/p4"), { kind: "post", place: "", shop: null, stars: null, text: "", has_photo: true, photo_status: "pending", uid: "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null });
+  b.set(doc(anon, "posts/p4"), { kind: "post", place: "", shop: null, stars: null, text: "", has_photo: true, photo_status: "approved", uid: "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null });
   b.set(doc(anon, "post_photos/p4"), { data: "data:image/jpeg;base64,AAAA", uid: "anon1" });
   b.set(doc(anon, "users_meta/anon1"), { last_post: serverTimestamp() });
   return b.commit();
@@ -70,7 +71,7 @@ await t("visitor photo post starts pending", assertSucceeds((() => {
 await t("owner can read own pending photo", assertSucceeds(getDoc(doc(anon, "post_photos/p4"))));
 const photoPost = (id, data) => {
   const b = writeBatch(anon);
-  b.set(doc(anon, `posts/${id}`), { kind: "post", place: "", shop: null, stars: null, text: "", has_photo: true, photo_status: "pending", uid: "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null });
+  b.set(doc(anon, `posts/${id}`), { kind: "post", place: "", shop: null, stars: null, text: "", has_photo: true, photo_status: "approved", uid: "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null });
   b.set(doc(anon, `post_photos/${id}`), { data, uid: "anon1" });
   b.set(doc(anon, "users_meta/anon1"), { last_post: serverTimestamp() });
   return b.commit();
@@ -167,6 +168,27 @@ await t("staff replies officially to a post", assertSucceeds(setDoc(doc(staff, "
 await t("staff likes a post (one like per login)", assertSucceeds((async () => { const b = writeBatch(staff); b.set(doc(staff, "post_likes/other_staff1"), { post: "other", uid: "staff1", at: serverTimestamp() }); b.update(doc(staff, "posts/other"), { likes: increment(1) }); return b.commit(); })()));
 await t("staff cannot like the same post twice", assertFails((async () => { const b = writeBatch(staff); b.set(doc(staff, "post_likes/other_staff1"), { post: "other", uid: "staff1", at: serverTimestamp() }); b.update(doc(staff, "posts/other"), { likes: increment(1) }); return b.commit(); })()));
 await t("staff unlikes", assertSucceeds((async () => { const b = writeBatch(staff); b.delete(doc(staff, "post_likes/other_staff1")); b.update(doc(staff, "posts/other"), { likes: increment(-1) }); return b.commit(); })()));
+
+const photoPostStatus = (id, status) => {
+  const b = writeBatch(anon);
+  b.set(doc(anon, `posts/${id}`), { kind: "post", place: "", shop: null, stars: null, text: "", has_photo: true, photo_status: status, uid: "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null });
+  b.set(doc(anon, `post_photos/${id}`), { data: "data:image/jpeg;base64,AAAA", uid: "anon1" });
+  b.set(doc(anon, "users_meta/anon1"), { last_post: serverTimestamp() });
+  return b.commit();
+};
+
+// 写真の確認：本部が「写真を確認してから出す」をオンにしているあいだだけ、確認待ち（pending）。オフなら、そのまま公開（approved）
+const resetCool = () => env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), "users_meta/anon1"), { last_post: new Date(Date.now() - 120000) }));
+const setReview = (on) => env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), "site_live/current"), { photo_review: on, updated_at: new Date(), updated_by: "x" }, { merge: true }));
+await setReview(true); await resetCool();
+await t("review on: approved photo post is rejected", assertFails(photoPostStatus("r1", "approved")));
+await t("review on: pending photo post is accepted", assertSucceeds(photoPostStatus("r2", "pending")));
+await setReview(false); await resetCool();
+await t("review off: pending photo post is rejected", assertFails(photoPostStatus("r3", "pending")));
+await t("review off: approved photo post is accepted", assertSucceeds(photoPostStatus("r4", "approved")));
+await t("staff can switch photo review", assertSucceeds(setDoc(doc(staff, "site_live/current"), { photo_review: true, updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
+await t("visitors cannot switch photo review", assertFails(setDoc(doc(anon, "site_live/current"), { photo_review: false, updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
+await setReview(false);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
