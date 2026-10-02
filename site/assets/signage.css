@@ -494,3 +494,11 @@ body.portrait .stage .nx { flex: 1; }
 .nx.is-then b { font-size: 48px; }
 body.portrait .stage .nxt { justify-content: flex-start; gap: 34px; }
 body.portrait .stage .nx { flex: none; }
+/* 縦の模擬店：店名をもっと大きく、下に余白 */
+body.portrait .shop h2 { font-size: 136px; line-height: 1.1; }
+body.portrait .shop h2.long { font-size: 104px; line-height: 1.15; }
+body.portrait .shop .grp { margin-top: 22px; }
+body.portrait .shop .chip { font-size: 34px; }
+body.portrait .shop .note { margin-top: 34px; font-size: 44px; }
+body.portrait .shop .body { padding-bottom: 72px; }
+body.portrait .mapbox { height: 560px; }
