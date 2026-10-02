@@ -307,17 +307,6 @@ function rebuildSchedule() {
 watchSchedule(rebuildSchedule);
 rebuildSchedule();
 
-// ---------- Sponsored by（1周に1回、協賛企業のロゴ） ----------
-const slideSponsor = {
-  async build() {
-    const list = SPONSORS.list.filter((x) => x.logo || x.name).slice(0, 8);
-    if (!list.length) return null;
-    return { dur: 12000, cls: "sponsor", html: `
-      <h1 class="spt">${chars("Sponsored by")}</h1>
-      <div class="sp-grid">${list.map((x, i) => `<div class="sp-tile pop" style="--i:${i + 2}">${x.logo ? `<img src="${esc(x.logo)}" alt="${esc(x.name)}">` : `<b>${esc(x.name)}</b>`}</div>`).join("")}</div>` };
-  },
-};
-
 // ---------- 道案内 ----------
 const slideWay = {
   async build() {
@@ -454,16 +443,27 @@ const slideIntro = {
 };
 
 // ---------- 流れ ----------
-const SLIDES = { intro: slideIntro, stage: slideStage, sponsor: slideSponsor, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
+const SLIDES = { intro: slideIntro, stage: slideStage, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
 function plan() {
-  const base = ["intro", "stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "sponsor", "share"];
+  const base = ["intro", "stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
   if (hurryItem(now())) base.splice(5, 0, "stage"); // 急げ！のときは、ステージの画面を多めに
   return base;
 }
 let order = [], idx = -1, timer = null, busy = false, dir = 1;
 const slide = $("#slide"), wipe = $("#wipe");
 
+// 画面の切りかえ：「縁」のはんこと一緒に、「Sponsored by」と協賛企業のロゴを1社ずつ（1周で8社が、ひととおり出る）
+const SPON = SPONSORS.list.filter((x) => x.logo).slice(0, 8);
+SPON.forEach((x) => { const im = new Image(); im.src = x.logo; }); // 先に読んでおく
+let wipeN = 0;
 async function cover() {
+  const wsp = wipe.querySelector("#wsp"), sp = SPON.length ? SPON[wipeN++ % SPON.length] : null;
+  if (wsp) wsp.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+  if (wsp && sp) {
+    wsp.querySelector("img").src = sp.logo; wsp.querySelector("img").alt = sp.name ?? "";
+    wsp.animate([{ opacity: 0, transform: "translate(-50%, 70px) scale(.8)" }, { opacity: 1, transform: "translate(-50%, -8px) scale(1.03)", offset: .65 }, { opacity: 1, transform: "translate(-50%, 0) scale(1)" }], { duration: 800, delay: 760, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
+    wsp.querySelector(".tile").animate([{ backgroundPosition: "-200% 0" }, { backgroundPosition: "200% 0" }], { duration: 900, delay: 1300, easing: "ease-in-out" }); // きらっと光る
+  }
   const bars = [...wipe.querySelectorAll("i")], seal = wipe.querySelector("b");
   const inn = bars.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(0) skewX(-14deg)" }], { duration: 520, delay: k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }));
   seal.animate([{ opacity: 0, transform: "scale(2.2) rotate(-14deg)" }, { opacity: 1, transform: "scale(1) rotate(-6deg)", offset: .55 }, { opacity: 1, transform: "scale(1) rotate(-6deg)" }], { duration: 900, delay: 330, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
@@ -477,6 +477,7 @@ async function cover() {
   await Promise.all(inn.map((a) => a.finished.catch(() => {}))); // 全画面にしたときなどに、動きが取り消されても止まらない
   return () => {
     seal.animate([{ opacity: 1 }, { opacity: 0, transform: "scale(.8) rotate(-6deg)" }], { duration: 300, fill: "forwards" });
+    wsp?.animate([{ opacity: 1 }, { opacity: 0, transform: "translate(-50%, -30px) scale(.9)" }], { duration: 300, fill: "forwards" });
     return Promise.all(bars.map((b, k) => b.animate([{ transform: "translateX(0) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 560, delay: 240 + k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }).finished.catch(() => {})));
   };
 }
@@ -533,7 +534,7 @@ if (params.has("test")) {
   const TIMES = [["いま（本当の時刻）", ""], ["開幕前（11:50）", "2026-10-24T11:50"], ["開催中・出演中（13:20）", "2026-10-24T13:20"], ["出演の合間（急げ！）", "2026-10-24T12:08"],
     ["1日目の夜", "2026-10-24T18:00"], ["2日目の朝", "2026-10-25T08:30"], ["結果発表の直前（15:55）", "2026-10-25T15:55"], ["終了後", "2026-10-26T10:00"]];
   const PLACES = [["なし（道案内は出ない）", ""], ["第1講義室の前", "lecture1"], ["総務課の横の廊下の角", "soumu"], ["インフォメーション前", "info"]];
-  const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["Sponsored by", "sponsor"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
+  const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
   const reloadWith = (ch) => { const p = new URLSearchParams(location.search); for (const [k, v] of Object.entries(ch)) { if (v === "" || v == null || v === false) p.delete(k); else p.set(k, v === true ? "1" : v); } p.set("test", "1"); location.search = p; };
   const cur = (k) => params.get(k) ?? "";
   const opt = (list, v) => list.map(([l, x]) => `<option value="${esc(x)}"${x === v ? " selected" : ""}>${esc(l)}</option>`).join("");
