@@ -25,6 +25,50 @@ const time = (ms) => (ms ? new Date(ms).toLocaleString("ja-JP", { timeZone: "Asi
 const hhmm = (ms) => new Date(ms).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" });
 const toMs = (v) => v?.toMillis?.() ?? null;
 
+// ---------- 通知音 ----------
+// 新しい投稿（来場者）が来たら「ピンポン」（高い2音）、お店の状況（待ち時間・完売・ひとこと）が変わったら「ポロロン」（低めの3音）。
+// 音は、ブラウザの中で作る（音のファイルは使わない）。ページを開いて最初に押した・触ったあとから鳴る（ブラウザの決まり）。右上のボタンで、オン・オフ
+const SOUND_KEY = "kosen63-staff-sound";
+let audioCtx = null;
+const soundOn = () => { try { return localStorage.getItem(SOUND_KEY) !== "off"; } catch { return true; } };
+function audio() {
+  audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function note(freq, at, dur, type, vol) {
+  const ctx = audio();
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type; o.frequency.value = freq;
+  const t0 = ctx.currentTime + at;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(ctx.destination);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function chime(kind) {
+  if (!soundOn()) return;
+  try {
+    if (kind === "post") { note(988, 0, 0.35, "sine", 0.2); note(1319, 0.16, 0.5, "sine", 0.2); }                       // ピンポン（高い2音）
+    else { note(392, 0, 0.3, "triangle", 0.22); note(494, 0.13, 0.3, "triangle", 0.22); note(587, 0.26, 0.45, "triangle", 0.22); } // ポロロン（低めの3音）
+  } catch { /* 音を出せないブラウザ */ }
+}
+const unlockAudio = () => { try { audio(); } catch { /* 音を出せないブラウザ */ } };
+addEventListener("pointerdown", unlockAudio, { once: true });
+addEventListener("keydown", unlockAudio, { once: true });
+function renderSoundToggle() {
+  const on = soundOn(), b = $("#sound-toggle");
+  b.setAttribute("aria-pressed", String(on));
+  b.textContent = `通知音：${on ? "オン" : "オフ"}`;
+}
+$("#sound-toggle").addEventListener("click", () => {
+  try { localStorage.setItem(SOUND_KEY, soundOn() ? "off" : "on"); } catch { /* 保存できないブラウザ */ }
+  renderSoundToggle();
+  chime("post"); // オンにしたときに、音の見本
+});
+renderSoundToggle();
+
 // ---------- 小窓 ----------
 let toastTimer = null;
 function toast(text, error = false) {
@@ -85,7 +129,11 @@ function startListening() {
     renderCrowd(); renderOverview();
   });
   listen(fs.doc(db, "chatter", "current"), (snap) => { state.chatter = snap.data() ?? {}; renderChatter(); renderOverview(); });
+  let postsReady = false;
   listen(fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(300)), (snap) => {
+    // 開いた直後の読みこみでは鳴らさない。そのあとに足された来場者の投稿（本部の公式の投稿・自分の書きこみは除く）で鳴らす
+    if (postsReady && !snap.metadata.hasPendingWrites && snap.docChanges().some((c) => c.type === "added" && !c.doc.data().official)) chime("post");
+    postsReady = true;
     state.posts = [];
     snap.forEach((d) => {
       const v = d.data();
@@ -94,7 +142,17 @@ function startListening() {
     });
     renderPosts(); renderOverview();
   });
+  let shopsReady = false;
+  const shopSig = new Map(); // お店ごとの、前の待ち時間・ひとこと（変わったときだけ鳴らす）
   listen(fs.collection(db, "shops"), (snap) => {
+    let changed = false;
+    snap.docChanges().forEach((c) => {
+      const v = c.doc.data(), sig = `${v.status ?? ""}|${v.message ?? ""}`;
+      if (shopsReady && c.type !== "removed" && shopSig.get(c.doc.id) !== sig && !snap.metadata.hasPendingWrites) changed = true;
+      shopSig.set(c.doc.id, sig);
+    });
+    if (changed) chime("shop"); // 開いた直後の読みこみ・自分の変更では鳴らさない
+    shopsReady = true;
     state.shops = [];
     snap.forEach((d) => state.shops.push({ id: d.id, ...d.data() }));
     renderShops(); renderRally(); renderOverview();
