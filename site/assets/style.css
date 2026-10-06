@@ -2118,7 +2118,10 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 /* アクセスと公式のリンク（来場案内の下） */
 .visit-access { margin: calc(26 * var(--u)) 0 0; padding: calc(16 * var(--u)) calc(16 * var(--u)) calc(14 * var(--u)); border-radius: calc(8 * var(--u)); background: var(--grain), #FEEBC4; color: #634A2E; box-shadow: calc(-6 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, 0.45); font-family: var(--text-font); font-weight: 700; }
 .visit-access h3 { margin: 0 0 calc(6 * var(--u)); font-family: var(--hud-font); font-weight: 400; font-size: calc(18 * var(--u)); }
-.visit-access p { margin: 0 0 calc(8 * var(--u)); font-size: calc(12.5 * var(--u)); line-height: 1.65; }
-.visit-links { display: flex; flex-wrap: wrap; gap: calc(6 * var(--u)) calc(8 * var(--u)); }
-.visit-links a { padding: calc(3 * var(--u)) calc(11 * var(--u)); border-radius: 999px; background: #634A2E; color: #FEEBC4; text-decoration: none; font-size: calc(11.5 * var(--u)); }
-.visit-access .visit-note { margin: calc(4 * var(--u)) 0 0; font-size: calc(10.5 * var(--u)); opacity: .8; }
+.va-list { display: grid; gap: calc(7 * var(--u)); margin: 0 0 calc(12 * var(--u)); padding: 0; list-style: none; }
+.va-list li { display: flex; align-items: center; gap: calc(10 * var(--u)); font-size: calc(13 * var(--u)); line-height: 1.4; }
+.va-list svg, .visit-links svg { flex: none; width: calc(20 * var(--u)); height: calc(20 * var(--u)); fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.visit-links { margin: 0; display: flex; flex-wrap: wrap; gap: calc(6 * var(--u)) calc(8 * var(--u)); }
+.visit-links a { display: inline-flex; align-items: center; gap: calc(5 * var(--u)); padding: calc(4 * var(--u)) calc(12 * var(--u)) calc(4 * var(--u)) calc(9 * var(--u)); border-radius: 999px; background: #634A2E; color: #FEEBC4; text-decoration: none; font-size: calc(11.5 * var(--u)); }
+
+.visit-links svg { width: calc(16 * var(--u)); height: calc(16 * var(--u)); }
