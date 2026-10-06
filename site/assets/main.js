@@ -328,7 +328,7 @@ function actsOf(day, t) {
   return `<ol class="acts">${acts.map((a) => {
     const now = Date.parse(a.start) <= t && t < Date.parse(a.end);
     const past = Date.parse(a.end) <= t;
-    return `<li class="${now ? "is-now" : ""}${past ? " is-past" : ""}"><time>${tStart(a)}</time><span><b>${esc(a.name)}</b><small>${esc(a.kind)}</small></span></li>`;
+    return `<li class="${now ? "is-now" : ""}${past ? " is-past" : ""}"><time>${tStart(a)}</time><span><b>${esc(a.name)}</b>${a.kind ? `<small>${esc(a.kind)}</small>` : ""}</span></li>`;
   }).join("")}</ol>${STAGE.tentative ? '<p class="acts-note">【仮】出演者と時間は仮のものです</p>' : ""}`;
 }
 

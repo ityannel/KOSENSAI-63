@@ -2396,7 +2396,7 @@ function buildIndex() {
   }
   // ステージの出演者（バンド名などでさがせる）
   const sp = place(STAGE.venue);
-  if (sp) for (const a of STAGE.acts) addItem({ p: sp, kind: "event", label: a.name, sub: `${md(a.start)} ${tPlain(a)}〜・ステージ・${a.kind}`, rank: 0.6 }, a.name, titleOf(sp), `ステージ 出演 ${a.kind}`);
+  if (sp) for (const a of STAGE.acts) addItem({ p: sp, kind: "event", label: a.name, sub: `${md(a.start)} ${tPlain(a)}〜・ステージ${a.kind ? `・${a.kind}` : ""}`, rank: 0.6 }, a.name, titleOf(sp), `ステージ 出演 ${a.kind ?? ""}`);
 }
 // 2文字ずつのかたまりの重なり（打ち間違い・うろ覚え用）
 const bigrams = (s) => { const out = new Set(); for (let i = 0; i < s.length - 1; i++) out.add(s.slice(i, i + 2)); return out; };

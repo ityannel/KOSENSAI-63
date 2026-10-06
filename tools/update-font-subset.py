@@ -21,7 +21,7 @@ FIXED = ("高専祭まであと日時間分秒0123456789:〜@ -!！●"
 # config.js の企画名（EVENTS の title）と会場名（VENUES の name / alias）
 titles = re.findall(r'title:\s*"([^"]+)"', config)
 # ステージの出演者（act("日", "始まり", "終わり", "名前", "種類")）
-acts = re.findall(r'act\("\d+",\s*"[\d:]+",\s*"[\d:]+",\s*"([^"]+)",\s*"([^"]+)"([^)]*)\)', config)
+acts = re.findall(r'act\("\d+",\s*"[\d:]+",\s*"[\d:]+",\s*"([^"]+)",\s*"([^"]*)"([^)]*)\)', config)
 titles += [n + k for n, k, _ in acts]
 venues = re.findall(r'(?:name|alias):\s*"([^"]+)"', config.split("export const VENUES")[1].split("];")[0])
 # 縁日（模擬店の紹介）：店名は WDXL、ひとこと・団体・ジャンルは Zen Kaku
