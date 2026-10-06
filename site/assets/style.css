@@ -1118,7 +1118,7 @@ body.lightning::after {
   filter: drop-shadow(0 0.6cqw 1.2cqw rgba(20, 60, 60, 0.25));
   transition: scale 0.3s, opacity 0.6s;
 }
-.logo img { width: 100%; height: auto; }
+.logo img { width: 100%; height: auto; filter: brightness(0) invert(1); } /* 「縁」のロゴは、完全な白（絵の形はそのまま） */
 .logo:hover, .logo:focus-visible { scale: 1.03; }
 body.streaming .logo { opacity: 0; pointer-events: none; }
 
