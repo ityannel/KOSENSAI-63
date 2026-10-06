@@ -982,18 +982,19 @@ function shopLabels(p) {
   const lines = [];
   if (p.kind !== "shops") lines.push({ cls: "lb-fest", text: p.name, px: 13 });   // 会場（中庭・食堂など）の名前
   for (const x of p.shopList) {
-    lines.push({ cls: "lb-shop", text: x.name, px: 12 });
-    if (x.group && x.group !== x.name) lines.push({ cls: "lb-group", text: x.group, px: 8.5, tight: true });
+    // 目立たせるのは団体名：オレンジのまるいラベル（学科展示の学科名と同じ形）、その下にお店の名前
+    if (x.group && x.group !== x.name) lines.push({ cls: "lb-group-pill", text: x.group, px: Math.max(7.5, Math.min(12, 12 * 5 / [...x.group].length)), pill: true }); // 長い団体名は、文字を小さくして、ラベルを部屋にあわせる
+    lines.push({ cls: "lb-shop", text: x.name, px: 11 });
   }
-  const lh = (l) => (l.tight ? l.px + 3 : l.px + 6);
+  const lh = (l) => (l.pill ? l.px + 7 : l.tight ? l.px + 3 : l.px + 6);
   const total = lines.reduce((a, l) => a + lh(l), 0);
-  const maxW = Math.max(...lines.map((l) => textW(l.text, l.px)));
+  const maxW = Math.max(...lines.map((l) => textW(l.text, l.px) + (l.pill ? l.px * 0.62 : 0)));
   // 横は少しはみ出してもよい（名前が見えるほうが大事）
   const ks = (w, h) => Math.max(p.zone ? 1.2 : 0.9, (total + 4) / Math.max(4, h), (maxW * 0.6) / Math.max(w, 50));
   const k = ks(w, h), kr = ks(h, w);
   let dy = -total / 2;
   return lines.map((l) => {
-    const out = `<text class="${l.cls}" x="${cx}" y="${cy}" data-for="${esc(p.id)}" data-k="${k.toFixed(2)}" data-kr="${kr.toFixed(2)}" data-fix data-dy="${(dy + lh(l) / 2).toFixed(1)}">${esc(l.text)}</text>`;
+    const out = `<text class="${l.cls}"${l.pill ? ` style="font-size:calc(var(--u) * ${l.px.toFixed(1)}px)"` : ""} x="${cx}" y="${cy}" data-for="${esc(p.id)}" data-k="${k.toFixed(2)}" data-kr="${kr.toFixed(2)}" data-fix data-dy="${(dy + lh(l) / 2).toFixed(1)}">${esc(l.text)}</text>`;
     dy += lh(l);
     return out;
   }).join("");
