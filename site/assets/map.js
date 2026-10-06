@@ -7,7 +7,7 @@
 // - 模擬店：config.js の SHOPS。教室の部屋番号（HOMEROOMS）がわかるまでは「L棟1階の模擬店」のように階までを案内する
 // - 屋外：campus.js の SITE（正門・グラウンド・寮など。構内通行経路図から写したもの）
 // - URL：map.html#ID でその場所を開く。map.html?from=ID&to=ID で道案内を開く（共有ボタンが作る）
-import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION } from "./config.js";
+import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION, DEPT_EXHIBITS } from "./config.js";
 import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES } from "./campus.js";
 import { avatar, VERIFIED } from "./avatar.js";
 import { tStart, tPlain } from "./schedule.js";
@@ -998,14 +998,16 @@ function shopLabels(p) {
     return out;
   }).join("");
 }
-// 学科展示：模擬店と同じように、短いタイトルを大きく、その下に学科の名前
+// 学科展示は、学科の色（トップの学科のボタンと同じ）で塗る。色は --dc で渡す
+const deptStyle = (p) => { const c = DEPT_EXHIBITS.find((d) => d.dept === p.dept)?.color; return c ? ` style="--dc:${c}"` : ""; };
+// 学科展示：上に学科の名前（学科の色のぷっくりしたラベル）、その下に展示のタイトル
 function deptLabels(p) {
   const [x, y, w, h] = p.labelRect ?? p.rect;
   const cx = x + w / 2, cy = y + h / 2;
   const ks = (w, h) => Math.max(0.8, 34 / Math.max(4, h), (Math.max(textW(p.name, 14), textW(p.dept, 10)) * 0.7) / Math.max(w, 30));
   const kk = `data-k="${ks(w, h).toFixed(2)}" data-kr="${ks(h, w).toFixed(2)}"`;
-  return `<text class="lb-dept" x="${cx}" y="${cy}" data-for="${esc(p.id)}" ${kk} data-fix data-dy="-4">${esc(p.name)}</text>` +
-    `<text class="lb-dept-sub" x="${cx}" y="${cy}" data-for="${esc(p.id)}" ${kk} data-fix data-dy="10">${esc(p.dept)}</text>`;
+  return `<text class="lb-dept-sub"${deptStyle(p)} x="${cx}" y="${cy}" data-for="${esc(p.id)}" ${kk} data-fix data-dy="-6">${esc(p.dept)}</text>` +
+    `<text class="lb-dept" x="${cx}" y="${cy}" data-for="${esc(p.id)}" ${kk} data-fix data-dy="11">${esc(p.name)}</text>`;
 }
 const festLabels = (p) => [p.shopList?.length ? shopLabels(p) : p.dept ? deptLabels(p) : roomLabel(p)];
 
@@ -1080,7 +1082,7 @@ function drawFloor() {
   const fest = [...places.values()].filter((p) => p.floor === floor && p.fest);
   const roomEls = rooms.map((p) => shapeEl(p.rects ?? [p.rect], `room k-${p.kind}`, ` data-id="${p.id}"`));
   // まとめた模擬店（〇棟〇階）は離れた教室の集まりなので、1部屋ずつ描く
-  const festEls = fest.flatMap((p) => p.poly ? [`<polygon class="room k-${p.kind}" points="${p.poly.join(" ")}" data-id="${p.id}"/>`] : (p.zone ? p.rects.map((r) => [r]) : [p.rects ?? [p.rect]]).map((rs) => shapeEl(rs, `room k-${p.kind}${p.zone ? " is-zone" : ""}`, ` data-id="${p.id}"`)));
+  const festEls = fest.flatMap((p) => p.poly ? [`<polygon class="room k-${p.kind}" points="${p.poly.join(" ")}" data-id="${p.id}"${deptStyle(p)}/>`] : (p.zone ? p.rects.map((r) => [r]) : [p.rects ?? [p.rect]]).map((rs) => shapeEl(rs, `room k-${p.kind}${p.zone ? " is-zone" : ""}`, ` data-id="${p.id}"${deptStyle(p)}`)));
   const roomLabels = [...rooms.map((p) => roomLabel(p)), ...fest.flatMap(festLabels)];
   const site = siteSvg();
   // 印：トイレ・エレベーター・階段

@@ -80,8 +80,11 @@ body.mapapp {
 #map-svg text.lb-fest { font-size: calc(var(--u) * 13px); font-weight: 800; fill: #155e58; }
 #map-svg text.lb-shop { font-size: calc(var(--u) * 12px); font-weight: 800; fill: #8a3b10; }
 /* 学科展示：タイトルを大きく、下に学科の名前 */
-#map-svg text.lb-dept { font-size: calc(var(--u) * 14px); font-weight: 800; fill: #2d3fae; }
-#map-svg text.lb-dept-sub { font-size: calc(var(--u) * 10px); font-weight: 700; fill: #4a5fd0; }
+#map-svg text.lb-dept { font-size: calc(var(--u) * 13px); font-weight: 800; fill: #4a3a2a; }
+/* 学科の名前：学科の色で、文字のまわりをふくらませて塗り、まるいラベルに見せる */
+#map-svg text.lb-dept-sub { font-family: var(--hud-font, inherit); font-size: calc(var(--u) * 14px); font-weight: 400; fill: #fff; stroke: var(--dc, #4a5fd0); stroke-width: calc(var(--u) * 11px); stroke-linejoin: round; paint-order: stroke; }
+/* 学科展示の場所：学科の色のうすい色で塗り、ふちは学科の色 */
+#map-svg .room.k-exhibit[style*="--dc"] { fill: color-mix(in srgb, var(--dc) 30%, #fff); stroke: var(--dc); }
 #map-svg text.lb-group { font-size: calc(var(--u) * 8.5px); font-weight: 400; fill: #8a6a55; }
 /* 屋外の建物（学生寮）・グラウンドなどの名前は控えめに（縁取りなし・小さめ・くすんだ色） */
 #map-svg text.lb-bldg { font-size: calc(var(--u) * 10.5px); font-weight: 700; fill: #8a8377; letter-spacing: 0.06em; stroke: none; }
@@ -921,8 +924,8 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > :is(.m-heading, .m-compa
 :root[data-theme="dark"] #map-svg text.lb-code { fill: #8f96a0; }
 :root[data-theme="dark"] #map-svg text.lb-fest { fill: #7fd6cc; }
 :root[data-theme="dark"] #map-svg text.lb-shop { fill: #f3a36b; }
-:root[data-theme="dark"] #map-svg text.lb-dept { fill: #aab6ff; }
-:root[data-theme="dark"] #map-svg text.lb-dept-sub { fill: #8e9cf0; }
+:root[data-theme="dark"] #map-svg text.lb-dept { fill: #f1e4d4; }
+:root[data-theme="dark"] #map-svg .room.k-exhibit[style*="--dc"] { fill: color-mix(in srgb, var(--dc) 38%, #1f2430); }
 :root[data-theme="dark"] #map-svg text.lb-group { fill: #c7a58c; }
 :root[data-theme="dark"] #map-svg text.lb-bldg, :root[data-theme="dark"] #map-svg text.lb-bldg tspan.sub { fill: #8f949c; }
 :root[data-theme="dark"] #map-svg text.lb-area { fill: #8fbf86; }
