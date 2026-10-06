@@ -57,6 +57,11 @@ ticket += "".join(re.findall(r'(?:copy|kind):\s*"([^"]+)"', config)) + "".join(v
 # みどころのページ（mido.html）の札と文
 ticket += shop_text
 ticket += dept_text
+# 開いたときのひとことのお知らせ（daytoast.js）：見出しは WDXL、説明は Zen Kaku
+toast_src = open("site/assets/daytoast.js", encoding="utf-8").read()
+toast_text = "".join(re.findall(r'"([^"]+)"', toast_src)) + "0123456789〜"
+titles += [toast_text]
+ticket += toast_text
 # ご来場の皆さまへ（VISIT）の説明の字
 ticket += "".join(re.findall(r'detail:\s*"([^"]+)"', config)) + "0123456789.:〜／SATSUN"
 ticket += "いまやっています（あと分）終了しましたで始まります日時場所種類前次学内の方限定の企画です。YouTube で生配信します（配信中はトップページに出ます）。【仮】出演者と時間は仮のものです。団体チラシを押すと、大きく開きます（指で拡大できます）"

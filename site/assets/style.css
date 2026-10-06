@@ -2106,3 +2106,11 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 
 /* 学科展示（ピンク）の次に来る「ご来場の皆さまへ」は、上にクリーム色を残さない（残すと、ピンクとの間に、ベージュの帯が出る） */
 .dept + .visit { background: var(--grain), radial-gradient(ellipse 80% 45% at 12% 0%, rgba(214, 240, 226, .45), transparent 70%), linear-gradient(165deg, #9dd0c3, #86bfb7 45%, #6fa8aa); }
+
+/* サイトを開いたときの、ひとことのお知らせ（高専祭の10日前から）：上からぽんと出て、押すか9秒でしまう */
+.day-toast { position: fixed; z-index: 60; left: 50%; top: calc(14px + env(safe-area-inset-top)); width: min(92vw, 380px); display: grid; gap: 2px; padding: 12px 16px 13px; border: 0; border-radius: 10px; text-align: left; cursor: pointer; color: #634A2E;
+  background: var(--grain), #FEEBC4; box-shadow: -6px 4px 0 rgba(48, 44, 41, 0.5); rotate: -1deg; translate: -50% -140%; opacity: 0; transition: translate .55s cubic-bezier(.3, 1.5, .5, 1), opacity .3s ease; -webkit-tap-highlight-color: transparent; }
+.day-toast.is-in { translate: -50% 0; opacity: 1; }
+.day-toast b { font-family: var(--hud-font); font-weight: 400; font-size: 22px; line-height: 1.25; color: #C8323A; }
+.day-toast small { font-family: var(--text-font); font-weight: 700; font-size: 13px; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { .day-toast { transition: opacity .2s; } }
