@@ -1506,7 +1506,6 @@ function renderSheet() {
     }).join("")}</ul>` : ""}
     ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` ${statusPill(w)}` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${msgHtml(x, s)}${x.note ? `<p>${esc(x.note)}</p>` : ""}</li>`).join("")}</ul>` : ""}
     ${p.zone ? `<p class="sh-hint">この階の教室（${esc(p.codes.join("・"))}）のどれかです。どの教室かは、当日は教室の入口の看板を見てください。</p>` : ""}
-    ${shops.length ? `<h3 class="sh-h">スタンプラリー</h3><ul class="sh-events">${shops.map((x) => `<li><span class="mini-hanko${s.stamps?.includes(x.id) ? " on" : ""}">${s.stamps?.includes(x.id) ? "縁" : ""}</span>${esc(x.name)}</li>`).join("")}</ul>` : ""}
     ${picks.length ? `<h3 class="sh-h">みどころ</h3><ul class="sh-events">${picks.map((x) => `<li>${esc(x.name)}${x.note ? `<small>　${esc(x.note)}</small>` : ""}</li>`).join("")}</ul>` : ""}
     ${voiceSection(p, s)}`;
   if (body._html === html) return; // 変わっていなければ描き直さない（読んでいる所・押している所がそのまま）
