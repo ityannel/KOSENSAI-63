@@ -25,13 +25,12 @@ const P = {
   mic: '<g class="a-shake"><rect x="9" y="3.5" width="6" height="10" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3.5M9 20.5h6"/></g><g class="a-waves"><path d="M3 8a7 7 0 0 0 0 6M21 8a7 7 0 0 1 0 6"/></g>',
   vote: '<g class="a-drop"><path d="M8.5 13.5V6.5l6-2 1.5 9"/></g><path d="M4 13.5h16v6.5H4zM9 16.8h6"/>',
   exit: '<path d="M14 4.5h5.5v15H14"/><g class="a-go"><path d="M4.5 12H14M10.5 8.5L14 12l-3.5 3.5"/></g>',
-  phone: '<g class="a-ring"><path d="M7 4.5h3l1.5 4-2 1.3a10 10 0 0 0 5 5l1.3-2 4 1.5v3a2 2 0 0 1-2 2A15.5 15.5 0 0 1 5 6.5a2 2 0 0 1 2-2z"/></g>',
   nosmoke: '<g class="a-no"><circle cx="12" cy="12" r="8.5"/><path d="M6 12h9M17 12h1"/><path d="M6 6l12 12"/></g>',
 };
 // 押したときに、絵のまわりに飛び出す文字（まんがの音のように）。「×」は禁煙の大きなバツ
 const FX = {
   clock: ["チクタク"], car: ["ブーン"], fire: ["ドーン！"], camera: ["パシャ！", "パシャ！"],
-  mic: ["ワー！", "ワー！", "キャー！"], vote: ["ストン"], exit: ["ダッ！"], nosmoke: ["×"], phone: ["プルルル"],
+  mic: ["ワー！", "ワー！", "キャー！"], vote: ["ストン"], exit: ["ダッ！"], nosmoke: ["×"],
 };
 const fx = (k) => (FX[k] ?? []).map((t, i) => `<i class="vi-fx${t === "×" ? " is-batsu" : ""}" style="--n:${i}" aria-hidden="true">${esc(t)}</i>`).join("");
 // WDXL の数字は小さく見えるので、ひとことの中の数字だけ大きく（32 に対して 40 くらい）
@@ -52,17 +51,43 @@ const COLORS = [
   ["#D3EFE6", "#3E9A86"], // 禁煙：ミント
 ];
 
+const opened = new Set(); // 開いた札（スクロールで順に開く。作りなおしても開いたまま）
 function renderVisit() {
   grid.innerHTML = VISIT.map((v, i) => `
-    <li style="--tilt:${TILTS[i % TILTS.length]}deg; --paper:${COLORS[i % COLORS.length][0]}; --mark:${COLORS[i % COLORS.length][1]}"><button type="button" class="vi-card" data-vi="${i}" aria-pressed="false">
+    <li style="--tilt:${TILTS[i % TILTS.length]}deg; --paper:${COLORS[i % COLORS.length][0]}; --mark:${COLORS[i % COLORS.length][1]}"><button type="button" class="vi-card" data-vi="${i}" aria-pressed="${opened.has(i)}">
       <span class="vi-face vi-front"><span class="vi-ic">${icon(v.icon)}</span>${fx(v.icon)}<b class="vi-title">${bigNum(fill(v.title))}</b></span>
       <span class="vi-face vi-back"><b class="vi-back-title">${bigNum(fill(v.title))}</b><span class="vi-text">${logo(fill(v.detail))}</span></span>
     </button></li>`).join("");
 }
 
+// スクロールして札が画面に入ったら、順々に開く（絵が動いてから、くるっと裏返る）。タップでも開け閉めできる
+const calmMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const queue = [];
+let running = false;
+function openCard(b) {
+  const i = Number(b.dataset.vi);
+  if (opened.has(i)) return;
+  opened.add(i);
+  if (calmMotion) { b.setAttribute("aria-pressed", "true"); return; }
+  b.classList.add("is-play");
+  setTimeout(() => b.setAttribute("aria-pressed", "true"), 750);
+  setTimeout(() => b.classList.remove("is-play"), 1500);
+}
+function drain() {
+  if (running) return;
+  running = true;
+  const next = () => { const b = queue.shift(); if (!b) { running = false; return; } openCard(b); setTimeout(next, 420); };
+  next();
+}
+const watch = "IntersectionObserver" in window ? new IntersectionObserver((es) => {
+  for (const e of es) if (e.isIntersecting && !opened.has(Number(e.target.dataset.vi)) && !queue.includes(e.target)) { queue.push(e.target); watch.unobserve(e.target); }
+  if (queue.length) { queue.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top || a.getBoundingClientRect().left - b.getBoundingClientRect().left); drain(); }
+}, { threshold: 0.65 }) : null;
+const observeAll = () => grid.querySelectorAll(".vi-card").forEach((b) => { if (watch && !opened.has(Number(b.dataset.vi))) watch.observe(b); });
 if (grid) {
   renderVisit();
-  onSiteTextChange(renderVisit);
+  observeAll();
+  onSiteTextChange(() => { renderVisit(); observeAll(); });
   grid.addEventListener("click", (e) => {
     const b = e.target.closest("[data-vi]");
     if (!b) return;

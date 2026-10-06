@@ -17,6 +17,7 @@ const MENU = [
   ["crowd-now", "いまの混雑", "CROWD", svg('<circle cx="8" cy="8" r="2.5"/><circle cx="16.5" cy="9" r="2"/><path d="M3.5 19c0-3 2-5 4.5-5s4.5 2 4.5 5M14 14.5c.8-.6 1.6-.9 2.5-.9 2.2 0 4 1.8 4 4.4"/>')],
   ["pickup", "みどころ", "HIGHLIGHTS", svg('<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.8 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>')],
   ["ennichi", "縁日", "FOOD & FUN", svg('<path d="M3.5 9L5 4h14l1.5 5M3.5 9h17M3.5 9a2.8 2.8 0 0 0 5.6 0 2.9 2.9 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0M5 12v8h14v-8M10 20v-5h4v5"/>')],
+  ["exhibit", "学科展示", "DEPARTMENTS", svg('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 15h9"/>')],
   ["info", "ご来場の皆さまへ", "INFO", svg('<path d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>')],
   ["sponsors", "協賛", "SPONSORS", svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>')],
 ].filter(([id]) => !onTop || document.getElementById(id)); // トップページにない場所は出さない
@@ -71,7 +72,7 @@ document.body.insertAdjacentHTML("beforeend", `
 
 // メニューの順番は、トップページの欄の並びに合わせる（本部コンソールの「サイトの設定」で変わる。blocks.js が知らせる）。出していない欄は、メニューからも消す
 // 日程（いちばん上の絵）はいつも最初。ほかのページでは、前にトップページで読んだ並び（このスマホ・PC に覚えてある）
-const SEC_OF = { message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", info: "info", sponsors: "sponsors" }; // 欄の名前 → メニューの行き先
+const SEC_OF = { message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", exhibit: "exhibit", info: "info", sponsors: "sponsors" }; // 欄の名前 → メニューの行き先
 function orderMenu(blocks) {
   if (!Array.isArray(blocks)) return;
   const ul = document.querySelector(".pc-menu");

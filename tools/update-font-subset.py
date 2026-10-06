@@ -27,6 +27,10 @@ venues = re.findall(r'(?:name|alias):\s*"([^"]+)"', config.split("export const V
 # 縁日（模擬店の紹介）：店名は WDXL、ひとこと・団体・ジャンルは Zen Kaku
 shops_src = config.split("export const SHOPS")[1].split("];")[0]
 titles += re.findall(r'name:\s*"([^"]+)"', shops_src) + ["縁日", "ABCDEFGHKLM-12345F@"]
+# 学科展示（DEPT_EXHIBITS）：見出し・学科名は WDXL、展示の文と場所は Zen Kaku
+dept_src = config.split("export const DEPT_EXHIBITS")[1].split("\n];")[0]
+titles += ["学科展示", "場所"] + re.findall(r'dept:\s*"([^"]+)"', dept_src)
+dept_text = "".join(re.findall(r'"([^"]+)"', dept_src)) + "5学科の展示地図で展示をさがす場所→"
 shop_text = "".join(re.findall(r'(?:note|group):\s*"([^"]+)"', shops_src)) + "".join(re.findall(r'id:\s*"([^"]+系|ドリンク)"', config)) + "模擬店・店地図でお店をさがすあそび・体験すべて"
 
 # PC の左右（side.js）：タブとメニューの言葉、日付
@@ -52,6 +56,7 @@ ticket = "".join(k + "".join(re.findall(r'"([^"]*)"', rest)) for _, k, rest in a
 ticket += "".join(re.findall(r'(?:copy|kind):\s*"([^"]+)"', config)) + "".join(venues) + "タイムテーブルをすべて見る→"
 # みどころのページ（mido.html）の札と文
 ticket += shop_text
+ticket += dept_text
 # ご来場の皆さまへ（VISIT）の説明の字
 ticket += "".join(re.findall(r'detail:\s*"([^"]+)"', config)) + "0123456789.:〜／SATSUN"
 ticket += "いまやっています（あと分）終了しましたで始まります日時場所種類前次学内の方限定の企画です。YouTube で生配信します（配信中はトップページに出ます）。【仮】出演者と時間は仮のものです。団体チラシを押すと、大きく開きます（指で拡大できます）"

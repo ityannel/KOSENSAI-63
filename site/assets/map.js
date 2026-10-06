@@ -1080,7 +1080,7 @@ function drawFloor() {
   const fest = [...places.values()].filter((p) => p.floor === floor && p.fest);
   const roomEls = rooms.map((p) => shapeEl(p.rects ?? [p.rect], `room k-${p.kind}`, ` data-id="${p.id}"`));
   // まとめた模擬店（〇棟〇階）は離れた教室の集まりなので、1部屋ずつ描く
-  const festEls = fest.flatMap((p) => (p.zone ? p.rects.map((r) => [r]) : [p.rects ?? [p.rect]]).map((rs) => shapeEl(rs, `room k-${p.kind}${p.zone ? " is-zone" : ""}`, ` data-id="${p.id}"`)));
+  const festEls = fest.flatMap((p) => p.poly ? [`<polygon class="room k-${p.kind}" points="${p.poly.join(" ")}" data-id="${p.id}"/>`] : (p.zone ? p.rects.map((r) => [r]) : [p.rects ?? [p.rect]]).map((rs) => shapeEl(rs, `room k-${p.kind}${p.zone ? " is-zone" : ""}`, ` data-id="${p.id}"`)));
   const roomLabels = [...rooms.map((p) => roomLabel(p)), ...fest.flatMap(festLabels)];
   const site = siteSvg();
   // 印：トイレ・エレベーター・階段

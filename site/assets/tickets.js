@@ -12,7 +12,9 @@ export const venueName = (id) => {
 };
 const fmt = (iso, o) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", ...o }).format(new Date(iso));
 
-const ACTS = STAGE.acts.map((a) => ({ ...a, title: a.name, venue: STAGE.venue, stageAct: true }));
+// 種類がまだ届いていない出演は、チケットの色が全部同じにならないように、順に色をかえる（種類が届いたら、そちらの色）
+const HUES = ["band", "acoustic", "comedy", "dance"];
+const ACTS = STAGE.acts.map((a, i) => ({ ...a, title: a.name, venue: STAGE.venue, stageAct: true, hue: HUES[i % HUES.length] }));
 export const ALL_TICKETS = [...EVENTS.filter((e) => !(ACTS.length && e.stage)), ...ACTS]
   .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 export const TICKETS = ALL_TICKETS.filter((e) => !e.internal);
@@ -25,7 +27,7 @@ export const dayOf = (e) => fmt(e.start, { day: "numeric" });
 
 // チケットの色（紙の色）：種類ごと。バンド・弾き語りなどの音楽・ダンス・お笑い・展示や発表などの企画
 const CATS = { band: ["ロック", "バンド", "パンク", "合同バンド"], acoustic: ["吹奏楽", "アカペラ", "弾き語り"], dance: ["ダンス"], comedy: ["漫才", "コント"] };
-export const catOf = (e) => Object.keys(CATS).find((c) => CATS[c].includes(e.kind)) ?? "event";
+export const catOf = (e) => Object.keys(CATS).find((c) => CATS[c].includes(e.kind)) ?? e.hue ?? "event";
 
 const TILTS = [-2.8, 1.5, -1.2];
 export function ticketHtml(e, i, t) {
