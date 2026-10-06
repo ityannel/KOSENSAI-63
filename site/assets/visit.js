@@ -23,12 +23,13 @@ const P = {
   camera: '<g class="a-jolt"><rect x="3.5" y="7" width="17" height="12" rx="2.5"/><circle cx="12" cy="13" r="3.4"/><path d="M8.5 7l1.3-2.2h4.4L15.5 7"/></g><circle class="a-flash" cx="12" cy="12" r="11"/>',
   mic: '<g class="a-shake"><rect x="9" y="3.5" width="6" height="10" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3.5M9 20.5h6"/></g><g class="a-waves"><path d="M3 8a7 7 0 0 0 0 6M21 8a7 7 0 0 1 0 6"/></g>',
   vote: '<g class="a-drop"><path d="M8.5 13.5V6.5l6-2 1.5 9"/></g><path d="M4 13.5h16v6.5H4zM9 16.8h6"/>',
+  bus: '<g class="a-drive"><rect x="4" y="5" width="16" height="12.5" rx="2.5"/><path d="M4 11.5h16M7.5 17.5V20M16.5 17.5V20M8 14.5h.01M16 14.5h.01M8 8h8"/></g>',
   exit: '<path d="M14 4.5h5.5v15H14"/><g class="a-go"><path d="M4.5 12H14M10.5 8.5L14 12l-3.5 3.5"/></g>',
   nosmoke: '<g class="a-no"><circle cx="12" cy="12" r="8.5"/><path d="M6 12h9M17 12h1"/><path d="M6 6l12 12"/></g>',
 };
 // 押したときに、絵のまわりに飛び出す文字（まんがの音のように）。「×」は禁煙の大きなバツ
 const FX = {
-  clock: ["チクタク"], car: ["ブーン"], fire: ["ドーン！"], camera: ["パシャ！", "パシャ！"],
+  clock: ["チクタク"], car: ["ブーン"], bus: ["ブロロロ"], fire: ["ドーン！"], camera: ["パシャ！", "パシャ！"],
   mic: ["ワー！", "ワー！", "キャー！"], vote: ["ストン"], exit: ["ダッ！"], nosmoke: ["×"],
 };
 const fx = (k) => (FX[k] ?? []).map((t, i) => `<i class="vi-fx${t === "×" ? " is-batsu" : ""}" style="--n:${i}" aria-hidden="true">${esc(t)}</i>`).join("");
@@ -53,7 +54,7 @@ const COLORS = [
 const opened = new Set(); // 開いた札（スクロールで順に開く。作りなおしても開いたまま）
 function renderVisit() {
   grid.innerHTML = VISIT.map((v, i) => `
-    <li style="--tilt:${TILTS[i % TILTS.length]}deg; --paper:${COLORS[i % COLORS.length][0]}; --mark:${COLORS[i % COLORS.length][1]}"><button type="button" class="vi-card" data-vi="${i}" aria-pressed="${opened.has(i)}">
+    <li class="${v.wide ? "is-wide" : ""}" style="--tilt:${TILTS[i % TILTS.length]}deg; --paper:${COLORS[i % COLORS.length][0]}; --mark:${COLORS[i % COLORS.length][1]}"><button type="button" class="vi-card" data-vi="${i}" aria-pressed="${opened.has(i)}">
       <span class="vi-face vi-front"><span class="vi-ic">${icon(v.icon)}</span>${fx(v.icon)}<b class="vi-title">${bigNum(fill(v.title))}</b></span>
       <span class="vi-face vi-back"><b class="vi-back-title">${bigNum(fill(v.title))}</b><span class="vi-text">${logo(fill(v.detail))}</span></span>
     </button></li>`).join("");

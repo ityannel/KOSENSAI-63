@@ -2125,3 +2125,9 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .visit-links a { display: inline-flex; align-items: center; gap: calc(5 * var(--u)); padding: calc(4 * var(--u)) calc(12 * var(--u)) calc(4 * var(--u)) calc(9 * var(--u)); border-radius: 999px; background: #634A2E; color: #FEEBC4; text-decoration: none; font-size: calc(11.5 * var(--u)); }
 
 .visit-links svg { width: calc(16 * var(--u)); height: calc(16 * var(--u)); }
+
+/* アクセスの札：ほかの札と同じようにフリップ。幅は2列ぶん */
+.visit-grid li.is-wide { grid-column: 1 / -1; }
+.visit-grid li.is-wide .vi-card { min-height: calc(120 * var(--u)); }
+.visit-grid li.is-wide .vi-title { font-size: calc(19 * var(--u)); }
+.visit-grid + .visit-links { margin-top: calc(22 * var(--u)); }
