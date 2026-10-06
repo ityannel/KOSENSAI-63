@@ -30,7 +30,7 @@ titles += re.findall(r'name:\s*"([^"]+)"', shops_src) + ["縁日", "ABCDEFGHKLM-
 # 学科展示（DEPT_EXHIBITS）：見出し・学科名は WDXL、展示の文と場所は Zen Kaku
 dept_src = config.split("export const DEPT_EXHIBITS")[1].split("\n];")[0]
 titles += ["学科展示", "場所"] + re.findall(r'dept:\s*"([^"]+)"', dept_src)
-dept_text = "".join(re.findall(r'"([^"]+)"', dept_src)) + "5学科の展示地図で展示をさがす場所→"
+dept_text = "".join(re.findall(r'"([^"]+)"', dept_src)) + "5学科の展示地図で展示をさがす@"
 shop_text = "".join(re.findall(r'(?:note|group):\s*"([^"]+)"', shops_src)) + "".join(re.findall(r'id:\s*"([^"]+系|ドリンク)"', config)) + "模擬店・店地図でお店をさがすあそび・体験すべて"
 
 # PC の左右（side.js）：タブとメニューの言葉、日付

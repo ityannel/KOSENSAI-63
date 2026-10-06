@@ -11,68 +11,75 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // 「～…～」の補足は、小さく別の行に
 const item = (t) => { const m = String(t).match(/^(.*?)\s*(～.*～)$/); return m ? `<b>${esc(m[1])}</b><small>${esc(m[2])}</small>` : `<b>${esc(t)}</b>`; };
 // 学科名のボタンは、少しずつ違う方向にかたむけて、高さもずらす（きれいに並べない）
-const TILTS = [-4, 3, -2.5, 4, -3.5];
-const DYS = ["0px", "calc(6 * var(--u))", "calc(-3 * var(--u))", "calc(4 * var(--u))", "calc(-5 * var(--u))"];
+const TILTS = [-3, 2.5, -2, 3.5, -2.5];
+const DYS = ["0px", "calc(4 * var(--u))", "calc(-2 * var(--u))", "calc(2 * var(--u))", "calc(-3 * var(--u))"];
+const DXS = ["0px", "calc(3 * var(--u))", "calc(-1 * var(--u))", "calc(16 * var(--u))", "calc(22 * var(--u))"]; // 2行目は、ずらして置く
+const bgOf = (d) => `color-mix(in srgb, ${d.color} 16%, #FFF8E8)`; // 吹き出しの地：学科の色をうすめた色
 let current = -1; // いま開いている学科（なければ -1）
-let busy = 0;     // 動かしている最中は、前の動きを打ち切るための番号
+let busy = 0;     // 別のボタンを押されたら、前の動きを打ち切るための番号
+const MS = calm ? 0 : 1;
 
 const panelHtml = (d) => `<p class="dept-who"><span>${esc(d.dept)}</span>の展示</p><ul class="dept-items">${d.items.map((t) => `<li>${item(t)}</li>`).join("")}</ul>
-  <a class="dept-where" href="map.html#${esc(d.place)}"><i aria-hidden="true">場所</i><span>${esc(d.where)}</span><em aria-hidden="true">→</em></a>`;
+  <a class="dept-where" href="map.html#${esc(d.place)}"><b aria-hidden="true">@</b><span>${esc(d.where)}</span></a>`;
+const colors = (panel, d) => { panel.style.setProperty("--dc", d.color); panel.style.setProperty("--bg", bgOf(d)); };
 
 function render() {
-  list.innerHTML = `<ul class="dept-pills">${DEPT_EXHIBITS.map((d, i) => `<li><button type="button" class="dept-pill" data-i="${i}" style="--dc:${esc(d.color)}; --tilt:${TILTS[i % TILTS.length]}deg; --dy:${DYS[i % DYS.length]}" aria-expanded="false" aria-controls="dept-panel">${esc(d.dept)}</button></li>`).join("")}</ul>
+  list.innerHTML = `<ul class="dept-pills">${DEPT_EXHIBITS.map((d, i) => `<li><button type="button" class="dept-pill" data-i="${i}" style="--dc:${esc(d.color)}; --tilt:${TILTS[i % TILTS.length]}deg; --dy:${DYS[i % DYS.length]}; --dx:${DXS[i % DXS.length]}" aria-expanded="false" aria-controls="dept-panel">${esc(d.dept)}</button></li>`).join("")}</ul>
     <div class="dept-panel" id="dept-panel" role="region" aria-live="polite"><div class="dept-clip"><div class="dept-inner"></div></div></div>`;
-  const panel = document.getElementById("dept-panel"), inner = panel.querySelector(".dept-inner");
   if (current >= 0) { // 作りなおしたときは、動かさずに、開いたまま
-    const d = DEPT_EXHIBITS[current];
-    inner.innerHTML = panelHtml(d); panel.style.setProperty("--dc", d.color); panel.style.setProperty("--bg", d.bg ?? "#FFF8E8"); placeNub(current); panel.classList.add("is-open"); panel.querySelector(".dept-clip").style.height = "auto";
+    const panel = document.getElementById("dept-panel"), d = DEPT_EXHIBITS[current];
+    panel.querySelector(".dept-inner").innerHTML = panelHtml(d); colors(panel, d); placeNub(current);
+    panel.classList.add("is-open"); panel.querySelector(".dept-clip").style.height = "auto";
     list.querySelectorAll(".dept-pill")[current]?.setAttribute("aria-expanded", "true");
   }
 }
+// 吹き出しのしっぽが、押したボタンの真下を指す
 function placeNub(i) {
   const panel = document.getElementById("dept-panel"), p = list.querySelectorAll(".dept-pill")[i];
-  if (p) panel.style.setProperty("--nub", `${p.offsetLeft + p.offsetWidth / 2 - panel.offsetLeft}px`); // 三角が、押したボタンの真下を指す
+  if (!p) return;
+  const a = p.getBoundingClientRect(), b = panel.getBoundingClientRect();
+  panel.style.setProperty("--nub", `${a.left + a.width / 2 - b.left - panel.clientLeft}px`);
 }
-// 高さを、いまの高さ → 中身の高さへ、なめらかに（終わったら auto にもどす）
-async function growTo(clip, inner, from) {
-  clip.style.height = `${from}px`;
-  void clip.offsetWidth;
-  clip.style.height = `${inner.offsetHeight}px`;
-  await sleep(calm ? 0 : 480);
-  clip.style.height = "auto";
-}
+// 動いている途中の値を読んで、そこから次の動きを始める（とちゅうで押されても、ぬるっとつながる）
+const fresh = (el) => { const o = getComputedStyle(el).opacity; el.getAnimations().forEach((a) => a.cancel()); return Number(o); };
+const ease = "cubic-bezier(0.3, 0.9, 0.3, 1)";
 async function show(i) {
   const panel = document.getElementById("dept-panel"), clip = panel.querySelector(".dept-clip"), inner = panel.querySelector(".dept-inner");
-  const pills = [...list.querySelectorAll(".dept-pill")];
   const was = current, id = ++busy;
   current = i;
-  pills.forEach((p, k) => p.setAttribute("aria-expanded", String(k === i)));
+  list.querySelectorAll(".dept-pill").forEach((p, k) => p.setAttribute("aria-expanded", String(k === i)));
+  const h0 = clip.offsetHeight, o0 = fresh(inner); fresh(clip);
   if (i < 0) { // 閉じる：高さを0へ
-    clip.style.height = `${clip.offsetHeight}px`; void clip.offsetWidth;
-    panel.classList.remove("is-open"); clip.style.height = "0px";
+    clip.style.height = "0px"; panel.classList.remove("is-open");
+    clip.animate([{ height: `${h0}px` }, { height: "0px" }], { duration: 420 * MS, easing: ease });
     return;
   }
   const d = DEPT_EXHIBITS[i];
-  panel.style.setProperty("--dc", d.color); panel.style.setProperty("--bg", d.bg ?? "#FFF8E8"); placeNub(i); // 色と三角は、CSS の transition でなめらかに動く
+  colors(panel, d); placeNub(i); // 色としっぽは、CSS の transition でなめらかに動く
   if (was < 0) { // 開く：0 から、中身の高さへ
-    inner.innerHTML = panelHtml(d);
-    clip.style.height = "0px"; panel.classList.add("is-open");
-    await growTo(clip, inner, 0);
+    inner.innerHTML = panelHtml(d); panel.classList.add("is-open");
+    const h1 = inner.offsetHeight; clip.style.height = "auto";
+    clip.animate([{ height: "0px" }, { height: `${h1}px` }], { duration: 480 * MS, easing: ease });
+    inner.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 380 * MS, delay: 80 * MS, easing: "ease-out", fill: "backwards" });
     return;
   }
-  // 学科をかえる：中身を消して → 入れかえて → 新しい高さへ → 中身を出す
-  const h0 = clip.offsetHeight;
-  clip.style.height = `${h0}px`;
-  inner.classList.add("is-out");
-  await sleep(calm ? 0 : 170);
-  if (id !== busy) return;
+  // 学科をかえる：いまの中身をすっと消して → 入れかえて → 高さを動かしながら、新しい中身をふわっと出す
+  if (o0 > 0.05) {
+    const out = inner.animate([{ opacity: o0 }, { opacity: 0 }], { duration: 130 * MS, easing: "ease-in", fill: "forwards" });
+    await sleep(130 * MS); // 動きの完了を待たず、時間で待つ（動きが止まる画面でも、中身が消えたままにならない）
+    if (id !== busy) return;
+    out.cancel();
+  }
   inner.innerHTML = panelHtml(d);
-  await growTo(clip, inner, h0);
-  if (id !== busy) return;
-  inner.classList.remove("is-out");
+  const h1 = inner.offsetHeight; clip.style.height = "auto";
+  clip.animate([{ height: `${h0}px` }, { height: `${h1}px` }], { duration: 440 * MS, easing: ease });
+  inner.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 340 * MS, easing: "ease-out", fill: "backwards" });
 }
 list?.addEventListener("click", (e) => {
+  if (e.target.closest(".dept-where")) return; // 場所のリンクは、そのまま地図へ
   const b = e.target.closest(".dept-pill");
   if (b) show(Number(b.dataset.i) === current ? -1 : Number(b.dataset.i));
+  else if (e.target.closest(".dept-panel") && current >= 0) show(-1); // 吹き出しを押しても、閉じる
 });
+window.addEventListener("resize", () => current >= 0 && placeNub(current));
 if (list) { render(); onSiteTextChange(render); }

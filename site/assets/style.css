@@ -372,6 +372,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 .k-btn img { display: block; width: 100%; height: auto; }
 .k-btn > img:first-child { filter: drop-shadow(var(--sx) var(--sy) 0 rgba(48, 44, 41, 0.7)); transition: filter 0.12s ease; }
 .k-btn:active { translate: var(--sx) var(--sy); }
+.k-btn:active > img:first-child { filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); } /* 影の位置まで沈んで、影はなくなる */
 .k-btn:active > img:first-child { filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
 .k-btn.is-map { left: calc(76 * var(--u)); top: calc(394 * var(--u)); width: calc(161.9 * var(--u)); --sx: calc(8.55 * var(--u)); --sy: calc(3.95 * var(--u)); } /* Figma「新ボタン案」：前の 0.658 倍 */
 .k-btn.is-enista { left: calc(129.94 * var(--u)); top: calc(601 * var(--u)); width: calc(202.9 * var(--u)); --sx: calc(-9.06 * var(--u)); --sy: calc(4.18 * var(--u)); } /* 前の 0.697 倍 */
@@ -654,7 +655,7 @@ body.mido-page { background: linear-gradient(rgba(20, 12, 18, 0.45), rgba(20, 12
 }
 .spon-tile { overflow: hidden; } /* ロゴの絵の大きさに引っぱられて、札が大きくならないように */
 .spon-tile img { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
-a.spon-tile:active { translate: calc(-3 * var(--u)) calc(2 * var(--u)); box-shadow: calc(-1 * var(--u)) calc(1 * var(--u)) 0 rgba(20, 24, 38, 0.45); }
+a.spon-tile:active { translate: calc(-3 * var(--u)) calc(2 * var(--u)); box-shadow: 0 0 0 rgba(20, 24, 38, 0); }
 /* まだロゴが来ていないあいだの、ロゴの入る場所 */
 .spon-tile.is-empty { background: rgba(255, 255, 255, .06); box-shadow: none; outline: calc(1.5 * var(--u)) dashed rgba(247, 255, 244, .55); outline-offset: calc(-1.5 * var(--u)); color: rgba(247, 255, 244, .6); font-family: var(--hud-font); font-weight: 400; font-size: calc(16 * var(--u)); letter-spacing: .1em; }
 .spon-copy { margin: calc(30 * var(--u)) 0 0; text-align: center; font-size: calc(11 * var(--u)); opacity: .6; }
@@ -1444,7 +1445,7 @@ body.tabs-docked .site-tabs::after { opacity: 0; }
 /* ×：丸いボタン（小さめ・こげ茶） */
 .install-x.mido-close { top: calc(12 * var(--u)); right: calc(12 * var(--u)); padding: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(calc(-3 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, 0.45)); }
 .install-x.mido-close span { width: calc(32 * var(--u)); background: var(--grain), #634A2E; color: #FEEBC4; }
-.install-x.mido-close:active { translate: calc(-3 * var(--u)) calc(2 * var(--u)); }
+.install-x.mido-close:active { translate: calc(-3 * var(--u)) calc(2 * var(--u)); filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
 
 /* =====================================================
    ライトモード・差し色
@@ -2060,27 +2061,31 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
   filter: drop-shadow(calc(-6 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, 0.45));
   transition: --dc 0.5s ease, --bg 0.5s ease, --nub 0.5s cubic-bezier(0.3, 0.9, 0.3, 1), margin-top 0.5s cubic-bezier(0.3, 0.9, 0.3, 1), padding 0.5s cubic-bezier(0.3, 0.9, 0.3, 1), opacity 0.35s ease; }
 .dept-panel.is-open { margin-top: calc(18 * var(--u)); padding: calc(18 * var(--u)); opacity: 1; pointer-events: auto; }
-.dept-panel::before { content: ""; position: absolute; top: calc(-8 * var(--u)); left: calc(var(--nub, 40px) - 8 * var(--u)); width: calc(16 * var(--u)); height: calc(16 * var(--u)); rotate: 45deg; border-radius: calc(3 * var(--u)) 0 0 0; background: var(--bg); border-left: calc(3 * var(--u)) solid var(--dc); border-top: calc(3 * var(--u)) solid var(--dc); }
-.dept-clip { height: 0; overflow: hidden; transition: height 0.48s cubic-bezier(0.3, 0.9, 0.3, 1); }
-.dept-inner { transition: opacity 0.17s ease; }
-.dept-inner.is-out { opacity: 0; }
-@media (prefers-reduced-motion: reduce) { .dept-panel, .dept-clip, .dept-inner { transition: none; } }
+/* 吹き出しのしっぽ：外側（縁の色）の三角の上に、地の色の三角を重ねて、縁の線とつなげる */
+.dept-panel::before, .dept-panel::after { content: ""; position: absolute; pointer-events: none; }
+.dept-panel::before { top: calc(-17 * var(--u)); left: calc(var(--nub, 40px) - 14 * var(--u)); width: calc(28 * var(--u)); height: calc(17 * var(--u)); background: var(--dc); clip-path: polygon(0 100%, 43% 12%, 50% 0, 57% 12%, 100% 100%); }
+.dept-panel::after { top: calc(-12.5 * var(--u)); left: calc(var(--nub, 40px) - 10.5 * var(--u)); width: calc(21 * var(--u)); height: calc(14 * var(--u)); background: var(--bg); clip-path: polygon(0 100%, 42% 14%, 50% 0, 58% 14%, 100% 100%); }
+.dept-clip { height: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .dept-panel { transition: none; } }
 .dept-items { display: grid; gap: calc(6 * var(--u)); margin: 0; padding: 0; list-style: none; }
 .dept-items li { position: relative; padding-left: calc(13 * var(--u)); font-family: var(--text-font); font-weight: 700; font-size: calc(13 * var(--u)); line-height: 1.5; word-break: auto-phrase; text-wrap: pretty; }
 .dept-items li::before { content: ""; position: absolute; left: 0; top: calc(7 * var(--u)); width: calc(6 * var(--u)); height: calc(6 * var(--u)); border-radius: 50%; background: var(--dc); }
 .dept-items small { display: block; font-size: calc(10.5 * var(--u)); opacity: 0.75; }
 .dept-where { display: flex; align-items: center; gap: calc(8 * var(--u)); margin-top: calc(12 * var(--u)); padding: calc(6 * var(--u)) calc(10 * var(--u)); border-radius: calc(10 * var(--u)); background: rgba(255, 255, 255, 0.65); color: inherit; text-decoration: none; font-family: var(--text-font); font-weight: 700; font-size: calc(11.5 * var(--u)); line-height: 1.4; }
-.dept-where i { flex: none; padding: 0 calc(7 * var(--u)); border-radius: 999px; background: #634A2E; color: #FEEBC4; font-style: normal; font-size: calc(10 * var(--u)); }
 .dept-where span { flex: 1; }
-.dept-where em { flex: none; font-style: normal; font-family: var(--hud-font); }
+.dept-where b { flex: none; font-weight: 700; opacity: 0.7; }
 .dept .mido-more { margin-top: calc(22 * var(--u)); }
 .dept-list { margin: 0; padding: 0; list-style: none; }
 
 /* 学科名のボタン：横幅はそろえて、かたむきと高さは1つずつ変える */
-.dept-pills { gap: calc(14 * var(--u)) calc(10 * var(--u)); }
-.dept-pill { width: calc(106 * var(--u)); padding-left: 0; padding-right: 0; text-align: center; rotate: var(--tilt, 0deg); translate: 0 var(--dy, 0px); }
-.dept-pill:active, .dept-pill[aria-expanded="true"] { translate: calc(-3 * var(--u)) calc(var(--dy, 0px) + 3 * var(--u)); }
+.dept-pills { gap: calc(20 * var(--u)) calc(8 * var(--u)); }
+.dept-pill { width: calc(106 * var(--u)); padding-left: 0; padding-right: 0; text-align: center; rotate: var(--tilt, 0deg); translate: var(--dx, 0px) var(--dy, 0px); }
+.dept-pill:active, .dept-pill[aria-expanded="true"] { translate: calc(var(--dx, 0px) - 3 * var(--u)) calc(var(--dy, 0px) + 3 * var(--u)); }
 
 /* 吹き出しの上に「だれの展示か」の学科名 */
 .dept-who { margin: 0 0 calc(10 * var(--u)); font-family: var(--text-font); font-weight: 700; font-size: calc(12 * var(--u)); }
 .dept-who span { display: inline-block; margin-right: calc(4 * var(--u)); padding: calc(1 * var(--u)) calc(12 * var(--u)); border-radius: 999px; background: var(--dc); color: #fff; font-family: var(--hud-font); font-weight: 400; font-size: calc(17 * var(--u)); line-height: 1.3; transition: background-color 0.5s ease; }
+
+/* 吹き出しも、ひとつのボタン：押すと、影の方へ沈む（中の「場所」のリンクを押したときは、動かさない） */
+.dept-panel { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: --dc 0.5s ease, --bg 0.5s ease, --nub 0.5s cubic-bezier(0.3, 0.9, 0.3, 1), margin-top 0.5s cubic-bezier(0.3, 0.9, 0.3, 1), padding 0.5s cubic-bezier(0.3, 0.9, 0.3, 1), opacity 0.35s ease, translate 0.12s ease, filter 0.12s ease; }
+.dept-panel.is-open:active:not(:has(.dept-where:active)) { translate: calc(-6 * var(--u)) calc(4 * var(--u)); filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
