@@ -307,8 +307,14 @@
       <h2 class="spon-title" id="sponsors-title">協賛</h2>
       <p class="spon-lead" id="sponsor-lead"></p>
       <ul class="spon-grid" id="sponsor-list"></ul>
+    </div>
+  </section>
+
+  <!-- ===== アプリとして使う（ホーム画面に追加）：いつも、版権表示のすぐ上に出す。アプリとして開いているときだけ、出さない ===== -->
+  <section class="spon spon-install" id="install-sec" aria-label="アプリとして使う">
+    <div class="spon-in">
       <!-- アプリとして使う（ホーム画面に追加）。入れられるときだけ出る。クリーム色の紙の札（ほかのボタンと同じ形） -->
-      <aside class="install" id="install" hidden>
+      <aside class="install" id="install" data-mode="other">
         <img src="assets/img/icon-192.png" width="192" height="192" alt="">
         <div class="install-text">
           <b>アプリとして使う</b>
@@ -316,7 +322,6 @@
           <small class="install-howto">画面の下（iPad は上）の <b>共有ボタン</b> →「<b>ホーム画面に追加</b>」</small>
         </div>
         <button type="button" class="install-btn mido-more"><span>追加</span></button>
-        <button type="button" class="install-x mido-close" aria-label="閉じる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></button>
       </aside>
     </div>
   </section>

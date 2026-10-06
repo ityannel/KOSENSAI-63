@@ -1428,7 +1428,9 @@ body.tabs-docked .site-tabs::after { opacity: 0; }
   border-radius: calc(8 * var(--u)); background: var(--grain), #FEEBC4; color: #634A2E; rotate: -1deg;
   box-shadow: calc(-6 * var(--u)) calc(4 * var(--u)) 0 rgba(20, 24, 38, 0.5);
 }
-.install[hidden] { display: none; }
+.install[hidden], .spon-install[hidden] { display: none; }
+.spon-install { background: var(--grain), #2f3953; }
+.spon-install .install { margin-top: 0; }
 .install img { width: 100%; height: auto; border-radius: calc(12 * var(--u)); }
 .install-text { display: grid; gap: calc(4 * var(--u)); min-width: 0; }
 .install-text > b { font-family: var(--hud-font); font-weight: 400; font-size: calc(20 * var(--u)); line-height: 1.2; }
@@ -2045,7 +2047,15 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 
 /* ---------- 学科展示：学科名の丸いボタンだけ。押すと、ちょっといびつな角丸の板に、その学科の展示が出る（一度に1学科） ---------- */
 .dept { container-type: inline-size; --u: calc(100cqi / 402); isolation: isolate; position: relative; margin-top: -1px; color: #634A2E; scroll-margin-top: 8px;
-  background: var(--grain), linear-gradient(#d9669b, #ec9fa0 calc(90 * var(--u)), #f2b79f); }
+  /* 学科の色（機械の橙・電気電子の黄土・情報の青・物質環境の緑・社会基盤のピンク）を、線ではなく、ばらばらの位置のにじみで重ねる（その上に紙のざらざら） */
+  background: var(--grain),
+    radial-gradient(ellipse 55% 42% at 6% 6%, rgba(217, 137, 43, .85), transparent 70%),
+    radial-gradient(ellipse 50% 38% at 96% 14%, rgba(63, 141, 184, .85), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 52% 32%, rgba(201, 161, 30, .7), transparent 72%),
+    radial-gradient(ellipse 55% 45% at 14% 92%, rgba(94, 156, 69, .8), transparent 70%),
+    radial-gradient(ellipse 52% 42% at 90% 96%, rgba(216, 99, 122, .85), transparent 70%),
+    radial-gradient(ellipse 30% 22% at 70% 62%, rgba(63, 141, 184, .45), transparent 70%),
+    #e9bfa6; }
 .dept-in { padding: calc(30 * var(--u)) calc(26 * var(--u)) calc(38 * var(--u)); }
 .dept-title { margin: 0 calc(1 * var(--u)) calc(16 * var(--u)); font-family: var(--hud-font); font-size: calc(30 * var(--u)); font-weight: 400; line-height: 1; color: #fff; }
 .dept-pills { display: flex; flex-wrap: wrap; gap: calc(10 * var(--u)); margin: 0; padding: 0; list-style: none; }

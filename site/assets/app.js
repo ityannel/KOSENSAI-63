@@ -3,34 +3,34 @@
 // - iPhone / iPad の Safari：入れ方（共有 → ホーム画面に追加）を出す
 // - もうアプリとして開いているとき・「×」で閉じたあとは出さない
 const card = document.getElementById("install");
-const KEY = "kosen63-install-dismissed";
 const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-const dismissed = () => { try { return !!localStorage.getItem(KEY); } catch { return false; } };
 const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 let deferred = null;
-
-function show(mode) {
-  if (!card || standalone || dismissed()) return;
-  card.dataset.mode = mode;
-  card.hidden = false;
+const HOWTO = {
+  ios: "画面の下（iPad は上）の <b>共有ボタン</b> →「<b>ホーム画面に追加</b>」",
+  other: "ブラウザのメニュー（︙）→「<b>ホーム画面に追加</b>」または「<b>アプリをインストール</b>」",
+};
+// いつも出す（アプリとして開いているときだけ出さない）。Chrome で、そのまま入れられるときは「追加」で入る
+function mode(m) {
+  if (!card) return;
+  card.dataset.mode = m;
+  const how = card.querySelector(".install-howto");
+  if (how && HOWTO[m]) how.innerHTML = HOWTO[m];
 }
-addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; show("prompt"); });
-addEventListener("appinstalled", () => { if (card) card.hidden = true; });
-if (ios) show("ios");
+if (card) {
+  if (standalone) document.getElementById("install-sec")?.setAttribute("hidden", "");
+  else mode(ios ? "ios" : "other");
+}
+addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; mode("prompt"); });
+addEventListener("appinstalled", () => document.getElementById("install-sec")?.setAttribute("hidden", ""));
 
 card?.addEventListener("click", async (e) => {
-  if (e.target.closest(".install-x")) {
-    card.hidden = true;
-    try { localStorage.setItem(KEY, "1"); } catch { /* 保存できないブラウザ */ }
-    return;
-  }
   if (!e.target.closest(".install-btn")) return;
-  if (card.dataset.mode === "ios") { card.classList.toggle("is-howto"); return; }
-  if (!deferred) return;
+  if (card.dataset.mode !== "prompt" || !deferred) { card.classList.toggle("is-howto"); return; }
   deferred.prompt();
   const { outcome } = await deferred.userChoice;
   deferred = null;
-  if (outcome === "accepted") card.hidden = true;
+  if (outcome === "accepted") document.getElementById("install-sec")?.setAttribute("hidden", "");
 });
 
 // 下のタブ：いま見ている「サイト」をもう一度押したら、いちばん上へ
