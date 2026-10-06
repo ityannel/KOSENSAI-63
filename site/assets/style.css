@@ -1118,7 +1118,7 @@ body.lightning::after {
   filter: drop-shadow(0 0.6cqw 1.2cqw rgba(20, 60, 60, 0.25));
   transition: scale 0.3s, opacity 0.6s;
 }
-.logo img { width: 100%; height: auto; filter: brightness(0) invert(1); } /* 「縁」のロゴは、完全な白（絵の形はそのまま） */
+.logo img { width: 100%; height: auto; }
 .logo:hover, .logo:focus-visible { scale: 1.03; }
 body.streaming .logo { opacity: 0; pointer-events: none; }
 
@@ -1587,7 +1587,7 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
     transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), scale 0.3s;
   }
   .pc-logo:hover .pc-logo-in { scale: 1.04; }
-  .pc-logo img { display: block; width: 100%; height: auto; }
+  .pc-logo img { display: block; width: 100%; height: auto; filter: brightness(0) invert(1); } /* PC の横の「縁」のロゴは、完全な白 */
   .pc-logo-in::after {
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 42%);
