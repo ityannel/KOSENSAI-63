@@ -983,7 +983,7 @@ function shopLabels(p) {
   if (p.kind !== "shops") lines.push({ cls: "lb-fest", text: p.name, px: 13 });   // 会場（中庭・食堂など）の名前
   for (const x of p.shopList) {
     // 目立たせるのは団体名：オレンジのまるいラベル（学科展示の学科名と同じ形）、その下にお店の名前
-    if (x.group && x.group !== x.name) lines.push({ cls: "lb-group-pill", text: x.group, px: Math.max(7.5, Math.min(12, 12 * 5 / [...x.group].length)), pill: true }); // 長い団体名は、文字を小さくして、ラベルを部屋にあわせる
+    if (x.group && x.group !== x.name) lines.push({ cls: "lb-group-pill", text: x.group, px: PILL_PX, pill: true }); // ラベルの大きさは、店も学科展示も同じ
     lines.push({ cls: "lb-shop", text: x.name, px: 11 });
   }
   const lh = (l) => (l.pill ? l.px + 7 : l.tight ? l.px + 3 : l.px + 6);
@@ -999,6 +999,8 @@ function shopLabels(p) {
     return out;
   }).join("");
 }
+// 団体名・学科名のまるいラベルの文字の大きさ（店・学科展示で共通。css の .lb-dept-sub と同じ）
+const PILL_PX = 13;
 // 学科展示は、学科の色（トップの学科のボタンと同じ）で塗る。色は --dc で渡す
 const deptStyle = (p) => { const c = DEPT_EXHIBITS.find((d) => d.dept === p.dept)?.color; return c ? ` style="--dc:${c}"` : ""; };
 // 学科展示：上に学科の名前（学科の色のぷっくりしたラベル）、その下に展示のタイトル
