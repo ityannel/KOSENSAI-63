@@ -2064,10 +2064,12 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .dept-panel.is-open { margin-top: calc(18 * var(--u)); padding: calc(18 * var(--u)); opacity: 1; pointer-events: auto; }
 /* 吹き出しのしっぽ：外側（縁の色）の三角の上に、地の色の三角を重ねて、縁の線とつなげる */
 .dept-panel::before, .dept-panel::after { content: ""; position: absolute; pointer-events: none; }
-.dept-panel::before { top: calc(-1 * var(--tail, 17px)); left: calc(var(--nub, 40px) - 14 * var(--u)); width: calc(28 * var(--u)); height: var(--tail, 17px); background: var(--dc);
-  clip-path: polygon(calc(50% - 3.5 * var(--u)) 0, calc(50% + 3.5 * var(--u)) 0, calc(50% + 3.5 * var(--u)) calc(100% - 17 * var(--u)), 100% 100%, 0 100%, calc(50% - 3.5 * var(--u)) calc(100% - 17 * var(--u))); }
-.dept-panel::after { top: calc(-1 * var(--tail, 17px) + 4.5 * var(--u)); left: calc(var(--nub, 40px) - 10.5 * var(--u)); width: calc(21 * var(--u)); height: calc(var(--tail, 17px) - 3 * var(--u)); background: var(--grain), var(--bg);
-  clip-path: polygon(calc(50% - 1 * var(--u)) 0, calc(50% + 1 * var(--u)) 0, calc(50% + 1 * var(--u)) calc(100% - 14 * var(--u)), 100% 100%, 0 100%, calc(50% - 1 * var(--u)) calc(100% - 14 * var(--u))); } /* 地の色の三角にも、紙のざらざらをつける */
+.dept-panel::before { top: calc(-1 * var(--tail, 17px)); left: calc(var(--nub, 40px) - 15 * var(--u)); width: calc(30 * var(--u)); height: var(--tail, 17px); background: var(--dc); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.dept-panel::after { top: calc(-1 * var(--tail, 17px)); left: calc(var(--nub, 40px) - 15 * var(--u)); width: calc(30 * var(--u)); height: calc(var(--tail, 17px) + 4 * var(--u)); background: var(--grain), var(--bg);
+  clip-path: polygon(50% calc(0.2 * var(--tail, 17px)), calc(100% - 3 * var(--u)) 100%, calc(3 * var(--u)) 100%); } /* 縁の色の三角の中に、地の色の三角（紙のざらざら付き）。縁の太さは、どこも 3u */
+/* ボタンは、吹き出しより上の層（しっぽの先は、ボタンの下にもぐる） */
+.dept-pills { position: relative; z-index: 2; }
+.dept-panel { z-index: 1; }
 .dept-clip { height: 0; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .dept-panel { transition: none; } }
 .dept-items { display: grid; gap: calc(6 * var(--u)); margin: 0; padding: 0; list-style: none; }
