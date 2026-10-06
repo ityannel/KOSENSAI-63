@@ -2045,7 +2045,7 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 
 /* ---------- 学科展示：学科名の丸いボタンだけ。押すと、ちょっといびつな角丸の板に、その学科の展示が出る（一度に1学科） ---------- */
 .dept { container-type: inline-size; --u: calc(100cqi / 402); isolation: isolate; position: relative; margin-top: -1px; color: #634A2E; scroll-margin-top: 8px;
-  background: var(--grain), linear-gradient(#d9669b, #f0b6a6 calc(60 * var(--u)), #f8dcc9 70%, #f3e6c6); }
+  background: var(--grain), linear-gradient(#d9669b, #ec9fa0 calc(90 * var(--u)), #f2b79f); }
 .dept-in { padding: calc(30 * var(--u)) calc(26 * var(--u)) calc(38 * var(--u)); }
 .dept-title { margin: 0 calc(1 * var(--u)) calc(16 * var(--u)); font-family: var(--hud-font); font-size: calc(30 * var(--u)); font-weight: 400; line-height: 1; color: #fff; }
 .dept-pills { display: flex; flex-wrap: wrap; gap: calc(10 * var(--u)); margin: 0; padding: 0; list-style: none; }
@@ -2100,3 +2100,6 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .visit-static dt { margin-top: calc(8 * var(--u)); font-size: calc(11 * var(--u)); opacity: .7; }
 .visit-static dt:first-child { margin-top: 0; }
 .visit-static dd { margin: 0; }
+
+/* 学科展示（ピンク）の次に来る「ご来場の皆さまへ」は、上にクリーム色を残さない（残すと、ピンクとの間に、ベージュの帯が出る） */
+.dept + .visit { background: var(--grain), radial-gradient(ellipse 80% 45% at 12% 0%, rgba(214, 240, 226, .45), transparent 70%), linear-gradient(165deg, #9dd0c3, #86bfb7 45%, #6fa8aa); }
