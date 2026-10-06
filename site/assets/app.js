@@ -18,7 +18,8 @@ function mode(m) {
   if (how && HOWTO[m]) how.innerHTML = HOWTO[m];
 }
 if (card) {
-  if (standalone) document.getElementById("install-sec")?.setAttribute("hidden", "");
+  const phone = matchMedia("(pointer: coarse)").matches; // PC（マウス）のときは出さない
+  if (standalone || !phone) document.getElementById("install-sec")?.setAttribute("hidden", "");
   else mode(ios ? "ios" : "other");
 }
 addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; mode("prompt"); });

@@ -2047,15 +2047,8 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 
 /* ---------- 学科展示：学科名の丸いボタンだけ。押すと、ちょっといびつな角丸の板に、その学科の展示が出る（一度に1学科） ---------- */
 .dept { container-type: inline-size; --u: calc(100cqi / 402); isolation: isolate; position: relative; margin-top: -1px; color: #634A2E; scroll-margin-top: 8px;
-  /* 学科の色（機械の橙・電気電子の黄土・情報の青・物質環境の緑・社会基盤のピンク）を、線ではなく、ばらばらの位置のにじみで重ねる（その上に紙のざらざら） */
-  background: var(--grain),
-    radial-gradient(ellipse 55% 42% at 6% 6%, rgba(217, 137, 43, .85), transparent 70%),
-    radial-gradient(ellipse 50% 38% at 96% 14%, rgba(63, 141, 184, .85), transparent 70%),
-    radial-gradient(ellipse 45% 35% at 52% 32%, rgba(201, 161, 30, .7), transparent 72%),
-    radial-gradient(ellipse 55% 45% at 14% 92%, rgba(94, 156, 69, .8), transparent 70%),
-    radial-gradient(ellipse 52% 42% at 90% 96%, rgba(216, 99, 122, .85), transparent 70%),
-    radial-gradient(ellipse 30% 22% at 70% 62%, rgba(63, 141, 184, .45), transparent 70%),
-    #e9bfa6; }
+  /* 学科の色（機械の橙・電気電子の黄・情報の青・物質環境の緑・社会基盤のピンク）を、大きくぼかした丸で、ばらばらの位置に置く。その上に紙のざらざら */
+  background: var(--grain), url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20400%20640%22%20preserveAspectRatio=%22none%22%3E%3Cdefs%3E%3Cfilter%20id=%22b%22%20x=%22-50%25%22%20y=%22-50%25%22%20width=%22200%25%22%20height=%22200%25%22%3E%3CfeGaussianBlur%20stdDeviation=%2246%22/%3E%3C/filter%3E%3C/defs%3E%3Crect%20width=%22400%22%20height=%22640%22%20fill=%22%23f1cdb4%22/%3E%3Cg%20filter=%22url%28%23b%29%22%3E%3Ccircle%20cx=%2240%22%20cy=%2260%22%20r=%22150%22%20fill=%22%23D9892B%22/%3E%3Ccircle%20cx=%22230%22%20cy=%2220%22%20r=%22110%22%20fill=%22%23E3B93C%22/%3E%3Ccircle%20cx=%22390%22%20cy=%22110%22%20r=%22150%22%20fill=%22%233F8DB8%22/%3E%3Ccircle%20cx=%22120%22%20cy=%22330%22%20r=%22110%22%20fill=%22%23E3B93C%22%20opacity=%22.8%22/%3E%3Ccircle%20cx=%22360%22%20cy=%22360%22%20r=%22120%22%20fill=%22%235E9C45%22/%3E%3Ccircle%20cx=%2220%22%20cy=%22560%22%20r=%22150%22%20fill=%22%235E9C45%22/%3E%3Ccircle%20cx=%22250%22%20cy=%22620%22%20r=%22140%22%20fill=%22%23D8637A%22/%3E%3Ccircle%20cx=%22400%22%20cy=%22620%22%20r=%22110%22%20fill=%22%233F8DB8%22%20opacity=%22.8%22/%3E%3C/g%3E%3C/svg%3E") center / 100% 100% no-repeat, #f1cdb4; }
 .dept-in { padding: calc(30 * var(--u)) calc(26 * var(--u)) calc(38 * var(--u)); }
 .dept-title { margin: 0 calc(1 * var(--u)) calc(16 * var(--u)); font-family: var(--hud-font); font-size: calc(30 * var(--u)); font-weight: 400; line-height: 1; color: #fff; }
 .dept-pills { display: flex; flex-wrap: wrap; gap: calc(10 * var(--u)); margin: 0; padding: 0; list-style: none; }
