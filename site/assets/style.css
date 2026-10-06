@@ -2078,7 +2078,7 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .dept-list { margin: 0; padding: 0; list-style: none; }
 
 /* 学科名のボタン：横幅はそろえて、かたむきと高さは1つずつ変える */
-.dept-pills { gap: calc(20 * var(--u)) calc(8 * var(--u)); }
+.dept-pills { justify-content: center; gap: calc(20 * var(--u)) calc(8 * var(--u)); }
 .dept-pill { width: calc(106 * var(--u)); padding-left: 0; padding-right: 0; text-align: center; rotate: var(--tilt, 0deg); translate: var(--dx, 0px) var(--dy, 0px); }
 .dept-pill:active, .dept-pill[aria-expanded="true"] { translate: calc(var(--dx, 0px) - 3 * var(--u)) calc(var(--dy, 0px) + 3 * var(--u)); }
 

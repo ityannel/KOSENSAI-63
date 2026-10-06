@@ -12,8 +12,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const item = (t) => { const m = String(t).match(/^(.*?)\s*(～.*～)$/); return m ? `<b>${esc(m[1])}</b><small>${esc(m[2])}</small>` : `<b>${esc(t)}</b>`; };
 // 学科名のボタンは、少しずつ違う方向にかたむけて、高さもずらす（きれいに並べない）
 const TILTS = [-3, 2.5, -2, 3.5, -2.5];
-const DYS = ["0px", "calc(4 * var(--u))", "calc(-2 * var(--u))", "calc(2 * var(--u))", "calc(-3 * var(--u))"];
-const DXS = ["0px", "calc(3 * var(--u))", "calc(-1 * var(--u))", "calc(16 * var(--u))", "calc(22 * var(--u))"]; // 2行目は、ずらして置く
+const DYS = ["0px", "calc(4 * var(--u))", "calc(-2 * var(--u))", "0px", "0px"]; // 2行目の2つは、同じ高さにそろえる
+const DXS = ["0px", "0px", "calc(10 * var(--u))", "0px", "0px"]; // 情報だけ、少し右へ。2行目は、上の3つの真ん中に置く
 const bgOf = (d) => `color-mix(in srgb, ${d.color} 16%, #FFF8E8)`; // 吹き出しの地：学科の色をうすめた色
 let current = -1; // いま開いている学科（なければ -1）
 let busy = 0;     // 別のボタンを押されたら、前の動きを打ち切るための番号
