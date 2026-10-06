@@ -1,7 +1,6 @@
 // トップページの「学科展示」：学科名の丸いボタンだけを並べ、押すと、その学科の展示が板に出る（一度に1学科。もう一度押すと閉じる）。
 // 開く・学科をかえる・閉じるは、板の高さ・色・三角の位置・中身の入れかわりを、なめらかにつないで動かす。
 // 文は config.js の DEPT_EXHIBITS（要項の「学科展示について」）。場所を押すと、地図でその場所が開く
-import { onSiteTextChange } from "./site-text.js"; // 本部が変えた文・書体（ほかより先に読む）
 import { DEPT_EXHIBITS } from "./config.js";
 
 const list = document.getElementById("dept-list");
@@ -82,4 +81,4 @@ list?.addEventListener("click", (e) => {
   else if (e.target.closest(".dept-panel") && current >= 0) location.href = `map.html#${DEPT_EXHIBITS[current].place}`; // 吹き出しを押すと、その展示の場所の地図へ
 });
 window.addEventListener("resize", () => current >= 0 && placeNub(current));
-if (list) { render(); onSiteTextChange(render); }
+if (list) render();

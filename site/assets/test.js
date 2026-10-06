@@ -1,7 +1,6 @@
 // テスト用の操作パネル。URL に ?test=1 を付けたときだけ読み込まれる（来場者には出ない）。
 // 時刻・空・天気・デモデータは URL の値を変えて読み込み直す。花火やメニューなどはその場で動かす。
 import { RALLY, FESTIVAL } from "./config.js";
-import { FONTS, previewFonts, currentSiteText } from "./site-text.js";
 
 const params = new URLSearchParams(location.search);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -77,7 +76,6 @@ export function initPreviewBridge(hooks) {
     wake: () => hooks.setAwake(true),
     sleep: () => hooks.setAwake(false),
     shake: () => hooks.shake?.push(12),
-    fonts: (v) => previewFonts(v),
     goto: (v) => goTo(v),
     ...STORAGE_ACTIONS,
   };
@@ -128,11 +126,6 @@ export function initTest(hooks) {
         <label><input type="checkbox" id="tw-demo"${params.has("demo") ? " checked" : ""}> デモ（お知らせ・配信・食レポ・混雑・実況・灯り・仮のお店）</label>
         <label><input type="checkbox" id="tw-urgent"${params.has("urgent") ? " checked" : ""}${params.has("demo") ? "" : " disabled"}> デモのお知らせを「緊急」にする</label>
         ${local ? `<label><input type="checkbox" id="tw-emu"${params.has("emulator") ? " checked" : ""}> Firebase エミュレーターにつなぐ（手元だけ）</label>` : ""}
-      </section>
-      <section>
-        <h4>書体（このページで試すだけ。保存は本部コンソール）</h4>
-        ${Object.entries({ display: "見出し・数字", text: "文", body: "ふつう" }).map(([role, label]) => `
-          <label class="tw-row">${label} <select data-tw-font="${role}">${FONTS[role].map((f) => `<option value="${esc(f.id)}"${(currentSiteText()?.fonts?.[role] ?? FONTS[role][0].id) === f.id ? " selected" : ""}>${esc(f.label)}</option>`).join("")}</select></label>`).join("")}
       </section>
       <section>
         <h4>演出</h4>
@@ -201,11 +194,6 @@ export function initTest(hooks) {
   $("#tw-demo").addEventListener("change", (e) => reloadWith({ demo: e.target.checked, urgent: e.target.checked && $("#tw-urgent").checked }));
   $("#tw-urgent").addEventListener("change", (e) => reloadWith({ urgent: e.target.checked }));
   $("#tw-emu")?.addEventListener("change", (e) => reloadWith({ emulator: e.target.checked }));
-
-  // 書体（保存しない。このページだけ）
-  box.querySelectorAll("[data-tw-font]").forEach((sel) => sel.addEventListener("change", () => {
-    previewFonts(Object.fromEntries([...box.querySelectorAll("[data-tw-font]")].map((x) => [x.dataset.twFont, x.value])));
-  }));
 
   // 演出
   $("#tw-fire").addEventListener("click", () => hooks.playOpening());

@@ -242,20 +242,6 @@ export async function subscribeRallyControl(callback) {
   }
 }
 
-// 本部の管理画面で変えた文章と書体（site-text.js が使う）
-export async function subscribeSiteText(callback) {
-  try {
-    const db = await getDb();
-    fs.onSnapshot(
-      fs.doc(db, "site_text", "current"),
-      (snap) => callback(snap.exists() ? snap.data() : null),
-      (err) => console.warn("[site_text] Firestore を読めませんでした:", err.code),
-    );
-  } catch (err) {
-    console.warn("[site_text] Firebase を読み込めませんでした:", err);
-  }
-}
-
 export async function subscribeChatter(callback) {
   if (params.has("demo")) return callback({ p4: "【デモ】いま体育館、めっちゃ盛り上がってる！" });
   try {

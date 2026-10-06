@@ -13,6 +13,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://hakodate-kosensai.pages.dev/">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Event","name":"第63回 函館高専祭「縁」","alternateName":"函館高専祭","startDate":"2026-10-24T12:00:00+09:00","endDate":"2026-10-25T16:00:00+09:00","eventStatus":"https://schema.org/EventScheduled","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","location":{"@type":"Place","name":"函館工業高等専門学校","address":{"@type":"PostalAddress","addressRegion":"北海道","addressLocality":"函館市","streetAddress":"戸倉町14-1","addressCountry":"JP"}},"organizer":{"@type":"Organization","name":"函館高専祭実行委員会"},"image":"https://hakodate-kosensai.pages.dev/assets/img/ogp.jpg","url":"https://hakodate-kosensai.pages.dev/","description":"函館工業高等専門学校の学園祭。テーマは「縁」。学科展示・模擬店・ステージ・花火。"}</script>
+  <noscript><style>.phase-before > .slot-label, .phase-before > .countdown, .scroll-hint { display: none; }</style></noscript>
   <meta name="theme-color" content="#3E3F42">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
@@ -32,7 +33,6 @@
   <!-- ページの部品を最初にまとめて読む（import を1段ずつたどって待たないように） -->
   <link rel="modulepreload" href="assets/main.js">
   <link rel="modulepreload" href="assets/config.js">
-  <link rel="modulepreload" href="assets/site-text.js">
   <link rel="modulepreload" href="assets/live.js">
   <link rel="modulepreload" href="assets/rally.js">
   <link rel="modulepreload" href="assets/rally-data.js">
@@ -111,8 +111,8 @@
       <p class="live-badge phase-during ui"><span class="live-dot"></span><span id="live-badge">開催中！</span></p>
 
       <!-- 「縁」のロゴ（開催中に生配信があるときは、配信と入れ替わる） -->
-      <a class="logo" href="#pickup" aria-label="縁（えにし）― みどころ">
-        <img src="assets/img/logo.webp" width="673" height="657" alt="">
+      <a class="logo" href="#pickup">
+        <img src="assets/img/logo.webp" width="673" height="657" alt="第63回 函館高専祭 縁（みどころへ）">
       </a>
       <div class="live-pip" id="live" hidden>
         <div id="live-stream"></div>
@@ -166,7 +166,7 @@
     </div>
     <img class="k-sil" src="assets/img/top-sil.webp" width="1017" height="262" alt="" loading="lazy" decoding="async">
     <a class="k-btn is-map" href="map.html"><img src="assets/img/btn-map.svg" width="246" height="221" alt="校内マップ"></a>
-    <a class="k-btn is-enista" href="map.html?tab=feed"><img src="assets/img/btn-enista.svg" width="291" height="152" alt=""><img class="k-logo" src="assets/img/enista-puffy.webp" width="666" height="117" alt="Enistagram"></a>
+    <a class="k-btn is-enista" href="map.html?tab=feed" aria-label="Enistagram（学生の投稿を見る）"><img src="assets/img/btn-enista.svg" width="291" height="152" alt=""><img class="k-logo" src="assets/img/enista-puffy.webp" width="666" height="117" alt=""></a>
     <!-- 道を歩く小さな人（マップの上を走る人・横に腰かける人・Enistagram の前に立つ人） -->
     <img class="k-figs" src="assets/img/top-figs.webp" width="315" height="569" alt="" loading="lazy" decoding="async">
   </section>
@@ -223,7 +223,15 @@
   <section class="visit" id="info" data-block="info" aria-labelledby="visit-title">
     <div class="visit-in">
       <h2 class="visit-title" id="visit-title">ご来場の皆さまへ</h2>
-      <ul class="visit-grid" id="visit-grid"></ul>
+      <ul class="visit-grid" id="visit-grid">
+        <!-- JS が動かなくても読めるように、来場案内を静的に書いておく（visit.js が動くと、絵と札に置きかわる） -->
+        <li class="visit-static"><dl>
+          <dt>会場</dt><dd>函館工業高等専門学校（〒042-8501 函館市戸倉町14-1）</dd>
+          <dt>開催日時</dt><dd>2026年10月24日(土) 12:00〜16:00／10月25日(日) 10:00〜16:00</dd>
+          <dt>アクセス</dt><dd>市電やバスなどの公共交通機関でお越しください。駐車場が限られているため、車でのご来場はご遠慮ください。函館大学や近隣のコンビニ・スーパーには停めないでください。</dd>
+          <dt>ご注意</dt><dd>校内は全面禁煙です。お酒・たばこは持ちこめません。ステージ・会場のルールにしたがってください。</dd>
+        </dl></li>
+      </ul>
     </div>
   </section>
 
@@ -307,13 +315,12 @@
         <button type="button" class="install-btn mido-more"><span>追加</span></button>
         <button type="button" class="install-x mido-close" aria-label="閉じる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></button>
       </aside>
-      <p class="spon-copy">© 函館工業高等専門学校 学生会</p>
     </div>
   </section>
 
   <!-- 隠し縁を全部見つけたときだけ開くパネル -->
   <!-- ===== いちばん下：並べかえても、いつも最後（色を分けた版権表示） ===== -->
-  <footer class="k-foot"><p class="k-foot-in">©All Rights Reserved. 2026 Hakodate Kosen Gakuseikai</p></footer>
+  <footer class="k-foot"><p class="k-foot-in">© 2026 函館工業高等専門学校 学生会 / Hakodate Kosen Gakuseikai. All Rights Reserved.</p></footer>
 
   <div class="panel-backdrop" id="panel-backdrop" hidden></div>
   <section class="panel" id="secret" hidden aria-labelledby="secret-title">

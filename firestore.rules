@@ -59,12 +59,6 @@ service cloud.firestore {
         && (!('photo_review' in data()) || data().photo_review is bool)
         && (!('stream_url' in data()) || (data().stream_url is string && data().stream_url.size() <= 300));
     }
-    // 文章と書体
-    match /site_text/{id} {
-      allow read: if true;
-      allow write: if isStaff() && stamped() && data().keys().hasOnly(['texts', 'fonts', 'updated_at', 'updated_by'])
-        && data().texts is map && data().fonts is map;
-    }
     match /crowd/{venue} {
       allow read: if true;
       allow delete: if isStaff(); // 「設定しない」（その会場の混雑を、出さない）

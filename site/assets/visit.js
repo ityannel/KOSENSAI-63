@@ -1,6 +1,5 @@
 // トップページの「ご来場の皆さまへ」：駅の案内板のように、絵とひとことの札を並べる。押すと、札がくるっと裏返って、裏にくわしい説明（もう一度押すと表へ）。
 // 文は config.js の VISIT。公開時間・総選挙の締め切りは FESTIVAL・ELECTION から入れる
-import { onSiteTextChange } from "./site-text.js"; // 本部が変えた文（ほかより先に読む）
 import { VISIT, FESTIVAL, ELECTION } from "./config.js";
 
 const grid = document.getElementById("visit-grid");
@@ -87,7 +86,6 @@ const observeAll = () => grid.querySelectorAll(".vi-card").forEach((b) => { if (
 if (grid) {
   renderVisit();
   observeAll();
-  onSiteTextChange(() => { renderVisit(); observeAll(); });
   grid.addEventListener("click", (e) => {
     const b = e.target.closest("[data-vi]");
     if (!b) return;

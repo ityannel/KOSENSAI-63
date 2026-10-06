@@ -1,4 +1,3 @@
-import { onSiteTextChange } from "./site-text.js"; // 本部が変えた文章・書体（ほかより先に読む）
 import {
   FESTIVAL, NAV, MESSAGE, ABOUT, VENUES, CROWD, GUIDES, EVENTS, STAGE,
   NOTICES, GARBAGE, SPONSORS, FX, SECRETS,
@@ -503,12 +502,9 @@ function update() {
 }
 
 renderStatic();
-onSiteTextChange(() => {
-  renderStatic();
-  renderMini($("#rally-mini"));
+renderMini($("#rally-mini"));
 renderVoteEntry($("#vote-sub"));
 setTimeout(countVisit, 4000); // 閲覧者数（開いて少したってから）
-});
 renderLiveContent();
 update();
 setInterval(update, 1000);

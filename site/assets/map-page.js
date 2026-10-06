@@ -1,5 +1,4 @@
 // map.html のためのスクリプト。トップページと同じデータ（企画・混雑・スタンプ・お知らせ）を地図に重ねる。
-import "./site-text.js"; // 本部が変えた書体（ほかより先に読む）
 import { onRallyChange } from "./rally-data.js";
 import { FESTIVAL, EVENTS, STAGE } from "./config.js";
 import { subscribeCrowd, subscribeLive, subscribeShops, countVisit } from "./live.js";

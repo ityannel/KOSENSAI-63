@@ -3,7 +3,6 @@
 // だれが使えるかは firestore.rules（staff コレクションにメールアドレスがある人だけ）で決まる。
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
 import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES, ELECTION, scheduleItems } from "../assets/config.js";
-import { FIELDS, FONTS, DEFAULTS, fontChoice } from "../assets/site-text.js";
 import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
 
 const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
@@ -94,7 +93,7 @@ async function write(label, fn) {
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
 // ---------- 画面の切りかえ（#overview など） ----------
-const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "schedule", "print", "texts", "settings"];
+const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "schedule", "print", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
@@ -111,7 +110,7 @@ addEventListener("hashchange", route);
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
 // ---------- データ ----------
-const state = { schedule: {}, myLikes: new Set(), visits: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], siteText: null, rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
+const state = { schedule: {}, myLikes: new Set(), visits: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
@@ -175,7 +174,6 @@ function startListening() {
     snap.forEach((d) => state.codes.push({ code: d.id, ...d.data() }));
     renderShops();
   });
-  listen(fs.doc(db, "site_text", "current"), (snap) => { state.siteText = snap.data() ?? null; renderTexts(); renderOverview(); });
   listen(fs.doc(db, "site_config", "current"), (snap) => { state.siteConfig = snap.data() ?? null; if (!blocksDirty) { draft = null; renderBlocks(); renderMode(); } }); // 並べかえている途中は描き直さない
   listen(fs.doc(db, "rally_control", "current"), (snap) => { state.rallyControl = snap.data() ?? null; });
 }
@@ -207,8 +205,6 @@ function renderOverview() {
   const stream = l.stream_url ? `<span class="pill ${l.stream_active ? "is-live" : ""}">${l.stream_active ? "配信中" : "待機"}</span> ${esc(l.stream_title || l.stream_url)}` : '<span class="muted">URL なし</span>';
   const phase = { before: "開催前（手動）", during: "開催中（手動）", after: "終了後（手動）" }[l.phase_override] ?? "自動（時刻で）";
   const chat = ["p1", "p2", "p3", "p4", "p5"].filter((k) => state.chatter[k]).length;
-  const fonts = Object.entries(state.siteText?.fonts ?? {}).map(([role, id]) => fontChoice(role, id).name);
-  const texts = Object.keys(state.siteText?.texts ?? {}).length;
   const row = (dt, dd) => `<div><dt>${dt}</dt><dd>${dd}</dd></div>`;
   $("#status-list").innerHTML = [
     row("閲覧者（日ごと）", Object.keys(state.visits).length ? Object.entries(state.visits).sort().map(([d, n]) => `${esc(d.slice(5).replace("-", "/"))} ${n}`).join("　") : '<span class="muted">まだ数えていません</span>'),
@@ -216,7 +212,6 @@ function renderOverview() {
     row("生配信", stream),
     row("表示", esc(phase)),
     row("5人の実況", chat ? `${chat}人がしゃべっている` : '<span class="muted">いつものセリフ</span>'),
-    row("文章と書体", texts || fonts.length ? `文 ${texts}か所・字 ${fonts.length ? esc(fonts.join("／")) : "いつもの"}` : '<span class="muted">いつものまま</span>'),
   ].join("");
 }
 
@@ -922,7 +917,7 @@ $("#cache-reset").addEventListener("click", () => {
   saveLive("全員のキャッシュ削除を指示しました", { cache_reset_at: fs.serverTimestamp() });
 });
 // 何個で達成か（「文章と書体」で変えていればそちら）。印刷する紙もこの数にそろえる
-const rallyGoal = () => { const v = Math.round(Number(state.siteText?.texts?.rally_goal)); return Math.min(v >= 1 ? v : RALLY.goal, rallySpots().length || RALLY.goal); }; // スタンプの場所の数をこえない
+const rallyGoal = () => { return Math.min(RALLY.goal, rallySpots().length || RALLY.goal); }; // スタンプの場所の数をこえない
 
 // ---------- 印刷（QR・チラシ） ----------
 const siteUrl = (path = "") => new URL(`../${path}`, location.href).href;
@@ -1119,9 +1114,9 @@ function buildFlyer(size) {
     </div>`;
   return size === "a5" ? `<section class="sheet pf-a5">${flyer}${flyer}</section>` : `<section class="sheet pf-a4">${flyer}</section>`;
 }
-// 来場案内の札の「ひとこと」（本部が変えていればそちら）。{close} は公開の終わりの時刻に
+// 来場案内の札の「ひとこと」。{close} は公開の終わりの時刻に
 const VISIT_NOTES = () => {
-  const cards = state.siteText?.texts?.visit ?? VISIT;
+  const cards = VISIT;
   const close = new Date(FESTIVAL.days[0].close).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" });
   return cards.slice(0, 6).map((c) => String(c.title).replace("{close}", close).replace("{voteEnd}", "締め切り"));
 };
@@ -1235,103 +1230,7 @@ function loadPrintFont(text) {
   link.href = `https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap&text=${encodeURIComponent(chars)}`;
 }
 
-// ---------- 文章と書体 ----------
-const ROLE_LABEL = { display: "見出し・数字の字", text: "文の字（札・説明）", body: "ふつうの字（そのほか）" };
-const SAMPLE = { display: "第63回 函館高専祭 10.24 NOW", text: "対象の模擬店で、お店の QR を読むとスタンプが押されます。", body: "ご来場の皆さまへ。校内は全面禁煙です。" };
-let textsDirty = false;
-const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
-function loadFontPreview(role, choice) {
-  const id = `staff-font-${role}-${choice.id}`;
-  if (document.getElementById(id)) return;
-  const link = document.createElement("link");
-  link.id = id;
-  link.rel = "stylesheet";
-  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(choice.name).replace(/%20/g, "+")}${choice.axes ? `:${choice.axes}` : ""}&display=swap`;
-  document.head.append(link);
-}
-function valueOf(f) {
-  const t = state.siteText?.texts ?? {};
-  return f.key in t ? t[f.key] : DEFAULTS[f.key];
-}
-function fieldHtml(f) {
-  const v = valueOf(f);
-  const changed = !same(v, DEFAULTS[f.key]) ? " changed" : "";
-  if (f.kind === "cards") {
-    return `<div class="field${changed}" data-key="${f.key}"><span>${esc(f.label)}</span><div class="cards-edit">${v.map((c, i) => `
-      <div class="card-edit"><b>${i + 1}枚目</b>
-        <input data-card="${i}" data-part="title" value="${esc(c.title)}" aria-label="${i + 1}枚目の表のひとこと">
-        <textarea data-card="${i}" data-part="detail" rows="3" aria-label="${i + 1}枚目の裏の説明">${esc(c.detail)}</textarea></div>`).join("")}</div>
-      <small class="muted small">{close}＝公開の終わりの時刻、{voteEnd}＝総選挙の締め切り に自動で置きかわります</small></div>`;
-  }
-  if (f.kind === "lines") return `<label class="field${changed}" data-key="${f.key}"><span>${esc(f.label)}</span><textarea rows="${Math.max(3, v.length + 1)}">${esc(v.join("\n"))}</textarea></label>`;
-  if (f.kind === "number") return `<label class="field${changed}" data-key="${f.key}"><span>${esc(f.label)}</span><input type="number" min="0" value="${esc(v)}"></label>`;
-  return `<label class="field${changed}" data-key="${f.key}"><span>${esc(f.label)}</span><input value="${esc(v)}"></label>`;
-}
-function renderTexts() {
-  if (textsDirty) return; // 書いている途中は描き直さない
-  const fonts = state.siteText?.fonts ?? {};
-  $("#font-grid").innerHTML = Object.entries(FONTS).map(([role, list]) => {
-    const cur = fontChoice(role, fonts[role]);
-    loadFontPreview(role, cur);
-    return `<label class="field"><span>${ROLE_LABEL[role]}</span>
-      <select data-font="${role}">${list.map((c) => `<option value="${c.id}"${c.id === cur.id ? " selected" : ""}>${esc(c.label)}</option>`).join("")}</select>
-      <div class="font-sample is-${role}" data-sample="${role}" style="font-family:'${esc(cur.name)}', sans-serif">${esc(SAMPLE[role])}</div></label>`;
-  }).join("");
-  const groups = [...new Set(FIELDS.map((f) => f.group))];
-  $("#text-fields").innerHTML = groups.map((g) => `
-    <article class="card text-group"><h3>${esc(g)}</h3><div class="stack">${FIELDS.filter((f) => f.group === g).map(fieldHtml).join("")}</div></article>`).join("");
-  $("#texts-state").textContent = state.siteText?.updated_at ? `最後の保存：${time(toMs(state.siteText.updated_at))}（${esc(state.siteText.updated_by ?? "")}）` : "いつもの文のまま";
-}
-function readTexts() {
-  const texts = {};
-  for (const f of FIELDS) {
-    const el = $(`[data-key="${f.key}"]`);
-    let v;
-    if (f.kind === "cards") {
-      v = DEFAULTS.visit.map((d, i) => ({ ...d, title: $(`[data-card="${i}"][data-part="title"]`, el).value.trim(), detail: $(`[data-card="${i}"][data-part="detail"]`, el).value.trim() }));
-    } else if (f.kind === "lines") {
-      v = $("textarea", el).value.split("\n").map((l) => l.trim()).filter(Boolean);
-    } else if (f.kind === "number") {
-      v = Number($("input", el).value);
-    } else {
-      v = $("input", el).value.trim();
-    }
-    if (!same(v, DEFAULTS[f.key])) texts[f.key] = v; // いつもと同じものは入れない（config.js を直したら、そちらが出る）
-  }
-  const fonts = {};
-  $$("[data-font]").forEach((s) => { if (s.value !== FONTS[s.dataset.font][0].id) fonts[s.dataset.font] = s.value; });
-  return { texts, fonts };
-}
-$("#texts-form").addEventListener("input", (e) => {
-  textsDirty = true;
-  $("#texts-state").textContent = "保存していない変更があります";
-  const field = e.target.closest("[data-key]");
-  if (field) {
-    const f = FIELDS.find((x) => x.key === field.dataset.key);
-    field.classList.toggle("changed", f.key in readTexts().texts);
-  }
-});
-$("#texts-form").addEventListener("change", (e) => {
-  const s = e.target.closest("[data-font]");
-  if (!s) return;
-  const choice = fontChoice(s.dataset.font, s.value);
-  loadFontPreview(s.dataset.font, choice);
-  $(`[data-sample="${s.dataset.font}"]`).style.fontFamily = `'${choice.name}', sans-serif`;
-});
-$("#texts-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const { texts, fonts } = readTexts();
-  if (await write("文章と書体を公開しました", () => fs.setDoc(fs.doc(db, "site_text", "current"), { texts, fonts, ...stamp() }))) {
-    textsDirty = false;
-  }
-});
-$("#texts-reset").addEventListener("click", async () => {
-  if (!confirm("文章と書体を、すべていつもの（config.js のまま）に戻しますか？")) return;
-  if (await write("いつもの文に戻しました", () => fs.setDoc(fs.doc(db, "site_text", "current"), { texts: {}, fonts: {}, ...stamp() }))) {
-    textsDirty = false;
-  }
-});
-addEventListener("beforeunload", (e) => { if (textsDirty || blocksDirty) e.preventDefault(); });
+addEventListener("beforeunload", (e) => { if (blocksDirty) e.preventDefault(); });
 
 // ---------- サイトの設定：トップページの並び ----------
 // site_config/current = { blocks: [{ id, show }] }。来場者のトップページは assets/blocks.js がこの順に並べる

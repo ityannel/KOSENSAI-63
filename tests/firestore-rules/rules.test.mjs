@@ -44,8 +44,6 @@ await t("staff can mark prizes out", assertSucceeds(setDoc(doc(staff, "site_live
 await t("prize_out must be a boolean", assertFails(setDoc(doc(staff, "site_live/current"), { prize_out: "yes", updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
 await t("visitors cannot mark prizes out", assertFails(setDoc(doc(anon, "site_live/current"), { prize_out: true, updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
 await t("anyone can read site_live", assertSucceeds(getDoc(doc(nobody, "site_live/current"))));
-await t("staff writes site_text", assertSucceeds(setDoc(doc(staff, "site_text/current"), { texts: { about: ["a"] }, fonts: { text: "zenmaru" }, updated_at: serverTimestamp(), updated_by: "honbu@example.com" })));
-await t("stranger cannot write site_text", assertFails(setDoc(doc(stranger, "site_text/current"), { texts: {}, fonts: {}, updated_at: serverTimestamp(), updated_by: "evil@example.com" })));
 await t("stranger cannot read staff list", assertFails(getDoc(doc(stranger, "staff/honbu@example.com"))));
 await t("staff can write crowd", assertSucceeds(setDoc(doc(staff, "crowd/gym2"), { level: 2, updated_at: serverTimestamp() })));
 await t("anonymous cannot write crowd", assertFails(setDoc(doc(anon, "crowd/gym2"), { level: 2, updated_at: serverTimestamp() })));
