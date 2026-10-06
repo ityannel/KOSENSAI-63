@@ -1006,8 +1006,8 @@ function deptLabels(p) {
   const cx = x + w / 2, cy = y + h / 2;
   const ks = (w, h) => Math.max(0.8, 34 / Math.max(4, h), (Math.max(textW(p.name, 14), textW(p.dept, 10)) * 0.7) / Math.max(w, 30));
   const kk = `data-k="${ks(w, h).toFixed(2)}" data-kr="${ks(h, w).toFixed(2)}"`;
-  return `<text class="lb-dept-sub"${deptStyle(p)} x="${cx}" y="${cy}" data-for="${esc(p.id)}" ${kk} data-fix data-dy="-6">${esc(p.dept)}</text>` +
-    `<text class="lb-dept" x="${cx}" y="${cy}" data-for="${esc(p.id)}" ${kk} data-fix data-dy="11">${esc(p.name)}</text>`;
+  return `<text class="lb-dept-sub"${deptStyle(p)} x="${cx}" y="${cy}" data-for="${esc(p.id)}" ${kk} data-fix data-dy="-9">${esc(p.dept)}</text>` +
+    `<text class="lb-dept" x="${cx}" y="${cy}" data-for="${esc(p.id)}" ${kk} data-fix data-dy="14">${esc(p.name)}</text>`;
 }
 const festLabels = (p) => [p.shopList?.length ? shopLabels(p) : p.dept ? deptLabels(p) : roomLabel(p)];
 
