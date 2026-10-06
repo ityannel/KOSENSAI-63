@@ -39,11 +39,7 @@ function placeNub(i) {
   if (!p) return;
   const a = p.getBoundingClientRect(), b = panel.getBoundingClientRect();
   panel.style.setProperty("--nub", `${a.left + a.width / 2 - b.left - panel.clientLeft}px`);
-  // しっぽは、ふつうの三角形を、押したボタンの真ん中まで伸ばす（吹き出しはボタンより下の層なので、先はボタンに隠れる）
-  const u = list.closest(".dept").clientWidth / 402, ul = list.querySelector(".dept-pills");
-  const pillMid = p.offsetTop + p.offsetHeight / 2 + (DYU[i % DYU.length] + 3) * u; // 押されて、3u 沈んだ位置
-  const tail = ul.offsetHeight + 18 * u + 3 * u - pillMid; // ボタンの位置は、ul（position: relative）からの距離
-  panel.style.setProperty("--tail", `${Math.max(tail, 17 * u)}px`);
+  panel.style.setProperty("--tail", `${17 * (list.closest(".dept").clientWidth / 402)}px`); // しっぽは、短い三角形（のばさない）
 }
 // 動いている途中の値を読んで、そこから次の動きを始める（とちゅうで押されても、ぬるっとつながる）
 const fresh = (el) => { const o = getComputedStyle(el).opacity; el.getAnimations().forEach((a) => a.cancel()); return Number(o); };
