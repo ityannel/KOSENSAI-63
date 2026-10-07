@@ -82,9 +82,9 @@
     <div class="stage" id="stage">
       <!-- 絵の電線を画面の端まで延ばす（絵の外だけに見える） -->
       <svg class="wires" viewBox="0 0 1215 1845" aria-hidden="true" preserveAspectRatio="none">
-        <line x1="-4000" y1="1571" x2="5000" y2="-256" />
-        <line x1="-4000" y1="1601" x2="5000" y2="-235" />
-        <line x1="-4000" y1="1413" x2="5000" y2="-35" />
+        <line x1="-4000" y1="1561.2" x2="5000" y2="-246.0" />
+        <line x1="-4000" y1="1602.4" x2="5000" y2="-235.4" />
+        <line x1="1215" y1="575.1" x2="5000" y2="5.5" /><!-- 3本目は、絵の中の電柱から右にだけ伸びている -->
       </svg>
       <!-- 絵は3枚重ね：空 → （星） → 街と5人。空は2枚を重ねて、時間帯や天気でゆっくり入れ替える -->
       <div class="poster-clip">
@@ -97,8 +97,6 @@
       <!-- 花火（開幕の瞬間と、花火の時間） -->
       <canvas class="fireworks" id="fireworks" aria-hidden="true"></canvas>
       <p class="opening-text" id="opening-text" aria-hidden="true">開幕</p>
-      <!-- 今この絵を見ている人の数だけ、電線に灯り -->
-      <div class="lanterns" id="lanterns" aria-hidden="true"></div>
       <!-- 絵の中の触れる場所（人・建物・隠しスポット） -->
       <div class="hotspots" id="hotspots"></div>
       <!-- 触れたときだけ出るもの：電柱の看板（混雑）と、電線の短冊（メニュー） -->

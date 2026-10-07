@@ -52,4 +52,6 @@
   // 切りかえボタン（どのページでも data-theme-set="auto|light|dark" のボタンを置けば動く）
   addEventListener("click", (e) => { const b = e.target.closest?.("[data-theme-set]"); if (b) window.kosenTheme.set(b.dataset.themeSet); });
   addEventListener("DOMContentLoaded", apply);
+  // 画像（と、画像の入ったリンク）は、つかんで引きずれないように（style.css の -webkit-user-drag が効かないブラウザのため）
+  addEventListener("dragstart", (e) => { const el = e.target instanceof Element ? e.target : e.target?.parentElement; if (el?.closest("img, a:has(img)")) e.preventDefault(); });
 })();

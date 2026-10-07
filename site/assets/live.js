@@ -256,10 +256,7 @@ export async function subscribeChatter(callback) {
   }
 }
 
-// ---------- 今この絵を見ている人の数 ----------
-// 5分ごとの「窓」ごとに presence/{窓の番号} = { n } を +1 する（開いている人が窓ごとに1回だけ）。
-// 表示するのは「前の窓」と「今の窓」の多いほう。書き込みも読み込みも1人5分に数回で済む。
-// 見ていない（別のタブにいる）間は数えない。isOff() が true になったら止まる（本部からの停止スイッチ）。
+// ---------- 閲覧者数 ----------
 // 閲覧者数：このブラウザを、1日に1回だけ数える（日付は日本時間）。同じ文書に書きすぎないよう、10個に分けて数える（本部が合計する）。個人を特定するものは送らない
 export async function countVisit() {
   if (params.has("demo") || params.has("preview") || ["localhost", "127.0.0.1"].includes(location.hostname)) return;
@@ -274,50 +271,4 @@ export async function countVisit() {
     await fs.setDoc(fs.doc(db, "visit_devices", `${day}-${device}-${Math.floor(Math.random() * 10)}`), { n: fs.increment(1) }, { merge: true });
     localStorage.setItem("kosen63-visit", day);
   } catch (err) { console.warn("[visit] 数えられませんでした:", err?.code ?? err); }
-}
-
-export async function startPresence(callback, { windowMinutes = 5, isOff = () => false } = {}) {
-  if (params.has("demo")) return callback(23);
-  const windowMs = windowMinutes * 60 * 1000;
-  let db;
-  try {
-    db = await getDb();
-  } catch {
-    return;
-  }
-  const countOf = async (w) => {
-    try {
-      const snap = await fs.getDoc(fs.doc(db, "presence", String(w)));
-      return snap.exists() ? snap.data().n ?? 0 : 0;
-    } catch {
-      return 0;
-    }
-  };
-  let counted = null;
-  let lastRead = 0;
-  const beat = async () => {
-    if (isOff() || document.hidden) return;
-    const w = Math.floor(Date.now() / windowMs);
-    if (counted === w && Date.now() - lastRead < 60000) return; // タブを行き来しても読みすぎない
-    lastRead = Date.now();
-    if (counted !== w) {
-      counted = w;
-      try {
-        await fs.setDoc(fs.doc(db, "presence", String(w)), { n: fs.increment(1) }, { merge: true });
-      } catch (err) {
-        console.warn("[presence] 数えられませんでした:", err.code);
-        return;
-      }
-    }
-    const [prev, now] = await Promise.all([countOf(w - 1), countOf(w)]);
-    callback(Math.max(prev, now, 1));
-  };
-  beat();
-  // 窓の切り替わりに合わせて。全員が同時に書かないよう、少しずらす
-  const schedule = () => {
-    const wait = windowMs - (Date.now() % windowMs) + Math.random() * 20000;
-    setTimeout(() => { beat(); schedule(); }, wait);
-  };
-  schedule();
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) beat(); });
 }

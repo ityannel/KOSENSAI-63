@@ -60,6 +60,8 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 img { max-width: 100%; display: block; }
+/* 画像は、つかんで引きずれないように（引きずると、色を変える前の元の画像が、半透明で出てしまう）。Firefox は theme.js で止める */
+img, a:has(> img), a:has(> span > img) { -webkit-user-drag: none; user-select: none; }
 /* スクロールバーは、どこにも出さない（ページ・シート・横にすべらせる列。指・ホイールではスクロールできる） */
 * { scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; }
@@ -983,24 +985,6 @@ body.opening .opening-text { animation: opening-text 8s ease both; }
 /* 開幕の瞬間、空がすっと暗くなる */
 body.opening .sky { background: linear-gradient(#0b1633 0%, #1b2447 50%, transparent 80%); mix-blend-mode: multiply; opacity: 0.85; }
 
-/* 今この絵を見ている人の灯り */
-.lanterns { position: absolute; inset: 0; pointer-events: none; }
-.lantern {
-  position: absolute; display: block;
-  width: max(6px, 1cqw); height: max(8px, 1.3cqw); translate: -50% 0;
-  margin-top: max(6px, 1cqw);
-  border-radius: 45% 45% 40% 40%;
-  background: radial-gradient(circle at 50% 40%, #FFF3C4, #FFB347 70%);
-  box-shadow: 0 0 max(6px, 1.2cqw) rgba(255, 190, 90, 0.9);
-  animation: lantern-in 0.6s cubic-bezier(.2, 1.6, .4, 1) both, flicker var(--flicker, 3s) ease-in-out infinite alternate;
-}
-.lantern::before { /* ひも */
-  content: ""; position: absolute; left: 50%; bottom: 100%; width: 1px; height: max(6px, 1cqw); background: #2A2624;
-}
-@keyframes lantern-in { from { scale: 0; opacity: 0; } }
-@keyframes flicker { to { filter: brightness(0.75); } }
-body[data-sky="sunset"] .lantern, body[data-sky="day"] .lantern { box-shadow: 0 0 max(4px, 0.8cqw) rgba(255, 190, 90, 0.7); }
-
 /* 函館の本物の天気 */
 .weather-fx { position: fixed; top: 0; left: var(--app-x); width: min(100vw, var(--app-w)); height: 100dvh; z-index: 20; pointer-events: none; }
 body[data-weather="fog"] .sky { box-shadow: inset 0 0 0 100vmax rgba(225, 228, 232, 0.35); }
@@ -1041,7 +1025,7 @@ body.lightning::after {
 .shake-btn[hidden] { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .lantern, .spot.is-secret.found::after, .secret-toast.pop { animation: none; }
+  .spot.is-secret.found::after, .secret-toast.pop { animation: none; }
   body.opening .opening-text { animation: none; opacity: 0; }
 }
 
@@ -1530,7 +1514,7 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
 /* =====================================================
    PC の左右（side.js）：うしろは今の空の絵とゆれる短冊。左にロゴと日付、右にタブとメニュー（幅 1000px 以上）
    ===================================================== */
-.pc-bg, .pc-side { display: none; }
+.pc-bg, .pc-rig, .pc-fg, .pc-side { display: none; }
 @media (min-width: 600px) {
   .pc-bg {
     display: block; position: fixed; inset: 0; z-index: -1; overflow: hidden;
@@ -1558,17 +1542,17 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
   :root[data-tint="cloudy"] .pc-bg { background-image: url("img/sky-cloudy.webp"); }
   :root[data-tint="rain"] .pc-bg { background-image: url("img/sky-rain.webp"); }
   :root[data-tint="snow"] .pc-bg { background-image: url("img/sky-snow.webp"); }
-  /* ---- うしろの世界（side.js）：奥から 星 → 遠くの山 → 電線と灯り → 短冊 → ただよう灯り ----
+  /* ---- うしろの世界（side.js）：奥から 星 → 遠くの山 → 電線 → 短冊 → ただよう灯り ----
      色と明かりの強さは、いまの空（:root の data-tint）に合わせる。--pc-lit＝明かりの強さ（昼は弱く、夜は強く）、--pc-star＝星の見え方 */
-  .pc-bg { --pc-far: rgba(52, 54, 96, 0.55); --pc-lit: 0.8; --pc-star: 0; }
-  :root[data-tint="dawn"] .pc-bg { --pc-far: rgba(86, 84, 128, 0.5); --pc-lit: 0.5; --pc-star: 0.2; }
-  :root[data-tint="day"] .pc-bg { --pc-far: rgba(74, 110, 150, 0.45); --pc-lit: 0.14; --pc-star: 0; }
-  :root[data-tint="sunset"] .pc-bg { --pc-far: rgba(96, 66, 110, 0.5); --pc-lit: 0.8; --pc-star: 0; }
-  :root[data-tint="dusk"] .pc-bg { --pc-far: rgba(52, 50, 96, 0.6); --pc-lit: 1; --pc-star: 0.5; }
-  :root[data-tint="night"] .pc-bg { --pc-far: rgba(22, 28, 58, 0.75); --pc-lit: 1; --pc-star: 1; }
-  :root[data-tint="cloudy"] .pc-bg { --pc-far: rgba(88, 96, 112, 0.5); --pc-lit: 0.45; --pc-star: 0; }
-  :root[data-tint="rain"] .pc-bg { --pc-far: rgba(60, 72, 90, 0.55); --pc-lit: 0.7; --pc-star: 0; }
-  :root[data-tint="snow"] .pc-bg { --pc-far: rgba(110, 122, 144, 0.5); --pc-lit: 0.6; --pc-star: 0; }
+  .pc-bg, .pc-fg { --pc-far: rgba(52, 54, 96, 0.55); --pc-lit: 0.8; --pc-star: 0; }
+  :root[data-tint="dawn"] .pc-bg, :root[data-tint="dawn"] .pc-fg { --pc-far: rgba(86, 84, 128, 0.5); --pc-lit: 0.5; --pc-star: 0.2; }
+  :root[data-tint="day"] .pc-bg, :root[data-tint="day"] .pc-fg { --pc-far: rgba(74, 110, 150, 0.45); --pc-lit: 0.14; --pc-star: 0; }
+  :root[data-tint="sunset"] .pc-bg, :root[data-tint="sunset"] .pc-fg { --pc-far: rgba(96, 66, 110, 0.5); --pc-lit: 0.8; --pc-star: 0; }
+  :root[data-tint="dusk"] .pc-bg, :root[data-tint="dusk"] .pc-fg { --pc-far: rgba(52, 50, 96, 0.6); --pc-lit: 1; --pc-star: 0.5; }
+  :root[data-tint="night"] .pc-bg, :root[data-tint="night"] .pc-fg { --pc-far: rgba(22, 28, 58, 0.75); --pc-lit: 1; --pc-star: 1; }
+  :root[data-tint="cloudy"] .pc-bg, :root[data-tint="cloudy"] .pc-fg { --pc-far: rgba(88, 96, 112, 0.5); --pc-lit: 0.45; --pc-star: 0; }
+  :root[data-tint="rain"] .pc-bg, :root[data-tint="rain"] .pc-fg { --pc-far: rgba(60, 72, 90, 0.55); --pc-lit: 0.7; --pc-star: 0; }
+  :root[data-tint="snow"] .pc-bg, :root[data-tint="snow"] .pc-fg { --pc-far: rgba(110, 122, 144, 0.5); --pc-lit: 0.6; --pc-star: 0; }
   /* 紙のざらざらを、空にも（サイトの中と同じ手ざわりに） */
   .pc-bg::after { background: var(--grain), linear-gradient(180deg, rgba(10, 12, 22, 0.15), rgba(10, 12, 22, 0.55)); }
   /* 星 */
@@ -1579,18 +1563,14 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
   .pc-far { translate: calc(var(--px, 0) * -8px) calc(var(--py, 0) * -3px); }
   .pc-far svg { display: block; width: 100%; height: clamp(220px, 24vw, 460px); overflow: visible; }
   .pc-far path { fill: var(--pc-far); transition: fill 2s; }
-  /* 電線と灯り：トップの絵（.stage）と同じ場所・同じ大きさの箱に置く（絵は下にそろえてある）。絵の電線と、つながって見える */
-  .pc-rig { position: absolute; z-index: 1; left: 50%; bottom: var(--tabs-h); width: var(--stage-w); aspect-ratio: 1215 / 1845; translate: -50% 0; pointer-events: none; }
+  /* 電線：トップの絵（.stage）と同じ場所・同じ大きさの箱に引く（絵は、最初の画面の下にそろえてある）。絵の電線と、つながって見える。
+     画面に固定せず、ページの上に置く → スクロールすると、絵といっしょに上へ流れる。絵の線より目立たないよう、細く・うすく */
+  .pc-rig { display: block; position: absolute; z-index: -1; left: 50%; top: calc(var(--hero-h) - var(--stage-w) * 1845 / 1215); width: var(--stage-w); aspect-ratio: 1215 / 1845; translate: -50% 0; pointer-events: none; }
+  /* 短冊・ただよう灯りは、電線より手前に（画面に固定） */
+  .pc-fg { display: block; position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
   .pc-wires { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .pc-wires line { stroke: #2A2624; stroke-width: 1.6; vector-effect: non-scaling-stroke; opacity: 0.75; }
-  :root[data-tint="night"] .pc-wires line, :root[data-tint="dusk"] .pc-wires line { stroke: #0c0f1c; opacity: 0.9; }
-  .pc-lamp {
-    position: absolute; width: 9px; height: 12px; margin-top: 9px; translate: -50% 0; border-radius: 45% 45% 40% 40%;
-    background: radial-gradient(circle at 50% 40%, #FFF3C4, #FFB347 70%);
-    box-shadow: 0 0 calc(4px + 12px * var(--pc-lit)) rgba(255, 190, 90, calc(0.3 + 0.6 * var(--pc-lit)));
-    animation: flicker var(--flicker) ease-in-out var(--delay) infinite alternate;
-  }
-  .pc-lamp::before { content: ""; position: absolute; left: 50%; bottom: 100%; width: 1px; height: 9px; background: #2A2624; }
+  .pc-wires line { stroke: #2A2624; stroke-width: 0.9; vector-effect: non-scaling-stroke; opacity: 0.55; }
+  :root[data-tint="night"] .pc-wires line, :root[data-tint="dusk"] .pc-wires line { stroke: #0c0f1c; opacity: 0.7; }
   /* ただよう灯り */
   .pc-motes { position: absolute; inset: 0; z-index: 1; pointer-events: none; translate: calc(var(--px, 0) * -26px) calc(var(--py, 0) * -10px); transition: translate 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }
   .pc-mote {
@@ -1696,7 +1676,7 @@ body.scrolled .scroll-hint { opacity: 0; translate: 0 8px; }
   .pc-menu a[aria-current="true"] { background: #FFFDF8; color: var(--ink); } /* いま読んでいるところは、タブと同じく色を反転 */
 }
 @media (min-width: 1000px) and (max-width: 1199px) { .pc-tabs svg { display: none; } } /* 左右がせまいときは、タブを1行におさめる */
-@media (prefers-reduced-motion: reduce) { .pc-tz, .pc-logo, .pc-stars, .pc-lamp { animation: none; } .pc-logo-in { transform: none; } .pc-motes { display: none; } .pc-far, .pc-tzs { translate: none; transition: none; } }
+@media (prefers-reduced-motion: reduce) { .pc-tz, .pc-logo, .pc-stars { animation: none; } .pc-logo-in { transform: none; } .pc-motes { display: none; } .pc-far, .pc-tzs { translate: none; transition: none; } }
 
 /* 画面の外の欄は、見えるまで配置の計算を省く（トップを開いたときに、長いページ全体を計算しない） */
 #pickup, #ennichi, #info, #sponsors { content-visibility: auto; contain-intrinsic-size: auto 900px; }

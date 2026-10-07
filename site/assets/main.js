@@ -2,7 +2,7 @@ import {
   FESTIVAL, NAV, MESSAGE, ABOUT, VENUES, CROWD, GUIDES, EVENTS, STAGE,
   NOTICES, GARBAGE, SPONSORS, FX, SECRETS,
 } from "./config.js";
-import { subscribeLive, subscribeCrowd, subscribeChatter, startPresence, countVisit } from "./live.js";
+import { subscribeLive, subscribeCrowd, subscribeChatter, countVisit } from "./live.js";
 import { renderMini, renderVoteEntry } from "./rally.js";
 import { initScene, setChatter, say, setAwake } from "./scene.js";
 import { initAsk } from "./ask.js";
@@ -295,7 +295,6 @@ function updateSky() {
   document.body.dataset.sky = sky.id;
   setSkyImage(skyImageFor(sky.id, weather?.kind));
   const parts = [`いまの函館の空 ― ${sky.label}${weather && weather.kind !== "clear" ? `・${weather.label}` : ""} ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`];
-  if (viewers) parts.push(`${viewers}人がこの絵を見ています`);
   $("#sky-caption").textContent = parts.join("　／　");
 }
 
@@ -438,27 +437,7 @@ function renderCrowd() {
   }).join("");
 }
 
-// ---------- 今この絵を見ている人の灯り ----------
-// 2本目の電線（y = 540 + (1202 - x) × 0.204）に、右から順に吊るす。絵の中が埋まったら外へ
-let viewers = 0;
-let weather = null;
-const wire2Y = (x) => 540 + (1202 - x) * 0.204;
-function renderLanterns(n) {
-  viewers = n;
-  const shown = Math.min(n, FX.presence.maxLanterns);
-  const box = $("#lanterns");
-  const have = box.children.length;
-  for (let i = have; i < shown; i++) {
-    // 絵の中（1191 → 825、タイトルの文字にかからないところ）を先に、そのあと右の外へ
-    const x = i < 11 ? 1191 - i * 36.6 : 1248 + (i - 11) * 36.6;
-    const el = document.createElement("i");
-    el.className = "lantern";
-    el.style.cssText = `left:${(x / POSTER_W) * 100}%; top:${(wire2Y(x) / POSTER_H) * 100}%; --flicker:${(2 + Math.random() * 2).toFixed(2)}s`;
-    box.append(el);
-  }
-  while (box.children.length > shown) box.lastChild.remove();
-  updateSky();
-}
+let weather = null; // 函館の本物の天気（weather.js から届く）
 
 // ---------- 花火 ----------
 const fireworks = createFireworks($("#fireworks"));
@@ -562,11 +541,6 @@ $("#secret-download").href = SECRETS.wallpaper;
 const shake = initShake($("#shake-btn"));
 initParallax();
 initWeather($("#weather-fx"), (wx) => { weather = wx; updateSky(); });
-if (FX.presence.enabled) {
-  // 先に用意しただけのページ（まだ見ていない）では数えない。開かれたら数える
-  const count = () => startPresence(renderLanterns, { windowMinutes: FX.presence.windowMinutes, isOff: () => !!live?.presence_off });
-  if (document.prerendering) document.addEventListener("prerenderingchange", count, { once: true }); else count();
-}
 // 開幕から90秒以内に開いた人にも見せる。?fireworks=1 でいつでも確認できる
 if (params.has("fireworks") || (nowMs() >= OPEN && nowMs() < OPEN + 90000)) {
   setTimeout(playOpening, document.body.classList.contains("intro") ? 3800 : 600);

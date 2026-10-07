@@ -439,8 +439,6 @@ export const FX = {
   weather: { lat: 41.82, lon: 140.75, refreshMinutes: 15 },
   // 花火の時間（学内のみ。要項 p.4：10/25 18:00〜18:30）。この間、絵の空に花火が上がり続ける
   fireworks: { start: "2026-10-25T18:00:00+09:00", minutes: 30 },
-  // 今この絵を見ている人の数だけ電線に灯りをともす。5分ごとにまとめて数える
-  presence: { enabled: true, windowMinutes: 5, maxLanterns: 40 },
 };
 
 // 絵の中の隠しスポット。全部見つけるとごほうび（壁紙）【仮】言葉は差し替えてよい

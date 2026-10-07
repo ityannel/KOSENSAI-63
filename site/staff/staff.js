@@ -259,7 +259,6 @@ function renderBroadcast() {
     $("#stream-title").value = l.stream_title ?? "";
     $("#stream-active").checked = !!l.stream_active;
     $(`[name="phase"][value="${l.phase_override ?? ""}"]`).checked = true;
-    $("#presence-off").checked = !!l.presence_off;
     previewNotice();
     previewStream();
   }
@@ -313,7 +312,7 @@ $("#stream-stop").addEventListener("click", () => {
 $("#phase-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const phase = $('[name="phase"]:checked').value;
-  saveLive("表示を保存しました", { phase_override: phase || null, presence_off: $("#presence-off").checked });
+  saveLive("表示を保存しました", { phase_override: phase || null });
 });
 
 // ---------- スケジュール（出演・企画の時間を変える） ----------
