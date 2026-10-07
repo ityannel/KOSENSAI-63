@@ -2131,7 +2131,3 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .visit-grid li.is-wide .vi-card { min-height: calc(120 * var(--u)); }
 .visit-grid li.is-wide .vi-title { font-size: calc(19 * var(--u)); }
 .visit-grid + .visit-links { margin-top: calc(22 * var(--u)); }
-
-/* 最初の画面の日付：祭名と日付は、初めて来た人にいちばん必要な情報 */
-.slot-date { margin: 0.25em 0 0; font-family: var(--hud-font); font-size: 4.4cqw; letter-spacing: 0.02em; color: #ECE6DC; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45); white-space: nowrap; }
-.slot-date small { font-family: var(--text-font); font-weight: 700; font-size: 3.2cqw; margin-left: 0.5em; }
