@@ -41,7 +41,6 @@
   <!-- 地図・Enistagram はトップと同じ字：短い見出し・ボタンは WDXL Lubrifont、文は Zen Kaku Gothic New。
        場所の名前や投稿はどんな字も出るので、字をしぼらずに読みこむ（Google Fonts が使う字の分だけ小分けにして届ける） -->
   <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;family=Zen+Kaku+Gothic+New:wght@700;900&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <link rel="preload" href="assets/map/rooms.json" as="fetch" crossorigin>
   <!-- 次に開きそうなページ（下のタブ・同じサイトのリンク）を、押しそうになったら裏で先に用意する（Chrome）。本部用は除く -->
   <script type="speculationrules">
   { "prerender": [{ "where": { "and": [{ "href_matches": "/*" }, { "not": { "href_matches": "/*staff/*" } }, { "not": { "href_matches": "*emulator*" } }] }, "eagerness": "moderate" }] }
