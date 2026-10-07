@@ -41,7 +41,7 @@ SIDE_FIXED = "第回函館高専祭MENUSUNMOTEWDHFRA" + "ほかの見どころ�
 toast_src = open("site/assets/daytoast.js", encoding="utf-8").read()
 toast_text = "".join(re.findall(r'"([^"]+)"', toast_src)) + "0123456789〜"
 titles += [toast_text]
-titles += ["利用規約を見る"]  # ご来場の皆さまへの下のボタン
+titles += ["利用規約を見る", "Google マップ", "函館高専", "学生会"]  # ご来場の皆さまへの下のボタン
 chars = "".join(dict.fromkeys(FIXED + "".join(titles) + "".join(venues) + SIDE_FIXED + "".join(a + b for a, b in side_words)))
 url = "https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap&text=" + urllib.parse.quote(chars)
 
