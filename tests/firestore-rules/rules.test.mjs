@@ -145,6 +145,12 @@ await t("counter id must be a date and shard", assertFails(setDoc(doc(nobody, "v
 await t("counter doc has only n", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-5"), { n: 1, x: 1 })));
 await t("visitors cannot read counters", assertFails(getDoc(doc(anon, "visit_counts/2026-10-24-3"))));
 await t("staff reads counters", assertSucceeds(getDoc(doc(staff, "visit_counts/2026-10-24-3"))));
+await t("anyone starts a device counter at 1", assertSucceeds(setDoc(doc(nobody, "visit_devices/2026-10-24-phone-3"), { n: 1 })));
+await t("device counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "visit_devices/2026-10-24-phone-3"), { n: increment(1) }, { merge: true })));
+await t("device counter cannot jump", assertFails(setDoc(doc(nobody, "visit_devices/2026-10-24-phone-3"), { n: 50 }, { merge: true })));
+await t("device counter id must be date-device-shard", assertFails(setDoc(doc(nobody, "visit_devices/2026-10-24-robot-3"), { n: 1 })));
+await t("visitors cannot read device counters", assertFails(getDoc(doc(anon, "visit_devices/2026-10-24-phone-3"))));
+await t("staff reads device counters", assertSucceeds(getDoc(doc(staff, "visit_devices/2026-10-24-phone-3"))));
 
 // 本部の公式が、ほかの投稿にいいね・返信
 await t("staff replies officially to a post", assertSucceeds(setDoc(doc(staff, "posts/reply1"), { kind: "post", place: "", shop: null, stars: null, text: "ありがとう！", has_photo: false, photo_status: "none", uid: "staff1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: "other", official: true })));

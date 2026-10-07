@@ -110,7 +110,7 @@ addEventListener("hashchange", route);
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
 // ---------- データ ----------
-const state = { schedule: {}, myLikes: new Set(), visits: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
+const state = { schedule: {}, myLikes: new Set(), visits: {}, devices: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
@@ -119,6 +119,11 @@ function startListening() {
   listen(fs.collection(db, "visit_counts"), (snap) => {
     state.visits = {};
     snap.forEach((d) => { const day = d.id.slice(0, 10); state.visits[day] = (state.visits[day] ?? 0) + (d.data().n ?? 0); });
+    renderOverview();
+  });
+  listen(fs.collection(db, "visit_devices"), (snap) => {
+    state.devices = {}; // { 日付: { phone, tablet, pc } }
+    snap.forEach((d) => { const [y, m, dd, dev] = d.id.split("-"); const day = `${y}-${m}-${dd}`; (state.devices[day] ??= { phone: 0, tablet: 0, pc: 0 })[dev] += d.data().n ?? 0; });
     renderOverview();
   });
   listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; $("#photo-review").checked = !!state.live.photo_review; $("#cache-state").textContent = state.live.cache_reset_at ? `${time(toMs(state.live.cache_reset_at))} に指示` : ""; });
@@ -187,10 +192,19 @@ function renderOverview() {
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
   const visitsToday = state.visits[today] ?? 0;
   const visitsAll = Object.values(state.visits).reduce((a, b) => a + b, 0);
+  const deviceShare = () => {
+    const sum = { phone: 0, tablet: 0, pc: 0 };
+    for (const d of Object.values(state.devices ?? {})) for (const k of Object.keys(sum)) sum[k] += d[k] ?? 0;
+    const all = sum.phone + sum.tablet + sum.pc;
+    if (!all) return "—";
+    const pct = (n) => Math.round((n / all) * 100);
+    return `${pct(sum.phone)}% / ${pct(sum.pc)}%`; // スマホ / パソコン
+  };
   const kpi = (label, value, sub, color, href) => `<a class="kpi" href="${href}" style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
   $("#kpis").innerHTML = [
     kpi("きょうの閲覧者", visitsToday, "台（1日1回まで）", "var(--teal)", "#overview"),
     kpi("これまでの閲覧者", visitsAll, "のべ", "var(--sun)", "#overview"),
+    kpi("スマホ／パソコン（これまで）", deviceShare(), "台の割合（タブレットは、別に数える）", "var(--teal)", "#overview"),
     kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts"),
     kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts"),
     kpi("入場制限中の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),

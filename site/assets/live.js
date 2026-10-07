@@ -268,6 +268,10 @@ export async function countVisit() {
   try {
     const db = await getDb();
     await fs.setDoc(fs.doc(db, "visit_counts", `${day}-${Math.floor(Math.random() * 10)}`), { n: fs.increment(1) }, { merge: true });
+    // どの端末か：スマホ（指でさわる・幅が狭い）／タブレット（指でさわる・幅が広い）／パソコン。同じ端末は1日1回だけ（上と同じ）
+    const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1 && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const device = !touch ? "pc" : Math.min(screen.width, screen.height) >= 600 ? "tablet" : "phone";
+    await fs.setDoc(fs.doc(db, "visit_devices", `${day}-${device}-${Math.floor(Math.random() * 10)}`), { n: fs.increment(1) }, { merge: true });
     localStorage.setItem("kosen63-visit", day);
   } catch (err) { console.warn("[visit] 数えられませんでした:", err?.code ?? err); }
 }

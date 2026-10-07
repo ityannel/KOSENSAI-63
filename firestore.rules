@@ -82,6 +82,12 @@ service cloud.firestore {
       allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]$') && data().keys().hasOnly(['n']) && data().n == 1;
       allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
     }
+    // visit_devices/{日付}-{phone|tablet|pc}-{0〜9} = { n }：スマホ・タブレット・パソコンの別の閲覧者数（上と同じ数え方）。読めるのは本部だけ
+    match /visit_devices/{id} {
+      allow read: if isStaff();
+      allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-(phone|tablet|pc)-[0-9]$') && data().keys().hasOnly(['n']) && data().n == 1;
+      allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
+    }
     match /presence/{w} {
       allow read: if true;
       allow create: if w.matches('^[0-9]+$')
