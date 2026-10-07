@@ -439,9 +439,9 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 .mido-more:active { translate: calc(-8 * var(--u)) calc(5 * var(--u)); filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
 .tk { position: relative; display: block; rotate: var(--tilt, 0deg); color: #634A2E; text-decoration: none; transition: translate 0.12s ease; -webkit-tap-highlight-color: transparent; } /* 数字は Figma のチケット（376×146・約 -2.8°）から */
 /* 押すと、校内マップ・Enistagram のボタンと同じく、影の方へ沈む（押すとその場所の地図へ） */
-.tk:active { translate: calc(-13 * var(--u)) calc(6 * var(--u)); }
+.tk:active:not(:has(.tk-photo:active)) { translate: calc(-13 * var(--u)) calc(6 * var(--u)); } /* 写真を押したときは、写真だけが沈む（下の .tk-photo:active） */
 .tk-shape { transition: filter 0.12s ease; }
-.tk:active .tk-shape { filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
+.tk:active:not(:has(.tk-photo:active)) .tk-shape { filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
 .tk-shape { filter: drop-shadow(calc(-13 * var(--u)) calc(6 * var(--u)) 0 rgba(48, 44, 41, 0.7)); } /* ボタンと同じ、ずらした影 */
 /* 本体：クリーム色の紙。半券のところの上下に半円の切れこみ（mask） */
 .tk-body {
@@ -2206,3 +2206,7 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .dt-photo-img { display: block; width: 100%; height: auto; max-height: calc(300 * var(--u)); object-fit: contain; background: #f3efe8; cursor: zoom-in; -webkit-user-drag: none; }
 @keyframes pz-pop { from { opacity: 0; transform: scale(0.88) rotate(-2deg); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .pz, .pz-fig { animation: none; } }
+/* 写真を押したときは、写真だけが影の方へ沈む（チケットは動かない）。シートの大きい写真も同じ */
+.tk-photo, .dt-photo { transition: translate 0.12s ease, box-shadow 0.12s ease; }
+.tk-photo:active { translate: calc(-3 * var(--u)) calc(-50% + 3 * var(--u)); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+.dt-photo:has(.dt-photo-img:active) { translate: calc(-3 * var(--u)) calc(3 * var(--u)); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
