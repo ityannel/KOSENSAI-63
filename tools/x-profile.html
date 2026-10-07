@@ -35,8 +35,8 @@
   .header .tr4 { right: 0; top: 0; width: 62px; height: 62px; background: #D8637A; clip-path: polygon(0 0, 100% 0, 100% 100%); }
   .header .bl1 { left: 0; bottom: 0; width: 120px; height: 120px; background: #3E9A86; clip-path: polygon(0 0, 0 100%, 100% 100%); }
   .header .bl2 { left: 0; bottom: 0; width: 84px; height: 84px; background: #FFF1A8; clip-path: polygon(0 0, 0 100%, 100% 100%); }
-  /* ヘッダーの headerscene：背景に、トップの一番上の絵（scene.webp＋sky-sunset.webp）の、屋根と人のあたりの帯（絵の y=820 から。倍率 1.2346） */
-  .scene .bg { background: url("../site/assets/img/scene.webp") 0 -1010px / 1500px auto no-repeat, url("../site/assets/img/sky-sunset.webp") 0 -1010px / 1500px auto no-repeat; }
+  /* ヘッダーの headerscene：背景に、トップの一番上の絵の「空」だけ（sky-sunset.webp の y=300 から。左上の青緑から、雲、下の桃色へ）。右はしのうすい縁を避けて、少し大きめに */
+  .scene .bg { background: url("../site/assets/img/sky-sunset.webp") -15px -378px / 1530px auto no-repeat; }
   .scene .t { color: #634A2E; text-shadow: 3px 3px 0 rgba(254, 235, 196, .75); } /* 空が明るいので、題字は茶色 */
   /* 絵（headerscene）の上には、緑のガラス調のロゴ（logo.webp）。色の面の上には、縁のハンコ */
   .scene .logo { position: absolute; left: 330px; top: 40px; height: 420px; width: auto; }
