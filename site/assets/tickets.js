@@ -46,7 +46,7 @@ export function ticketHtml(e, i, t) {
         </div>
       </div></div>
       ${on ? '<span class="tk-badge is-now">NOW</span>' : isPast(e, t) ? '<span class="tk-badge is-end">終了</span>' : e.live ? '<span class="tk-badge is-live">LIVE</span>' : ""}
-      ${e.photo ? `<img class="tk-photo" src="${esc(e.photo)}" alt="" loading="lazy" decoding="async">` : ""}
+      ${e.photo ? `<img class="tk-photo" src="${esc(e.photo)}" alt="${esc(e.title)}の写真（押すと大きく表示）" loading="lazy" decoding="async">` : ""}
     </a>`;
 }
 

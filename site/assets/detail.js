@@ -148,3 +148,48 @@ export function wireDetails(container, getNow = () => Date.now()) {
     else if (sh) { ev.preventDefault(); openShop(SHOPS[+sh.dataset.shop], getNow()); }
   });
 }
+
+// ---------- 写真を大きく見る ----------
+// チケットの写真（.tk-photo）を押すと、元の構図のままの大きい写真を出す。どこからでも（一覧のチケット・詳しいシート）。
+// チケットを押したときの動き（シートを開く）より先に受けたいので、capture で拾う。大きい版は「◯◯.webp」に対する「◯◯-l.webp」
+let zoom, zoomImg, zoomLast;
+function zoomBuild() {
+  if (zoom) return;
+  document.body.insertAdjacentHTML("beforeend", `
+    <div class="pz" id="pz" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="写真を大きく表示">
+      <button type="button" class="mido-close pz-close" data-pz-close aria-label="とじる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></button>
+      <figure class="pz-fig"><img class="pz-img" alt="" decoding="async"><figcaption class="pz-cap"></figcaption></figure>
+    </div>`);
+  zoom = document.getElementById("pz");
+  zoomImg = zoom.querySelector(".pz-img");
+  zoom.addEventListener("click", () => zoomClose()); // どこを押してもとじる
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && !zoom.hidden) { e.stopPropagation(); zoomClose(); } }, true);
+}
+function zoomOpen(thumb) {
+  zoomBuild();
+  zoomLast = document.activeElement;
+  const name = thumb.alt.replace(/の写真.*$/, "");
+  zoomImg.src = thumb.getAttribute("src"); // 大きい版が届くまで、小さい版を出しておく
+  const big = new Image();
+  big.onload = () => { if (!zoom.hidden) zoomImg.src = big.src; };
+  big.src = thumb.getAttribute("src").replace(/\.webp$/, "-l.webp");
+  zoomImg.alt = name ? `${name}の写真` : "写真";
+  zoom.querySelector(".pz-cap").textContent = name;
+  zoom.classList.remove("is-closing");
+  zoom.hidden = false;
+  zoom.focus({ preventScroll: true }); // 枠が出ないように、× ではなく外側に合わせる
+}
+function zoomClose() {
+  if (!zoom || zoom.hidden) return;
+  const done = () => { zoom.hidden = true; zoomLast?.focus?.({ preventScroll: true }); };
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return done();
+  zoom.classList.add("is-closing");
+  setTimeout(done, 220);
+}
+document.addEventListener("click", (e) => {
+  const img = e.target.closest?.(".tk-photo");
+  if (!img) return;
+  e.preventDefault();
+  e.stopPropagation(); // チケットを押した扱いにしない（シートを開かない）
+  zoomOpen(img);
+}, true);
