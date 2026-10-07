@@ -56,5 +56,5 @@ const sheetEl = document.getElementById("m-sheet");
 if (sheetEl) watch.observe(sheetEl, { attributes: true, attributeFilter: ["hidden"] });
 if (needPosts()) wantPosts();
 setInterval(renderMap, 30000);
-setTimeout(countVisit, 4000); // 閲覧者数（地図から入った人も、1日1回だけ数える）
+setTimeout(() => countVisit({ isOff: () => !!live?.presence_off }), 4000); // 閲覧者数（地図から入った人も数える。本部の「アクセス」）
 setTimeout(() => watchSchedule(), 1500); // スケジュールの変更

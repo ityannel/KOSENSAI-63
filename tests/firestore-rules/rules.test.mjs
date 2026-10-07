@@ -151,6 +151,13 @@ await t("device counter cannot jump", assertFails(setDoc(doc(nobody, "visit_devi
 await t("device counter id must be date-device-shard", assertFails(setDoc(doc(nobody, "visit_devices/2026-10-24-robot-3"), { n: 1 })));
 await t("visitors cannot read device counters", assertFails(getDoc(doc(anon, "visit_devices/2026-10-24-phone-3"))));
 await t("staff reads device counters", assertSucceeds(getDoc(doc(staff, "visit_devices/2026-10-24-phone-3"))));
+await t("anyone starts an hour counter at 1", assertSucceeds(setDoc(doc(nobody, "visit_hours/2026-10-24-13-1"), { n: 1 })));
+await t("hour counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "visit_hours/2026-10-24-13-1"), { n: increment(1) }, { merge: true })));
+await t("hour counter cannot jump", assertFails(setDoc(doc(nobody, "visit_hours/2026-10-24-13-1"), { n: 50 }, { merge: true })));
+await t("hour counter id must be date-hour-shard", assertFails(setDoc(doc(nobody, "visit_hours/2026-10-24-25-1"), { n: 1 })));
+await t("hour counter shard is 0-2", assertFails(setDoc(doc(nobody, "visit_hours/2026-10-24-13-7"), { n: 1 })));
+await t("visitors cannot read hour counters", assertFails(getDoc(doc(anon, "visit_hours/2026-10-24-13-1"))));
+await t("staff reads hour counters", assertSucceeds(getDoc(doc(staff, "visit_hours/2026-10-24-13-1"))));
 
 // 本部の公式が、ほかの投稿にいいね・返信
 await t("staff replies officially to a post", assertSucceeds(setDoc(doc(staff, "posts/reply1"), { kind: "post", place: "", shop: null, stars: null, text: "ありがとう！", has_photo: false, photo_status: "none", uid: "staff1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: "other", official: true })));

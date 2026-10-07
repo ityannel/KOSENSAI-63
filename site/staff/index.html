@@ -38,6 +38,7 @@
       </a>
       <nav class="nav" id="nav">
         <a href="#overview" data-nav="overview"><svg viewBox="0 0 24 24"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 4v4h6V4z"/></svg><span data-short="ホーム">ダッシュボード</span></a>
+        <a href="#stats" data-nav="stats"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M8 16v-4M12 16V8M16 16v-6M20 16v-9"/></svg><span data-short="数">アクセス</span></a>
         <a href="#broadcast" data-nav="broadcast"><svg viewBox="0 0 24 24"><path d="M4 9v6h3l5 4V5L7 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg><span data-short="配信">お知らせ・配信</span></a>
         <a href="#crowd" data-nav="crowd"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.5M17.5 19a5.5 5.5 0 0 0-2.5-4.6"/></svg><span data-short="混雑">混雑・実況</span></a>
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
@@ -76,6 +77,17 @@
             <dl class="status-list" id="status-list"></dl>
           </article>
         </div>
+      </section>
+
+      <!-- ===== アクセス：閲覧の数を、グラフで（stats.js が描く。数が届くたびに、描き直す） ===== -->
+      <section class="view" id="view-stats" data-title="アクセス" data-eyebrow="ANALYTICS" hidden>
+        <div class="st" id="stats"><p class="muted">読みこんでいます…</p></div>
+        <article class="card">
+          <header class="card-head"><h2>数え方</h2></header>
+          <p class="muted st-note">トップページか地図を開いた端末を数えます。同じ端末は、1日・1時間・5分の区切りごとに、1回だけ。この本部コンソールと、手元の確認用のページ（localhost）は、数えません。</p>
+          <label class="switch"><input type="checkbox" id="stats-live-off"><span class="switch-ui" aria-hidden="true"></span><span>「いまのようす」（5分ごと）の集計を止める</span></label>
+          <p class="muted st-note">止めると、見ている人の端末からの書きこみが減ります（混んできて、Firebase の上限が心配なときに）。「時間ごと」「日ごと」は、止めても数えます。</p>
+        </article>
       </section>
 
       <!-- ===== お知らせ・配信 ===== -->

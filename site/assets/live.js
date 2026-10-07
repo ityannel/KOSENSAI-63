@@ -256,19 +256,55 @@ export async function subscribeChatter(callback) {
   }
 }
 
-// ---------- 閲覧者数 ----------
-// 閲覧者数：このブラウザを、1日に1回だけ数える（日付は日本時間）。同じ文書に書きすぎないよう、10個に分けて数える（本部が合計する）。個人を特定するものは送らない
-export async function countVisit() {
+// ---------- 閲覧者数（本部コンソールの「ダッシュボード」「アクセス」） ----------
+// このブラウザを、時間の区切りごとに1回だけ数える（日付・時刻は日本時間）。数を1つ足すだけで、個人を特定するものは送らない。
+// - 1日に1回：visit_counts/{日}-{0〜9} と、どの端末か visit_devices/{日}-{phone|tablet|pc}-{0〜9}
+// - 1時間に1回：visit_hours/{日}-{時}-{0〜2}
+// - 5分に1回（開いて見ている間だけ）：presence/{5分ごとの番号}＝いま見ている端末の数。isOff() が true の間は数えない（本部の停止スイッチ）
+// 同じ文書に書きすぎないよう、いくつかに分けて数える（本部が合計する）。どこまで数えたかは、このブラウザに覚えておく（ページを移っても、読み直しても、二重に数えない）
+export function countVisit({ isOff = () => false } = {}) {
   if (params.has("demo") || params.has("preview") || ["localhost", "127.0.0.1"].includes(location.hostname)) return;
-  const day = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date()); // 2026-10-24
-  try { if (localStorage.getItem("kosen63-visit") === day) return; } catch { return; }
-  try {
-    const db = await getDb();
-    await fs.setDoc(fs.doc(db, "visit_counts", `${day}-${Math.floor(Math.random() * 10)}`), { n: fs.increment(1) }, { merge: true });
-    // どの端末か：スマホ（指でさわる・幅が狭い）／タブレット（指でさわる・幅が広い）／パソコン。同じ端末は1日1回だけ（上と同じ）
-    const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1 && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    const device = !touch ? "pc" : Math.min(screen.width, screen.height) >= 600 ? "tablet" : "phone";
-    await fs.setDoc(fs.doc(db, "visit_devices", `${day}-${device}-${Math.floor(Math.random() * 10)}`), { n: fs.increment(1) }, { merge: true });
-    localStorage.setItem("kosen63-visit", day);
-  } catch (err) { console.warn("[visit] 数えられませんでした:", err?.code ?? err); }
+  const KEY = "kosen63-beat", DAY_KEY = "kosen63-visit", WIN = 5 * 60000;
+  try { localStorage.setItem("kosen63-t", "1"); localStorage.removeItem("kosen63-t"); } catch { return; } // 覚えておけないブラウザでは、数えない（開くたびに増えてしまうので）
+  const inc = { n: fs.increment(1) }, merge = { merge: true }, pick = (n) => Math.floor(Math.random() * n);
+  let busy = false;
+  const beat = async () => {
+    if (busy || document.hidden) return;
+    busy = true;
+    try {
+      const now = new Date();
+      const day = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(now); // 2026-10-24
+      const hour = `${day}-${new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tokyo", hour: "2-digit", hourCycle: "h23" }).format(now).slice(0, 2)}`; // 2026-10-24-13
+      const win = String(Math.floor(now.getTime() / WIN));
+      let last = {};
+      try { last = JSON.parse(localStorage.getItem(KEY) ?? "{}") ?? {}; } catch { /* 読めなければ、数え直す */ }
+      const done = (patch) => { Object.assign(last, patch); localStorage.setItem(KEY, JSON.stringify(last)); };
+      const needDay = localStorage.getItem(DAY_KEY) !== day;
+      const needDevice = needDay || last.dev === ""; // 前に、日の数だけ数えて、端末を数えそこねたとき
+      const needHour = last.hour !== hour, needNow = last.win !== win && !isOff();
+      if (!needDay && !needDevice && !needHour && !needNow) return;
+      const db = await getDb();
+      if (needDay) {
+        await fs.setDoc(fs.doc(db, "visit_counts", `${day}-${pick(10)}`), inc, merge);
+        localStorage.setItem(DAY_KEY, day);
+        done({ dev: "" }); // 端末は、このあと
+      }
+      if (needDevice) {
+        // どの端末か：スマホ（指でさわる・幅が狭い）／タブレット（指でさわる・幅が広い）／パソコン
+        const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1 && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        const device = !touch ? "pc" : Math.min(screen.width, screen.height) >= 600 ? "tablet" : "phone";
+        await fs.setDoc(fs.doc(db, "visit_devices", `${day}-${device}-${pick(10)}`), inc, merge);
+        done({ dev: day });
+      }
+      if (needHour) { await fs.setDoc(fs.doc(db, "visit_hours", `${hour}-${pick(3)}`), inc, merge); done({ hour }); }
+      if (needNow) { await fs.setDoc(fs.doc(db, "presence", win), inc, merge); done({ win }); }
+    } catch (err) {
+      console.warn("[visit] 数えられませんでした:", err?.code ?? err);
+    } finally {
+      busy = false;
+    }
+  };
+  beat();
+  setInterval(beat, 30000 + Math.random() * 10000); // 5分の区切りが変わったら、次の区切りにも数える（全員が同時に書かないよう、少しずらす）
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) beat(); });
 }

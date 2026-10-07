@@ -4,6 +4,7 @@
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
 import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES, ELECTION, scheduleItems } from "../assets/config.js";
 import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
+import { renderStats, wireStats, dayKey as statDay, WIN as STAT_WIN } from "./stats.js";
 
 const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
 const [appMod, auth, fs] = await Promise.all([
@@ -93,7 +94,7 @@ async function write(label, fn) {
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
 // ---------- 画面の切りかえ（#overview など） ----------
-const VIEWS = ["overview", "broadcast", "crowd", "posts", "shops", "schedule", "print", "settings"];
+const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "shops", "schedule", "print", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
@@ -103,30 +104,77 @@ function route() {
   $("#page-eyebrow").textContent = view.dataset.eyebrow;
   document.title = `${view.dataset.title}｜本部コンソール`;
   scrollTo({ top: 0 });
+  if (name === "stats") openStats();
 }
 addEventListener("hashchange", route);
+
+// ---------- アクセス（閲覧の数のグラフ。stats.js が描く） ----------
+// 「アクセス」を開いたときに、はじめて読みこむ（ほかの画面だけを使う人の分、読みこみを減らす）。
+// - presence：5分ごとの、サイトを開いていた端末の数。直近2時間半だけを聞く
+// - visit_hours：1時間ごとの数。きょうと、選んだ日だけを聞く
+const hourSubs = new Set();
+let statsListening = false, statsWired = false;
+function watchHours(day) {
+  if (hourSubs.has(day)) return;
+  hourSubs.add(day);
+  listen(fs.query(fs.collection(db, "visit_hours"), fs.where(fs.documentId(), ">=", `${day}-`), fs.where(fs.documentId(), "<=", `${day}-~`)), (snap) => {
+    const h = {};
+    snap.forEach((d) => { const k = d.id.slice(11, 13); h[k] = (h[k] ?? 0) + (d.data().n ?? 0); });
+    state.hours[day] = h;
+    drawStats();
+  });
+}
+function openStats() {
+  if (!a.currentUser) return; // ログインの前は、まだ読めない（ログインしたら startListening が呼ぶ）
+  if (!statsWired) {
+    statsWired = true;
+    wireStats($("#stats"));
+    $("#stats").addEventListener("change", (e) => {
+      if (e.target.id !== "stats-day") return;
+      state.statsDay = e.target.value; e.target.blur();
+      watchHours(state.statsDay); drawStats();
+    });
+    $("#stats-live-off").addEventListener("change", (e) => saveLive(e.target.checked ? "「いまのようす」の集計を止めました" : "「いまのようす」の集計を再開しました", { presence_off: e.target.checked }));
+    setInterval(drawStats, 20000); // 数が届かなくても、時間がたつと5分の区切りがずれていく
+  }
+  if (!statsListening) {
+    statsListening = true;
+    listen(fs.query(fs.collection(db, "presence"), fs.where(fs.documentId(), ">=", String(Math.floor(Date.now() / STAT_WIN) - 30))), (snap) => {
+      snap.forEach((d) => { state.presence[d.id] = d.data().n ?? 0; });
+      drawStats();
+    });
+  }
+  drawStats();
+}
+function drawStats() {
+  if (!statsListening || $("#view-stats").hidden) return;
+  const today = statDay(Date.now());
+  watchHours(today); // 日付が変わったら、新しい日も聞く
+  renderStats($("#stats"), { visits: state.visits, devices: state.devices, hours: state.hours, presence: state.presence, day: state.statsDay ?? today, now: Date.now() });
+}
 
 // 時計（日本時間）
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
 // ---------- データ ----------
-const state = { schedule: {}, myLikes: new Set(), visits: {}, devices: {}, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
+const state = { schedule: {}, myLikes: new Set(), visits: {}, devices: {}, hours: {}, presence: {}, statsDay: null, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
 }
 function startListening() {
+  statsListening = false; hourSubs.clear(); // ログインし直したら、「アクセス」の読みこみもやり直す
   listen(fs.collection(db, "visit_counts"), (snap) => {
     state.visits = {};
     snap.forEach((d) => { const day = d.id.slice(0, 10); state.visits[day] = (state.visits[day] ?? 0) + (d.data().n ?? 0); });
-    renderOverview();
+    renderOverview(); drawStats();
   });
   listen(fs.collection(db, "visit_devices"), (snap) => {
     state.devices = {}; // { 日付: { phone, tablet, pc } }
     snap.forEach((d) => { const [y, m, dd, dev] = d.id.split("-"); const day = `${y}-${m}-${dd}`; (state.devices[day] ??= { phone: 0, tablet: 0, pc: 0 })[dev] += d.data().n ?? 0; });
-    renderOverview();
+    renderOverview(); drawStats();
   });
-  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; $("#photo-review").checked = !!state.live.photo_review; $("#cache-state").textContent = state.live.cache_reset_at ? `${time(toMs(state.live.cache_reset_at))} に指示` : ""; });
+  listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; $("#stats-live-off").checked = !!state.live.presence_off; $("#photo-review").checked = !!state.live.photo_review; $("#cache-state").textContent = state.live.cache_reset_at ? `${time(toMs(state.live.cache_reset_at))} に指示` : ""; });
   listen(fs.doc(db, "site_schedule", "current"), (snap) => { state.schedule = snap.exists() ? (snap.data().changes ?? {}) : {}; renderSchedule(); });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
@@ -1486,6 +1534,7 @@ auth.onAuthStateChanged(a, async (user) => {
   route();
   renderOverview();
   startListening();
+  if (location.hash === "#stats") openStats();
 });
 
 // コンソールのタイトルの下の小さい字

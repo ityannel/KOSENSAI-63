@@ -483,7 +483,7 @@ function update() {
 renderStatic();
 renderMini($("#rally-mini"));
 renderVoteEntry($("#vote-sub"));
-setTimeout(countVisit, 4000); // 閲覧者数（開いて少したってから）
+setTimeout(() => countVisit({ isOff: () => !!live?.presence_off }), 4000); // 閲覧者数（開いて少したってから。本部の「アクセス」）
 renderLiveContent();
 update();
 setInterval(update, 1000);
