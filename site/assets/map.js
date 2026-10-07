@@ -518,7 +518,13 @@ function clampView() {
   view.y = cy - vh / 2;
 }
 // 画面の中で、上の検索と下のシートに隠れていない部分（地図の枠の座標）
+// PC：地図を画面いっぱいに広げているか（map.css の body.is-wide。幅 1000px 以上だけ。Enistagram のタブでは、いつもの幅にもどる）
+const isWide = () => document.body.classList.contains("is-wide") && !document.body.classList.contains("is-feed") && matchMedia("(min-width: 1000px)").matches;
 function safeArea() {
+  if (isWide()) { // 検索とシートは左の欄に出ている。地図が見えるのは、その右（右はボタンの列、上はタブの分をあける）
+    const left = ($(".m-top")?.getBoundingClientRect().right ?? 416) + 16;
+    return { left, top: 84, right: Math.max(left + 200, screen.w - 76), bottom: Math.max(300, screen.h - 20) };
+  }
   const top = ($(".m-top")?.getBoundingClientRect().bottom ?? 0) + 8;
   const shown = !$("#m-sheet").hidden;
   const sheet = $("#m-sheet").getBoundingClientRect();
@@ -539,6 +545,19 @@ function viewFor(rect, maxK = 4) {
   const k = Math.max(kMin, Math.min(maxK, (a.right - a.left) / Math.max(bw, 1), (a.bottom - a.top) / Math.max(bh, 1)));
   const [lx, ly] = toLocal((a.left + a.right) / 2, (a.top + a.bottom) / 2);
   return { k, x: x + w / 2 - lx / k, y: y + h / 2 - ly / k };
+}
+// 枠の大きさが変わったとき（PC で広げた・もどした）：地図を測り直す。見えているところの真ん中にあった場所が、新しい真ん中に来るようにする
+function relayout(change) {
+  const mid = () => { const a = safeArea(); return toLocal((a.left + a.right) / 2, (a.top + a.bottom) / 2); };
+  const [lx, ly] = mid();
+  const mx = view.x + lx / view.k, my = view.y + ly / view.k;
+  change?.();
+  measure();
+  const [lx2, ly2] = mid();
+  view.x = mx - lx2 / view.k;
+  view.y = my - ly2 / view.k;
+  clampView();
+  applyView();
 }
 let anim = 0;
 function animateTo(target, ms = 420) {
@@ -1823,6 +1842,7 @@ function setTab(t) {
   $("#m-feed").hidden = t !== "feed";
   document.querySelectorAll("#m-tabs [data-tab]").forEach((b) => { b.setAttribute("aria-selected", String(b.dataset.tab === t)); if (b.dataset.tab === t) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
   if (t === "feed") { closeResults(); renderFeed(true); }
+  else if (document.body.classList.contains("is-wide")) relayout(); // 広げた地図にもどる：枠の幅が変わるので、測り直す
 }
 let feedHtml = ""; // いま出しているタイムラインの中身（同じなら描き直さない）
 function renderFeed(force = false) {
@@ -2574,6 +2594,27 @@ export async function initMap(opts) {
   // 右の QR ボタン：いつでも「いまここ」QR を読める（読むとその場所に地図が動く）
   $("#m-locate").addEventListener("click", openScanner);
   $("#m-fit").addEventListener("click", fitAll);
+  // PC：地図を画面いっぱいに広げる・もどす。広げると、検索と場所の情報は左の欄に出る（map.css の body.is-wide）。広げたかどうかは、このブラウザに覚えておく
+  const setWide = (on) => {
+    relayout(() => {
+      document.body.classList.toggle("is-wide", on);
+      // 向きは、枠の形で決める：横長（広げたとき）は校内図の向き＝横長の校舎が横に入る。縦長（もどしたとき）は北が上
+      const r = $("#m-canvas").getBoundingClientRect();
+      setFollow(false);
+      cam = { bearing: r.height > r.width * 1.2 ? -NORTH : 0, tilt: 0 };
+    });
+    $("#m-wide").setAttribute("aria-pressed", String(on));
+    $("#m-wide").setAttribute("aria-label", on ? "地図をもとの大きさにもどす" : "地図を画面いっぱいに広げる");
+    $("#m-wide").title = on ? "もどす" : "広げる";
+    try { on ? localStorage.setItem("kosen63-map-wide", "1") : localStorage.removeItem("kosen63-map-wide"); } catch { /* 覚えられないブラウザ */ }
+    if (mode === "home" && !selected) animateTo(viewFor(wholeSite ? VIEW : HOME, 1.2)); // 何も選んでいなければ、校舎ぜんたいを入れ直す
+  };
+  $("#m-wide").addEventListener("click", () => setWide(!document.body.classList.contains("is-wide")));
+  if (document.body.classList.contains("is-wide")) { $("#m-wide").setAttribute("aria-pressed", "true"); $("#m-wide").setAttribute("aria-label", "地図をもとの大きさにもどす"); $("#m-wide").title = "もどす"; }
+  // Esc：広げた地図をもどす（検索の結果や、説明の窓が出ているとき・字を打っているときは、そちらが先）
+  addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isWide() && $("#m-results").hidden && !document.querySelector("dialog[open]") && !e.target.closest?.("input, textarea")) setWide(false);
+  });
   // 方位：押すと北が上（真上から）。北が上のときに押すと、校内図の向きに戻す。3D：傾けて見る／真上から見る
   $("#m-compass").addEventListener("click", () => { setFollow(false); animateCam(Math.abs(normDeg(NORTH + cam.bearing)) < 1 ? 0 : -NORTH, 0); });
   $("#m-heading").addEventListener("click", toggleFollow);

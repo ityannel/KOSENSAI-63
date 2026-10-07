@@ -50,6 +50,8 @@
   <script src="assets/theme.js"></script><!-- ライト／ダークと差し色（描く前に決める） -->
 </head>
 <body class="mapapp">
+  <!-- PC：前に地図を広げていたら、描く前に広げておく（あとから広がって、がたつかないように）。map.css の body.is-wide -->
+  <script>try { if (localStorage.getItem("kosen63-map-wide") && matchMedia("(min-width: 1000px)").matches) document.body.classList.add("is-wide"); } catch {}</script>
   <!-- アプリの画面（PC では真ん中のスマホの幅。まわりは side.js の左右の案内） -->
   <div class="app-frame">
   <main class="m-canvas" id="m-canvas">
@@ -81,6 +83,8 @@
     <button type="button" class="m-compass" id="m-compass" aria-label="北を上にする（もう一度押すと校内図の向き）"><i></i><b>N</b></button>
     <button type="button" class="m-fab m-tilt" id="m-tilt" aria-label="地図を傾けて見る" aria-pressed="false">3D</button>
     <button type="button" class="m-fab" id="m-fit" aria-label="校舎と敷地全体を切りかえ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <!-- PC だけ：地図を画面いっぱいに広げる・もどす（スマホ・せまい画面では出さない） -->
+    <button type="button" class="m-fab m-wide" id="m-wide" aria-label="地図を画面いっぱいに広げる" aria-pressed="false" title="広げる"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="on" d="M4 12h16M8 7l-5 5 5 5M16 7l5 5-5 5"/><path class="off" d="M3 12h7M21 12h-7M6 7l5 5-5 5M18 7l-5 5 5 5"/></svg></button>
     <!-- 地図の見かた（色と印の意味）。さがす欄から、右のボタンの列へ -->
     <button type="button" class="m-fab m-help" id="m-help" aria-label="地図の見かた（色と印の意味）">?</button>
   </div>

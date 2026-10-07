@@ -1223,3 +1223,45 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 /* スケジュールの変更（地図）：新しい時間を上に、もとの時間を小さく取り消し線で */
 .t-chg { display: inline-flex; flex-direction: column; line-height: 1.1; vertical-align: top; }
 .t-chg .t-old { display: block; margin-top: .15em; font-size: .62em; font-weight: 400; opacity: .7; text-decoration: line-through; white-space: nowrap; }
+
+/* =====================================================
+   PC：地図を画面いっぱいに広げる（右のボタンの列の「広げる」。map.js が body に is-wide をつける）
+   ふだんは、真ん中のスマホの幅のまま。広げたときだけ：
+   - 地図は、画面ぜんぶ。左右の案内（side.js）は、しまう
+   - 検索・よく探すもの・場所の情報は、左の欄（幅 400px）。下から出るシートは、左の欄の中の札になる（つまみは出さない）
+   - サイト・地図・Enistagram のタブは、右上に浮かべる
+   Enistagram のタブ（body.is-feed）では、いつもの幅にもどる
+   ===================================================== */
+.m-wide { display: none; }
+.m-wide .off, .m-wide[aria-pressed="true"] .on { display: none; }
+.m-wide[aria-pressed="true"] .off { display: inline; }
+@media (min-width: 1000px) {
+  .m-wide { display: grid; }
+  body.is-wide:not(.is-feed) .app-frame { width: 100%; }
+  body.is-wide:not(.is-feed) .pc-side { display: none; }
+  /* 左の欄：検索と、よく探すもの（折り返して全部見せる） */
+  body.is-wide:not(.is-feed) .m-top { left: 16px; right: auto; width: 400px; padding: 14px 0 0; }
+  body.is-wide:not(.is-feed) .m-bar { max-width: none; margin: 0; }
+  body.is-wide:not(.is-feed) .m-chips { flex-wrap: wrap; max-width: none; margin: 10px 0 0; padding: 2px 4px 6px; overflow: visible; }
+  /* 検索の結果：左の欄にだけ出す（地図は見えたまま） */
+  body.is-wide:not(.is-feed) .m-results { right: auto; width: 432px; padding: 78px 16px 24px; box-shadow: 6px 0 22px -10px rgba(48, 44, 41, .45); }
+  /* 場所の情報：左の欄の、検索の下。中身の長さに合わせて伸び、長いときは中でスクロール */
+  body.is-wide:not(.is-feed) .m-sheet,
+  body.is-wide:not(.is-feed) .m-sheet.is-open,
+  body.is-wide:not(.is-feed) .m-sheet.is-min {
+    left: 16px; right: auto; top: calc(var(--m-top-h, 130px) + 12px); bottom: auto; width: 400px; max-width: none; margin: 0; padding-bottom: 0;
+    max-height: calc(100dvh - var(--m-top-h, 130px) - 28px); overflow: hidden;
+    border-radius: 12px; box-shadow: -4px 3px 0 var(--press), 0 8px 22px -10px rgba(48, 44, 41, .35);
+  }
+  body.is-wide:not(.is-feed) .m-sheet[hidden] { display: none; }
+  body.is-wide:not(.is-feed) .m-grip { display: none; }
+  body.is-wide:not(.is-feed) .m-sheet .m-sheet-body { padding-top: 16px; overflow-y: auto; visibility: visible; }
+  body.is-wide:not(.is-feed) .m-sheet.is-min .m-sheet-x { display: grid; }
+  /* 右：タブを右上に浮かべ、その下にボタンの列 */
+  body.is-wide:not(.is-feed) .m-tabs { display: flex; left: auto; right: 16px; top: 14px; bottom: auto; width: 380px; }
+  body.is-wide:not(.is-feed) .m-side, body.is-wide.has-notice:not(.is-feed) .m-side { top: 86px; right: 16px; }
+  body.is-wide:not(.is-feed) .m-toast { bottom: 24px; }
+  /* 広げているときは、シートが右のボタンにかぶらないので、ボタンは全部出したまま */
+  body.is-wide:not(.is-feed):has(.m-sheet:not([hidden]):not(.is-min)) .m-side > :is(#m-tilt, #m-help) { display: grid; } /* もとの「かくす」決まりが id を使っているので、こちらも id で */
+  body.is-wide:not(.is-feed):has(.m-sheet:not([hidden]):not(.is-min)) .m-side > #m-compass[data-rotated] { display: block; }
+}
