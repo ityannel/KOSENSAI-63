@@ -2210,3 +2210,6 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .tk-photo, .dt-photo { transition: translate 0.12s ease, box-shadow 0.12s ease; }
 .tk-photo:active { translate: calc(-3 * var(--u)) calc(-50% + 3 * var(--u)); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
 .dt-photo:has(.dt-photo-img:active) { translate: calc(-3 * var(--u)) calc(3 * var(--u)); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+/* リンクの札が4つ（Google マップ・函館高専・学生会 Instagram・公式X）：1行に収まるように、間とふちを少しつめる */
+.visit-links { gap: calc(12 * var(--u)) calc(9 * var(--u)); }
+.visit-links a { padding: calc(6 * var(--u)) calc(10 * var(--u)) calc(6 * var(--u)) calc(8 * var(--u)); font-size: calc(13.5 * var(--u)); }
