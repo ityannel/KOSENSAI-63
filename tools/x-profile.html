@@ -38,6 +38,8 @@
   /* ヘッダーの headerscene：背景に、トップの一番上の絵（scene.webp＋sky-sunset.webp）の、屋根と人のあたりの帯（絵の y=820 から。倍率 1.2346） */
   .scene .bg { background: url("../site/assets/img/scene.webp") 0 -1010px / 1500px auto no-repeat, url("../site/assets/img/sky-sunset.webp") 0 -1010px / 1500px auto no-repeat; }
   .scene .t { color: #634A2E; text-shadow: 3px 3px 0 rgba(254, 235, 196, .75); } /* 空が明るいので、題字は茶色 */
+  /* 絵（headerscene）の上には、緑のガラス調のロゴ（logo.webp）。色の面の上には、縁のハンコ */
+  .scene .logo { position: absolute; left: 330px; top: 40px; height: 420px; width: auto; }
   /* 人のシルエット（トップの絵 top-figs.webp の3人。ヘッダーの headerfigs だけ） */
   .fig { position: absolute; background: url("../site/assets/img/top-figs.webp") no-repeat; background-size: 504px auto; } /* 倍率 1.6 */
   .f1 { left: 50px; top: 30px; width: 165px; height: 173px; background-position: 0 0; }
@@ -60,7 +62,7 @@
     icon: `<div class="bg"></div><div class="grain"></div><div class="en">縁</div>`,
   }[/^header/.test(v) ? "header" : v];
   document.body.className = v === "headerfigs" ? "header" : v === "headerscene" ? "header scene" : v;
-  document.body.insertAdjacentHTML("afterbegin", v === "headerfigs" ? html.replace('<div class="en">', figs + '<div class="en">') : html);
+  document.body.insertAdjacentHTML("afterbegin", v === "headerfigs" ? html.replace('<div class="en">', figs + '<div class="en">') : v === "headerscene" ? html.replace('<div class="en">縁</div>', '<img class="logo" src="../site/assets/img/logo.webp" alt="">') : html);
 </script>
 </body>
 </html>
