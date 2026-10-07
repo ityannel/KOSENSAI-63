@@ -192,19 +192,18 @@ function renderOverview() {
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
   const visitsToday = state.visits[today] ?? 0;
   const visitsAll = Object.values(state.visits).reduce((a, b) => a + b, 0);
-  const deviceShare = () => {
-    const sum = { phone: 0, tablet: 0, pc: 0 };
-    for (const d of Object.values(state.devices ?? {})) for (const k of Object.keys(sum)) sum[k] += d[k] ?? 0;
-    const all = sum.phone + sum.tablet + sum.pc;
-    if (!all) return "—";
-    const pct = (n) => Math.round((n / all) * 100);
-    return `${pct(sum.phone)}% / ${pct(sum.pc)}%`; // スマホ / パソコン
-  };
+  // 端末の別（数えはじめたのは 10/7 の公開から。それより前の閲覧は、端末がわからない）
+  const dev = { phone: 0, tablet: 0, pc: 0 };
+  for (const d of Object.values(state.devices ?? {})) for (const k of Object.keys(dev)) dev[k] += d[k] ?? 0;
+  const devAll = dev.phone + dev.tablet + dev.pc;
+  const devPct = (n) => Math.round((n / devAll) * 100);
+  const deviceShare = devAll ? `${devPct(dev.phone)}% / ${devPct(dev.pc)}%` : "—"; // スマホ / パソコン
+  const deviceSub = `スマホ ${dev.phone}・PC ${dev.pc}・タブレット ${dev.tablet}（計 ${devAll} 台）`; // 割合だけだと、数が少ないことに気づけないので、台数も出す
   const kpi = (label, value, sub, color, href) => `<a class="kpi" href="${href}" style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
   $("#kpis").innerHTML = [
     kpi("きょうの閲覧者", visitsToday, "台（1日1回まで）", "var(--teal)", "#overview"),
     kpi("これまでの閲覧者", visitsAll, "のべ", "var(--sun)", "#overview"),
-    kpi("スマホ／パソコン（これまで）", deviceShare(), "台の割合（タブレットは、別に数える）", "var(--teal)", "#overview"),
+    kpi("スマホ／PC の割合", deviceShare, deviceSub, "var(--teal)", "#overview"),
     kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts"),
     kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts"),
     kpi("入場制限中の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),
