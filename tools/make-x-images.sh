@@ -9,13 +9,11 @@ shot() { # 名前 幅 高さ
   "$CHROME" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=$2,$3 --virtual-time-budget=15000 --screenshot="$(cygpath -w "$OUT/$1.png" 2>/dev/null || echo "$OUT/$1.png")" "file:///$(cygpath -m "$HERE/x-profile.html" 2>/dev/null || echo "$HERE/x-profile.html")?v=$1"
 }
 shot header 1500 500
-shot headerfigs 1500 500   # 人のシルエットを足した案
-shot headerscene 1500 500  # 背景を、トップの一番上の絵にした案
 shot icon 400 400
 python - "$OUT" <<'PY'
 import sys
 from PIL import Image
-for n, s in (("header", (1500, 500)), ("headerfigs", (1500, 500)), ("headerscene", (1500, 500)), ("icon", (400, 400))):
+for n, s in (("header", (1500, 500)), ("icon", (400, 400))):
     im = Image.open(f"{sys.argv[1]}/{n}.png").convert("RGB")
     assert im.size == s, (n, im.size)
     im.save(f"{sys.argv[1]}/{n}.png", optimize=True); print(n, im.size)

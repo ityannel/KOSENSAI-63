@@ -2,67 +2,29 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<!-- X（旧 Twitter）の公式アカウント用の画像の元：?v=header（ヘッダー 1500×500）／?v=icon（アイコン 400×400。X が丸く切りぬく）。
-     tools/make-x-images.sh が、これを画像にして design/x/ に書く。色・「縁」のハンコは、OGP（tools/ogp.html の G）と同じ -->
+<!-- X（旧 Twitter）の公式アカウント用の画像の元：?v=header（ヘッダー 1500×500。トップの一番上の絵の「空」だけ）／?v=icon（アイコン 400×400。X が丸く切りぬく。縁のハンコ）。
+     tools/make-x-images.sh が、これを画像にして design/x/ に書く。ハンコは OGP（tools/ogp.html の G）・サイネージの切りかわりと同じ -->
 <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=block&text=%E7%AC%AC63%E5%9B%9E%E5%87%BD%E9%A4%A8%E9%AB%98%E5%B0%82%E7%A5%AD%E3%81%88%E3%81%AB%E3%81%9710.24SAT12%3A00%EF%BD%9E16%3A0025SUN%E3%80%9C%E7%B8%81" rel="stylesheet">
 <style>
   html, body { margin: 0; overflow: hidden; }
-  body { position: relative; font-family: "WDXL Lubrifont JP N", sans-serif; color: #634A2E; }
+  body { position: relative; font-family: "WDXL Lubrifont JP N", sans-serif; }
   body.header { width: 1500px; height: 500px; }
   body.icon { width: 400px; height: 400px; }
-  /* 背景：トップページの背景の絵（site/assets/img/top-bg.webp・804×2106）の一部。ノイズのある、不規則なグラデーション。絵のどこを使うかは、下の background-position */
-  .bg { position: absolute; inset: 0; background: url("../site/assets/img/top-bg.webp") no-repeat; }
-  .header .bg { background-size: 1500px auto; background-position: 0 -1941px; } /* 絵の y=1040 から（横に 1500px のとき、倍率 1.866） */
-  .icon .bg { background-size: 400px auto; background-position: 0 -408px; } /* 絵の y=820 から（正方形） */
-  .grain { position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .39 0 0 0 0 .29 0 0 0 0 .18 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); mix-blend-mode: multiply; opacity: .55; }
-  .grain { display: none; } /* 背景の絵に、もうノイズが入っている */
+  .bg { position: absolute; inset: 0; }
+  /* ヘッダー：トップの一番上の絵の空（sky-sunset.webp の y=300 から。左上の青緑から、雲、下の桃色へ）だけ。ロゴ・文字・模様は入れない。右はしのうすい縁を避けて、少し大きめに */
+  .header .bg { background: url("../site/assets/img/sky-sunset.webp") -15px -378px / 1530px auto no-repeat; }
+  /* アイコン：トップの背景の絵（top-bg.webp・804×2106）の y=820 から（ノイズのある、不規則なグラデーション）に、縁のハンコ */
+  .icon .bg { background: url("../site/assets/img/top-bg.webp") 0 -408px / 400px auto no-repeat; }
   .en { position: absolute; color: #FEEBC4; transform: rotate(-14deg); font-weight: 400; line-height: 1; }
-  .t { margin: 0; color: #fff; font-weight: 400; letter-spacing: .02em; white-space: nowrap; text-shadow: 4px 4px 0 rgba(99, 74, 46, .6); } /* 右の黄色い面でも読めるように、サイトの札と同じ茶色の影 */
-  .chips { display: grid; gap: 18px; }
-  .chip { display: flex; align-items: center; gap: 20px; width: fit-content; padding: 14px 36px 14px 16px; border-radius: 18px; background: #FEEBC4; box-shadow: -6px 5px 0 rgba(48, 44, 41, .5); font-size: 34px; letter-spacing: .02em; }
-  .chip b { display: inline-block; min-width: 150px; padding: 5px 0; border-radius: 12px; color: #fff; font-weight: 400; font-size: 28px; text-align: center; letter-spacing: .04em; }
-  .chip:nth-child(1) b { background: #3F8DB8; } .chip:nth-child(2) b { background: #D8637A; }
-  .tri { position: absolute; }
-  .dot { position: absolute; border-radius: 50%; }
-  .star { position: absolute; background: #FFF1A8; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
-  /* ヘッダー：左下はアイコンがかぶるので空けておく。縁は左寄り、字は右 */
-  .header .en { left: 350px; top: 52px; font-size: 330px; text-shadow: 8px 8px 0 #d9669b, 15px 15px 0 #2f8fe0, 22px 22px 0 #ffd24a, 30px 30px 0 #ff6b5e; }
-  .header .txt { position: absolute; left: 860px; top: 92px; }
-  .header .t { font-size: 66px; line-height: 1.1; margin-bottom: 30px; }
-  .header .tr1 { right: 0; top: 0; width: 170px; height: 170px; background: #3E9A86; clip-path: polygon(0 0, 100% 0, 100% 100%); }
-  .header .tr2 { right: 0; top: 0; width: 134px; height: 134px; background: #FFF1A8; clip-path: polygon(0 0, 100% 0, 100% 100%); }
-  .header .tr3 { right: 0; top: 0; width: 98px; height: 98px; background: #E2622E; clip-path: polygon(0 0, 100% 0, 100% 100%); }
-  .header .tr4 { right: 0; top: 0; width: 62px; height: 62px; background: #D8637A; clip-path: polygon(0 0, 100% 0, 100% 100%); }
-  .header .bl1 { left: 0; bottom: 0; width: 120px; height: 120px; background: #3E9A86; clip-path: polygon(0 0, 0 100%, 100% 100%); }
-  .header .bl2 { left: 0; bottom: 0; width: 84px; height: 84px; background: #FFF1A8; clip-path: polygon(0 0, 0 100%, 100% 100%); }
-  /* ヘッダーの headerscene：背景に、トップの一番上の絵の「空」だけ（sky-sunset.webp の y=300 から。左上の青緑から、雲、下の桃色へ）。右はしのうすい縁を避けて、少し大きめに */
-  .scene .bg { background: url("../site/assets/img/sky-sunset.webp") -15px -378px / 1530px auto no-repeat; }
-  .scene .t { color: #634A2E; text-shadow: 3px 3px 0 rgba(254, 235, 196, .75); } /* 空が明るいので、題字は茶色 */
-  /* 絵（headerscene）の上には、緑のガラス調のロゴ（logo.webp）。色の面の上には、縁のハンコ */
-  .scene .logo { position: absolute; left: 330px; top: 40px; height: 420px; width: auto; }
-  /* 人のシルエット（トップの絵 top-figs.webp の3人。ヘッダーの headerfigs だけ） */
-  .fig { position: absolute; background: url("../site/assets/img/top-figs.webp") no-repeat; background-size: 504px auto; } /* 倍率 1.6 */
-  .f1 { left: 50px; top: 30px; width: 165px; height: 173px; background-position: 0 0; }
-  .f2 { left: 672px; top: 290px; width: 192px; height: 235px; background-position: -312px -416px; }
-  .f3 { left: 1340px; top: 245px; width: 99px; height: 246px; background-position: -245px -664px; }
-  /* アイコン：丸く切りぬかれても、縁と影が収まる大きさ。影が右下にのびるぶん、字を左上に寄せて、見た目の真ん中に */
+  /* 丸く切りぬかれても収まる大きさ。影が右下にのびるぶん、字を左上に寄せて、見た目の真ん中に */
   .icon .en { left: 69px; top: 32px; width: 260px; height: 260px; font-size: 270px; text-shadow: 6px 6px 0 #d9669b, 12px 12px 0 #2f8fe0, 18px 18px 0 #ffd24a, 24px 24px 0 #ff6b5e; }
 </style>
 </head>
 <body>
 <script>
   const v = new URLSearchParams(location.search).get("v") || "header";
-  const figs = `<i class="fig f1"></i><i class="fig f2"></i><i class="fig f3"></i>`;
-  const html = {
-    header: `<div class="bg"></div><div class="grain"></div>
-      <i class="tri tr1"></i><i class="tri tr2"></i><i class="tri tr3"></i><i class="tri tr4"></i><i class="tri bl1"></i><i class="tri bl2"></i>
-      <i class="dot" style="left:320px;top:70px;width:20px;height:20px;background:#FFF1A8"></i><i class="star" style="left:790px;top:46px;width:34px;height:34px"></i><i class="dot" style="left:1400px;top:420px;width:16px;height:16px;background:#FEEBC4"></i><i class="star" style="left:760px;top:420px;width:28px;height:28px"></i>
-      <div class="en">縁</div>
-      <div class="txt"><h1 class="t">第63回 函館高専祭</h1><div class="chips"><div class="chip"><b>10.24 SAT</b><span>12:00～16:00</span></div><div class="chip"><b>10.25 SUN</b><span>10:00～16:00</span></div></div></div>`,
-    icon: `<div class="bg"></div><div class="grain"></div><div class="en">縁</div>`,
-  }[/^header/.test(v) ? "header" : v];
-  document.body.className = v === "headerfigs" ? "header" : v === "headerscene" ? "header scene" : v;
-  document.body.insertAdjacentHTML("afterbegin", v === "headerfigs" ? html.replace('<div class="en">', figs + '<div class="en">') : v === "headerscene" ? html.replace('<div class="en">縁</div>', '<img class="logo" src="../site/assets/img/logo.webp" alt="">') : html);
+  document.body.className = v;
+  document.body.insertAdjacentHTML("afterbegin", v === "icon" ? `<div class="bg"></div><div class="en">縁</div>` : `<div class="bg"></div>`);
 </script>
 </body>
 </html>
