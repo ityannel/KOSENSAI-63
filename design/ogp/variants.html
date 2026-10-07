@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<!-- 共有したときに出る画像（OGP）の元。1200×630。tools/make-ogp.sh が、これを画像にして site/assets/img/ogp.jpg を作る（案は design/ogp/ に残してある。?v=a〜f で切りかえ） -->
+<!-- OGP の案。?v=a〜e で切りかえる（1200×630）。design/ogp/make-variants.sh が、画像にする -->
 <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=block&text=%E7%AC%AC63%E5%9B%9E%E5%87%BD%E9%A4%A8%E9%AB%98%E5%B0%82%E7%A5%AD%E3%81%88%E3%81%AB%E3%81%9710.24SAT12%3A00%EF%BD%9E16%3A0025SUN%E3%80%9C%E7%B8%81" rel="stylesheet">
 <style>
   html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
@@ -15,32 +15,32 @@
   .d { margin: 0; font-weight: 400; letter-spacing: .02em; line-height: 1.35; }
   .d small { margin-left: 8px; font-size: .62em; letter-spacing: .06em; }
   /* A：札（今、本番に出ているもの） */
-  .a .bg { background-image: url("../site/assets/img/scene.webp"), url("../site/assets/img/sky-sunset.webp"); background-size: 1200px auto; background-position: 0 -790px, 0 -790px; }
+  .a .bg { background-image: url("../../site/assets/img/scene.webp"), url("../../site/assets/img/sky-sunset.webp"); background-size: 1200px auto; background-position: 0 -790px, 0 -790px; }
   .a .logo { left: 56px; top: 34px; width: 250px; }
   .a .card { position: absolute; left: 56px; bottom: 44px; padding: 20px 38px 24px 34px; border-radius: 16px; background: #FEEBC4; box-shadow: -10px 8px 0 rgba(48, 44, 41, .5); }
   .a .t { font-size: 54px; margin-bottom: 10px; } .a .d { font-size: 35px; }
   /* B：「縁」を大きく。空のあいたところに、字だけ（面も影もなし）。字は白 */
-  .b .bg { background-image: url("../site/assets/img/scene.webp"), url("../site/assets/img/sky-sunset.webp"); background-size: 1200px auto; background-position: 0 -470px, 0 -470px; }
+  .b .bg { background-image: url("../../site/assets/img/scene.webp"), url("../../site/assets/img/sky-sunset.webp"); background-size: 1200px auto; background-position: 0 -470px, 0 -470px; }
   .b .logo { left: 60px; top: 26px; width: 360px; }
   .b .txt { position: absolute; left: 470px; top: 58px; color: #fff; }
   .b .t { font-size: 70px; line-height: 1.15; } .b .d { font-size: 44px; } .b .t + .d { margin-top: 22px; }
   .b .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 18px; background: #634A2E; }
   /* C：左に紙の面、右に絵（きっぱり半分） */
-  .c .bg { left: 520px; background-image: url("../site/assets/img/scene.webp"), url("../site/assets/img/sky-sunset.webp"); background-size: 1100px auto; background-position: -240px -740px, -240px -740px; }
+  .c .bg { left: 520px; background-image: url("../../site/assets/img/scene.webp"), url("../../site/assets/img/sky-sunset.webp"); background-size: 1100px auto; background-position: -240px -740px, -240px -740px; }
   .c .paper { position: absolute; left: 0; top: 0; bottom: 0; width: 520px; background: #FEEBC4; }
   .c .logo { left: 70px; top: 50px; width: 290px; }
   .c .txt { position: absolute; left: 70px; bottom: 56px; }
   .c .t { font-size: 58px; margin-bottom: 14px; } .c .d { font-size: 38px; }
   .c .edge { position: absolute; left: 520px; top: 0; bottom: 0; width: 10px; background: #C8323A; }
   /* D：夕暮れ。ロゴと字を、いっぱいに。字は白、うすい面も影もなし */
-  .d4 .bg { background-image: url("../site/assets/img/scene.webp"), url("../site/assets/img/sky-dusk.webp"); background-size: 1200px auto; background-position: 0 -790px, 0 -790px; }
+  .d4 .bg { background-image: url("../../site/assets/img/scene.webp"), url("../../site/assets/img/sky-dusk.webp"); background-size: 1200px auto; background-position: 0 -790px, 0 -790px; }
   .d4 .logo { left: 70px; top: 40px; width: 300px; }
   .d4 .band { position: absolute; left: 0; right: 0; bottom: 0; height: 210px; background: #2b2347; }
   .d4 .txt { position: absolute; left: 70px; bottom: 26px; color: #fff; display: flex; align-items: flex-end; gap: 70px; }
   .d4 .t { font-size: 62px; line-height: 1.15; } .d4 .d { font-size: 38px; }
   .d4 .logo { top: 24px; width: 270px; }
   /* E：日付を大きく（遠くから読める）。下に一本、紙の帯 */
-  .e .bg { background-image: url("../site/assets/img/scene.webp"), url("../site/assets/img/sky-sunset.webp"); background-size: 1200px auto; background-position: 0 -700px, 0 -700px; }
+  .e .bg { background-image: url("../../site/assets/img/scene.webp"), url("../../site/assets/img/sky-sunset.webp"); background-size: 1200px auto; background-position: 0 -700px, 0 -700px; }
   .e .logo { left: 56px; top: 30px; width: 230px; }
   .e .band { position: absolute; left: 0; right: 0; bottom: 0; height: 190px; background: #FEEBC4; }
   .e .txt { position: absolute; left: 56px; right: 56px; bottom: 26px; display: flex; align-items: flex-end; justify-content: space-between; }
@@ -48,7 +48,7 @@
   .e .days { text-align: right; } .e .d { font-size: 44px; line-height: 1.3; }
   .e .band::before { content: ""; position: absolute; left: 0; right: 0; top: -10px; height: 10px; background: #C8323A; }
   /* C2：Cをポップに。サイトの色（ピンク→橙→黄）の面と、斜めの色の帯。字は白、日付は色のついた札。要素どうしは、重ねない */
-  .f .bg { background-image: url("../site/assets/img/scene.webp"), url("../site/assets/img/sky-sunset.webp"); background-size: 1300px auto; background-position: -70px -860px, -70px -860px; }
+  .f .bg { background-image: url("../../site/assets/img/scene.webp"), url("../../site/assets/img/sky-sunset.webp"); background-size: 1300px auto; background-position: -70px -860px, -70px -860px; }
   .f .stripe { position: absolute; inset: 0; }
   .f .panel { position: absolute; inset: 0; background: linear-gradient(160deg, #d9669b 0%, #e2622e 55%, #e3a43a 100%); clip-path: polygon(0 0, 600px 0, 510px 630px, 0 630px); }
   .f .s1 { background: #3E9A86; clip-path: polygon(0 0, 664px 0, 574px 630px, 0 630px); }
@@ -68,9 +68,9 @@
 </head>
 <body>
 <script>
-  const v = new URLSearchParams(location.search).get("v") || "f";
+  const v = new URLSearchParams(location.search).get("v") || "a";
   const D = `<p class="d">10.24<small>SAT</small>　12:00～16:00</p><p class="d">10.25<small>SUN</small>　10:00～16:00</p>`;
-  const L = `<img class="logo" src="../site/assets/img/logo.webp" alt="">`;
+  const L = `<img class="logo" src="../../site/assets/img/logo.webp" alt="">`;
   const T = `<h1 class="t">第63回 函館高専祭</h1>`;
   const html = {
     a: `<div class="bg"></div>${L}<div class="card">${T}${D}</div>`,
