@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>本部コンソールの手引き｜第63回 函館高専祭「縁」</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <style>
+    :root { --ink: #3b2c1a; --sub: #7a6446; --paper: #FFFBF2; --cream: #FEEBC4; --red: #C8323A; --line: rgba(99, 74, 46, .3); }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px 16px 60px; background: #F1E4C6; color: var(--ink); font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif; font-weight: 700; line-height: 1.75; font-size: 15px; }
+    .sheet { max-width: 800px; margin: 0 auto; padding: 28px 34px 34px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; box-shadow: -6px 5px 0 rgba(48, 44, 41, .35); }
+    h1 { margin: 0 0 4px; font-size: 1.9rem; line-height: 1.25; }
+    .lead { margin: 0 0 18px; color: var(--sub); font-size: .9rem; }
+    h2 { margin: 28px 0 8px; padding: 2px 12px; border-left: 6px solid var(--red); background: var(--cream); font-size: 1.15rem; }
+    h3 { margin: 16px 0 4px; font-size: 1rem; color: var(--red); }
+    p { margin: 0 0 8px; }
+    ul, ol { margin: 0 0 8px; padding-left: 1.4em; }
+    li { margin: 0 0 3px; }
+    table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: .9rem; }
+    th, td { padding: 6px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { width: 9.5em; background: var(--cream); white-space: nowrap; }
+    .step { counter-reset: s; list-style: none; padding: 0; }
+    .step li { position: relative; padding-left: 2em; }
+    .step li::before { counter-increment: s; content: counter(s); position: absolute; left: 0; top: 2px; width: 1.5em; height: 1.5em; border-radius: 50%; background: var(--red); color: #fff; text-align: center; font-size: .8rem; line-height: 1.5em; }
+    .tip { margin: 8px 0; padding: 8px 12px; border-radius: 8px; background: #FFF1B8; font-size: .88rem; }
+    .warn { margin: 8px 0; padding: 8px 12px; border-radius: 8px; background: #FAD6D2; font-size: .88rem; }
+    .btn { display: inline-block; padding: 1px 9px; border: 1.5px solid var(--ink); border-radius: 999px; background: #fff; font-size: .85em; white-space: nowrap; }
+    .fill { display: inline-block; min-width: 9em; border-bottom: 1.5px solid var(--ink); }
+    .print { position: fixed; right: 16px; top: 16px; padding: 8px 18px; border: 0; border-radius: 999px; background: var(--ink); color: #FEEBC4; font: inherit; cursor: pointer; }
+    @media print {
+      body { background: #fff; padding: 0; font-size: 11.5px; line-height: 1.6; }
+      .sheet { max-width: none; padding: 0; border: 0; box-shadow: none; border-radius: 0; }
+      .print { display: none; }
+      h2 { break-after: avoid; } table, .tip, .warn, li { break-inside: avoid; }
+      @page { size: A4; margin: 14mm; }
+    }
+  </style>
+</head>
+<body>
+  <button class="print" type="button" onclick="print()">印刷する（A4）</button>
+  <main class="sheet">
+    <h1>本部コンソールの手引き</h1>
+    <p class="lead">第63回 函館高専祭「縁」　当日に、サイトとディスプレイを動かす人のための、1枚ものです。画面の名前は、コンソールの左（スマホは下）の名前と同じです。</p>
+
+    <h2>1. はじめに</h2>
+    <ul>
+      <li>コンソールの場所：サイトのアドレスのうしろに <b>/staff/</b> をつけます。メールアドレスとパスワードでログインします（本部の名簿にあるアドレスだけ入れます）。</li>
+      <li>パスワードは、人に見せない・貼らない・ほかの人の画面で開かない。ログインしたままにして、席を離れない。</li>
+      <li>どの画面も、<b>押す・保存する</b>と、お客さんのスマホとディスプレイに<b>すぐ</b>反映されます。まちがえたら、すぐ直せます（直した内容も、すぐ反映されます）。</li>
+      <li>右上の「通知音」は、報告された投稿や写真の確認待ちが来たときの音です。うるさければ切れます。</li>
+    </ul>
+    <table>
+      <tr><th>ダッシュボード</th><td>いまの状態の一覧：閲覧者、確認待ちの写真、報告された投稿、入場制限中の会場、完売の模擬店。</td></tr>
+      <tr><th>アクセス</th><td>サイトを見ている人の数（いま・1時間ごと・1日ごと）と、スマホ／パソコンの割合。</td></tr>
+      <tr><th>お知らせ・配信</th><td>トップに出るお知らせ、生配信（YouTube）、「開催前／開催中／終了後」の手動の切りかえ。</td></tr>
+      <tr><th>混雑・実況</th><td>会場の混みぐあい、模擬店の待ち時間、トップの絵の5人のセリフ。</td></tr>
+      <tr><th>投稿の管理</th><td>Enistagram の投稿を見る・はずす。本部として投稿する。写真の確認。</td></tr>
+      <tr><th>模擬店</th><td>スタンプラリーの対象のお店の受付（QR を渡したか）。</td></tr>
+      <tr><th>スケジュール</th><td>ステージや企画の時間を変える（遅れ・順番の入れかえ）。</td></tr>
+      <tr><th>印刷・スタンプ</th><td>スタンプラリーの QR の印刷、景品がなくなったときのスイッチ。</td></tr>
+      <tr><th>サイトの設定</th><td>トップの欄の並び、全員のキャッシュの削除、スタンプ履歴のリセット。</td></tr>
+    </table>
+
+    <h2>2. 当日の流れ（チェックリスト）</h2>
+    <h3>開場の前（10/24 11:00ごろ・10/25 9:00ごろ）</h3>
+    <ul>
+      <li>□ コンソールにログインして、ダッシュボードが開くことを確かめる。</li>
+      <li>□ 自分のスマホで、サイトを開く（トップ・地図・みどころ・Enistagram）。出ていなければ、<b>いちばん下の「困ったとき」</b>へ。</li>
+      <li>□ 会場のディスプレイを、全画面で開く（アドレスのうしろに <b>signage.html</b>）。縦のものは、そのままで自動で縦の画面になります。</li>
+      <li>□ 「混雑・実況」で、会場の混みぐあいを、いまの様子にする（わからない会場は「設定しない」）。</li>
+      <li>□ 「お知らせ・配信」で、お知らせに、その日の注意（雨・混雑・駐車）があれば出す。</li>
+    </ul>
+    <h3>開催中</h3>
+    <ul>
+      <li>□ ステージが遅れたら、すぐ「スケジュール」で直す（下の「ステージが遅れた・早まったとき」）。</li>
+      <li>□ 混んだ会場・お店は、そのつど変える。30分に1回は、ようすを見に行く。</li>
+      <li>□ 「投稿の管理」を、ときどき見る。報告のある投稿は、早めに判断する。</li>
+      <li>□ 景品がなくなったら、「印刷・スタンプ」の <span class="btn">景品がなくなった</span> をオンにする。</li>
+    </ul>
+    <h3>2日目のおわり</h3>
+    <ul>
+      <li>□ 10/25 15:40 の模擬店総選挙の結果発表は、YouTube で配信します。配信の URL を、前もって「お知らせ・配信」に入れておく（下の「生配信」）。</li>
+      <li>□ 大抽選会（16:00〜）は、学内の方だけです。ディスプレイは、閉場後5分で、通常の表示にもどります。</li>
+      <li>□ 花火（18:00〜18:30・学内の方限定）は、ディスプレイに「花火！」と出て、背景に花火が上がります。自動です。</li>
+    </ul>
+
+    <h2>3. こんなときは</h2>
+    <h3>急ぎのお知らせを出したい</h3>
+    <ol class="step">
+      <li>「お知らせ・配信」の「お知らせ」で、<b>ふつう</b>か<b>緊急</b>（赤い帯）を選ぶ。</li>
+      <li>文を入れて <span class="btn">出す</span>。トップの上に出ます。</li>
+      <li>終わったら <span class="btn">消す</span>。</li>
+    </ol>
+    <div class="tip">文は短く（200字まで）。時刻・場所・してほしいことを入れる。例：「14:00から体育館で抽選会の整理券を配ります」</div>
+
+    <h3>会場が混んできた</h3>
+    <ol class="step">
+      <li>「混雑・実況」で、その会場の段階を選ぶ：<b>空いています／ふつう／混雑しています／入場制限中</b>。</li>
+      <li>全会場を一度に変えるときは、上の「一斉に変える」。わからなくなった会場は「設定しない」（出さない）。</li>
+    </ol>
+    <p>模擬店の待ち時間・完売は、同じ画面の「模擬店の混みぐあい」で変えます（お店の人が、自分でも変えられます）。</p>
+
+    <h3>ステージが遅れた・早まったとき</h3>
+    <ol class="step">
+      <li>「スケジュール」を開く。変えたい出演の、始まりと終わりの時間を直す。</li>
+      <li>以降ぜんぶが遅れるときは、「この時刻から後ろを◯分ずらす」に、<b>ずらす分</b>を入れて <span class="btn">まとめてずらす</span>。</li>
+      <li>トップ・地図・みどころ・ディスプレイの時間が、すぐ変わります。変えた時間は「新しい時間」が大きく、「もとの時間」が小さく取り消し線で出ます。</li>
+    </ol>
+    <div class="tip">まちがえたら、その行の「もとにもどす」か、<span class="btn">すべてもとの時間にもどす</span>。</div>
+
+    <h3>生配信を出す・止める</h3>
+    <ul>
+      <li>「お知らせ・配信」の「生配信」に、YouTube の URL と見出しを入れて、「いますぐトップに出す」をオン。</li>
+      <li>止めるときは <span class="btn">配信を止める</span>。</li>
+      <li>結果発表（10/25 15:40〜）と大抽選会の時間は、スイッチを入れなくても、自動でトップに配信が出ます。<b>URL が本物になっているか、前の日までに必ず確かめる</b>（テスト用の動画のままだと、それが出てしまいます）。</li>
+    </ul>
+
+    <h3>不適切な投稿があった</h3>
+    <ol class="step">
+      <li>「投稿の管理」を開く。「報告あり」で、報告された投稿だけに絞れます。</li>
+      <li>その投稿の <span class="btn">はずす</span> で、サイトから消えます（データは残ります）。</li>
+      <li>報告が一定数たまった投稿は、自動で隠れます。それでも、本部で見て、はずす・残すを決めてください。</li>
+    </ol>
+    <div class="warn">写真を載せる人が増えて、確認が追いつかないときは、「写真を確認してから出す」をオン。オンの間は、写真は本部が OK するまで出ません。</div>
+    <p>権利や写っている人の相談が来たら、サイトの「ご利用にあたって」に書いてある窓口（フォーム）に来ます。内容を見て、投稿をはずしてください。</p>
+
+    <h3>スタンプの景品がなくなった</h3>
+    <p>「印刷・スタンプ」の <span class="btn">景品がなくなった</span> をオン。スタンプカードのページに、おわびが出ます。</p>
+
+    <h3>画面が古い・直したのに変わらない</h3>
+    <p>お客さんのスマホは、サイトの部品をしまってあるので、古いまま見えることがあります。「サイトの設定」の <span class="btn">全員のキャッシュを削除</span> を押すと、全員が、開き直したときに最新になります。</p>
+    <div class="warn"><b>押す前に</b>：全員の画面が1回読み直されます（スタンプや投票の記録は消えません）。人が多い時間帯は、避けてください。</div>
+
+    <h3>トップの欄の並びを変えたい</h3>
+    <p>「サイトの設定」の「トップページの並び」。開催前と期間中の、2つの並びがあります。<b>自動</b>のままなら、最初の日の開場で、期間中の並びに切りかわります。並べかえて <span class="btn">保存して公開</span>。</p>
+
+    <h2>4. やってはいけないこと</h2>
+    <ul>
+      <li>「サイトの設定」の <span class="btn">全員の履歴をリセット</span>：<b>全員のスタンプが消えます。</b>パスワードが要ります。当日は、絶対に押さない。</li>
+      <li>投稿の「はずす」を、悪口でも何でもないものに使わない（まちがえたら、すぐ戻す）。</li>
+      <li>お客さんの個人情報（名前・連絡先・写真）を、スクリーンショットで人に送らない。</li>
+      <li>コンソールのパスワードを、LINE やメモに貼らない。</li>
+    </ul>
+
+    <h2>5. 困ったとき</h2>
+    <table>
+      <tr><th>サイトが開かない</th><td>お客さんの電波・会場の回線の問題のことが多いです。自分のスマホの電波と、コンソールの画面が出るかを見る。<b>投稿・混雑・スタンプが止まっても、トップ・地図・みどころ・時間割は見られます。</b></td></tr>
+      <tr><th>コンソールに入れない</th><td>メールアドレスとパスワードを、もう一度。それでも入れなければ、システム担当へ。</td></tr>
+      <tr><th>「書けませんでした」と出る</th><td>電波が弱いか、本部の名簿にないアドレスです。ログインし直す。</td></tr>
+      <tr><th>空の色が、時間と合わない</th><td>空の色を固定する設定が、データに残っているかもしれません。システム担当に伝える。</td></tr>
+      <tr><th>システム担当</th><td><span class="fill">　</span>　電話 <span class="fill">　</span></td></tr>
+      <tr><th>学生課（学校）</th><td>0138-59-6334（当日の問い合わせは、まず学生会へ）</td></tr>
+      <tr><th>けが・急病・火事</th><td>まず、会場の先生・スタッフへ。必要なら 119。そのあと、お知らせを出す。</td></tr>
+    </table>
+    <p style="font-size:.8rem;color:var(--sub)">このページは、印刷して本部に置いておくと、回線が止まっても読めます。</p>
+  </main>
+</body>
+</html>
