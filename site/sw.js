@@ -8,11 +8,7 @@
 // - 混雑・お知らせ・みんなの声（Firestore）はしまわない（電波がないときは出ないだけ）
 // - staff/（本部用）はしまわない
 // 中身を大きく変えたときは VERSION を上げる（古いしまったものを消す）
-<<<<<<< HEAD
-const VERSION = "kosen63-v226";
-=======
-const VERSION = "kosen63-v226";
->>>>>>> parent of d5b20cd (ご利用にあたって：文節で改行)
+const VERSION = "kosen63-v227";
 const CORE = [
   "./", "index.html", "map.html", "mido.html", "rally.html", "vote.html", "terms.html", "favicon.svg", "manifest.webmanifest",
   "assets/style.css", "assets/map.css",
