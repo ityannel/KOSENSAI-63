@@ -69,14 +69,7 @@
 </head>
 <body data-phase="before">
   <!-- 初めての人にだけ、最初は絵だけを見せる。JSが途中で止まっても6秒後には必ず全部出す -->
-  <script>
-    let seen = false;
-    try { seen = !!localStorage.getItem("kosen63-intro-seen"); } catch {}
-    if (!seen) {
-      document.body.classList.add("intro");
-      setTimeout(() => document.body.classList.remove("intro"), 6000);
-    }
-  </script>
+  <script src="assets/intro.js"></script><!-- 初めてだけの演出 -->
   <!-- ===== 最初の画面は絵の1枚。下へスクロールすると Enistagram =====
        ふだんは Figma のデザインどおり「絵・縁・カウントダウン」だけ。
        画面に触れると、カウントダウンが消えて、下から質問ボタンがせり上がる（body.awake）。 -->

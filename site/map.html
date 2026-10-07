@@ -51,7 +51,7 @@
 </head>
 <body class="mapapp">
   <!-- PC：前に地図を広げていたら、描く前に広げておく（あとから広がって、がたつかないように）。map.css の body.is-wide -->
-  <script>try { if (localStorage.getItem("kosen63-map-wide") && matchMedia("(min-width: 1000px)").matches) document.body.classList.add("is-wide"); } catch {}</script>
+  <script src="assets/map-wide.js"></script>
   <!-- アプリの画面（PC では真ん中のスマホの幅。まわりは side.js の左右の案内） -->
   <div class="app-frame">
   <main class="m-canvas" id="m-canvas">
