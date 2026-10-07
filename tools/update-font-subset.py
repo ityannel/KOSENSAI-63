@@ -17,7 +17,8 @@ config = (SITE / "assets" / "config.js").read_text(encoding="utf-8")
 FIXED = ("高専祭まであと日時間分秒0123456789:〜@ -!！●"
          "開催中本日は終了まもなく開場の公開しましたお楽しみください会場を"
          "第回函館ご来場ありがとうございました明NOWEXT"
-         "学生主事より~.SUNMOTEWDHFRA")  # 絵の下の日付（10.24 SAT）と「学生主事より」
+         "学生主事より~.SUNMOTEWDHFRA"
+         "インスタエックス学校サイト")  # トップのリンクの札（Google マップ・学校サイト・インスタ・エックス）  # 絵の下の日付（10.24 SAT）と「学生主事より」
 # config.js の企画名（EVENTS の title）と会場名（VENUES の name / alias）
 titles = re.findall(r'title:\s*"([^"]+)"', config)
 # ステージの出演者（act("日", "始まり", "終わり", "名前", "種類")）
