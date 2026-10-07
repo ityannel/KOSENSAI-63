@@ -10,11 +10,11 @@
   body { position: relative; font-family: "WDXL Lubrifont JP N", sans-serif; color: #634A2E; }
   body.header { width: 1500px; height: 500px; }
   body.icon { width: 400px; height: 400px; }
-  .bg { position: absolute; inset: 0; background: linear-gradient(150deg, #d9669b 0%, #e2622e 52%, #e3a43a 100%); }
+  .bg { position: absolute; inset: 0; background: linear-gradient(115deg, #d8457f, #e2622e 35%, #e3a43a 65%, #dfc27a); } /* トップページ（style.css の .ennichi・.visit など）と同じ色 */
   .grain { position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .39 0 0 0 0 .29 0 0 0 0 .18 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); mix-blend-mode: multiply; opacity: .55; }
   .grain { opacity: .5; }
   .en { position: absolute; color: #FEEBC4; transform: rotate(-14deg); font-weight: 400; line-height: 1; }
-  .t { margin: 0; color: #fff; font-weight: 400; letter-spacing: .02em; white-space: nowrap; }
+  .t { margin: 0; color: #fff; font-weight: 400; letter-spacing: .02em; white-space: nowrap; text-shadow: 4px 4px 0 rgba(99, 74, 46, .6); } /* 右の黄色い面でも読めるように、サイトの札と同じ茶色の影 */
   .chips { display: grid; gap: 18px; }
   .chip { display: flex; align-items: center; gap: 20px; width: fit-content; padding: 14px 36px 14px 16px; border-radius: 18px; background: #FEEBC4; box-shadow: -6px 5px 0 rgba(48, 44, 41, .5); font-size: 34px; letter-spacing: .02em; }
   .chip b { display: inline-block; min-width: 150px; padding: 5px 0; border-radius: 12px; color: #fff; font-weight: 400; font-size: 28px; text-align: center; letter-spacing: .04em; }
