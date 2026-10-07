@@ -10,9 +10,12 @@
   body { position: relative; font-family: "WDXL Lubrifont JP N", sans-serif; color: #634A2E; }
   body.header { width: 1500px; height: 500px; }
   body.icon { width: 400px; height: 400px; }
-  .bg { position: absolute; inset: 0; background: linear-gradient(115deg, #d8457f, #e2622e 35%, #e3a43a 65%, #dfc27a); } /* トップページ（style.css の .ennichi・.visit など）と同じ色 */
+  /* 背景：トップページの背景の絵（site/assets/img/top-bg.webp・804×2106）の一部。ノイズのある、不規則なグラデーション。絵のどこを使うかは、下の background-position */
+  .bg { position: absolute; inset: 0; background: url("../site/assets/img/top-bg.webp") no-repeat; }
+  .header .bg { background-size: 1500px auto; background-position: 0 -1941px; } /* 絵の y=1040 から（横に 1500px のとき、倍率 1.866） */
+  .icon .bg { background-size: 400px auto; background-position: 0 -408px; } /* 絵の y=820 から（正方形） */
   .grain { position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .39 0 0 0 0 .29 0 0 0 0 .18 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); mix-blend-mode: multiply; opacity: .55; }
-  .grain { opacity: .5; }
+  .grain { display: none; } /* 背景の絵に、もうノイズが入っている */
   .en { position: absolute; color: #FEEBC4; transform: rotate(-14deg); font-weight: 400; line-height: 1; }
   .t { margin: 0; color: #fff; font-weight: 400; letter-spacing: .02em; white-space: nowrap; text-shadow: 4px 4px 0 rgba(99, 74, 46, .6); } /* 右の黄色い面でも読めるように、サイトの札と同じ茶色の影 */
   .chips { display: grid; gap: 18px; }
@@ -32,6 +35,14 @@
   .header .tr4 { right: 0; top: 0; width: 62px; height: 62px; background: #D8637A; clip-path: polygon(0 0, 100% 0, 100% 100%); }
   .header .bl1 { left: 0; bottom: 0; width: 120px; height: 120px; background: #3E9A86; clip-path: polygon(0 0, 0 100%, 100% 100%); }
   .header .bl2 { left: 0; bottom: 0; width: 84px; height: 84px; background: #FFF1A8; clip-path: polygon(0 0, 0 100%, 100% 100%); }
+  /* ヘッダーの headerscene：背景に、トップの一番上の絵（scene.webp＋sky-sunset.webp）の、屋根と人のあたりの帯（絵の y=820 から。倍率 1.2346） */
+  .scene .bg { background: url("../site/assets/img/scene.webp") 0 -1010px / 1500px auto no-repeat, url("../site/assets/img/sky-sunset.webp") 0 -1010px / 1500px auto no-repeat; }
+  .scene .t { color: #634A2E; text-shadow: 3px 3px 0 rgba(254, 235, 196, .75); } /* 空が明るいので、題字は茶色 */
+  /* 人のシルエット（トップの絵 top-figs.webp の3人。ヘッダーの headerfigs だけ） */
+  .fig { position: absolute; background: url("../site/assets/img/top-figs.webp") no-repeat; background-size: 504px auto; } /* 倍率 1.6 */
+  .f1 { left: 50px; top: 30px; width: 165px; height: 173px; background-position: 0 0; }
+  .f2 { left: 672px; top: 290px; width: 192px; height: 235px; background-position: -312px -416px; }
+  .f3 { left: 1340px; top: 245px; width: 99px; height: 246px; background-position: -245px -664px; }
   /* アイコン：丸く切りぬかれても、縁と影が収まる大きさ。影が右下にのびるぶん、字を左上に寄せて、見た目の真ん中に */
   .icon .en { left: 69px; top: 32px; width: 260px; height: 260px; font-size: 270px; text-shadow: 6px 6px 0 #d9669b, 12px 12px 0 #2f8fe0, 18px 18px 0 #ffd24a, 24px 24px 0 #ff6b5e; }
 </style>
@@ -39,6 +50,7 @@
 <body>
 <script>
   const v = new URLSearchParams(location.search).get("v") || "header";
+  const figs = `<i class="fig f1"></i><i class="fig f2"></i><i class="fig f3"></i>`;
   const html = {
     header: `<div class="bg"></div><div class="grain"></div>
       <i class="tri tr1"></i><i class="tri tr2"></i><i class="tri tr3"></i><i class="tri tr4"></i><i class="tri bl1"></i><i class="tri bl2"></i>
@@ -46,9 +58,9 @@
       <div class="en">縁</div>
       <div class="txt"><h1 class="t">第63回 函館高専祭</h1><div class="chips"><div class="chip"><b>10.24 SAT</b><span>12:00～16:00</span></div><div class="chip"><b>10.25 SUN</b><span>10:00～16:00</span></div></div></div>`,
     icon: `<div class="bg"></div><div class="grain"></div><div class="en">縁</div>`,
-  }[v];
-  document.body.className = v;
-  document.body.insertAdjacentHTML("afterbegin", html);
+  }[/^header/.test(v) ? "header" : v];
+  document.body.className = v === "headerfigs" ? "header" : v === "headerscene" ? "header scene" : v;
+  document.body.insertAdjacentHTML("afterbegin", v === "headerfigs" ? html.replace('<div class="en">', figs + '<div class="en">') : html);
 </script>
 </body>
 </html>
