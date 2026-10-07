@@ -60,6 +60,7 @@ export function openEvent(e, t = Date.now()) {
   const state = on ? "" : past ? "終了しました" : start - t < 3 * 3600000 ? `あと${mins(start - t)}分で始まります` : "";
   open(`
     <div class="dt-ticket" aria-hidden="true">${ticketHtml(e, 0, t)}</div>
+    ${e.photo ? `<figure class="dt-photo"><img class="dt-photo-img" src="${esc(e.photo.replace(/\.webp$/, "-l.webp"))}" alt="${esc(e.title)}の写真（押すと画面いっぱいに表示）" decoding="async"></figure>` : ""}
     <h2 class="dt-title" id="dt-title">${esc(e.title)}${on ? ' <span class="dt-now">NOW</span>' : ""}</h2>
     ${state ? `<p class="dt-state">${esc(state)}</p>` : ""}
     <dl class="dt-facts">
@@ -172,7 +173,7 @@ function zoomOpen(thumb) {
   zoomImg.src = thumb.getAttribute("src"); // 大きい版が届くまで、小さい版を出しておく
   const big = new Image();
   big.onload = () => { if (!zoom.hidden) zoomImg.src = big.src; };
-  big.src = thumb.getAttribute("src").replace(/\.webp$/, "-l.webp");
+  big.src = thumb.getAttribute("src").replace(/(-l)?\.webp$/, "-l.webp");
   zoomImg.alt = name ? `${name}の写真` : "写真";
   zoom.querySelector(".pz-cap").textContent = name;
   zoom.classList.remove("is-closing");
@@ -187,7 +188,7 @@ function zoomClose() {
   setTimeout(done, 220);
 }
 document.addEventListener("click", (e) => {
-  const img = e.target.closest?.(".tk-photo");
+  const img = e.target.closest?.(".tk-photo, .dt-photo-img");
   if (!img) return;
   e.preventDefault();
   e.stopPropagation(); // チケットを押した扱いにしない（シートを開かない）
