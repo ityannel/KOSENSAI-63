@@ -4,7 +4,7 @@
 function makeTakedownForm() {
   const form = FormApp.create("Enistagram の投稿の削除のお願い（第63回 函館高専祭）");
   form.setDescription(
-    "Enistagram（地図の投稿）の、削除のお願いを受け付けます。確認して、高専祭の本部が対応します。\n" +
+    "Enistagram（地図の投稿）の、削除のお願いを受け付けます。確認して、学生会が対応します。\n" +
     "いただいた名前や連絡先は、確認と連絡のためだけに使います。"
   ).setCollectEmail(false).setAllowResponseEdits(false).setProgressBar(false);
 
@@ -18,7 +18,7 @@ function makeTakedownForm() {
   form.addTextItem().setTitle("お名前（ニックネームでも可）").setRequired(true);
   form.addTextItem().setTitle("連絡先（メールアドレスまたは電話番号）").setRequired(true)
     .setHelpText("確認が必要なときだけ、連絡します。");
-  form.setConfirmationMessage("お知らせありがとうございました。確認して、本部が対応します。");
+  form.setConfirmationMessage("お知らせありがとうございました。確認して、学生会が対応します。");
 
   const sheet = SpreadsheetApp.create("Enistagram 削除のお願い（回答）");
   form.setDestination(FormApp.DestinationType.SPREADSHEET, sheet.getId());
