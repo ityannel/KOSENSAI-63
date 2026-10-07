@@ -568,7 +568,7 @@ body.mido-page { background: linear-gradient(rgba(20, 12, 18, 0.45), rgba(20, 12
 .mido-day { margin: calc(8 * var(--u)) 0 calc(-8 * var(--u)) calc(1 * var(--u)); font-family: var(--hud-font); font-weight: 400; font-size: calc(20 * var(--u)); color: #F7FFF4; }
 .mido-empty, .mido-note { margin: calc(24 * var(--u)) 0 0; font-family: var(--text-font); font-weight: 700; font-size: calc(12.5 * var(--u)); color: #F7FFF4; }
 /* 写真はポラロイドのように、右下にはみ出して貼る */
-.tk-photo { position: absolute; right: calc(8 * var(--u)); bottom: calc(-16 * var(--u)); width: calc(66 * var(--u)); padding: calc(4 * var(--u)) calc(4 * var(--u)) calc(12 * var(--u)); background: #fff; rotate: 5deg; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); }
+.tk-photo { position: absolute; right: calc(10 * var(--u)); top: 50%; translate: 0 -50%; width: calc(66 * var(--u)); padding: calc(4 * var(--u)) calc(4 * var(--u)) calc(12 * var(--u)); background: #fff; rotate: 5deg; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); }
 
 /* ---------- 縁日（模擬店の紹介）：クリーム色の紙の掲示板に、チラシ（A4 のたて長）をテープで貼る ---------- */
 .ennichi {
