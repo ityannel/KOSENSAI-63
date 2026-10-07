@@ -563,21 +563,10 @@ body.portrait .closing p { font-size: 52px; }
 /* 花火 */
 #fw { position: absolute; inset: 0; width: var(--sw, 1920px); height: var(--sh, 1080px); pointer-events: none; }
 body.is-fw .sun { opacity: 0; }
+body.is-fw #bgclock { opacity: 0; transition: opacity .6s; } /* 花火のあいだは、うしろの時計も出さない（「花火！」の字だけ） */
 .fwslide { align-items: center; justify-content: center; text-align: center; }
 .fwt { font: 400 380px/1 var(--hud); color: #ffe27a; text-shadow: -12px 10px 0 rgba(48, 44, 41, .6), 0 0 90px rgba(255, 190, 80, .7); animation: fwpulse 1.6s ease-in-out infinite; }
 @keyframes fwpulse { 50% { transform: scale(1.05); } }
-.fwsub { margin-top: 30px; display: flex; gap: 30px; align-items: center; justify-content: center; }
-.fwsub .chip { font-size: 40px; }
-.fwtime { font: 400 64px/1 var(--hud); color: #fff; }
-.fwguide { margin-top: 56px; display: flex; align-items: center; gap: 34px; padding: 22px 52px 22px 30px; border-radius: 34px; background: var(--grain), var(--paper); color: var(--ink); filter: drop-shadow(-14px 10px 0 rgba(48, 44, 41, .55)); }
-.fwguide .mk { display: grid; place-items: center; width: 100px; height: 100px; border-radius: 28px; background: #efe9dd; font-size: 62px; }
-.fwguide .nm { font: 400 64px/1.1 var(--hud); text-align: left; }
-.fwguide .nm small { display: block; margin-top: 6px; font: 700 28px var(--txt); color: #6b6560; }
-.fwguide .sy { font-size: 34px; text-align: left; margin-left: 24px; }
-.fwguide .sy small { display: block; font-size: 28px; opacity: .75; }
-.fwguide .ar { flex: none; width: 96px; height: 96px; transform: rotate(var(--rot, 0deg)); }
 body.portrait .fwt { font-size: 300px; }
-body.portrait .fwguide { flex-wrap: wrap; justify-content: center; padding: 26px 34px; }
-body.portrait .fwguide .nm { font-size: 54px; }
 body.is-fw #bg { background: linear-gradient(180deg, #060a22 0%, #1d1448 60%, #3a1d5c 100%); animation: none; }
 body.is-fw .grain { opacity: .25; }

@@ -8,7 +8,7 @@
 // ・goal 個たまると、カードが下へ伸びて「引き換える！」が出る。押すと「引き換え済み」になる（番号は要らない）
 // ・模擬店総選挙：スタンプを押した模擬店（rally/current の shops で vote: true のもの）に、1人1票。votes/{匿名ログインの印} = { shop }。
 //   押しなおすと、投票先が変わる（票は1つのまま）。受け付けは config.js の ELECTION の opens〜closes
-import { RALLY, FESTIVAL, ELECTION, SHOPS, shopIdOf } from "./config.js";
+import { RALLY, FESTIVAL, ELECTION, SHOPS, EVENTS, VENUES, shopIdOf } from "./config.js";
 import { rallyReady, onRallyChange } from "./rally-data.js"; // 本部コンソールで作った対象のお店（Firestore）
 import { openQrScanner } from "./qr-scan.js";
 
@@ -264,7 +264,10 @@ function renderVote() {
     return;
   }
   if (phase === "closed") {
-    el.innerHTML = `${title}<p class="rv-lead">投票は終わりました。結果発表は 10/25 16:00 から、第二体育館です。</p>`;
+    // 結果発表の日時と場所は、企画（config.js の EVENTS）から出す（前は「10/25 16:00」と直に書いてあり、時刻が 15:40 に変わったあとも古いままだった）
+    const res = EVENTS.find((e) => e.title.includes("結果発表"));
+    const hall = VENUES.find((v) => v.id === res?.venue);
+    el.innerHTML = `${title}<p class="rv-lead">投票は終わりました。${res ? `結果発表は ${esc(voteDay(res.start))} から${hall ? `、${esc(hall.alias ? `${hall.alias}（${hall.name}）` : hall.name)}` : ""}です。` : ""}</p>`;
     return;
   }
   if (!ELECTION.form) { el.innerHTML = `${title}<p class="rv-lead">投票のフォームは、準備ができしだい、ここに出ます。</p>`; return; }

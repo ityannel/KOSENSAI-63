@@ -306,7 +306,7 @@ const runningEvents = (t = nowMs()) => (live?.now_events?.length
 // ---------- みどころ（Figma のチケット。形は tickets.js） ----------
 // いまやっているもの → これから始まるもの の順に3枚。全部は「ほかの見どころも見る」→ みどころのページ（mido.html）。
 // 全部終わったら、みどころごと出さない
-let lastMido = "";
+let lastMido = null; // 最初の1回は、かならず描く（1枚もないときに、欄を隠すため。"" で始めると、空のまま隠れなかった）
 wireDetails($("#mido-tickets"), nowMs); // チケットを押すと詳しいシート（地図へはそこから）
 function renderMido(t = nowMs()) {
   const list = upcomingTickets(t).slice(0, 3);

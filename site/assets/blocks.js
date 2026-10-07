@@ -10,16 +10,23 @@ const KEY = "kosen63-blocks";
 const top = document.querySelector(".k-top");
 const els = Object.fromEntries(TOP_BLOCKS.map(([id]) => [id, document.querySelector(`[data-block="${id}"]`)]).filter(([, el]) => el));
 
-// 本部の設定と、いつもの並びを合わせる（本部の設定にない欄は、うしろに足して出す）
-function orderOf(blocks) {
-  const list = Array.isArray(blocks) ? blocks.filter((b) => els[b?.id]) : [];
-  const seen = new Set(list.map((b) => b.id));
-  return [...list.map((b) => ({ id: b.id, show: b.show !== false })), ...TOP_BLOCKS.filter(([id]) => els[id] && !seen.has(id)).map(([id]) => ({ id, show: true }))];
+// 本部の設定と、いつもの並びを合わせる。
+// 本部の設定にない欄（設定を保存したあとで増えた欄。たとえば学科展示）は、いつもの並び（config.js の TOP_PRESETS）での場所に入れる：
+// いつもの並びで、その欄のすぐ前にある欄のうしろ。うしろに足すだけだと、協賛の下に出てしまう
+function orderOf(blocks, base) {
+  const list = (Array.isArray(blocks) ? blocks.filter((b) => els[b?.id]) : []).map((b) => ({ id: b.id, show: b.show !== false }));
+  const has = (id) => list.some((b) => b.id === id);
+  (base ?? []).filter((b) => els[b.id]).forEach(({ id, show }, i, arr) => {
+    if (has(id)) return;
+    const prev = arr.slice(0, i).reverse().find((b) => has(b.id));
+    list.splice(prev ? list.findIndex((b) => b.id === prev.id) + 1 : 0, 0, { id, show });
+  });
+  return [...list, ...TOP_BLOCKS.filter(([id]) => els[id] && !has(id)).map(([id]) => ({ id, show: true }))];
 }
 
 let order = orderOf(null);
-function apply(blocks) {
-  order = orderOf(blocks);
+function apply(blocks, base) {
+  order = orderOf(blocks, base);
   let anchor = top;
   for (const { id, show } of order) {
     const el = els[id];
@@ -52,19 +59,18 @@ const test = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSe
 const nowParam = new URLSearchParams(location.search).get("now");
 const now = () => (nowParam ? Date.parse(nowParam.includes("+") ? nowParam : nowParam + "+09:00") : Date.now());
 const phase = () => (now() < Date.parse(FESTIVAL.days[0].open) ? "before" : "during");
-function pick(cfg) {
-  const which = cfg?.mode === "before" || cfg?.mode === "during" ? cfg.mode : phase();
-  return cfg?.presets?.[which] ?? TOP_PRESETS[which];
-}
+const which = (cfg) => (cfg?.mode === "before" || cfg?.mode === "during" ? cfg.mode : phase());
+const pick = (cfg) => cfg?.presets?.[which(cfg)] ?? TOP_PRESETS[which(cfg)];
+const base = (cfg) => TOP_PRESETS[which(cfg)]; // いつもの並び（本部の設定にない欄の場所を決めるのに使う）
 let cfg = null;
 if (test) apply(test.split(",").map((t) => ({ id: t.replace(/^-/, ""), show: !t.startsWith("-") })));
-else try { apply(JSON.parse(localStorage.getItem(KEY) ?? "null") ?? pick(null)); } catch { apply(pick(null)); }
+else try { apply(JSON.parse(localStorage.getItem(KEY) ?? "null") ?? pick(null), base(null)); } catch { apply(pick(null), base(null)); }
 if (!test) {
   subscribeSiteConfig((d) => {
     cfg = d ?? null;
     const blocks = pick(cfg);
-    apply(blocks);
+    apply(blocks, base(cfg));
     try { localStorage.setItem(KEY, JSON.stringify(blocks)); } catch { /* 保存できないブラウザ */ }
   });
-  setInterval(() => apply(pick(cfg)), 60000); // 開催の時刻をまたいだら切りかえる
+  setInterval(() => apply(pick(cfg), base(cfg)), 60000); // 開催の時刻をまたいだら切りかえる
 }

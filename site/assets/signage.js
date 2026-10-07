@@ -451,16 +451,12 @@ const slideClosing = {
   },
 };
 
-// ---------- 花火（学内の方限定）：花火の時間は、画面に「花火！」と案内を出し、背景に花火を打ち上げる ----------
+// ---------- 花火（学内の方限定）：花火の時間は、画面に「花火！」とだけ出し、背景に花火を打ち上げる ----------
 const fwEvent = () => EVENTS.find((e) => e.title === "花火");
 function fireworksNow(t = now()) { const e = fwEvent(); return !!e && t >= Date.parse(e.start) && t < Date.parse(e.end); }
 const slideFireworks = {
   async build() {
-    const e = fwEvent(), r = spot?.routes.find((x) => x.to === "ground");
-    return { dur: 90000, cls: "fwslide", html: `
-      <h1 class="fwt">${chars("花火！")}</h1>
-      <p class="fwsub rise" style="--i:3"><span class="chip a">学内の方限定</span>${e ? `<span class="fwtime">${tRange(e)}</span>` : ""}</p>
-      <div class="fwguide rise" style="--i:5"><span class="mk">${ic("firework")}</span><span class="nm">総合グラウンド<small>で、打ち上げます</small></span>${r ? `<span class="sy">${esc(r.say)}<small>歩いて${r.min}分</small></span>${arrow(r.dir)}` : ""}</div>` };
+    return { dur: 90000, cls: "fwslide", html: `<h1 class="fwt">${chars("花火！")}</h1>` }; // 「花火！」の字だけ（時間・場所の案内は出さない）
   },
 };
 // 背景の花火：1枚の canvas に、ロケットが昇って開く（花火の時間のあいだだけ動かす）
@@ -609,7 +605,7 @@ setInterval(paintHurry, 15000);
 if (params.has("test")) {
   document.documentElement.style.cursor = "auto"; document.body.style.cursor = "auto";
   const TIMES = [["いま（本当の時刻）", ""], ["開幕前（11:50）", "2026-10-24T11:50"], ["開催中・出演中（13:20）", "2026-10-24T13:20"], ["出演の合間（急げ！）", "2026-10-24T12:08"],
-    ["1日目の夜", "2026-10-24T18:00"], ["2日目の朝", "2026-10-25T08:30"], ["結果発表の直前（15:55）", "2026-10-25T15:55"], ["一般公開の終了直後（16:02）", "2026-10-25T16:02"], ["終了の5分後（16:06）", "2026-10-25T16:06"], ["花火（18:10）", "2026-10-25T18:10"], ["終了後", "2026-10-26T10:00"]];
+    ["1日目の夜", "2026-10-24T18:00"], ["2日目の朝", "2026-10-25T08:30"], ["結果発表（15:45）", "2026-10-25T15:45"], ["一般公開の終了直後（16:02）", "2026-10-25T16:02"], ["終了の5分後（16:06）", "2026-10-25T16:06"], ["花火（18:10）", "2026-10-25T18:10"], ["終了後", "2026-10-26T10:00"]];
   const PLACES = [["なし（道案内は出ない）", ""], ["第1講義室の前", "lecture1"], ["総務課の横の廊下の角", "soumu"], ["インフォメーション前", "info"]];
   const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
   const reloadWith = (ch) => { const p = new URLSearchParams(location.search); for (const [k, v] of Object.entries(ch)) { if (v === "" || v == null || v === false) p.delete(k); else p.set(k, v === true ? "1" : v); } p.set("test", "1"); location.search = p; };

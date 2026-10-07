@@ -1306,9 +1306,15 @@ function presetsFromConfig() {
 }
 function blocksFromConfig() {
   draft ??= presetsFromConfig();
-  const saved = (draft[editing()] ?? []).filter((b) => BLOCK_INFO[b?.id]);
-  const seen = new Set(saved.map((b) => b.id));
-  return [...saved.map((b) => ({ id: b.id, show: b.show !== false })), ...TOP_BLOCKS.filter(([id]) => !seen.has(id)).map(([id]) => ({ id, show: true }))];
+  const list = (draft[editing()] ?? []).filter((b) => BLOCK_INFO[b?.id]).map((b) => ({ id: b.id, show: b.show !== false }));
+  const has = (id) => list.some((b) => b.id === id);
+  // 保存したあとで増えた欄（たとえば学科展示）は、いつもの並びでの場所に入れる（サイトの blocks.js と同じ決まり。うしろに足すと、協賛の下に出てしまう）
+  (TOP_PRESETS[editing()] ?? []).filter((b) => BLOCK_INFO[b.id]).forEach(({ id, show }, i, arr) => {
+    if (has(id)) return;
+    const prev = arr.slice(0, i).reverse().find((b) => has(b.id));
+    list.splice(prev ? list.findIndex((b) => b.id === prev.id) + 1 : 0, 0, { id, show });
+  });
+  return [...list, ...TOP_BLOCKS.filter(([id]) => !has(id)).map(([id]) => ({ id, show: true }))];
 }
 function renderBlocks(list = blocksFromConfig()) {
   $("#blocks-list").innerHTML = list.map(({ id, show }) => `
