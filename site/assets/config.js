@@ -201,7 +201,7 @@ export const STAGE = {
     act("24", "14:35", "14:55", "+10せんち！", "", "", ""),
     act("24", "15:15", "15:30", "Neo abyss", "", "", "", "assets/img/stage/neo-abyss.webp"),
     act("24", "15:35", "15:50", "LunaTi☪︎³", "", "", "", "assets/img/stage/luna-ti.webp"),
-    act("25", "10:40", "11:10", "イイカンジ", "", "", ""),
+    act("25", "10:40", "11:10", "イイカンジ", "", "", "", "assets/img/stage/iikanji.webp"),
     act("25", "11:20", "11:50", "Criminals", "", "", ""),
     act("25", "12:00", "12:30", "ゴーストノート", "", "", "", "assets/img/stage/ghost-note.webp"),
     act("25", "12:40", "13:10", "疫病Jr.", "", "", ""),
