@@ -1,3 +1,4 @@
+import { whileVisible } from "./idle-listen.js";
 // 当日の更新内容を Firestore の site_live/current から受け取る。
 // サーバーのファイルを触らずに、Firebase コンソールで書き換えるだけでトップに反映される。
 //
@@ -163,7 +164,7 @@ export async function subscribeShops(callback) {
   if (params.has("demo")) return callback(DEMO_SHOPS);
   try {
     const db = await getDb();
-    fs.onSnapshot(
+    whileVisible(() => fs.onSnapshot(
       fs.collection(db, "shops"),
       (snap) => {
         const list = [];
@@ -175,7 +176,7 @@ export async function subscribeShops(callback) {
         callback(list);
       },
       (err) => console.warn("[shops] Firestore を読めませんでした:", err.code),
-    );
+    ));
   } catch (err) {
     console.warn("[shops] Firebase を読み込めませんでした:", err);
   }

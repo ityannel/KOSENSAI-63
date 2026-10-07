@@ -12,6 +12,7 @@
 //   users_meta/{uid}        = { last_post }                              続けて投稿できないようにする（60秒）
 // 書くには匿名ログインが要る（Firebase コンソール → Authentication → ログイン方法 → 匿名 を有効にする）。
 // 読み書きのルールは KOSENSAI-63/firestore.rules。
+import { whileVisible } from "./idle-listen.js";
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators, firestoreFor } from "./live.js";
 
 export const MAX_TEXT = 140;       // 文字数
@@ -107,7 +108,7 @@ function photoState(v, mine) {
   return { has_photo: false, pending: status === "pending" };
 }
 
-// 新しい順に150件。隠したもの・報告が多いもの・写真の確認中（ほかの人の）は visible:false
+// 新しい順に60件（読み取りを減らすため）。隠したもの・報告が多いもの・写真の確認中（ほかの人の）は visible:false
 export async function subscribePosts(callback) {
   if (params.has("demo")) return callback(DEMO.map((p) => ({ reply_to: null, ...p, author: handleOf(p.uid), visible: true })));
   try {
@@ -116,8 +117,8 @@ export async function subscribePosts(callback) {
     // 初めて開いて電波がないとき、Firestore は「このスマホにしまってあるもの＝空」をすぐ返す。これを本当の「投稿なし」と取りちがえない：
     // サーバーからの答え（fromCache でない）が来るまでは「読みこみ中」にしておき、8秒たっても来なければ「つながりにくい」を出す
     let slow = null;
-    fs.onSnapshot(
-      fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(100)),
+    whileVisible(() => fs.onSnapshot(
+      fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(60)),
       { includeMetadataChanges: true },
       (snap) => {
         if (snap.empty && snap.metadata.fromCache) { slow ??= setTimeout(() => callback(null, new Error("offline")), 8000); return; }
@@ -140,7 +141,7 @@ export async function subscribePosts(callback) {
         callback(list);
       },
       (err) => { console.warn("[posts] Firestore を読めませんでした:", err.code); callback(null, err); },
-    );
+    ));
   } catch (err) {
     console.warn("[posts] Firebase を読み込めませんでした:", err);
     callback(null, err);
