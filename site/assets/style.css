@@ -2141,11 +2141,3 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .visit + .visit-links, .visit .mido-more { margin-top: calc(30 * var(--u)); }
 
 .visit-links a { font-family: var(--hud-font); font-weight: 400; font-size: calc(14 * var(--u)); letter-spacing: 0.02em; }
-
-/* ご来場の皆さまへ：札の裏の説明も、文節の切れ目で折り返し、最後の行に1〜2字だけ残らないように */
-.vi-text, .vi-back-title, .vi-title, .visit-static dd { word-break: auto-phrase; text-wrap: pretty; line-break: strict; }
-.vi-title, .vi-back-title { text-wrap: balance; }
-
-.vi-s { display: block; margin-top: 0.35em; word-break: auto-phrase; text-wrap: balance; line-break: strict; }
-.vi-s:first-child { margin-top: 0; }
-.vi-nb { white-space: nowrap; } /* ロゴと、そのあとの1字（「に」など）は、離さない */

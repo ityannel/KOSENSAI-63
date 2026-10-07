@@ -36,9 +36,7 @@ const fx = (k) => (FX[k] ?? []).map((t, i) => `<i class="vi-fx${t === "×" ? " i
 // WDXL の数字は小さく見えるので、ひとことの中の数字だけ大きく（32 に対して 40 くらい）
 const bigNum = (s) => esc(s).replace(/[0-9][0-9.:]*/g, (m) => `<span class="vi-num">${m}</span>`);
 // 説明の中の「Enistagram」はロゴの絵にする
-// 説明は、1文ずつ改行し、文のなかは行の長さをそろえて折り返す（文の途中から次の文が始まらないように）
-const sentences = (s) => s.split(/(?<=[。！？])\s*/).filter(Boolean).map((x) => `<span class="vi-s">${logo(x)}</span>`).join("");
-const logo = (s) => esc(s).replace(/Enistagram\s*(.?)/g, (_, c) => `<span class="vi-nb"><img class="vi-logo" src="assets/img/enista-puffy.webp" width="666" height="117" alt="Enistagram">${c}</span>`);
+const logo = (s) => esc(s).replace(/Enistagram\s*/g, '<img class="vi-logo" src="assets/img/enista-puffy.webp" width="666" height="117" alt="Enistagram">');
 const icon = (k) => `<svg viewBox="0 0 24 24" aria-hidden="true">${P[k] ?? P.clock}</svg>`;
 const TILTS = [-1.5, 1.2, 1, -1.3];
 // 札ごとに色をかえる（うすい紙の色と、絵の丸の濃い色）。チケットの色とそろえたパステル
@@ -58,7 +56,7 @@ function renderVisit() {
   grid.innerHTML = VISIT.map((v, i) => `
     <li class="${v.wide ? "is-wide" : ""}" style="--tilt:${TILTS[i % TILTS.length]}deg; --paper:${COLORS[i % COLORS.length][0]}; --mark:${COLORS[i % COLORS.length][1]}"><button type="button" class="vi-card" data-vi="${i}" aria-pressed="${opened.has(i)}">
       <span class="vi-face vi-front"><span class="vi-ic">${icon(v.icon)}</span>${fx(v.icon)}<b class="vi-title">${bigNum(fill(v.title))}</b></span>
-      <span class="vi-face vi-back"><b class="vi-back-title">${bigNum(fill(v.title))}</b><span class="vi-text">${sentences(fill(v.detail))}</span></span>
+      <span class="vi-face vi-back"><b class="vi-back-title">${bigNum(fill(v.title))}</b><span class="vi-text">${logo(fill(v.detail))}</span></span>
     </button></li>`).join("");
 }
 
