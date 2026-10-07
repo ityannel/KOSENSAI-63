@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<!-- 共有したときに出る画像（OGP）の元。1200×630。tools/make-ogp.sh が、これを画像にして site/assets/img/ogp.jpg を作る -->
+<link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=block&text=%E7%AC%AC63%E5%9B%9E%E5%87%BD%E9%A4%A8%E9%AB%98%E5%B0%82%E7%A5%AD%E3%81%88%E3%81%AB%E3%81%9710.24SAT12%3A00%EF%BD%9E16%3A0025SUN" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body { position: relative; font-family: "WDXL Lubrifont JP N", sans-serif; color: #634A2E; }
+  /* 絵：空の上に、街と5人。下にそろえて切る */
+  .bg { position: absolute; inset: 0; background: url("../site/assets/img/scene.webp") 0 var(--y, -790px) / 1200px auto no-repeat, url("../site/assets/img/sky-sunset.webp") 0 var(--y, -790px) / 1200px auto no-repeat; }
+  /* 「縁」のロゴ：影も、もやも、つけない */
+  .logo { position: absolute; left: 56px; top: 34px; width: 250px; }
+  /* 紙の札：クリーム色の紙に、ずらした影（サイトの札と同じ形。影はこの1か所だけ） */
+  .card { position: absolute; left: 56px; bottom: 44px; padding: 20px 38px 24px 34px; border-radius: 16px; background: #FEEBC4; box-shadow: -10px 8px 0 rgba(48, 44, 41, .5); }
+  .card h1 { margin: 0 0 10px; font-size: 54px; font-weight: 400; line-height: 1.1; letter-spacing: .02em; }
+  .card p { margin: 0; font-size: 35px; line-height: 1.4; letter-spacing: .02em; }
+  .card p small { margin-left: 8px; font-size: 22px; letter-spacing: .06em; opacity: .85; }
+  .card p + p { margin-top: 2px; }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <img class="logo" src="../site/assets/img/logo.webp" alt="">
+  <div class="card">
+    <h1>第63回 函館高専祭</h1>
+    <p>10.24<small>SAT</small>　12:00～16:00</p>
+    <p>10.25<small>SUN</small>　10:00～16:00</p>
+  </div>
+</body>
+</html>
