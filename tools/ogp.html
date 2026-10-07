@@ -68,13 +68,13 @@
   .g .bg { background: linear-gradient(150deg, #d9669b 0%, #e2622e 52%, #e3a43a 100%); }
   .g .grain { opacity: .5; }
   /* 縁：サイネージの切りかわりに出る、縁のハンコと同じ。書体（WDXL）の文字を、クリームがかった白で、-14度かたむけて、色つきの影を重ねる */
-  .g .en { position: absolute; left: 44px; top: 96px; width: 420px; height: 420px; display: grid; place-items: center; font: 400 410px/1 "WDXL Lubrifont JP N", sans-serif; color: #FEEBC4; transform: rotate(-14deg);
+  .g .en { position: absolute; left: 44px; top: 58px; /* 影が右下にのびるぶん、字だけだと下によって見える。影ごとの見た目の中心が、画像の真ん中（315px）にくるように上げた */ width: 420px; height: 420px; display: grid; place-items: center; font: 400 410px/1 "WDXL Lubrifont JP N", sans-serif; color: #FEEBC4; transform: rotate(-14deg);
     text-shadow: 10px 10px 0 #d9669b, 20px 20px 0 #2f8fe0, 30px 30px 0 #ffd24a, 40px 40px 0 #ff6b5e; }
-  .g .txt { position: absolute; left: 540px; top: 186px; }
+  .g .txt { position: absolute; left: 536px; top: 160px; }
   .g .t { color: #fff; font-size: 68px; line-height: 1.1; white-space: nowrap; }
-  .g .chips { margin-top: 34px; display: grid; gap: 16px; }
-  .g .chip { display: flex; align-items: center; gap: 16px; width: fit-content; padding: 9px 28px 9px 12px; border-radius: 16px; background: #FEEBC4; box-shadow: -7px 6px 0 rgba(48, 44, 41, .5); font-size: 42px; line-height: 1.2; }
-  .g .chip b { display: inline-block; min-width: 140px; padding: 3px 0; border-radius: 11px; color: #fff; font-weight: 400; font-size: 31px; text-align: center; letter-spacing: .04em; }
+  .g .chips { margin-top: 36px; display: grid; gap: 24px; }
+  .g .chip { display: flex; align-items: center; gap: 24px; width: fit-content; padding: 18px 44px 18px 20px; border-radius: 20px; background: #FEEBC4; box-shadow: -7px 6px 0 rgba(48, 44, 41, .5); font-size: 42px; line-height: 1.2; }
+  .g .chip b { display: inline-block; min-width: 168px; padding: 7px 0; border-radius: 13px; color: #fff; font-weight: 400; font-size: 31px; text-align: center; letter-spacing: .04em; }
   .g .chip:nth-child(1) b { background: #3F8DB8; } .g .chip:nth-child(2) b { background: #D8637A; }
   .g .tri { position: absolute; }
   .g .tr1 { right: 0; top: 0; width: 210px; height: 210px; background: #3E9A86; clip-path: polygon(0 0, 100% 0, 100% 100%); }
