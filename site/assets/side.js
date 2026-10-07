@@ -53,9 +53,38 @@ const TABS = [
 // ゆれる短冊（飾り）：左右に4枚ずつ。位置（画面の幅の %）・ひもの長さ・色・ゆれの速さ
 const TZ = [[6, 40, 0], [14, 90, 1], [22, 30, 2], [30, 70, 3], [70, 60, 4], [78, 26, 0], [86, 84, 2], [94, 44, 1]];
 
+// ---------- うしろの世界（PC）：空の絵の上に、奥から順に 星 → 遠くの山 → 電線と灯り → 短冊 → ただよう灯り ----------
+// いつも同じ並びになるように、決まった種から数を作る（開くたびに星や灯りの場所が変わらない）
+let seed = 63;
+const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+const f1 = (n) => Number(n.toFixed(1));
+
+// 電線：トップの絵（index.html の .wires）と同じ3本を、絵と同じ場所・同じ大きさに置く。絵の電線が、そのまま左右へ続いて見える
+const WIRES = [[-4000, 1571, 5000, -256], [-4000, 1601, 5000, -235], [-4000, 1413, 5000, -35]]; // 絵（1215×1845）の中の座標
+const wireY = (k, x) => { const [x1, y1, x2, y2] = WIRES[k]; return y1 + ((x - x1) * (y2 - y1)) / (x2 - x1); };
+// 灯り：絵の外（左右）の電線に、とびとびに下げる。[絵の中の x, どの電線か]
+const LAMPS = [-1210, -1040, -860, -690, -520, -350, -180, -20, 1240, 1400, 1570, 1740, 1910, 2080, 2250, 2420].map((x, i) => [x, i % 2 ? 2 : 0]);
+const rigHtml = `<div class="pc-rig">
+    <svg class="pc-wires" viewBox="0 0 1215 1845" preserveAspectRatio="none">${WIRES.map(([x1, y1, x2, y2]) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`).join("")}</svg>
+    ${LAMPS.map(([x, k], i) => `<i class="pc-lamp" style="left:${f1((x / 1215) * 100)}%; top:${f1((wireY(k, x) / 1845) * 100)}%; --flicker:${(2.4 + (i % 4) * 0.7).toFixed(1)}s; --delay:${(-i * 0.9).toFixed(1)}s"></i>`).join("")}
+  </div>`;
+
+// 星：夜と日暮れだけ見える。3組に分けて、ばらばらにまたたく
+const starsHtml = [0, 1, 2].map((g) => `<i class="pc-stars" style="--dur:${3.5 + g * 1.7}s; box-shadow:${Array.from({ length: 26 }, () => `${f1(rnd() * 100)}vw ${f1(rnd() * 58)}vh 0 ${rnd() < 0.18 ? 0.7 : 0}px #fff`).join(",")}"></i>`).join("");
+
+// 遠くの山：左に函館山、右に低い山なみ（形だけ。建物や電柱は描かない）
+const farSvg = `<svg viewBox="0 0 1440 220" preserveAspectRatio="none"><path d="M-60 220V152C30 146 104 100 186 93C246 88 296 101 348 96C420 90 470 118 540 150C590 172 640 198 706 220ZM880 220C968 170 1060 140 1160 150C1262 160 1360 124 1500 110V220Z"/></svg>`;
+
+// ただよう灯り：下から上へ、ゆっくりのぼっていく小さな光（夕方〜夜ほど、はっきり）
+const motesHtml = Array.from({ length: 14 }, () => `<i class="pc-mote" style="--x:${f1(rnd() * 100)}%; --s:${Math.round(5 + rnd() * 11)}px; --dur:${Math.round(24 + rnd() * 26)}s; --delay:${-Math.round(rnd() * 48)}s; --drift:${Math.round((rnd() - 0.5) * 140)}px; --o:${(0.3 + rnd() * 0.4).toFixed(2)}"></i>`).join("");
+
 document.body.insertAdjacentHTML("beforeend", `
   <div class="pc-bg" aria-hidden="true">
-    ${TZ.map(([x, len, c], i) => `<i class="pc-tz" style="--x:${x}%; --len:${len}px; --c:${COLORS[c]}; --dur:${(4.2 + (i % 3) * 0.9).toFixed(1)}s; --delay:${(-i * 0.7).toFixed(1)}s"></i>`).join("")}
+    ${starsHtml}
+    <div class="pc-far">${farSvg}</div>
+    ${rigHtml}
+    <div class="pc-tzs">${TZ.map(([x, len, c], i) => `<i class="pc-tz" style="--x:${x}%; --len:${len}px; --c:${COLORS[c]}; --dur:${(4.2 + (i % 3) * 0.9).toFixed(1)}s; --delay:${(-i * 0.7).toFixed(1)}s"></i>`).join("")}</div>
+    <div class="pc-motes">${motesHtml}</div>
   </div>
   <aside class="pc-side is-left">
     <a class="pc-logo" href="${onTop ? "#" : "./"}" aria-label="第63回 函館高専祭「縁」トップへ"><span class="pc-logo-in"><img src="assets/img/logo.webp" width="673" height="657" alt="" loading="lazy" decoding="async"></span></a>
@@ -108,6 +137,14 @@ new MutationObserver(() => syncMore(lastBlocks)).observe(document.body, { attrib
 const logo = document.querySelector(".pc-logo");
 const logoIn = logo.querySelector(".pc-logo-in");
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
+// うしろの世界は、マウスの動きで少しずれる（手前の灯りほど大きく、奥の山は小さく → 奥行き）。style.css が --px --py を使う
+const pcBg = document.querySelector(".pc-bg");
+let par = null, parFrame = 0;
+addEventListener("pointermove", (e) => {
+  if (calm.matches || e.pointerType !== "mouse") return;
+  par = [(e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1];
+  parFrame ||= requestAnimationFrame(() => { parFrame = 0; pcBg.style.setProperty("--px", par[0].toFixed(3)); pcBg.style.setProperty("--py", par[1].toFixed(3)); });
+}, { passive: true });
 addEventListener("pointermove", (e) => {
   if (calm.matches || e.pointerType !== "mouse" || !logo.offsetWidth) return;
   const r = logo.getBoundingClientRect();
