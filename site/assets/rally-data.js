@@ -16,9 +16,13 @@ function apply(data) {
   RALLY.staffPin = data?.staffPin ?? CONFIG.staffPin;
 }
 
+// お店の情報を、一度でも読めたか（前に読んでこのスマホに覚えてあるか、いま Firestore から届いたか）。
+// まだ読めていないあいだは、config.js のテスト用のお店しかないので、本物の QR を読んでも「この QR ではない」と出てしまう。それを、電波のせいだと伝えるのに使う
+let loaded = false;
+export const rallyLoaded = () => loaded || params.has("demo");
 try {
   const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
-  if (saved && !params.has("demo")) apply(saved);
+  if (saved && !params.has("demo")) { apply(saved); loaded = true; }
 } catch { /* 覚えていない・読めない */ }
 
 const listeners = new Set();
@@ -40,6 +44,7 @@ if (params.has("demo")) {
   import("./live.js").then(({ subscribeRally }) => subscribeRally((data) => {
     const before = JSON.stringify({ shops: RALLY.shops, staffPin: RALLY.staffPin });
     apply(data);
+    loaded = true;
     try { localStorage.setItem(KEY, JSON.stringify(data ?? null)); } catch { /* 保存できないブラウザ */ }
     resolveReady();
     if (JSON.stringify({ shops: RALLY.shops, staffPin: RALLY.staffPin }) !== before) listeners.forEach((fn) => fn());

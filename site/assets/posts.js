@@ -113,9 +113,15 @@ export async function subscribePosts(callback) {
   try {
     const { fs, db } = await dbKit();
     if (myPosts().length) kit().catch(() => {}); // 自分の投稿があれば、確認中の写真を見るためのログインも裏で用意
+    // 初めて開いて電波がないとき、Firestore は「このスマホにしまってあるもの＝空」をすぐ返す。これを本当の「投稿なし」と取りちがえない：
+    // サーバーからの答え（fromCache でない）が来るまでは「読みこみ中」にしておき、8秒たっても来なければ「つながりにくい」を出す
+    let slow = null;
     fs.onSnapshot(
       fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(100)),
+      { includeMetadataChanges: true },
       (snap) => {
+        if (snap.empty && snap.metadata.fromCache) { slow ??= setTimeout(() => callback(null, new Error("offline")), 8000); return; }
+        clearTimeout(slow); slow = null;
         const list = [];
         const mine = new Set(myPosts());
         snap.forEach((d) => {

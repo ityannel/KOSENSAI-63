@@ -9,7 +9,7 @@
 // ・模擬店総選挙：スタンプを押した模擬店（rally/current の shops で vote: true のもの）に、1人1票。votes/{匿名ログインの印} = { shop }。
 //   押しなおすと、投票先が変わる（票は1つのまま）。受け付けは config.js の ELECTION の opens〜closes
 import { RALLY, FESTIVAL, ELECTION, SHOPS, EVENTS, VENUES, shopIdOf } from "./config.js";
-import { rallyReady, onRallyChange } from "./rally-data.js"; // 本部コンソールで作った対象のお店（Firestore）
+import { rallyReady, rallyLoaded, onRallyChange } from "./rally-data.js"; // 本部コンソールで作った対象のお店（Firestore）
 import { openQrScanner } from "./qr-scan.js";
 
 const STORE_KEY = "kosen63-rally";
@@ -128,6 +128,7 @@ async function stamp(code, shopId) {
     return message("スタンプは開催日（" + FESTIVAL.days.map((d) => d.label).join("・") + "）に押せます。", "warn");
   }
   const shop = await findShop(code, shopId);
+  if (!shop && !rallyLoaded()) return message("お店の情報を読みこめていません。電波のよい所で、もう一度 QR を読んでください。", "warn"); // 電波がなくて読めていないだけのとき
   if (!shop) return message("この QR ではスタンプを押せませんでした。近くのスタッフに聞いてみてください。", "warn");
   if (state.stamps[shop.id]) return message(`「${shop.name}」のスタンプはもう押してあります。`, "info");
   state.stamps[shop.id] = nowMs();

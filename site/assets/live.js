@@ -186,9 +186,11 @@ export async function subscribeShops(callback) {
 export async function subscribeRally(callback) {
   try {
     const db = await getDb();
+    // 初めて開いて電波がないとき、Firestore は「このスマホにしまってあるもの＝ない」をすぐ返す。本当に「ない」のとは区別する（サーバーの答えが来るまで待つ）
     fs.onSnapshot(
       fs.doc(db, "rally", "current"),
-      (snap) => callback(snap.exists() ? snap.data() : null),
+      { includeMetadataChanges: true },
+      (snap) => { if (!snap.exists() && snap.metadata.fromCache) return; callback(snap.exists() ? snap.data() : null); },
       (err) => console.warn("[rally] Firestore を読めませんでした:", err.code),
     );
   } catch (err) {
