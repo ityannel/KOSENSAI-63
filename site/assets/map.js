@@ -1650,7 +1650,7 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
       ${pickPlace ? `<div class="ig-row ig-placerow"><button type="button" class="ig-placebtn" data-pickplace>${I.pin}<span>${pid ? esc(titleOf(place(pid))) : "場所を追加"}</span></button>${pid ? `<button type="button" class="ig-placeclear" aria-label="場所を外す">${I.close}</button>` : ""}</div>`
         : `<p class="ig-row">${I.pin}<span>${esc(titleOf(place(pid)))}</span></p>`}
       <div class="v-shopbox"></div>
-      <p class="v-rule">顔や名札が写らないように。悪口・個人情報は書かないでください。すぐ公開され、本部が消すことがあります。</p>
+      <p class="v-rule">顔や名札が写らないように。悪口・個人情報は書かないでください。すぐ公開され、本部が消すことがあります。<a href="terms.html" target="_blank" rel="noopener">ご利用にあたって</a></p>
       <p class="v-msg" role="status"></p>
     </form>`;
   }

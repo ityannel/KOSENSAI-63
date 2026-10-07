@@ -334,6 +334,9 @@ export const GARBAGE = [
 ];
 
 // 協賛
+// ご利用にあたって（terms.html）：投稿の削除のお願いを受ける Google フォームの回答用URL（tools/make-takedown-form.gs でつくる）。入れるまで、ページには「準備中」と出る
+export const LEGAL = { takedownForm: "" };
+
 export const SPONSORS = {
   count: 0, // 【仮】確定したら社数を入れる
   // トップページのいちばん下に、白い札で並べる。logo（画像）があればロゴ、なければ会社名。url があれば押すとその会社のページ
