@@ -41,7 +41,8 @@ SIDE_FIXED = "第回函館高専祭MENUSUNMOTEWDHFRA" + "ほかの見どころ�
 toast_src = open("site/assets/daytoast.js", encoding="utf-8").read()
 toast_text = "".join(re.findall(r'"([^"]+)"', toast_src)) + "0123456789〜"
 titles += [toast_text]
-titles += ["利用規約を見る", "Google マップ", "函館高専", "学生会"]  # ご来場の皆さまへの下のボタン
+titles += ["利用規約を見る", "Google マップ", "函館高専", "学生会"]
+titles += ["思い出", "Enistagram で見る"]  # 終了後の「思い出」の欄（memory.js）  # ご来場の皆さまへの下のボタン
 chars = "".join(dict.fromkeys(FIXED + "".join(titles) + "".join(venues) + SIDE_FIXED + "".join(a + b for a, b in side_words)))
 url = "https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap&text=" + urllib.parse.quote(chars)
 
@@ -63,6 +64,7 @@ ticket += "".join(re.findall(r'(?:copy|kind):\s*"([^"]+)"', config)) + "".join(v
 ticket += shop_text
 ticket += dept_text
 ticket += toast_text
+ticket += "思い出2日間、ありがとうございました。みんなの投稿から。Enistagram で見る♡"
 ticket += toast_text
 # ご来場の皆さまへ（VISIT）の説明の字
 ticket += "".join(re.findall(r'detail:\s*"([^"]+)"', config)) + "0123456789.:〜／SATSUN"

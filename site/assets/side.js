@@ -12,6 +12,7 @@ const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 // 一度削除したもの：高専祭について（about）・タイムテーブル（schedule）・Enistagram の欄（enistagram）・混雑状況（crowd）・スタンプラリー（rally）・企画案内（guide）・会場の様子（report）
 // トップページの上から順に。いま読んでいるところに印がつく
 const MENU = [
+  ["memory", "思い出", "MEMORIES", svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>')],
   ["days", "日程", "SCHEDULE", svg('<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/>')],
   ["message", "学生主事より", "MESSAGE", svg('<path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z"/>')],
   ["crowd-now", "いまの混雑", "CROWD", svg('<circle cx="8" cy="8" r="2.5"/><circle cx="16.5" cy="9" r="2"/><path d="M3.5 19c0-3 2-5 4.5-5s4.5 2 4.5 5M14 14.5c.8-.6 1.6-.9 2.5-.9 2.2 0 4 1.8 4 4.4"/>')],
@@ -102,7 +103,7 @@ document.body.insertAdjacentHTML("beforeend", `
 
 // メニューの順番は、トップページの欄の並びに合わせる（本部コンソールの「サイトの設定」で変わる。blocks.js が知らせる）。出していない欄は、メニューからも消す
 // 日程（いちばん上の絵）はいつも最初。ほかのページでは、前にトップページで読んだ並び（このスマホ・PC に覚えてある）
-const SEC_OF = { message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", exhibit: "exhibit", info: "info", sponsors: "sponsors" }; // 欄の名前 → メニューの行き先
+const SEC_OF = { memory: "memory", message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", exhibit: "exhibit", info: "info", sponsors: "sponsors" }; // 欄の名前 → メニューの行き先
 function orderMenu(blocks) {
   if (!Array.isArray(blocks)) return;
   const ul = document.querySelector(".pc-menu");

@@ -2168,3 +2168,21 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .visit + .visit-links, .visit .mido-more { margin-top: calc(30 * var(--u)); }
 
 .visit-links a { font-family: var(--hud-font); font-weight: 400; font-size: calc(14 * var(--u)); letter-spacing: 0.02em; }
+
+/* ---------- 思い出：高専祭が終わったあとだけ。写真は、チェキのように少しかたむけて、ずらした影 ---------- */
+.memory { container-type: inline-size; --u: calc(100cqi / 402); position: relative; margin-top: -1px; color: #fff;
+  background: var(--grain), radial-gradient(ellipse 90% 40% at 10% 0%, rgba(255, 210, 120, .55), transparent 70%), radial-gradient(ellipse 80% 40% at 100% 100%, rgba(120, 90, 190, .5), transparent 70%), linear-gradient(170deg, #d9669b, #e2622e 55%, #e3a43a); }
+.memory[hidden] { display: none; }
+.memory-in { padding: calc(36 * var(--u)) calc(22 * var(--u)) calc(34 * var(--u)) calc(26 * var(--u)); }
+.memory-title { margin: 0 0 calc(8 * var(--u)); font-family: var(--hud-font); font-size: calc(32 * var(--u)); font-weight: 400; line-height: 1; }
+.memory-lead { margin: 0 0 calc(22 * var(--u)); font-family: var(--text-font); font-weight: 700; font-size: calc(14 * var(--u)); line-height: 1.7; }
+.mm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(20 * var(--u)) calc(16 * var(--u)); margin: 0; padding: 0; list-style: none; }
+.mm-grid.is-text { grid-template-columns: 1fr; }
+.mm-grid li { rotate: var(--tilt, 0deg); filter: drop-shadow(calc(-6 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, .5)); transition: translate .12s ease, filter .12s ease; }
+.mm-grid li:has(a:active) { translate: calc(-6 * var(--u)) calc(4 * var(--u)); filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
+.mm-card { display: grid; gap: calc(6 * var(--u)); padding: calc(8 * var(--u)) calc(8 * var(--u)) calc(10 * var(--u)); border-radius: calc(4 * var(--u)); background: var(--grain), #FFFBF2; color: #634A2E; text-decoration: none; }
+.mm-card img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: calc(2 * var(--u)); background: #efe6d4; }
+.mm-card p { margin: 0; font-family: var(--text-font); font-weight: 700; font-size: calc(12 * var(--u)); line-height: 1.5; word-break: auto-phrase; }
+.mm-card small { font-family: var(--text-font); font-weight: 700; font-size: calc(12 * var(--u)); color: #8a6f4f; }
+.mm-grid.is-text .mm-card p { font-size: calc(14 * var(--u)); }
+.memory .mido-more { margin-top: calc(30 * var(--u)); }

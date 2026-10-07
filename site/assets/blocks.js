@@ -48,7 +48,10 @@ function markEdges() {
   window.kosenBlocks = order.map(({ id, show }) => ({ id, show, visible: shown.includes(els[id]) }));
   document.dispatchEvent(new CustomEvent("blocks:order", { detail: window.kosenBlocks }));
 }
-new MutationObserver(markEdges).observe(document.querySelector("main") ?? document.body, { subtree: true, attributes: true, attributeFilter: ["hidden"] });
+{ // 欄そのものの hidden だけを見る（body 全体を見ると、右のメニュー（side.js）の切りかえまで拾って、つながってしまう）。あとから出る「いまの混雑」「思い出」の印を、付け直すため
+  const mo = new MutationObserver(markEdges);
+  Object.values(els).forEach((el) => mo.observe(el, { attributes: true, attributeFilter: ["hidden"] }));
+}
 
 // 上の欄が絵に重なる幅・角の丸さ（Figma の 402px 幅で 20）。絵の幅に合わせる
 if (top) new ResizeObserver(([e]) => document.documentElement.style.setProperty("--edge", `${(e.contentRect.width * 20) / 402}px`)).observe(top);

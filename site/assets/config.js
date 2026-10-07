@@ -32,6 +32,7 @@ export const NAV = [
 // トップページの欄（絵の下に並ぶもの）。この順がいつもの並び。本部コンソールの「サイトの設定」で並べかえ・出す／出さないを変えられる
 // [名前, 本部コンソールに出す名前, 説明]。名前は index.html の data-block と同じ
 export const TOP_BLOCKS = [
+  ["memory", "思い出", "高専祭が終わったあとだけ出る（Enistagram のいいね順）"],
   ["message", "学生主事より", "学生主事のことば（写真つき）"],
   ["stamp", "スタンプカード", "スタンプラリーの入口"],
   ["crowd", "いまの混雑", "本部が混雑を入れたときだけ出る"],
@@ -59,8 +60,8 @@ export const DEPT_EXHIBITS = [
 ];
 
 export const TOP_PRESETS = {
-  before: P(["message", "pickup", "ennichi", "exhibit", "info", "stamp", "-crowd", "sponsors"]),
-  during: P(["stamp", "crowd", "pickup", "ennichi", "exhibit", "info", "message", "sponsors"]),
+  before: P(["-memory", "message", "pickup", "ennichi", "exhibit", "info", "stamp", "-crowd", "sponsors"]),
+  during: P(["memory", "stamp", "crowd", "pickup", "ennichi", "exhibit", "info", "message", "sponsors"]),
 };
 
 export const MESSAGE = {
