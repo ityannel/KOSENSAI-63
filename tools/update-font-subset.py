@@ -37,6 +37,11 @@ shop_text = "".join(re.findall(r'(?:note|group):\s*"([^"]+)"', shops_src)) + "".
 side = (SITE / "assets" / "side.js").read_text(encoding="utf-8")
 side_words = re.findall(r'\[\s*"[a-z.?=]+",\s*"([^"]+)",\s*"([^"]+)"', side)  # MENU（#の場所）と MORE（ページ）
 SIDE_FIXED = "第回函館高専祭MENUSUNMOTEWDHFRA" + "ほかの見どころも見るとじる詳しく学内のみ終了したイベントを件（）地図で場所を見るここへの道案内模擬店総選挙で、このお店に投票お店をさがす日時場所種類団体前次ご来場の皆さまへ公開はまで協賛LOGO●アプリとして使う追加のしかたお店のQRを読むやめるいまの混雑空いていますふつう混雑しています入場制限中スタンプカード模擬店スタンプラリーNo.あと個で景品！達成引き換え済みうらを見るあそびかた縁引換済ポンッ押す合言葉を入れるチクタクブーンドーン！パシャワーキャーストンダッ×"  # みどころのボタンと、みどころのページの見出し
+# 開いたときのひとことのお知らせ（daytoast.js）：見出しは WDXL、説明は Zen Kaku
+toast_src = open("site/assets/daytoast.js", encoding="utf-8").read()
+toast_text = "".join(re.findall(r'"([^"]+)"', toast_src)) + "0123456789〜"
+titles += [toast_text]
+titles += ["利用規約を見る"]  # ご来場の皆さまへの下のボタン
 chars = "".join(dict.fromkeys(FIXED + "".join(titles) + "".join(venues) + SIDE_FIXED + "".join(a + b for a, b in side_words)))
 url = "https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap&text=" + urllib.parse.quote(chars)
 
@@ -57,10 +62,7 @@ ticket += "".join(re.findall(r'(?:copy|kind):\s*"([^"]+)"', config)) + "".join(v
 # みどころのページ（mido.html）の札と文
 ticket += shop_text
 ticket += dept_text
-# 開いたときのひとことのお知らせ（daytoast.js）：見出しは WDXL、説明は Zen Kaku
-toast_src = open("site/assets/daytoast.js", encoding="utf-8").read()
-toast_text = "".join(re.findall(r'"([^"]+)"', toast_src)) + "0123456789〜"
-titles += [toast_text]
+ticket += toast_text
 ticket += toast_text
 # ご来場の皆さまへ（VISIT）の説明の字
 ticket += "".join(re.findall(r'detail:\s*"([^"]+)"', config)) + "0123456789.:〜／SATSUN"
