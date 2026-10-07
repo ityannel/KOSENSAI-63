@@ -64,6 +64,26 @@
   .f .chip span { letter-spacing: .02em; }
   .f .dot { position: absolute; border-radius: 50%; }
   .f .star { position: absolute; width: 30px; height: 30px; background: #FFF1A8; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+  /* G：絵は入れない。サイトの色の面に、サイネージと同じ白ぬきの「縁」を大きく。すみに色の三角、日付は色のついた札 */
+  .g .bg { background: linear-gradient(150deg, #d9669b 0%, #e2622e 52%, #e3a43a 100%); }
+  .g .grain { opacity: .5; }
+  .g .logo { left: 74px; top: 112px; width: 400px; filter: brightness(0) invert(.95) sepia(.25) drop-shadow(0 8px 0 rgba(99, 74, 46, .3)); }
+  .g .txt { position: absolute; left: 540px; top: 186px; }
+  .g .t { color: #fff; font-size: 68px; line-height: 1.1; white-space: nowrap; }
+  .g .chips { margin-top: 34px; display: grid; gap: 16px; }
+  .g .chip { display: flex; align-items: center; gap: 16px; width: fit-content; padding: 9px 28px 9px 12px; border-radius: 16px; background: #FEEBC4; box-shadow: -7px 6px 0 rgba(48, 44, 41, .5); font-size: 42px; line-height: 1.2; }
+  .g .chip b { display: inline-block; min-width: 140px; padding: 3px 0; border-radius: 11px; color: #fff; font-weight: 400; font-size: 31px; text-align: center; letter-spacing: .04em; }
+  .g .chip:nth-child(1) b { background: #3F8DB8; } .g .chip:nth-child(2) b { background: #D8637A; }
+  .g .tri { position: absolute; }
+  .g .tr1 { right: 0; top: 0; width: 210px; height: 210px; background: #3E9A86; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .g .tr2 { right: 0; top: 0; width: 172px; height: 172px; background: #FFF1A8; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .g .tr3 { right: 0; top: 0; width: 134px; height: 134px; background: #E2622E; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .g .tr4 { right: 0; top: 0; width: 96px; height: 96px; background: #D8637A; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .g .bl1 { left: 0; bottom: 0; width: 150px; height: 150px; background: #3E9A86; clip-path: polygon(0 0, 0 100%, 100% 100%); }
+  .g .bl2 { left: 0; bottom: 0; width: 112px; height: 112px; background: #FFF1A8; clip-path: polygon(0 0, 0 100%, 100% 100%); }
+  .g .bl3 { left: 0; bottom: 0; width: 74px; height: 74px; background: #D8637A; clip-path: polygon(0 0, 0 100%, 100% 100%); }
+  .g .dot { position: absolute; border-radius: 50%; }
+  .g .star { position: absolute; width: 38px; height: 38px; background: #FFF1A8; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
 </style>
 </head>
 <body>
@@ -78,6 +98,10 @@
     c: `<div class="bg"></div><div class="paper"><div class="grain"></div></div><div class="edge"></div>${L}<div class="txt">${T}${D}</div>`,
     d: `<div class="bg"></div>${L}<div class="band"></div><div class="txt">${T}<div>${D}</div></div>`,
     e: `<div class="bg"></div>${L}<div class="band"><div class="grain"></div></div><div class="txt">${T}<div class="days">${D}</div></div>`,
+    g: `<div class="bg"></div><div class="grain"></div>
+      <i class="tri tr1"></i><i class="tri tr2"></i><i class="tri tr3"></i><i class="tri tr4"></i><i class="tri bl1"></i><i class="tri bl2"></i><i class="tri bl3"></i>
+      <i class="dot" style="left:520px;top:92px;width:22px;height:22px;background:#FFF1A8"></i><i class="star" style="left:640px;top:60px"></i><i class="dot" style="left:1010px;top:560px;width:18px;height:18px;background:#fff"></i><i class="star" style="left:1090px;top:470px"></i><i class="dot" style="left:300px;top:560px;width:24px;height:24px;background:#3E9A86"></i>
+      <img class="logo" src="../../site/assets/img/logo-s.webp" alt=""><div class="txt">${T}<div class="chips"><div class="chip"><b>10.24 SAT</b><span>12:00～16:00</span></div><div class="chip"><b>10.25 SUN</b><span>10:00～16:00</span></div></div></div>`,
     f: `<div class="bg"></div><div class="stripe s1"></div><div class="stripe s2"></div><div class="stripe s3"></div><div class="stripe s4"></div><div class="panel"><div class="grain"></div></div>
       <i class="dot" style="left:404px;top:70px;width:22px;height:22px;background:#FFF1A8"></i><i class="star" style="left:464px;top:150px"></i><i class="dot" style="left:420px;top:230px;width:14px;height:14px;background:#fff"></i>
       ${L}<h1 class="t">第63回<br>函館高専祭</h1><div class="chips"><div class="chip"><b>10.24 SAT</b><span>12:00～16:00</span></div><div class="chip"><b>10.25 SUN</b><span>10:00～16:00</span></div></div>`,
