@@ -612,15 +612,10 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches && !params.has("prev
   }).catch(() => { /* 読めなければ、いつものスクロール */ });
 }
 
-// ---------- テスト用パネル（?test=1 のときだけ） ----------
-// 本部コンソールのプレビュー（?preview=1 で iframe の中に開いたとき）からも、同じことができる
-if (params.has("test") || params.has("preview")) {
-  import("./test.js").then(({ initTest, initPreviewBridge }) => {
-    const hooks = { playOpening, setAwake, shake };
-    if (params.has("test")) initTest(hooks);
-    if (params.has("preview")) initPreviewBridge(hooks);
-  });
-}
+// ---------- テスト用パネル（?test=1 のときだけ。全ページ共通の test-loader.js が読みこむ） ----------
+// このページでだけ動かせるもの（花火・メニュー・短冊）を、パネルに渡す。本部コンソールのプレビュー（?preview=1 で iframe の中に開いたとき）からも、同じことができる
+globalThis.kosenHooks = { playOpening, setAwake, shake };
+if (params.has("preview")) import("./test.js").then(({ initPreviewBridge }) => initPreviewBridge(globalThis.kosenHooks));
 
 // スケジュールの変更（本部コンソール）：この端末の表示と違う変更が届いたら、1回だけ読みこみなおす
 setTimeout(() => watchSchedule(), 1500);

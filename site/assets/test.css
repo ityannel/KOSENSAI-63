@@ -1,0 +1,33 @@
+/* テスト用パネル（?test=1 のときだけ、test.js が読みこむ。全ページ共通：トップ・地図・みどころ・スタンプ・投票・模擬店・規約・サイネージ） */
+.testwin {
+  position: fixed; left: 8px; top: 8px; z-index: 200;
+  width: min(320px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow-y: auto;
+  background: rgba(18, 18, 22, 0.94); color: #eee; border: 1px solid #555; border-radius: 10px;
+  font: 12px/1.5 system-ui, sans-serif; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.testwin.is-folded { width: auto; overflow: hidden; }
+.testwin.is-folded .tw-body, .testwin.is-folded #tw-state, .testwin.is-folded .tw-fold { display: none; }
+.tw-head { display: flex; align-items: center; gap: 8px; padding: 6px 10px; position: sticky; top: 0; background: #2a2a30; }
+.tw-head b { color: #3BF53D; cursor: pointer; letter-spacing: 0.1em; }
+#tw-state { flex: 1; font-size: 11px; color: #bbb; }
+.tw-fold { background: none; border: 0; color: #eee; font-size: 16px; cursor: pointer; }
+.tw-body { padding: 4px 10px 10px; }
+.tw-body section { padding: 8px 0; border-bottom: 1px solid #333; }
+.tw-body h4 { margin: 0 0 6px; font-size: 11px; color: #9BD7D0; letter-spacing: 0.1em; }
+.tw-row { display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.tw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.testwin select, .testwin input[type="datetime-local"], .testwin button {
+  font: inherit; color: #eee; background: #33333b; border: 1px solid #555; border-radius: 6px; padding: 4px 8px;
+}
+.testwin select { max-width: 100%; }
+.testwin button { cursor: pointer; }
+.testwin button:hover { background: #44444d; }
+.testwin input[type="range"] { flex: 1; }
+.tw-wide { width: 100%; }
+.tw-note { margin: 6px 0 0; font-size: 11px; color: #999; }
+.testwin section > label:not(.tw-row) { display: flex; gap: 6px; align-items: baseline; margin-top: 4px; }
+/* サイネージ（舞台を拡大・縮小するページ）でも、パネルは舞台の外なので、そのままの大きさ */
+.testwin { --tw-z: 9999; z-index: 9999; }
+.testwin .tw-only { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.testwin .tw-only button[aria-pressed="true"] { background: #FEEBC4; color: #634A2E; }
+

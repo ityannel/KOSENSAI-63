@@ -1,4 +1,5 @@
-// テスト用の操作パネル。URL に ?test=1 を付けたときだけ読み込まれる（来場者には出ない）。
+// テスト用の操作パネル。URL に ?test=1 を付けたときだけ読み込まれる（来場者には出ない）。全ページ共通（test-loader.js が読みこむ）。
+// ページごとに動かせるもの（花火・メニュー・短冊＝トップ、画面送り＝サイネージ）は、各ページが globalThis.kosenHooks に入れておいたものだけ、パネルに出る。
 // 時刻・空・天気・デモデータは URL の値を変えて読み込み直す。花火やメニューなどはその場で動かす。
 import { RALLY, FESTIVAL } from "./config.js";
 
@@ -8,6 +9,8 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 // よく使う時刻（日本時間）
 export const TIMES = [
   ["いま（本当の時刻）", ""],
+  ["開幕前（11:50）", "2026-10-24T11:50"],
+  ["出演の合間（急げ！）", "2026-10-24T12:08"],
   ["開幕10秒前（花火）", "2026-10-24T11:59:50"],
   ["開催中・企画あり", "2026-10-24T13:30"],
   ["企画の間（NEXTだけ）", "2026-10-24T14:45"],
@@ -16,8 +19,15 @@ export const TIMES = [
   ["結果発表（配信・15:45）", "2026-10-25T15:45"],
   ["1日目の公開終了（16:00）直前", "2026-10-24T15:59:50"],
   ["公開終了後（大抽選会・学内のみ）", "2026-10-25T16:05"],
+  ["一般公開の終了直後（16:02）", "2026-10-25T16:02"],
+  ["花火（18:10）", "2026-10-25T18:10"],
   ["終了後", "2026-10-26T10:00"],
 ];
+// サイネージ：置く場所と、流す画面
+const PLACES = [["なし（道案内は出ない）", ""], ["第1講義室の前", "lecture1"], ["総務課の横の廊下の角", "soumu"], ["インフォメーション前", "info"]];
+const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
+const hooksOf = () => globalThis.kosenHooks ?? {};
+const loadCss = () => { if (!document.querySelector("link[data-test-css]")) { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = new URL("./test.css", import.meta.url).href; l.dataset.testCss = ""; document.head.append(l); } };
 export const SKIES = [["自動", ""], ["明け方", "dawn"], ["昼", "day"], ["夕焼け", "sunset"], ["日暮れ", "dusk"], ["夜", "night"]];
 export const WEATHERS = [["本物", ""], ["晴れ", "clear"], ["くもり", "cloudy"], ["霧", "fog"], ["雨", "rain"], ["雪", "snow"], ["雷", "thunder"]];
 // トップページの場所（スクロールで出るもの）と、押すと開くパネル
@@ -25,8 +35,8 @@ export const PANELS = [["日程・入口", "days"], ["みどころ", "pickup"], 
   ["（パネル）高専祭について", "about"], ["（パネル）タイムテーブル", "schedule"], ["（パネル）Enistagram", "enistagram"], ["（パネル）混雑状況", "crowd"],
   ["（パネル）企画案内", "guide"], ["（パネル）食レポ・写真", "report"], ["（パネル）隠し縁のごほうび", "secret"]];
 // ほかのページ（今の設定のまま開く）
-export const PAGES = [["校内マップ", "map.html"], ["Enistagram", "map.html?tab=feed"], ["みどころ", "mido.html"], ["スタンプカード", "rally.html"],
-  ["模擬店用のページ", "shop.html"], ["本部コンソール", "staff/"]];
+export const PAGES = [["トップページ", "./"], ["校内マップ", "map.html"], ["Enistagram", "map.html?tab=feed"], ["みどころ", "mido.html"], ["スタンプカード", "rally.html"],
+  ["模擬店総選挙", "vote.html"], ["模擬店用のページ", "shop.html"], ["ご利用にあたって", "terms.html"], ["会場ディスプレイ（サイネージ）", "signage.html"], ["本部コンソール", "staff/"]];
 const local = ["localhost", "127.0.0.1"].includes(location.hostname);
 
 // URL の値を変えて読み込み直す（test=1 は残す）
@@ -87,8 +97,12 @@ export function initPreviewBridge(hooks) {
   window.parent.postMessage({ kosenPreviewReady: true, phase: document.body.dataset.phase }, location.origin);
 }
 
-export function initTest(hooks) {
-  const now = params.get("now") ?? "";
+export function initTest() {
+  loadCss();
+  const hooks = hooksOf();
+  const sg = hooks.signage; // サイネージのときだけ
+  const now = params.get("now") ?? params.get("t") ?? "";
+  if (sg) { document.documentElement.style.cursor = "auto"; document.body.style.cursor = "auto"; }
   const box = document.createElement("aside");
   box.className = "testwin";
   box.setAttribute("aria-label", "テスト用パネル");
@@ -127,7 +141,7 @@ export function initTest(hooks) {
         <label><input type="checkbox" id="tw-urgent"${params.has("urgent") ? " checked" : ""}${params.has("demo") ? "" : " disabled"}> デモのお知らせを「緊急」にする</label>
         ${local ? `<label><input type="checkbox" id="tw-emu"${params.has("emulator") ? " checked" : ""}> Firebase エミュレーターにつなぐ（手元だけ）</label>` : ""}
       </section>
-      <section>
+      ${hooks.playOpening ? `<section>
         <h4>演出</h4>
         <div class="tw-grid">
           <button type="button" id="tw-fire">花火を上げる</button>
@@ -137,7 +151,14 @@ export function initTest(hooks) {
           <button type="button" id="tw-shake">短冊を揺らす</button>
           <button type="button" id="tw-rain">天気を今すぐ変更↑</button>
         </div>
-      </section>
+      </section>` : ""}
+      ${sg ? `<section>
+        <h4>サイネージ</h4>
+        <label class="tw-row">置く場所 <select id="tw-at">${opt(PLACES, params.get("at") ?? "")}</select></label>
+        <label class="tw-row">向き <select id="tw-o">${opt([["画面の形に合わせる", ""], ["横（1920×1080）", "landscape"], ["縦（1080×1920）", "portrait"]], params.get("o") ?? "")}</select></label>
+        <div class="tw-only">${SCREENS.map(([l, x]) => `<button type="button" data-only="${x}" aria-pressed="${(params.get("only") ?? "") === x}">${l}</button>`).join("")}</div>
+        <div class="tw-row"><button type="button" data-step="-1">前の画面</button><button type="button" data-step="1">次の画面</button></div>
+      </section>` : ""}
       <section>
         <h4>スタンプ・隠し縁</h4>
         <div class="tw-grid">
@@ -150,10 +171,10 @@ export function initTest(hooks) {
       </section>
       <section>
         <h4>移動</h4>
-        <div class="tw-row">
+        ${hooks.playOpening ? `<div class="tw-row">
           <select id="tw-panel">${opt(PANELS, "")}</select>
           <button type="button" id="tw-open">移動</button>
-        </div>
+        </div>` : ""}
         <div class="tw-row">
           <select id="tw-page">${opt(PAGES, "")}</select>
           <button type="button" id="tw-go">開く</button>
@@ -188,7 +209,6 @@ export function initTest(hooks) {
   $("#tw-sky").addEventListener("change", (e) => reloadWith({ sky: e.target.value }));
   $("#tw-weather").addEventListener("change", (e) => reloadWith({ weather: e.target.value, wind: e.target.value ? $("#tw-wind").value : "" }));
   $("#tw-wind").addEventListener("input", (e) => ($("#tw-wind-v").textContent = e.target.value));
-  $("#tw-rain").addEventListener("click", () => reloadWith({ weather: $("#tw-weather").value || "clear", wind: $("#tw-wind").value }));
 
   // データ
   $("#tw-demo").addEventListener("change", (e) => reloadWith({ demo: e.target.checked, urgent: e.target.checked && $("#tw-urgent").checked }));
@@ -196,11 +216,18 @@ export function initTest(hooks) {
   $("#tw-emu")?.addEventListener("change", (e) => reloadWith({ emulator: e.target.checked }));
 
   // 演出
-  $("#tw-fire").addEventListener("click", () => hooks.playOpening());
-  $("#tw-intro").addEventListener("click", () => STORAGE_ACTIONS.intro());
-  $("#tw-wake").addEventListener("click", () => hooks.setAwake(true));
-  $("#tw-sleep").addEventListener("click", () => hooks.setAwake(false));
-  $("#tw-shake").addEventListener("click", () => hooks.shake?.push(12));
+  $("#tw-fire")?.addEventListener("click", () => hooks.playOpening());
+  $("#tw-intro")?.addEventListener("click", () => STORAGE_ACTIONS.intro());
+  $("#tw-wake")?.addEventListener("click", () => hooks.setAwake(true));
+  $("#tw-sleep")?.addEventListener("click", () => hooks.setAwake(false));
+  $("#tw-shake")?.addEventListener("click", () => hooks.shake?.push(12));
+  $("#tw-rain")?.addEventListener("click", () => reloadWith({ weather: $("#tw-weather").value || "clear", wind: $("#tw-wind").value }));
+  // サイネージ
+  $("#tw-at")?.addEventListener("change", (e) => reloadWith({ at: e.target.value }));
+  $("#tw-o")?.addEventListener("change", (e) => reloadWith({ o: e.target.value }));
+  box.querySelectorAll("[data-only]").forEach((b) => b.addEventListener("click", () => reloadWith({ only: b.dataset.only })));
+  box.querySelectorAll("[data-step]").forEach((b) => b.addEventListener("click", () => sg?.step(+b.dataset.step)));
+  box.addEventListener("click", (e) => e.stopPropagation()); // 画面クリックで全画面にするページで、パネルを押しても起こさない
 
   // スタンプ・隠し縁
   $("#tw-stamp1").addEventListener("click", () => STORAGE_ACTIONS.stamp1());
@@ -209,7 +236,7 @@ export function initTest(hooks) {
   $("#tw-secret").addEventListener("click", () => STORAGE_ACTIONS.secretReset());
 
   // パネル
-  $("#tw-open").addEventListener("click", () => goTo($("#tw-panel").value));
+  $("#tw-open")?.addEventListener("click", () => goTo($("#tw-panel").value));
   // ほかのページへ。時刻・空・天気・デモなどの設定はそのまま持っていく
   $("#tw-go").addEventListener("click", () => {
     const target = new URL($("#tw-page").value, location.href);
@@ -223,7 +250,9 @@ export function initTest(hooks) {
   const state = () => {
     const b = document.body.dataset;
     const open = FESTIVAL.days.map((d) => d.label).join("・");
-    $("#tw-state").textContent = `${{ before: "開催前", during: "開催中", after: "終了後" }[b.phase] ?? b.phase} / 空:${b.skyimg ?? "-"} / 天気:${b.weather ?? "-"}${document.body.classList.contains("awake") ? " / メニュー" : ""} / ${innerWidth}×${innerHeight}`;
+    // ページにあるものだけ出す（開催前・開催中などはトップ、空・天気は theme.js のあるページ）
+    const parts = [{ before: "開催前", during: "開催中", after: "終了後" }[b.phase], b.skyimg && `空:${b.skyimg}`, b.weather && `天気:${b.weather}`, document.body.classList.contains("awake") && "メニュー", `${innerWidth}×${innerHeight}`];
+    $("#tw-state").textContent = parts.filter(Boolean).join(" / ");
     $("#tw-state").title = `開催日：${open}`;
   };
   state();

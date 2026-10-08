@@ -288,19 +288,6 @@ body.is-hurry #slide { bottom: 160px; }
 #bgphoto.on { opacity: .6; }
 .cv .al { min-height: 1.3em; }
 .lists.one { grid-template-columns: 1fr; }
-/* テスト用の操作パネル（?test=1 のときだけ。舞台の外なので、拡大・縮小されない） */
-.tp { position: fixed; z-index: 99; left: 10px; bottom: 10px; display: flex; flex-direction: column-reverse; align-items: flex-start; font: 700 13px/1.4 var(--txt); color: #fff; }
-.tp button, .tp select { font: inherit; }
-.tp-t { padding: 6px 14px; border: 0; border-radius: 999px; background: #634A2E; color: #FEEBC4; cursor: pointer; }
-.tp-b { margin-top: 6px; width: 250px; padding: 12px; border-radius: 14px; background: rgba(48, 44, 41, .92); display: grid; gap: 8px; }
-.tp-b label { display: grid; gap: 2px; }
-.tp-b select { width: 100%; padding: 4px; border-radius: 6px; }
-.tp-b .chk { display: flex; align-items: center; gap: 6px; }
-.tp-s { display: flex; flex-wrap: wrap; gap: 5px; }
-.tp-s button, .tp-n button { padding: 4px 9px; border: 1px solid #FEEBC4; border-radius: 999px; background: transparent; color: #FEEBC4; cursor: pointer; }
-.tp-s button[aria-pressed="true"] { background: #FEEBC4; color: #634A2E; }
-.tp-n { display: flex; gap: 6px; }
-.tp-b { max-height: calc(100vh - 60px); overflow: auto; }
 /* ようこそ画面の日時：板をやめて、見出しと同じ字・白・はっきりした影 */
 .intro .big { padding: 0; background: none; border-radius: 0; gap: 28px; align-items: baseline; color: var(--paper); text-shadow: -6px 5px 0 rgba(48, 44, 41, .55); }
 .intro .big b { font: 400 120px/1 var(--hud); color: inherit; text-shadow: inherit; letter-spacing: .02em; }

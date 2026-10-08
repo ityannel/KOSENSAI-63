@@ -12,8 +12,9 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ---------- 時刻（?t=2026-10-24T13:20 で、その時刻として動かして確かめられる） ----------
-const T0 = params.get("t") ? Date.parse(params.get("t").includes("+") ? params.get("t") : `${params.get("t")}+09:00`) : null;
+// ---------- 時刻（?now=2026-10-24T13:20 で、その時刻として動かして確かめられる。ほかのページと同じ書き方。?t= でも同じ） ----------
+const T_PARAM = params.get("now") ?? params.get("t");
+const T0 = T_PARAM ? Date.parse(T_PARAM.includes("+") ? T_PARAM : `${T_PARAM}+09:00`) : null;
 const BOOT = Date.now();
 const now = () => (T0 ? T0 + (Date.now() - BOOT) : Date.now());
 const jp = (ms, o) => new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", ...o }).format(new Date(ms));
@@ -601,34 +602,5 @@ setInterval(paintHurry, 15000);
   show(0, true);
 })();
 
-// ---------- テスト用の操作パネル（?test=1 のときだけ。本ページの ?test=1 と同じ使い方：値を変えて読みこみなおす） ----------
-if (params.has("test")) {
-  document.documentElement.style.cursor = "auto"; document.body.style.cursor = "auto";
-  const TIMES = [["いま（本当の時刻）", ""], ["開幕前（11:50）", "2026-10-24T11:50"], ["開催中・出演中（13:20）", "2026-10-24T13:20"], ["出演の合間（急げ！）", "2026-10-24T12:08"],
-    ["1日目の夜", "2026-10-24T18:00"], ["2日目の朝", "2026-10-25T08:30"], ["結果発表（15:45）", "2026-10-25T15:45"], ["一般公開の終了直後（16:02）", "2026-10-25T16:02"], ["終了の5分後（16:06）", "2026-10-25T16:06"], ["花火（18:10）", "2026-10-25T18:10"], ["終了後", "2026-10-26T10:00"]];
-  const PLACES = [["なし（道案内は出ない）", ""], ["第1講義室の前", "lecture1"], ["総務課の横の廊下の角", "soumu"], ["インフォメーション前", "info"]];
-  const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
-  const reloadWith = (ch) => { const p = new URLSearchParams(location.search); for (const [k, v] of Object.entries(ch)) { if (v === "" || v == null || v === false) p.delete(k); else p.set(k, v === true ? "1" : v); } p.set("test", "1"); location.search = p; };
-  const cur = (k) => params.get(k) ?? "";
-  const opt = (list, v) => list.map(([l, x]) => `<option value="${esc(x)}"${x === v ? " selected" : ""}>${esc(l)}</option>`).join("");
-  const box = document.createElement("div");
-  box.className = "tp";
-  box.innerHTML = `<button type="button" class="tp-t">テスト</button><div class="tp-b" hidden>
-    <label>時刻<select data-k="t">${opt(TIMES, cur("t"))}</select></label>
-    <label>場所<select data-k="at">${opt(PLACES, cur("at"))}</select></label>
-    <label class="chk"><input type="checkbox" data-k="demo"${params.has("demo") ? " checked" : ""}>見本の投稿・混雑・お店</label>
-    <label>向き<select data-k="o">${opt([["画面の形に合わせる", ""], ["横（1920×1080）", "landscape"], ["縦（1080×1920）", "portrait"]], cur("o"))}</select></label>
-    <div class="tp-s">${SCREENS.map(([l, x]) => `<button type="button" data-only="${x}" aria-pressed="${cur("only") === x}">${l}</button>`).join("")}</div>
-    <div class="tp-n"><button type="button" data-step="-1">前へ</button><button type="button" data-step="1">次へ</button></div></div>`;
-  document.body.append(box);
-  const open = sessionStorage.getItem("kosen63-sg-test") === "1";
-  box.querySelector(".tp-b").hidden = !open;
-  box.querySelector(".tp-t").addEventListener("click", () => { const b = box.querySelector(".tp-b"); b.hidden = !b.hidden; try { sessionStorage.setItem("kosen63-sg-test", b.hidden ? "0" : "1"); } catch { /* 保存できない */ } });
-  box.addEventListener("click", (e) => e.stopPropagation()); // 全画面にする、画面クリックを、パネルでは起こさない
-  box.addEventListener("change", (e) => { const k = e.target.dataset.k; if (k) reloadWith({ [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }); });
-  box.addEventListener("click", (e) => {
-    const b = e.target.closest("button"); if (!b) return;
-    if (b.dataset.only != null) reloadWith({ only: b.dataset.only });
-    else if (b.dataset.step) { dir = +b.dataset.step; go(idx + dir); }
-  });
-}
+// ---------- テスト用パネル（?test=1 のときだけ。全ページ共通の test-loader.js が読みこむ）：画面を送る操作だけ、ここから渡す ----------
+globalThis.kosenHooks = { signage: { step: (d) => { dir = d; go(idx + d); } } };
