@@ -78,10 +78,13 @@ ticket += "本部がリアルタイムで更新たった今分前に更新時間
 ticket += "←サイトにもどるすべていまやっているステージ企画この条件のみどころはありません。【仮】出演者と時間は仮のものです団体名・企画名でさがす学内のみ"
 msg = "".join(dict.fromkeys("".join(re.findall(r'"([^"]+)"', body)) + ticket))
 zen = "https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&display=swap&text=" + urllib.parse.quote(msg)
+# 字をしぼらない（Google が使う字の分だけ配信する）：しぼると、足りない字だけ別の書体になって崩れて見えるため。
+# index.html・mido.html は、とくに出演団体の紹介など、どんな字も出る
+zen_all = "https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&display=swap"
 for page in ["index.html", "mido.html", "rally.html", "vote.html"]:
     path = SITE / page
     html = path.read_text(encoding="utf-8")
-    html, n = re.subn(r'href="https://fonts\.googleapis\.com/css2\?family=Zen\+Kaku\+Gothic\+New[^"]*"', 'href="' + zen.replace("&", "&amp;") + '"', html)
+    html, n = re.subn(r'href="https://fonts\.googleapis\.com/css2\?family=Zen\+Kaku\+Gothic\+New[^"]*"', 'href="' + zen_all.replace("&", "&amp;") + '"', html)
     assert n == 1, f"{page} に Zen Kaku Gothic New の読み込みが見つかりません"
     path.write_text(html, encoding="utf-8")
 print(f"Zen Kaku Gothic New の {len(msg)} 字を読み込むようにしました")
