@@ -109,7 +109,7 @@
                 <label><input type="radio" name="notice-level" value="info" checked><span>ふつう</span></label>
                 <label class="seg-danger"><input type="radio" name="notice-level" value="urgent"><span>緊急</span></label>
               </div>
-              <label class="field"><span>文（https:// で始まるものは、自動でリンクになります）</span>
+              <label class="field"><span>文</span>
                 <textarea id="notice-text" rows="3" maxlength="200" placeholder="例：14:00から体育館で抽選会の整理券を配ります"></textarea></label>
 
               <fieldset class="nt-set">
@@ -126,30 +126,29 @@
                     <label>背景 <input type="color" id="nt-bg" value="#2f6fb8"></label>
                     <label>文字 <input type="color" id="nt-fg" value="#ffffff"></label>
                   </div></div>
-                <div class="field"><span>アイコン（文の前に出る印）</span>
-                  <div class="nt-icons" id="nt-icons" role="radiogroup" aria-label="アイコン"></div>
-                  <input id="nt-icon-free" type="text" maxlength="4" placeholder="ほかの絵文字を入れる（1つ）" autocomplete="off"></div>
+                <div class="field"><span>アイコン</span>
+                  <div class="nt-icons" id="nt-icons" role="radiogroup" aria-label="アイコン"></div></div>
               </fieldset>
 
               <fieldset class="nt-set">
                 <legend>リンク</legend>
                 <div class="nt-grid">
-                  <label class="field"><span>ボタンの言葉</span><input id="nt-link-label" type="text" maxlength="30" placeholder="詳しくはこちら" autocomplete="off"></label>
-                  <label class="field"><span>リンク先（https:// から）</span><input id="nt-link-url" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
+                  <label class="field"><span>ボタンの言葉</span><input id="nt-link-label" type="text" maxlength="30" autocomplete="off"></label>
+                  <label class="field"><span>リンク先</span><input id="nt-link-url" type="url" maxlength="300" autocomplete="off"></label>
                 </div>
               </fieldset>
 
               <fieldset class="nt-set">
                 <legend>出す期間と場所</legend>
                 <div class="nt-grid">
-                  <label class="field"><span>ここから（空なら、すぐ）</span><input id="nt-from" type="datetime-local"></label>
-                  <label class="field"><span>ここまで（空なら、消すまで）</span><input id="nt-until" type="datetime-local"></label>
+                  <label class="field"><span>ここから</span><input id="nt-from" type="datetime-local"></label>
+                  <label class="field"><span>ここまで</span><input id="nt-until" type="datetime-local"></label>
                 </div>
                 <div class="field"><span>出す場所</span>
                   <div class="nt-wheres" id="nt-wheres"></div></div>
               </fieldset>
 
-              <div class="field"><span>プレビュー（いま入れたとおりに、出ます）</span>
+              <div class="field"><span>プレビュー</span>
                 <div class="preview-bar" id="notice-preview" hidden></div></div>
               <div class="row">
                 <button class="btn btn-primary" type="submit">出す</button>

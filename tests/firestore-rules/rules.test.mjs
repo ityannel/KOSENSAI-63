@@ -248,7 +248,7 @@ await t("ATTACK: report id must match reporter's own uid", assertFails(setDoc(do
 
 // お知らせの見た目（notice_style）
 const noticeSt = (db, style, extra = {}) => setDoc(doc(db, "site_live/current"), { notice: "テスト", notice_level: "info", notice_style: style, updated_at: serverTimestamp(), updated_by: "honbu@example.com", ...extra }, { merge: true });
-await t("staff saves a full notice style", assertSucceeds(noticeSt(staff, { font: "round", size: "l", bg: "#2F6FB8", fg: "#FFFFFF", icon: "📢", link_label: "くわしく", link_url: "https://example.com/a", from: 1790000000000, until: 1790003600000, where: ["top", "signage"] })));
+await t("staff saves a full notice style", assertSucceeds(noticeSt(staff, { font: "round", size: "l", bg: "#2F6FB8", fg: "#FFFFFF", icon: "mega", link_label: "くわしく", link_url: "https://example.com/a", from: 1790000000000, until: 1790003600000, where: ["top", "signage"] })));
 await t("unknown font rejected", assertFails(noticeSt(staff, { font: "comic" })));
 await t("bad color rejected", assertFails(noticeSt(staff, { bg: "red" })));
 await t("javascript: link rejected", assertFails(noticeSt(staff, { link_url: "javascript:alert(1)" })));

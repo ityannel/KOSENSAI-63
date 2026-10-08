@@ -31,7 +31,7 @@ export const firebaseConfig = {
 const DEMO = {
   notice: "【デモ】14:00から体育館で抽選会の整理券を配布します",
   notice_level: new URLSearchParams(location.search).has("urgent") ? "urgent" : "info",
-  // 見た目を確かめるとき：?demo=1&ntstyle={"font":"round","size":"l","bg":"#2F6FB8","fg":"#FFFFFF","icon":"📢","link_label":"くわしく","link_url":"https://example.com/"}（デモのときだけ）
+  // 見た目を確かめるとき：?demo=1&ntstyle={"font":"round","size":"l","bg":"#2F6FB8","fg":"#FFFFFF","icon":"mega","link_label":"くわしく","link_url":"https://example.com/"}（デモのときだけ）
   notice_style: (() => { try { return JSON.parse(new URLSearchParams(location.search).get("ntstyle") ?? "null") ?? undefined; } catch { return undefined; } })(),
   stream_url: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
   stream_active: true,

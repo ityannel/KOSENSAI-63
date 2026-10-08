@@ -810,6 +810,7 @@ h1, h2, h3 { font-weight: 400; }
 .nt-sw span { display: block; min-width: 54px; padding: 6px 12px; border: 2px solid var(--line); border-radius: 999px; text-align: center; font-size: .85rem; font-weight: 700; cursor: pointer; background: var(--bg-2); color: var(--ink); }
 .nt-ic span { display: grid; place-items: center; min-width: 40px; height: 36px; padding: 0 8px; border: 2px solid var(--line); border-radius: 10px; font-size: 1.15rem; cursor: pointer; background: var(--bg-2); color: var(--ink); }
 .nt-ic input:first-of-type + span { font-size: .8rem; font-weight: 700; }
+.nt-ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .nt-sw input:checked + span, .nt-ic input:checked + span { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(94, 211, 195, .25); }
 .nt-sw input:focus-visible + span, .nt-ic input:focus-visible + span { outline: 2px solid var(--teal); outline-offset: 2px; }
 .nt-custom { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 6px; font-size: .85rem; }
