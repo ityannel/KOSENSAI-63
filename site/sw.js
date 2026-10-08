@@ -8,7 +8,7 @@
 // - 混雑・お知らせ・みんなの声（Firestore）はしまわない（電波がないときは出ないだけ）
 // - staff/（本部用）はしまわない
 // 中身を大きく変えたときは VERSION を上げる（古いしまったものを消す）
-const VERSION = "kosen63-v276";
+const VERSION = "kosen63-v277";
 const CORE = [
   "./", "index.html", "map.html", "mido.html", "rally.html", "vote.html", "terms.html", "favicon.svg", "manifest.webmanifest",
   "assets/style.css", "assets/map.css", "assets/intro.js", "assets/map-wide.js",
