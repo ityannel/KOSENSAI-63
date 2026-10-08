@@ -730,7 +730,7 @@ h1, h2, h3 { font-weight: 400; }
    色：1系列のグラフは青。端末は スマホ＝青・パソコン＝橙・タブレット＝緑（色の見え方がちがう人にも区別できる組み合わせ。順番は変えない）
    棒は細く（24px まで）、上だけ丸く。目もりの線は、うすい実線。字は、いつもの字の色（グラフの色は使わない）
    ===================================================== */
-#view-stats { --st-1: #2f6fc4; --st-2: #E2622E; --st-3: #1f9a78; --st-surface: #FFFBF2; --st-grid: rgba(99, 74, 46, .14); }
+#view-stats { --st-main: #C8323A; --st-1: #2f6fc4; --st-2: #E2622E; --st-3: #1f9a78; --st-surface: #FFFBF2; --st-grid: rgba(99, 74, 46, .14); }
 .st { display: grid; gap: 18px; }
 .kpi.is-static:hover { border-color: var(--line); }
 .kpi.is-static:active { translate: none; box-shadow: var(--shadow); }
@@ -749,7 +749,7 @@ h1, h2, h3 { font-weight: 400; }
 /* 棒：1本ずつが、合わせる的（棒より広い、列ぜんぶ） */
 .st-cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
 .st-col { position: relative; display: flex; align-items: flex-end; justify-content: center; height: 100%; padding: 0; border: 0; background: none; cursor: default; }
-.st-bar { position: relative; display: block; width: min(24px, 100% - 2px); height: var(--h); border-radius: 4px 4px 0 0; background: var(--st-1); transition: height .4s cubic-bezier(.2, .8, .2, 1); }
+.st-bar { position: relative; display: block; width: min(24px, 100% - 2px); height: var(--h); border-radius: 4px 4px 0 0; background: var(--st-main); transition: height .4s cubic-bezier(.2, .8, .2, 1); }
 .st-col:hover .st-bar, .st-col:focus-visible .st-bar { filter: brightness(1.18); }
 .st-col:focus-visible, .st-seg:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; border-radius: 4px; }
 .st-bar b { position: absolute; left: 50%; bottom: calc(100% + 3px); translate: -50% 0; font: 700 .72rem/1 var(--font); color: var(--ink); white-space: nowrap; }
@@ -758,9 +758,9 @@ h1, h2, h3 { font-weight: 400; }
 /* 線：2px の線と、うすい面。右はしの点が「いま」 */
 .st-chart.is-line { padding-right: 18px; }
 .st-chart.is-line svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.st-line { fill: none; stroke: var(--st-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.st-area { fill: var(--st-1); opacity: .1; }
-.st-dot { position: absolute; width: 8px; height: 8px; margin: 0 0 -4px -4px; border-radius: 50%; background: var(--st-1); box-shadow: 0 0 0 2px var(--st-surface); pointer-events: none; }
+.st-line { fill: none; stroke: var(--st-main); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.st-area { fill: var(--st-main); opacity: .1; }
+.st-dot { position: absolute; width: 8px; height: 8px; margin: 0 0 -4px -4px; border-radius: 50%; background: var(--st-main); box-shadow: 0 0 0 2px var(--st-surface); pointer-events: none; }
 .st-end { position: absolute; right: 10px; translate: 0 -8px; font: 700 .78rem/1 var(--font); color: var(--ink); pointer-events: none; }
 .st-cross { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid var(--line-2); pointer-events: none; }
 .st-xl { position: absolute; left: 0; right: 0; top: calc(100% + 7px); height: 0; }
