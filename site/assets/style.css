@@ -2226,7 +2226,8 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .tk-photo.is-back { aspect-ratio: 1; object-fit: cover; pointer-events: none; cursor: default; filter: brightness(0.94); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28); }
 .tk-photo.is-back.b1 { translate: calc(-26 * var(--u)) calc(-50% + 3 * var(--u)); }
 .tk-photo.is-back.b2 { translate: calc(-12 * var(--u)) calc(-50% - 9 * var(--u)); }
-.has-photo.is-stack .tk-main { padding-right: calc(112 * var(--u)); }
+.has-photo.is-stack .tk-main { padding-right: calc(132 * var(--u)); }
+.has-photo.is-stack .tk-place { margin-right: calc(40 * var(--u)); }
 /* 拡大：前へ・次へ。送ったときは、横から入ってくる */
 .pz-nav { position: absolute; top: 50%; translate: 0 -50%; display: none; place-items: center; width: calc(44 * var(--u)); aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%; background: var(--grain), #FEEBC4; color: #634A2E; cursor: pointer; box-shadow: calc(-3 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, 0.45); -webkit-tap-highlight-color: transparent; }
 .pz.is-multi .pz-nav { display: grid; }
