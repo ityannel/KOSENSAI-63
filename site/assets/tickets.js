@@ -30,6 +30,9 @@ const CATS = { band: ["ロック", "バンド", "パンク", "合同バンド"],
 export const catOf = (e) => Object.keys(CATS).find((c) => CATS[c].includes(e.kind)) ?? e.hue ?? "event";
 
 const TILTS = [-2.8, 1.5, -1.2];
+// 写真の傾き：バンドごとに、少しずつ変える（団体名から決まるので、毎回同じ角度）
+const PTILTS = [4, -3, 5, -5, 3, -2, 6, -4];
+const photoTilt = (name) => PTILTS[[...String(name)].reduce((n, c) => n + c.charCodeAt(0), 0) % PTILTS.length];
 export function ticketHtml(e, i, t) {
   const on = isOn(e, t);
   const wd = fmt(e.start, { weekday: "short" }).toUpperCase();
@@ -47,7 +50,7 @@ export function ticketHtml(e, i, t) {
         </div>
       </div></div>
       ${on ? '<span class="tk-badge is-now">NOW</span>' : isPast(e, t) ? '<span class="tk-badge is-end">終了</span>' : e.live ? '<span class="tk-badge is-live">LIVE</span>' : ""}
-      ${e.photo ? `<img class="tk-photo" src="${esc(e.photo)}" alt="${esc(e.title)}の写真（押すと大きく表示）" loading="lazy" decoding="async">` : ""}
+      ${e.photo ? `<img class="tk-photo" style="--ptilt:${photoTilt(e.title)}deg" src="${esc(e.photo)}" alt="${esc(e.title)}の写真（押すと大きく表示）" loading="lazy" decoding="async">` : ""}
     </a>`;
 }
 

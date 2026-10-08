@@ -487,6 +487,9 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 /* 場所：「@太平洋セメントアリーナ」。写真があるときは、写真にかからないように右を空ける */
 .tk-place { align-self: flex-start; margin-top: auto; font-family: var(--hud-font); font-size: calc(18 * var(--u)); line-height: 1.2; white-space: nowrap; }
 .has-photo .tk-place { margin-right: calc(60 * var(--u)); }
+/* 写真がある札は、文字を写真の左に収める（かぶらない）。写真は表面の右で、大きく見せる */
+.has-photo .tk-main { padding-right: calc(84 * var(--u)); }
+.has-photo .tk-name { white-space: normal; }
 .tk-badge { position: absolute; top: calc(-9 * var(--u)); right: calc(16 * var(--u)); padding: calc(3 * var(--u)) calc(11 * var(--u)); border-radius: 999px; font-family: var(--hud-font); font-size: calc(14 * var(--u)); line-height: 1.2; }
 .tk-badge.is-now { background: var(--led); color: #0c2a0c; }
 .tk-badge.is-live { background: #E5484D; color: #fff; }
@@ -568,7 +571,7 @@ body.mido-page { background: linear-gradient(rgba(20, 12, 18, 0.45), rgba(20, 12
 .mido-day { margin: calc(8 * var(--u)) 0 calc(-8 * var(--u)) calc(1 * var(--u)); font-family: var(--hud-font); font-weight: 400; font-size: calc(20 * var(--u)); color: #F7FFF4; }
 .mido-empty, .mido-note { margin: calc(24 * var(--u)) 0 0; font-family: var(--text-font); font-weight: 700; font-size: calc(12.5 * var(--u)); color: #F7FFF4; }
 /* 写真はポラロイドのように、右下にはみ出して貼る */
-.tk-photo { position: absolute; right: calc(10 * var(--u)); top: 50%; translate: 0 -50%; width: calc(66 * var(--u)); padding: calc(4 * var(--u)) calc(4 * var(--u)) calc(12 * var(--u)); background: #fff; rotate: 5deg; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); }
+.tk-photo { position: absolute; right: calc(8 * var(--u)); top: 50%; translate: 0 -50%; width: calc(76 * var(--u)); rotate: var(--ptilt, 5deg); padding: calc(4 * var(--u)) calc(4 * var(--u)) calc(12 * var(--u)); background: #fff; rotate: 5deg; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); }
 
 /* ---------- 縁日（模擬店の紹介）：クリーム色の紙の掲示板に、チラシ（A4 のたて長）をテープで貼る ---------- */
 .ennichi {
