@@ -33,7 +33,8 @@ const TILTS = [-2.8, 1.5, -1.2];
 export function ticketHtml(e, i, t) {
   const on = isOn(e, t);
   const wd = fmt(e.start, { weekday: "short" }).toUpperCase();
-  const tags = [e.internal && "学内のみ", e.kind, e.mood].filter(Boolean);
+  const tags = [e.internal && "学内のみ", e.kind, !e.stageAct && e.mood].filter(Boolean); // 出演団体は、一言を紹介文の位置に出す（タグには入れない）
+  const line = e.stageAct ? e.mood : e.copy; // 出演団体のチケットは一言。詳しい紹介文は、押したときの詳しいシートで出す
   return `
     <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.photo ? " has-photo" : ""}" href="map.html#${esc(e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
       <div class="tk-shape"><div class="tk-body"><i class="tk-hole" aria-hidden="true"></i>
@@ -41,7 +42,7 @@ export function ticketHtml(e, i, t) {
         <div class="tk-main">
           ${tags.length ? `<p class="tk-tags">${tags.map((x) => `<span>${esc(x)}</span>`).join("")}</p>` : ""}
           <h3 class="tk-name${[...e.title].length > 8 ? " is-long" : ""}">${esc(e.title)}</h3>
-          ${e.copy ? `<p class="tk-copy">${esc(e.copy).replace(/\n/g, "<br>")}</p>` : ""}
+          ${line ? `<p class="tk-copy">${esc(line).replace(/\n/g, "<br>")}</p>` : ""}
           <span class="tk-place">@${esc(venueName(e.venue))}</span>
         </div>
       </div></div>
