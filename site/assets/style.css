@@ -2207,9 +2207,9 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 /* 詳しいシートの Instagram ボタン：アイコンを文字の前に */
 .dt-insta svg { width: 1.15em; height: 1.15em; margin-right: .4em; vertical-align: -.2em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .dt-links + .dt-links { margin-top: calc(8 * var(--u)); }
-/* リンクの札：それぞれに色（マップ＝緑、学校サイト＝青、インスタ＝ピンク、エックス＝黒）。字は白、影はそのまま */
+/* リンクの札：それぞれに色。くすんだ緑の背景に映えるように、サイトのグラデーションの暖かい色（橙・黄・ピンク・茶）。黄は濃い茶の字、茶はクリーム色の字 */
 .visit-links a { color: #fff; background: var(--grain), var(--lk, #634A2E); }
-.visit-links a:nth-child(1) { --lk: #3E9A86; }
-.visit-links a:nth-child(2) { --lk: #3F8DB8; }
-.visit-links a:nth-child(3) { --lk: #D9669B; }
-.visit-links a:nth-child(4) { --lk: #302C29; }
+.visit-links a:nth-child(1) { --lk: #E2622E; }
+.visit-links a:nth-child(2) { --lk: #E9B13C; color: #4A3B36; }
+.visit-links a:nth-child(3) { --lk: #D8457F; }
+.visit-links a:nth-child(4) { --lk: #634A2E; color: #FEEBC4; }
