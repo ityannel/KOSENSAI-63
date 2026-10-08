@@ -751,9 +751,9 @@ html.dt-open { overflow: hidden; }
 .dt[hidden] { display: none; }
 .dt-backdrop { position: absolute; inset: 0; background: rgba(30, 18, 24, 0.5); animation: dt-fade 0.3s ease both; }
 .dt-sheet {
-  position: absolute; left: 0; right: 0; bottom: 0; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain;
+  position: absolute; left: 0; right: 0; bottom: 0; max-height: 100dvh; overflow-y: auto; overscroll-behavior: contain; /* 長いときは上まで届く（角を残さない） */
   padding: calc(22 * var(--u)) calc(22 * var(--u)) calc(28 * var(--u) + env(safe-area-inset-bottom));
-  border-radius: calc(12 * var(--u)) calc(12 * var(--u)) 0 0; background: var(--grain), #FFFBF2; /* チケットやボタン（クリーム色）が浮くように、白っぽい紙 */
+  border-radius: 0; background: var(--grain), #FFFBF2; /* チケットやボタン（クリーム色）が浮くように、白っぽい紙 */
   box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.25); animation: dt-up 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .dt.is-closing .dt-sheet { animation: dt-down 0.3s cubic-bezier(0.4, 0, 1, 1) both; }

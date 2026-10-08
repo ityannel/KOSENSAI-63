@@ -45,7 +45,7 @@ titles += [toast_text]
 titles += ["利用規約を見る", "Google マップ", "函館高専", "学生会"]
 titles += ["思い出", "Enistagram で見る"]  # 終了後の「思い出」の欄（memory.js）  # ご来場の皆さまへの下のボタン
 chars = "".join(dict.fromkeys(FIXED + "".join(titles) + "".join(venues) + SIDE_FIXED + "".join(a + b for a, b in side_words)))
-url = "https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap&text=" + urllib.parse.quote(chars)
+url = "https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap"  # 字をしぼらない：字が足りないと、その字だけ別の書体になって崩れて見えるため（Google が字ごとに分けて配信する）
 
 for page in ["index.html", "mido.html", "rally.html", "vote.html"]:  # map.html は字をしぼらずに読みこむ（場所の名前・投稿はどんな字も出るので）
     path = SITE / page
