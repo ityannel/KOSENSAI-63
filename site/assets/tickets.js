@@ -39,7 +39,7 @@ export const photosOf = (e) => (e.photo ? [e.photo, ...(e.more ?? [])] : []);
 function photoStack(e) {
   const all = photosOf(e);
   if (!all.length) return "";
-  const back = all.slice(1, 3).map((src, i) => `<img class="tk-photo is-back b${i + 1}" style="--ptilt:${photoTilt(e.title) + (i ? 9 : -9)}deg" src="${esc(src)}" alt="" loading="lazy" decoding="async" aria-hidden="true">`).reverse().join("");
+  const back = all.slice(1, 3).map((src, i) => `<img class="tk-photo is-back b${i + 1}" style="--ptilt:${photoTilt(e.title) + (i ? 12 : -12)}deg" src="${esc(src)}" alt="" loading="lazy" decoding="async" aria-hidden="true">`).reverse().join("");
   return `${back}<img class="tk-photo" data-photos="${esc(all.join("|"))}" style="--ptilt:${photoTilt(e.title)}deg" src="${esc(all[0])}" alt="${esc(e.title)}の写真（押すと大きく表示）" loading="lazy" decoding="async">`;
 }
 export function ticketHtml(e, i, t) {
