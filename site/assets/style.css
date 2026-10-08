@@ -510,6 +510,10 @@ body.mido-page { background: linear-gradient(rgba(20, 12, 18, 0.45), rgba(20, 12
 @keyframes mido-down { to { translate: 0 100vh; } }
 @media (prefers-reduced-motion: reduce) { .mido-full, .mido-full.is-closing { animation: none; } }
 .mido-full .mido-in { position: relative; }
+/* PC（左右に案内が出る幅）：スマホの「うしろにページがある」見せ方（上の隙間と丸い角）はやめて、一番上まで届かせる */
+@media (min-width: 1000px) {
+  .mido-full { margin-top: 0; min-height: 100dvh; border-radius: 0; box-shadow: none; }
+}
 /* × ：チケットと同じクリーム色の紙の丸に、ずらした影。押すと沈む */
 .mido-close {
   position: absolute; top: calc(22 * var(--u)); right: calc(18 * var(--u)); z-index: 2; display: block;
