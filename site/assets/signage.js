@@ -541,13 +541,19 @@ async function cover() {
   wipe.querySelectorAll("i.b2").forEach((b) => b.getAnimations().forEach((x) => x.cancel())); // 前の切りかえの虹の帯を、もとにもどす
   const wsp = wipe.querySelector("#wsp"), sp = SPON.length ? SPON[wipeN++ % SPON.length] : null;
   if (wsp) wsp.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+  wipe.classList.toggle("has-spon", !!(wsp && sp));
+  const portrait = document.body.classList.contains("portrait");
   if (wsp && sp) {
     wsp.querySelector("img").src = sp.logo; wsp.querySelector("img").alt = sp.name ?? "";
-    wsp.animate([{ opacity: 0, transform: "translate(-50%, 70px) scale(.8)" }, { opacity: 1, transform: "translate(-50%, -8px) scale(1.03)", offset: .65 }, { opacity: 1, transform: "translate(-50%, 0) scale(1)" }], { duration: 800, delay: 600, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
+    // 「縁」が左へ動いたあと（1.7秒ごろ）、右（縦の画面は下）から、ふわっと乗る
+    const from = portrait ? "translate(-50%, calc(-50% + 90px)) scale(.85)" : "translate(calc(-50% + 110px), -50%) scale(.85)";
+    wsp.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: "translate(-50%, -50%) scale(1.02)", offset: .7 }, { opacity: 1, transform: "translate(-50%, -50%) scale(1)" }], { duration: 900, delay: 1700, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
   }
   const bars = [...wipe.querySelectorAll("i:not(.b2)")], seal = wipe.querySelector("b");
   const inn = bars.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(0) skewX(-14deg)" }], { duration: 520, delay: k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }));
   seal.animate([{ opacity: 0, transform: "scale(2.2) rotate(-14deg)" }, { opacity: 1, transform: "scale(1) rotate(-6deg)", offset: .55 }, { opacity: 1, transform: "scale(1) rotate(-6deg)" }], { duration: 900, delay: 330, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
+  // ロゴが出るときは、押されたあと、左へふわっと動く（縦の画面は、上へ）。少し小さくなって、ロゴに場所をゆずる
+  if (sp) seal.animate([{ transform: "translate(0, 0) scale(1) rotate(-6deg)" }, { transform: portrait ? "translate(0, -300px) scale(.8) rotate(-4deg)" : "translate(-380px, 0) scale(1) rotate(-4deg)" }], { duration: 1000, delay: 1250, easing: "cubic-bezier(.45,0,.2,1)", fill: "forwards" });
   // 紙吹雪：はんこが押されるときに、いろいろな色が四方へ散る
   const COL = ["#d9669b", "#2f8fe0", "#a061c9", "#ffd24a", "#3BF53D", "#FEEBC4", "#ff6b5e"];
   wipe.querySelectorAll("s").forEach((d, k, all) => {
@@ -556,7 +562,7 @@ async function cover() {
     d.animate([{ opacity: 1, transform: "translate(0, 0) scale(.3) rotate(0)" }, { opacity: 1, transform: `translate(${Math.cos(ang) * far}px, ${Math.sin(ang) * far}px) scale(1) rotate(${k * 70}deg)`, offset: .7 }, { opacity: 0, transform: `translate(${Math.cos(ang) * far * 1.15}px, ${Math.sin(ang) * far * 1.15 + 60}px) scale(.8) rotate(${k * 90}deg)` }], { duration: 1000, delay: 480, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
   });
   await Promise.all(inn.map((a) => a.finished.catch(() => {}))); // 全画面にしたときなどに、動きが取り消されても止まらない
-  if (sp) await sleep(1900); // ロゴをしっかり見せる時間（帯がおおったまま、少し止める）
+  if (sp) await sleep(2800); // 「縁」が動いて、ロゴが乗るまで待ち、しっかり見せる（帯がおおったまま、止める）
   return () => {
     // 次の画面が映るとき：「縁」とロゴは、そのまま残し、虹色の帯がその上を通って消していく（帯が全部おおったところで、下のものを片づける）
     const top = [...wipe.querySelectorAll("i.b2")];

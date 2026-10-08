@@ -404,12 +404,12 @@ body.is-hurry #slide { bottom: 160px; }
 .barw time .t-chg { align-items: center; }
 .nx .t .t-chg .t-old { font-size: 24px; }
 .chip .t-chg .t-old { font-size: .72em; }
-/* 切りかえの「縁」のはんこの下に、Sponsored by と協賛企業のロゴ。札をやめて、ロゴを大きく、背景なしで出す（透明な背景のロゴなら、そのまま映える）。
-   どんな色のロゴでも読めるように、ロゴの形に沿って白い縁取りをつけ、サイトと同じ硬い影を落とす */
-#wipe b { top: 30%; }
-#wsp { position: absolute; left: 50%; top: 57%; width: min(1500px, 94%); opacity: 0; transform: translate(-50%, 70px); display: flex; flex-direction: column; align-items: center; gap: 26px; }
+/* 切りかえの「縁」のはんこと、協賛企業のロゴ。はんこが押されたあと、左へふわっと動き、その右にロゴが乗る（動かす順は signage.js の cover）。
+   札はなく、ロゴを大きく・背景なしで出す。どんな色のロゴでも読めるように、ロゴの形に沿って白い縁取りをつけ、サイトと同じ硬い影を落とす */
+#wipe.has-spon b { top: 50%; }
+#wsp { position: absolute; left: 66%; top: 50%; width: 1040px; opacity: 0; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 26px; }
 #wsp > span { font: 400 66px/1 var(--hud); letter-spacing: .12em; color: #fff; text-shadow: -5px 4px 0 rgba(48, 44, 41, .6); }
-#wsp .tile { position: relative; width: 100%; height: 330px; } /* 1080 の高さに収まる：57%（616）＋ 見出し 66 ＋ 間 26 ＋ 330 ＝ 1038 */
+#wsp .tile { position: relative; width: 100%; height: 360px; }
 #wsp .tile img { display: block; width: 100%; height: 100%; object-fit: contain;
   filter: drop-shadow(7px 0 0 #fff) drop-shadow(-7px 0 0 #fff) drop-shadow(0 7px 0 #fff) drop-shadow(0 -7px 0 #fff) drop-shadow(-16px 13px 0 rgba(48, 44, 41, .55)); }
 
@@ -566,7 +566,7 @@ body.is-fw .grain { opacity: .25; }
 #sg-notice .nt-link { pointer-events: none; }
 @keyframes sgn-in { from { translate: 0 -100%; } }
 @keyframes notice-blink { 50% { opacity: .35; } }
-/* 縦のディスプレイ：幅が狭いので、ロゴの高さをおさえる */
-body.portrait #wipe b { top: 27%; }
-body.portrait #wsp { top: 52%; width: 94%; }
-body.portrait #wsp .tile { height: 460px; }
+/* 縦のディスプレイ：幅が狭いので、「縁」は上へ、ロゴはその下に（左右に並べない） */
+body.portrait #wipe.has-spon b { top: 50%; }
+body.portrait #wsp { left: 50%; top: 66%; width: 94%; }
+body.portrait #wsp .tile { height: 440px; }
