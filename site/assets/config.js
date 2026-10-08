@@ -189,8 +189,9 @@ export const EVENTS = [
 // 出演者・時間は、要項ver5・タイムテーブルVer2.0のとおり（下の STAGE）
 // 写真は、いちばん目立つ1枚（photo）と、ほかの写真の一覧（more）。チケットには photo を前に、more を後ろに重ねて出す。押すと、photo → more の順にスライドショー。
 // どの写真も「◯◯.webp」（小）と「◯◯-l.webp」（拡大）の2つを置く
-const act = (day, start, end, name, kind, mood, copy, photo = null, more = []) =>
-  ({ name, kind, mood, copy, photo, more, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` });
+// insta は Instagram のアカウント名（@ なし。例 "luna.tic_idol"）。詳しいシートに、リンクのボタンが出る
+const act = (day, start, end, name, kind, mood, copy, photo = null, more = [], insta = "") =>
+  ({ name, kind, mood, copy, photo, more, insta, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` });
 export const STAGE = {
   venue: "gym2",
   tentative: false,
@@ -202,12 +203,12 @@ export const STAGE = {
     act("24", "13:55", "14:25", "MOSAiC", "", "", "", "assets/img/stage/mosaic.webp"),
     act("24", "14:35", "14:55", "+10せんち！", "", "", "", "assets/img/stage/plus10.webp"),
     act("24", "15:15", "15:30", "Neo abyss", "", "", "", "assets/img/stage/neo-abyss.webp"),
-    act("24", "15:35", "15:50", "LunaTi☪︎³", "ダンス", "盛り上がれる曲たくさんなので見に来てね〜‼︎💕", "💗せっとりすと💗\nツインテールは20歳まで♡\nくりてぃかる♡ぷりちー \nころころガール\nキスハグ侵略者！\nらぶきゅん♡うぉんてっど\nアイドルライフエクストラパック", "assets/img/stage/luna-ti.webp", ["assets/img/stage/luna-ti-poster.webp"]),
+    act("24", "15:35", "15:50", "LunaTi☪︎³", "ダンス", "盛り上がれる曲たくさんなので見に来てね〜‼︎💕", "💗せっとりすと💗\nツインテールは20歳まで♡\nくりてぃかる♡ぷりちー \nころころガール\nキスハグ侵略者！\nらぶきゅん♡うぉんてっど\nアイドルライフエクストラパック", "assets/img/stage/luna-ti.webp", ["assets/img/stage/luna-ti-poster.webp"], "luna.tic_idol"),
     act("25", "10:40", "11:10", "イイカンジ", "", "", "", "assets/img/stage/iikanji.webp"),
     act("25", "11:20", "11:50", "Criminals", "", "", ""),
-    act("25", "12:00", "12:30", "ゴーストノート", "バンド", "オリジナル曲、あり", "🫵✨🫵✨これ🫵✨🫵✨が❗❗ブチ😡😡💢💢💣💣💥💥上がり☝️😁⤴️⤴️🕺✨🕺✨ゴースト👻💖👻💖たち🤪🤪のライブ🎤🎤🎸🎸🎶🎶だよ ❗❗😅😅💦💦🙏✨🙏✨", "assets/img/stage/ghost-note.webp"),
+    act("25", "12:00", "12:30", "ゴーストノート", "バンド", "オリジナル曲、あり", "🫵✨🫵✨これ🫵✨🫵✨が❗❗ブチ😡😡💢💢💣💣💥💥上がり☝️😁⤴️⤴️🕺✨🕺✨ゴースト👻💖👻💖たち🤪🤪のライブ🎤🎤🎸🎸🎶🎶だよ ❗❗😅😅💦💦🙏✨🙏✨", "assets/img/stage/ghost-note.webp", [], "g0st_note4"),
     act("25", "12:40", "13:10", "疫病Jr.", "", "", ""),
-    act("25", "13:30", "13:45", "Untitled", "ダンス", "解釈を光に、ステージへ。", "ヲタク文化への偏見を少しでも減らすために活動しています。\n去年同様、アニソン・ボカロを中心にヲタ芸をしていきます。\nヲタ芸以外の照明、演出等もご注目ください！！", "assets/img/stage/untitled.webp"),
+    act("25", "13:30", "13:45", "Untitled", "ダンス", "解釈を光に、ステージへ。", "ヲタク文化への偏見を少しでも減らすために活動しています。\n去年同様、アニソン・ボカロを中心にヲタ芸をしていきます。\nヲタ芸以外の照明、演出等もご注目ください！！", "assets/img/stage/untitled.webp", [], "untitled_lightdance"),
     act("25", "13:50", "14:50", "ダンス愛好会", "ダンス", "", "", "assets/img/stage/dance.webp"),
   ],
 };

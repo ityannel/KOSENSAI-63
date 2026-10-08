@@ -2204,3 +2204,6 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 @keyframes pz-in-l { from { opacity: 0; translate: 40px 0; } }
 @keyframes pz-in-r { from { opacity: 0; translate: -40px 0; } }
 @media (prefers-reduced-motion: reduce) { .pz-img.is-slide-l, .pz-img.is-slide-r { animation: none; } }
+/* 詳しいシートの Instagram ボタン：アイコンを文字の前に */
+.dt-insta svg { width: 1.15em; height: 1.15em; margin-right: .4em; vertical-align: -.2em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dt-links + .dt-links { margin-top: calc(8 * var(--u)); }
