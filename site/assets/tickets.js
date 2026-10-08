@@ -33,13 +33,22 @@ const TILTS = [-2.8, 1.5, -1.2];
 // 写真の傾き：バンドごとに、少しずつ変える（団体名から決まるので、毎回同じ角度）
 const PTILTS = [4, -3, 5, -5, 3, -2, 6, -4];
 const photoTilt = (name) => PTILTS[[...String(name)].reduce((n, c) => n + c.charCodeAt(0), 0) % PTILTS.length];
+// チケットの写真：いちばん目立つ1枚を前に、ほかの写真（more）は後ろに少しずらして重ねる（最大3枚まで見せる）。
+// 前の写真が持つ data-photos に、見せる順の全部（小さい版の URL）を入れる。押すと、これをスライドショーにする（detail.js）
+export const photosOf = (e) => (e.photo ? [e.photo, ...(e.more ?? [])] : []);
+function photoStack(e) {
+  const all = photosOf(e);
+  if (!all.length) return "";
+  const back = all.slice(1, 3).map((src, i) => `<img class="tk-photo is-back b${i + 1}" style="--ptilt:${photoTilt(e.title) + (i ? 7 : -6)}deg" src="${esc(src)}" alt="" loading="lazy" decoding="async" aria-hidden="true">`).reverse().join("");
+  return `${back}<img class="tk-photo" data-photos="${esc(all.join("|"))}" style="--ptilt:${photoTilt(e.title)}deg" src="${esc(all[0])}" alt="${esc(e.title)}の写真${all.length > 1 ? `（全${all.length}枚。押すと大きく表示）` : "（押すと大きく表示）"}" loading="lazy" decoding="async">${all.length > 1 ? `<i class="tk-count" aria-hidden="true">${all.length}</i>` : ""}`;
+}
 export function ticketHtml(e, i, t) {
   const on = isOn(e, t);
   const wd = fmt(e.start, { weekday: "short" }).toUpperCase();
   const tags = [e.internal && "学内のみ", e.kind, !e.stageAct && e.mood].filter(Boolean); // 出演団体は、一言を紹介文の位置に出す（タグには入れない）
   const line = e.stageAct ? e.mood : e.copy; // 出演団体のチケットは一言。詳しい紹介文は、押したときの詳しいシートで出す
   return `
-    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.photo ? " has-photo" : ""}" href="map.html#${esc(e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
+    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.photo ? " has-photo" : ""}${e.more?.length ? " is-stack" : ""}" href="map.html#${esc(e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
       <div class="tk-shape"><div class="tk-body"><i class="tk-hole" aria-hidden="true"></i>
         <p class="tk-stub is-${wd.toLowerCase()}"><span class="tk-wd">${wd}</span><b class="tk-day">${dayOf(e)}</b><span class="tk-time">${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}</b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}`}</span></p>
         <div class="tk-main">
@@ -50,7 +59,7 @@ export function ticketHtml(e, i, t) {
         </div>
       </div></div>
       ${on ? '<span class="tk-badge is-now">NOW</span>' : isPast(e, t) ? '<span class="tk-badge is-end">終了</span>' : e.live ? '<span class="tk-badge is-live">LIVE</span>' : ""}
-      ${e.photo ? `<img class="tk-photo" style="--ptilt:${photoTilt(e.title)}deg" src="${esc(e.photo)}" alt="${esc(e.title)}の写真（押すと大きく表示）" loading="lazy" decoding="async">` : ""}
+      ${photoStack(e)}
     </a>`;
 }
 
