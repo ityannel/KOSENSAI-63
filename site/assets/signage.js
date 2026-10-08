@@ -544,7 +544,6 @@ async function cover() {
   if (wsp && sp) {
     wsp.querySelector("img").src = sp.logo; wsp.querySelector("img").alt = sp.name ?? "";
     wsp.animate([{ opacity: 0, transform: "translate(-50%, 70px) scale(.8)" }, { opacity: 1, transform: "translate(-50%, -8px) scale(1.03)", offset: .65 }, { opacity: 1, transform: "translate(-50%, 0) scale(1)" }], { duration: 800, delay: 600, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
-    wsp.querySelector(".tile").animate([{ backgroundPosition: "-200% 0" }, { backgroundPosition: "200% 0" }], { duration: 1000, delay: 1500, easing: "ease-in-out" }); // きらっと光る
   }
   const bars = [...wipe.querySelectorAll("i:not(.b2)")], seal = wipe.querySelector("b");
   const inn = bars.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(0) skewX(-14deg)" }], { duration: 520, delay: k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }));
