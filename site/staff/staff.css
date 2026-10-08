@@ -796,3 +796,27 @@ h1, h2, h3 { font-weight: 400; }
 .st-table[open] { max-height: 300px; overflow: auto; }
 @media (prefers-reduced-motion: reduce) { .st-bar { transition: none; } }
 #view-stats .switch { margin-top: 14px; }
+
+/* ---------- お知らせの見た目（フォント・大きさ・色・アイコン・リンク・期間・場所） ---------- */
+.nt-tpl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.nt-tpl > span { font-size: .8rem; font-weight: 700; color: var(--sub); margin-right: 2px; }
+.nt-tpl .btn { padding: 5px 12px; font-size: .85rem; }
+.nt-set { display: grid; gap: 12px; margin: 0; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+.nt-set legend { padding: 0 6px; font-size: .8rem; font-weight: 700; color: var(--sub); }
+.nt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.nt-swatches, .nt-icons, .nt-wheres { display: flex; flex-wrap: wrap; gap: 6px; }
+.nt-sw, .nt-ic { position: relative; }
+.nt-sw input, .nt-ic input { position: absolute; opacity: 0; pointer-events: none; }
+.nt-sw span { display: block; min-width: 54px; padding: 6px 12px; border: 2px solid var(--line); border-radius: 999px; text-align: center; font-size: .85rem; font-weight: 700; cursor: pointer; background: var(--bg-2); color: var(--ink); }
+.nt-ic span { display: grid; place-items: center; min-width: 40px; height: 36px; padding: 0 8px; border: 2px solid var(--line); border-radius: 10px; font-size: 1.15rem; cursor: pointer; background: var(--bg-2); color: var(--ink); }
+.nt-ic input:first-of-type + span { font-size: .8rem; font-weight: 700; }
+.nt-sw input:checked + span, .nt-ic input:checked + span { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(94, 211, 195, .25); }
+.nt-sw input:focus-visible + span, .nt-ic input:focus-visible + span { outline: 2px solid var(--teal); outline-offset: 2px; }
+.nt-custom { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 6px; font-size: .85rem; }
+.nt-custom label { display: inline-flex; align-items: center; gap: 6px; }
+.nt-custom input[type="color"] { width: 38px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+.nt-wheres label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: .88rem; cursor: pointer; }
+/* 入力欄用の「幅いっぱい」の設定を、チェックボックス・色えらびには当てない（文字が縦に折れないように） */
+.field .nt-wheres input, .field .nt-custom input[type="checkbox"] { width: auto; padding: 0; flex: none; }
+.field .nt-custom input[type="color"] { width: 38px; height: 28px; padding: 0; }
+.nt-wheres label, .nt-custom label { white-space: nowrap; }

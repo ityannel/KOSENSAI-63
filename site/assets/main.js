@@ -11,6 +11,7 @@ import { initWeather, setWeatherOverride } from "./weather.js";
 import { upcomingTickets, ticketHtml } from "./tickets.js";
 import { drawThread, watchThread } from "./thread.js";
 import { wireDetails } from "./detail.js";
+import { noticeOf, paintNotice } from "./notice.js";
 import { tStart, tRange, watchSchedule } from "./schedule.js";
 import "./offline.js";
 
@@ -223,13 +224,26 @@ function renderLiveContent() {
     ? photos.map((p) => `<figure><img src="${esc(p.url)}" alt="${esc(p.caption ?? "")}" loading="lazy">${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>`).join("")
     : `<p class="empty">写真は当日随時アップします。</p>`;
 
-  // お知らせ：本部の管理画面から。notice_level が "urgent" なら赤い帯（緊急）
-  const bar = $("#notice-bar");
-  bar.hidden = !live?.notice;
-  bar.textContent = live?.notice ?? "";
-  bar.classList.toggle("is-urgent", live?.notice_level === "urgent");
-  bar.setAttribute("role", live?.notice_level === "urgent" ? "alert" : "status");
+  renderNotice();
 }
+// お知らせ：本部の管理画面から。見た目（フォント・大きさ・色・アイコン・リンク）と、出す期間・場所は notice.js が決める。緊急なら赤い帯
+let daily = null; // 日替わりのひとこと（daytoast.js）。本部のお知らせが無いときだけ、同じ帯に出す
+addEventListener("daily-notice", (e) => {
+  const mine = (daily = e.detail);
+  renderNotice();
+  setTimeout(() => { if (daily === mine) { daily = null; renderNotice(); } }, 9000);
+});
+$("#notice-bar").addEventListener("click", () => { if (daily) { daily = null; renderNotice(); } }); // 日替わりは、押しても消える
+function renderNotice() {
+  const bar = $("#notice-bar");
+  const n = noticeOf(live, "top", nowMs()) ?? daily;
+  if (n?.key === bar.dataset.ntKey) return;
+  bar.dataset.ntKey = n?.key ?? "";
+  bar.hidden = !n;
+  paintNotice(bar, n);
+  bar.setAttribute("role", n?.urgent ? "alert" : "status");
+}
+setInterval(renderNotice, 20000); // 「から」「まで」の時刻になったら、出す・消す
 
 // ---------- 電線の短冊（ナビ） ----------
 // 電柱の右、タイトルの文字の左の空いたところに吊るす。

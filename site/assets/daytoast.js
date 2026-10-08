@@ -38,12 +38,9 @@ let seen = null;
 try { seen = localStorage.getItem(KEY); } catch { /* 記録できないときは、毎回出る */ }
 if (m && (nowParam || seen !== today)) {
   try { localStorage.setItem(KEY, today); } catch { /* 保存できないブラウザ */ }
-  const el = document.createElement("button");
-  el.type = "button";
-  el.className = "day-toast";
-  el.innerHTML = `<b>${m[0]}</b><small>${m[1]}</small>`;
-  const close = () => { el.classList.remove("is-in"); setTimeout(() => el.remove(), 500); };
-  el.addEventListener("click", close);
-  setTimeout(() => { document.body.append(el); requestAnimationFrame(() => el.classList.add("is-in")); }, 1800); // 絵が出てから
-  setTimeout(close, 9000);
+  // お知らせの帯（notice.js の見た目）に統合：本部のお知らせが無いときだけ、main.js が、この日替わりを帯に出す（9秒で消える。帯を押しても消える）
+  const icon = m[0].includes("まで") || /あと/.test(m[0]) ? "🍂" : "🎪";
+  const n = { title: m[0], text: m[1], urgent: false, icon, font: "", size: "", bg: "", fg: "", link: null, daily: true };
+  n.key = JSON.stringify(n);
+  setTimeout(() => dispatchEvent(new CustomEvent("daily-notice", { detail: n })), 1800); // 絵が出てから
 }

@@ -4,6 +4,7 @@
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
 import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES, ELECTION, scheduleItems } from "../assets/config.js";
 import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
+import { noticeOf, paintNotice, FONTS as NT_FONTS, SIZES as NT_SIZES, COLORS as NT_COLORS, ICONS as NT_ICONS, WHERES as NT_WHERES, DEFAULT_WHERE as NT_DEFAULT_WHERE } from "../assets/notice.js";
 import { renderStats, wireStats, dayKey as statDay, WIN as STAT_WIN } from "./stats.js";
 
 const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
@@ -289,6 +290,68 @@ function toEmbedUrl(url) {
     return null;
   }
 }
+// ---------- お知らせの見た目（フォント・大きさ・色・アイコン・リンク・期間・場所。見た目の決まりは ../assets/notice.js） ----------
+const NT_TPL = {
+  info: { level: "info", style: { icon: "📢" } },
+  event: { level: "info", style: { icon: "🎉", bg: "#D9669B", fg: "#FFFFFF", font: "round" } },
+  rain: { level: "info", style: { icon: "☔", bg: "#2F6FB8", fg: "#FFFFFF" } },
+  caution: { level: "info", style: { icon: "⚠️", bg: "#FFD24A", fg: "#4A3B36", font: "bold" } },
+  urgent: { level: "urgent", style: { icon: "⚠️" } },
+};
+const NT_COLOR_KEYS = Object.keys(NT_COLORS);
+let ntBuilt = false;
+function buildNoticeForm() {
+  if (ntBuilt) return;
+  ntBuilt = true;
+  $("#nt-font").innerHTML = `<option value="">ふつう</option>${Object.entries(NT_FONTS).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join("")}`;
+  $("#nt-size").innerHTML = Object.entries(NT_SIZES).map(([k, [l]]) => `<label><input type="radio" name="nt-size" value="${k === "m" ? "" : k}"${k === "m" ? " checked" : ""}><span>${l}</span></label>`).join("");
+  $("#nt-colors").innerHTML = NT_COLOR_KEYS.map((k, i) => { const [l, bg, fg] = NT_COLORS[k]; return `<label class="nt-sw"><input type="radio" name="nt-color" value="${k}"${i === 0 ? " checked" : ""}><span style="${bg ? `background:${bg};color:${fg}` : ""}">${esc(l)}</span></label>`; }).join("");
+  $("#nt-icons").innerHTML = NT_ICONS.map((ic, i) => `<label class="nt-ic"><input type="radio" name="nt-icon" value="${esc(ic)}"${i === 0 ? " checked" : ""}><span>${ic ? esc(ic) : "なし"}</span></label>`).join("");
+  $("#nt-wheres").innerHTML = NT_WHERES.map(([k, l]) => `<label><input type="checkbox" name="nt-where" value="${k}"${NT_DEFAULT_WHERE.includes(k) ? " checked" : ""}> ${esc(l)}</label>`).join("");
+}
+// datetime-local（日本時間）⇄ ミリ秒
+const jstMs = (v) => (v ? Date.parse(`${v}:00+09:00`) : 0);
+const jstStr = (ms) => (ms ? new Date(ms + 9 * 3600000).toISOString().slice(0, 16) : "");
+// いまの入力から、保存する notice_style を作る（何も決めていなければ null）。https 以外のリンクは、受けつけない
+function readNoticeStyle() {
+  const st = {};
+  const font = $("#nt-font").value; if (font) st.font = font;
+  const size = $('[name="nt-size"]:checked')?.value; if (size) st.size = size;
+  if ($("#nt-custom").checked) { st.bg = $("#nt-bg").value.toUpperCase(); st.fg = $("#nt-fg").value.toUpperCase(); }
+  else { const c = NT_COLORS[$('[name="nt-color"]:checked')?.value]; if (c?.[1]) { st.bg = c[1]; st.fg = c[2]; } }
+  const icon = ($("#nt-icon-free").value.trim() || $('[name="nt-icon"]:checked')?.value || ""); if (icon) st.icon = [...icon].slice(0, 4).join("");
+  const url = $("#nt-link-url").value.trim();
+  if (url) { st.link_url = url; const lb = $("#nt-link-label").value.trim(); if (lb) st.link_label = lb; }
+  const from = jstMs($("#nt-from").value), until = jstMs($("#nt-until").value);
+  if (from) st.from = from; if (until) st.until = until;
+  const where = $$('[name="nt-where"]:checked').map((c) => c.value);
+  if (where.length && where.slice().sort().join() !== NT_DEFAULT_WHERE.slice().sort().join()) st.where = where;
+  return Object.keys(st).length ? st : null;
+}
+function fillNoticeStyle(st = {}) {
+  buildNoticeForm();
+  $("#nt-font").value = NT_FONTS[st.font] ? st.font : "";
+  const sz = $(`[name="nt-size"][value="${NT_SIZES[st.size] && st.size !== "m" ? st.size : ""}"]`); if (sz) sz.checked = true;
+  const key = NT_COLOR_KEYS.find((k) => NT_COLORS[k][1] && NT_COLORS[k][1].toUpperCase() === String(st.bg ?? "").toUpperCase() && NT_COLORS[k][2].toUpperCase() === String(st.fg ?? "").toUpperCase());
+  const custom = !!(st.bg || st.fg) && !key;
+  $("#nt-custom").checked = custom;
+  if (st.bg) $("#nt-bg").value = st.bg; if (st.fg) $("#nt-fg").value = st.fg;
+  const ck = $(`[name="nt-color"][value="${key ?? "default"}"]`); if (ck) ck.checked = true;
+  const known = NT_ICONS.includes(st.icon ?? "");
+  const ik = $$('[name="nt-icon"]').find((r) => r.value === (known ? st.icon ?? "" : "")); if (ik) ik.checked = true;
+  $("#nt-icon-free").value = !known && st.icon ? st.icon : "";
+  $("#nt-link-label").value = st.link_label ?? ""; $("#nt-link-url").value = st.link_url ?? "";
+  $("#nt-from").value = jstStr(st.from); $("#nt-until").value = jstStr(st.until);
+  const wh = Array.isArray(st.where) && st.where.length ? st.where : NT_DEFAULT_WHERE;
+  $$('[name="nt-where"]').forEach((c) => { c.checked = wh.includes(c.value); });
+}
+function applyTemplate(key) {
+  const t = NT_TPL[key]; if (!t) return;
+  $(`[name="notice-level"][value="${t.level}"]`).checked = true;
+  fillNoticeStyle(t.style);
+  previewNotice();
+}
+
 let broadcastFilled = false;
 function renderBroadcast() {
   const l = state.live;
@@ -303,6 +366,7 @@ function renderBroadcast() {
     broadcastFilled = true;
     $("#notice-text").value = l.notice ?? "";
     $(`[name="notice-level"][value="${l.notice_level === "urgent" ? "urgent" : "info"}"]`).checked = true;
+    fillNoticeStyle(l.notice_style ?? {});
     $("#stream-url").value = l.stream_url ?? "";
     $("#stream-title").value = l.stream_title ?? "";
     $("#stream-active").checked = !!l.stream_active;
@@ -312,11 +376,14 @@ function renderBroadcast() {
   }
 }
 function previewNotice() {
+  buildNoticeForm();
   const text = $("#notice-text").value.trim();
   const p = $("#notice-preview");
-  p.hidden = !text;
-  p.textContent = text;
-  p.classList.toggle("is-urgent", $('[name="notice-level"]:checked').value === "urgent");
+  const live = { notice: text, notice_level: $('[name="notice-level"]:checked').value, notice_style: readNoticeStyle() ?? undefined };
+  const n = noticeOf(live, "top"); // 場所・期間は、ここでは見ない（プレビューは、いつも出す）
+  const view = n ?? noticeOf({ ...live, notice_style: { ...(live.notice_style ?? {}), where: ["top"], from: 0, until: 0 } }, "top");
+  p.hidden = !view;
+  paintNotice(p, view);
 }
 let previewedStream = null;
 function previewStream() {
@@ -329,21 +396,34 @@ function previewStream() {
 }
 $("#notice-text").addEventListener("input", previewNotice);
 $$('[name="notice-level"]').forEach((r) => r.addEventListener("change", previewNotice));
+buildNoticeForm();
+$("#notice-form").addEventListener("input", previewNotice);
+$("#notice-form").addEventListener("change", previewNotice);
+$$("[data-tpl]").forEach((b) => b.addEventListener("click", () => applyTemplate(b.dataset.tpl)));
 $("#stream-url").addEventListener("input", previewStream);
 
 const saveLive = (label, fields) => write(label, () => fs.setDoc(fs.doc(db, "site_live", "current"), { ...fields, ...stamp() }, { merge: true }));
-$("#notice-form").addEventListener("submit", (e) => {
+$("#notice-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = $("#notice-text").value.trim();
   const level = $('[name="notice-level"]:checked').value;
   if (!text) return toast("文を入れてください", true);
   if (level === "urgent" && !confirm("緊急のお知らせとして、全員の画面に赤い帯で出します。よろしいですか？")) return;
-  saveLive(level === "urgent" ? "緊急のお知らせを出しました" : "お知らせを出しました", { notice: text, notice_level: level });
+  const url = $("#nt-link-url").value.trim();
+  if (url && !/^https:\/\/[^\s"'<>]+$/.test(url)) return toast("リンク先は https:// から始まる URL にしてください", true);
+  const from = jstMs($("#nt-from").value), until = jstMs($("#nt-until").value);
+  if (from && until && until <= from) return toast("「ここまで」は、「ここから」より後にしてください", true);
+  const st = readNoticeStyle();
+  const label = level === "urgent" ? "緊急のお知らせを出しました" : "お知らせを出しました";
+  const ok = await saveLive(label, { notice: text, notice_level: level, notice_style: st ?? fs.deleteField() });
+  // 見た目の保存だけが、ルールに通らないとき（ルールが古い）：文だけでも、出す
+  if (!ok && st) await saveLive("見た目は保存できませんでした。文だけ出しました", { notice: text, notice_level: level });
 });
 $("#notice-clear").addEventListener("click", () => {
   $("#notice-text").value = "";
   previewNotice();
-  saveLive("お知らせを消しました", { notice: "", notice_level: "info" });
+  fillNoticeStyle({});
+  saveLive("お知らせを消しました", { notice: "", notice_level: "info", notice_style: fs.deleteField() });
 });
 $("#stream-form").addEventListener("submit", (e) => {
   e.preventDefault();

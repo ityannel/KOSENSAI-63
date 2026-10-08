@@ -36,6 +36,21 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // お知らせの見た目（site_live/current の notice_style。site/assets/notice.js と同じ決まり）
+    function noticeStyleOk(s) {
+      return s is map
+        && s.keys().hasOnly(['font', 'size', 'bg', 'fg', 'icon', 'link_label', 'link_url', 'from', 'until', 'where'])
+        && s.get('font', '') in ['', 'gothic', 'bold', 'pop', 'round', 'mincho', 'hand']
+        && s.get('size', '') in ['', 's', 'm', 'l', 'xl']
+        && s.get('bg', '#000000') is string && s.get('bg', '#000000').matches('^#[0-9a-fA-F]{6}$')
+        && s.get('fg', '#000000') is string && s.get('fg', '#000000').matches('^#[0-9a-fA-F]{6}$')
+        && s.get('icon', '') is string && s.get('icon', '').size() <= 8
+        && s.get('link_label', '') is string && s.get('link_label', '').size() <= 30
+        && s.get('link_url', 'https://x') is string && s.get('link_url', 'https://x').size() <= 300 && s.get('link_url', 'https://x').matches('^https://[^ <>"]+$')
+        && s.get('from', 0) is number && s.get('until', 0) is number
+        && s.get('where', ['top']) is list && s.get('where', ['top']).size() <= 3 && s.get('where', ['top']).hasOnly(['top', 'map', 'signage']);
+    }
+
     // ---------- トップページ・地図が読むもの（書くのは本部だけ） ----------
     // お知らせ・緊急のお知らせ・生配信・今やっていること
     match /site_live/{id} {
@@ -43,7 +58,7 @@ service cloud.firestore {
       allow write: if isStaff() && stamped()
         && data().keys().hasOnly(['notice', 'notice_level', 'stream_url', 'stream_title', 'stream_active', 'now_events',
                                   'phase_override', 'presence_off', 'food_reports', 'photos', 'updated_at', 'updated_by',
-                                  'fireworks_at', 'sky_override', 'weather_override', 'wind_override', 'prize_out', 'cache_reset_at', 'photo_review'])
+                                  'fireworks_at', 'sky_override', 'weather_override', 'wind_override', 'prize_out', 'cache_reset_at', 'photo_review', 'notice_style'])
         // 演出（全員の画面）：花火を上げた時刻は、いま押したときだけ変えられる
         && (!('fireworks_at' in data()) || data().fireworks_at == request.time
             || (resource != null && data().fireworks_at == resource.data.get('fireworks_at', null)))
@@ -57,6 +72,8 @@ service cloud.firestore {
         // スタンプラリーの景品がなくなった（スタンプカードのページにおわびを出す）
         && (!('prize_out' in data()) || data().prize_out is bool)
         && (!('photo_review' in data()) || data().photo_review is bool)
+        // お知らせの見た目（フォント・大きさ・色・アイコン・リンク・期間・場所）。決まった値か、正しい形だけ
+        && (!('notice_style' in data()) || noticeStyleOk(data().notice_style))
         && (!('stream_url' in data()) || (data().stream_url is string && data().stream_url.size() <= 300));
     }
     match /crowd/{venue} {

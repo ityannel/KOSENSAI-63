@@ -7,6 +7,7 @@
 // - 模擬店：config.js の SHOPS。教室の部屋番号（HOMEROOMS）がわかるまでは「L棟1階の模擬店」のように階までを案内する
 // - 屋外：campus.js の SITE（正門・グラウンド・寮など。構内通行経路図から写したもの）
 // - URL：map.html#ID でその場所を開く。map.html?from=ID&to=ID で道案内を開く（共有ボタンが作る）
+import { paintNotice } from "./notice.js";
 import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION, DEPT_EXHIBITS } from "./config.js";
 import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES } from "./campus.js";
 import { avatar, VERIFIED } from "./avatar.js";
@@ -2643,6 +2644,7 @@ export async function initMap(opts) {
   });  $("#m-legend").addEventListener("click", (e) => { if (e.target === e.currentTarget || e.target.closest("[data-close]")) $("#m-legend").close(); });
   $("#m-notice").addEventListener("click", (e) => {
     if (e.target.closest("[data-close]")) { dismissNotice(); return; }
+    if (e.target.closest("a")) return; // お知らせの中のリンクは、そのまま開く
     $("#m-notice").classList.toggle("is-open"); // 長いお知らせは押すと全部出す
   });
   $("#m-tilt").addEventListener("click", () => animateCam(cam.bearing, cam.tilt > 0 ? 0 : TILT_ON));
@@ -2815,22 +2817,20 @@ export async function initMap(opts) {
 // 本部からのお知らせ（トップページと同じもの）
 // 地図をふさがないように1行で出し、押すと全部、× で閉じる（同じお知らせは閉じたまま）
 const NOTICE_KEY = "kosen63-notice-closed";
-let noticeText = null;
-// level が "urgent"（緊急）のときは赤くして、閉じたことがあっても出す
-export function setNotice(text, level = null) {
-  noticeText = text ?? null;
+let noticeKey = null;
+// n は notice.js の noticeOf(live, "map") の答え（出さないときは null）。緊急のときは、閉じたことがあっても出す
+export function setNotice(n) {
+  noticeKey = n?.key ?? null;
   let closed = null;
   try { closed = sessionStorage.getItem(NOTICE_KEY); } catch { /* 保存できないブラウザ */ }
-  const n = $("#m-notice");
-  const urgent = level === "urgent";
-  n.classList.toggle("is-urgent", urgent);
-  n.setAttribute("role", urgent ? "alert" : "status");
-  n.hidden = !text || (!urgent && closed === text);
-  n.querySelector("span").textContent = text ?? "";
-  document.body.classList.toggle("has-notice", !n.hidden);
+  const el = $("#m-notice");
+  paintNotice(el, n, el.querySelector("span"));
+  el.setAttribute("role", n?.urgent ? "alert" : "status");
+  el.hidden = !n || (!n.urgent && closed === n.key);
+  document.body.classList.toggle("has-notice", !el.hidden);
 }
 function dismissNotice() {
-  try { sessionStorage.setItem(NOTICE_KEY, noticeText ?? ""); } catch { /* 保存できないブラウザ */ }
+  try { sessionStorage.setItem(NOTICE_KEY, noticeKey ?? ""); } catch { /* 保存できないブラウザ */ }
   $("#m-notice").hidden = true;
   document.body.classList.remove("has-notice");
 }

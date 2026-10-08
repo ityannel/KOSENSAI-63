@@ -1,5 +1,6 @@
 // 校内のディスプレイ（signage.html）：Enistagram の最新・人気の投稿、混雑、ピックアップ模擬店、ステージの「いま・次」、道案内、シェアの QR を、
 // 色の帯の「つなぎ」をはさんで、ずっと流す。データは本サイトと同じ Firestore（読むだけ）。使い方は signage.html の先頭に書いてある
+import { noticeOf, paintNotice } from "./notice.js";
 import { FESTIVAL, STAGE, EVENTS, SPONSORS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
@@ -57,7 +58,21 @@ subscribePosts((list) => {
 });
 subscribeCrowd((d) => { crowd = d ?? {}; });
 subscribeShops((l) => { shopDocs = l ?? []; });
-subscribeLive(() => {}); // 「全員のキャッシュ削除」を受けとる（live.js の中で、読みこみなおす）
+// 本部のお知らせ（「全員のキャッシュ削除」を受けとるのも、この購読）。画面の上に、帯で出す。見た目・期間・場所は notice.js
+let liveNow = null;
+const sgNotice = document.createElement("div");
+sgNotice.id = "sg-notice"; sgNotice.hidden = true;
+sgNotice.innerHTML = '<div class="sgn-in"></div>';
+document.getElementById("stage").append(sgNotice);
+function paintSgNotice() {
+  const n = noticeOf(liveNow, "signage", now());
+  if ((n?.key ?? "") === (sgNotice.dataset.ntKey ?? "")) return;
+  sgNotice.dataset.ntKey = n?.key ?? "";
+  sgNotice.hidden = !n;
+  paintNotice(sgNotice, n, sgNotice.firstElementChild);
+}
+subscribeLive((d) => { liveNow = d; paintSgNotice(); });
+setInterval(paintSgNotice, 15000);
 
 const norm = (t) => String(t ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase();
 const flat = (t) => String(t ?? "").replace(/\n/g, " ");

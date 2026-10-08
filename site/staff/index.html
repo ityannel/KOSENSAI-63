@@ -97,13 +97,60 @@
           <article class="card">
             <header class="card-head"><h2>お知らせ</h2><span class="pill" id="notice-state"></span></header>
             <form id="notice-form" class="stack">
+              <div class="nt-tpl" role="group" aria-label="よく使う型">
+                <span>型から選ぶ：</span>
+                <button type="button" class="btn btn-ghost" data-tpl="info">お知らせ</button>
+                <button type="button" class="btn btn-ghost" data-tpl="event">イベント</button>
+                <button type="button" class="btn btn-ghost" data-tpl="rain">天気</button>
+                <button type="button" class="btn btn-ghost" data-tpl="caution">注意</button>
+                <button type="button" class="btn btn-ghost" data-tpl="urgent">緊急</button>
+              </div>
               <div class="seg" role="radiogroup" aria-label="お知らせの種類">
                 <label><input type="radio" name="notice-level" value="info" checked><span>ふつう</span></label>
                 <label class="seg-danger"><input type="radio" name="notice-level" value="urgent"><span>緊急</span></label>
               </div>
-              <label class="field"><span>文</span>
+              <label class="field"><span>文（https:// で始まるものは、自動でリンクになります）</span>
                 <textarea id="notice-text" rows="3" maxlength="200" placeholder="例：14:00から体育館で抽選会の整理券を配ります"></textarea></label>
-              <div class="preview-bar" id="notice-preview" hidden></div>
+
+              <fieldset class="nt-set">
+                <legend>見た目</legend>
+                <div class="nt-grid">
+                  <label class="field"><span>フォント</span><select id="nt-font"></select></label>
+                  <div class="field"><span>文字の大きさ</span>
+                    <div class="seg" role="radiogroup" aria-label="文字の大きさ" id="nt-size"></div></div>
+                </div>
+                <div class="field"><span>色</span>
+                  <div class="nt-swatches" id="nt-colors" role="radiogroup" aria-label="色"></div>
+                  <div class="nt-custom">
+                    <label><input type="checkbox" id="nt-custom"> 色を自分で決める</label>
+                    <label>背景 <input type="color" id="nt-bg" value="#2f6fb8"></label>
+                    <label>文字 <input type="color" id="nt-fg" value="#ffffff"></label>
+                  </div></div>
+                <div class="field"><span>アイコン（文の前に出る印）</span>
+                  <div class="nt-icons" id="nt-icons" role="radiogroup" aria-label="アイコン"></div>
+                  <input id="nt-icon-free" type="text" maxlength="4" placeholder="ほかの絵文字を入れる（1つ）" autocomplete="off"></div>
+              </fieldset>
+
+              <fieldset class="nt-set">
+                <legend>リンク</legend>
+                <div class="nt-grid">
+                  <label class="field"><span>ボタンの言葉</span><input id="nt-link-label" type="text" maxlength="30" placeholder="詳しくはこちら" autocomplete="off"></label>
+                  <label class="field"><span>リンク先（https:// から）</span><input id="nt-link-url" type="url" maxlength="300" placeholder="https://" autocomplete="off"></label>
+                </div>
+              </fieldset>
+
+              <fieldset class="nt-set">
+                <legend>出す期間と場所</legend>
+                <div class="nt-grid">
+                  <label class="field"><span>ここから（空なら、すぐ）</span><input id="nt-from" type="datetime-local"></label>
+                  <label class="field"><span>ここまで（空なら、消すまで）</span><input id="nt-until" type="datetime-local"></label>
+                </div>
+                <div class="field"><span>出す場所</span>
+                  <div class="nt-wheres" id="nt-wheres"></div></div>
+              </fieldset>
+
+              <div class="field"><span>プレビュー（いま入れたとおりに、出ます）</span>
+                <div class="preview-bar" id="notice-preview" hidden></div></div>
               <div class="row">
                 <button class="btn btn-primary" type="submit">出す</button>
                 <button class="btn btn-ghost" type="button" id="notice-clear">消す</button>

@@ -557,3 +557,11 @@ body.is-fw #bgclock { opacity: 0; transition: opacity .6s; } /* 花火のあい�
 body.portrait .fwt { font-size: 300px; }
 body.is-fw #bg { background: linear-gradient(180deg, #060a22 0%, #1d1448 60%, #3a1d5c 100%); animation: none; }
 body.is-fw .grain { opacity: .25; }
+/* 本部のお知らせ（舞台の上に、帯で）。色・字・大きさは notice.js が当てる */
+#sg-notice { position: absolute; z-index: 40; left: 0; right: 0; top: 0; padding: 22px 80px; text-align: center; background: #9C3B2E; color: #fff; font: 700 54px/1.35 var(--txt); box-shadow: 0 8px 28px rgba(0, 0, 0, .35); animation: sgn-in .5s cubic-bezier(.2, .8, .2, 1) both; }
+#sg-notice[hidden] { display: none; }
+#sg-notice.is-urgent { background: #C8102E; }
+#sg-notice.is-urgent::before { content: "緊急"; display: inline-block; margin-right: .6em; padding: 0 .55em; border-radius: 8px; background: #fff; color: #C8102E; font-size: .8em; letter-spacing: .08em; animation: notice-blink 1.6s ease-in-out infinite; }
+#sg-notice .nt-link { pointer-events: none; }
+@keyframes sgn-in { from { translate: 0 -100%; } }
+@keyframes notice-blink { 50% { opacity: .35; } }
