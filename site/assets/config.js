@@ -200,7 +200,7 @@ export const STAGE = {
   acts: [
     act("24", "12:40", "13:10", "Endless bond", "", "", "", "assets/img/stage/endless-bond.webp"),
     act("24", "13:20", "13:45", "cresc.", "", "", ""),
-    act("24", "13:55", "14:25", "MOSAiC", "", "", "", "assets/img/stage/mosaic.webp"),
+    act("24", "13:55", "14:25", "MOSAiC", "バンド", "気合い十分ヤル気十分", "ASIAN KUNG-FU GENERATIONコピー", "assets/img/stage/mosaic.webp"),
     act("24", "14:35", "14:55", "+10せんち！", "", "", "", "assets/img/stage/plus10.webp"),
     act("24", "15:15", "15:30", "Neo abyss", "", "", "", "assets/img/stage/neo-abyss.webp"),
     act("24", "15:35", "15:50", "LunaTi☪︎³", "ダンス", "盛り上がれる曲たくさんなので見に来てね〜‼︎💕", "💗せっとりすと💗\nツインテールは20歳まで♡\nくりてぃかる♡ぷりちー \nころころガール\nキスハグ侵略者！\nらぶきゅん♡うぉんてっど\nアイドルライフエクストラパック", "assets/img/stage/luna-ti.webp", ["assets/img/stage/luna-ti-poster.webp"], "luna.tic_idol"),
