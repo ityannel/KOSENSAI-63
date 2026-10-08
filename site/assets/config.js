@@ -198,7 +198,7 @@ export const STAGE = {
   // 出演団体と時間：「R8高専祭 実施要項 ver5」と「ステージパフォーマンス タイムスタンプ Ver.2.0（9/18現在）」の本番の時間。
   // 種類・ひとこと・説明は、団体から届いたら入れる（空のままでも、名前と時間だけで表示できる）
   acts: [
-    act("24", "12:40", "13:10", "Endless bond", "", "", "", "assets/img/stage/endless-bond.webp"),
+    act("24", "12:40", "13:10", "Endless bond", "バンド", "高専祭初ライブなのでぜひ見に来てほしいです！！！", "セットリスト\n本能\nおやすみ泣き声、さよなら歌姫\n丸の内サディスティック\n雪月花\n憂、燦々", "assets/img/stage/endless-bond.webp"),
     act("24", "13:20", "13:45", "cresc.", "", "", ""),
     act("24", "13:55", "14:25", "MOSAiC", "バンド", "気合い十分ヤル気十分", "ASIAN KUNG-FU GENERATIONコピー", "assets/img/stage/mosaic.webp"),
     act("24", "14:35", "14:55", "+10せんち！", "", "", "", "assets/img/stage/plus10.webp"),
