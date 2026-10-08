@@ -553,7 +553,7 @@ async function cover() {
   const inn = bars.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(0) skewX(-14deg)" }], { duration: 520, delay: k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }));
   seal.animate([{ opacity: 0, transform: "scale(2.2) rotate(-14deg)" }, { opacity: 1, transform: "scale(1) rotate(-6deg)", offset: .55 }, { opacity: 1, transform: "scale(1) rotate(-6deg)" }], { duration: 900, delay: 330, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
   // ロゴが出るときは、押されたあと、左へふわっと動く（縦の画面は、上へ）。少し小さくなって、ロゴに場所をゆずる
-  if (sp) seal.animate([{ transform: "translate(0, 0) scale(1) rotate(-6deg)" }, { transform: portrait ? "translate(0, -300px) scale(.8) rotate(-4deg)" : "translate(-380px, 0) scale(1) rotate(-4deg)" }], { duration: 1000, delay: 1250, easing: "cubic-bezier(.45,0,.2,1)", fill: "forwards" });
+  if (sp) seal.animate([{ transform: "translate(0, 0) scale(1) rotate(-6deg)" }, { transform: portrait ? "translate(0, -300px) scale(.8) rotate(-4deg)" : "translate(-470px, 0) scale(1) rotate(-4deg)" }], { duration: 1000, delay: 1250, easing: "cubic-bezier(.45,0,.2,1)", fill: "forwards" });
   // 紙吹雪：はんこが押されるときに、いろいろな色が四方へ散る
   const COL = ["#d9669b", "#2f8fe0", "#a061c9", "#ffd24a", "#3BF53D", "#FEEBC4", "#ff6b5e"];
   wipe.querySelectorAll("s").forEach((d, k, all) => {
