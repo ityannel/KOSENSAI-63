@@ -343,9 +343,11 @@ function fillNoticeStyle(st = {}) {
   const wh = Array.isArray(st.where) && st.where.length ? st.where : NT_DEFAULT_WHERE;
   $$('[name="nt-where"]').forEach((c) => { c.checked = wh.includes(c.value); });
 }
+// 種類：緊急だけ、緊急（赤い帯・点滅の印・確認つき）。ほかは、ふつう。選ぶと、その種類の見た目が入る
+const ntLevel = () => ($('[name="nt-type"]:checked')?.value === "urgent" ? "urgent" : "info");
 function applyTemplate(key) {
   const t = NT_TPL[key]; if (!t) return;
-  $(`[name="notice-level"][value="${t.level}"]`).checked = true;
+  const r = $(`[name="nt-type"][value="${key}"]`); if (r) r.checked = true;
   fillNoticeStyle(t.style);
   previewNotice();
 }
@@ -363,7 +365,8 @@ function renderBroadcast() {
   if (!broadcastFilled) {
     broadcastFilled = true;
     $("#notice-text").value = l.notice ?? "";
-    $(`[name="notice-level"][value="${l.notice_level === "urgent" ? "urgent" : "info"}"]`).checked = true;
+    buildNoticeForm();
+    $(`[name="nt-type"][value="${l.notice_level === "urgent" ? "urgent" : "info"}"]`).checked = true;
     fillNoticeStyle(l.notice_style ?? {});
     $("#stream-url").value = l.stream_url ?? "";
     $("#stream-title").value = l.stream_title ?? "";
@@ -377,7 +380,7 @@ function previewNotice() {
   buildNoticeForm();
   const text = $("#notice-text").value.trim();
   const p = $("#notice-preview");
-  const live = { notice: text, notice_level: $('[name="notice-level"]:checked').value, notice_style: readNoticeStyle() ?? undefined };
+  const live = { notice: text, notice_level: ntLevel(), notice_style: readNoticeStyle() ?? undefined };
   const n = noticeOf(live, "top"); // 場所・期間は、ここでは見ない（プレビューは、いつも出す）
   const view = n ?? noticeOf({ ...live, notice_style: { ...(live.notice_style ?? {}), where: ["top"], from: 0, until: 0 } }, "top");
   p.hidden = !view;
@@ -393,18 +396,17 @@ function previewStream() {
   box.innerHTML = url ? `<iframe src="${esc(url)}" title="配信のプレビュー" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>` : "";
 }
 $("#notice-text").addEventListener("input", previewNotice);
-$$('[name="notice-level"]').forEach((r) => r.addEventListener("change", previewNotice));
 buildNoticeForm();
 $("#notice-form").addEventListener("input", previewNotice);
 $("#notice-form").addEventListener("change", previewNotice);
-$$("[data-tpl]").forEach((b) => b.addEventListener("click", () => applyTemplate(b.dataset.tpl)));
+$$('[name="nt-type"]').forEach((r) => r.addEventListener("change", () => applyTemplate(r.value)));
 $("#stream-url").addEventListener("input", previewStream);
 
 const saveLive = (label, fields) => write(label, () => fs.setDoc(fs.doc(db, "site_live", "current"), { ...fields, ...stamp() }, { merge: true }));
 $("#notice-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = $("#notice-text").value.trim();
-  const level = $('[name="notice-level"]:checked').value;
+  const level = ntLevel();
   if (!text) return toast("文を入れてください", true);
   if (level === "urgent" && !confirm("緊急のお知らせとして、全員の画面に赤い帯で出します。よろしいですか？")) return;
   const url = $("#nt-link-url").value.trim();
@@ -421,6 +423,7 @@ $("#notice-clear").addEventListener("click", () => {
   $("#notice-text").value = "";
   previewNotice();
   fillNoticeStyle({});
+  const r0 = $('[name="nt-type"][value="info"]'); if (r0) r0.checked = true;
   saveLive("お知らせを消しました", { notice: "", notice_level: "info", notice_style: fs.deleteField() });
 });
 $("#stream-form").addEventListener("submit", (e) => {

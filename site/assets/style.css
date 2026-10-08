@@ -583,7 +583,7 @@ body.mido-page { background: linear-gradient(rgba(20, 12, 18, 0.45), rgba(20, 12
   position: relative; margin-top: -1px; color: #634A2E; scroll-margin-top: 8px;
   background: var(--grain), linear-gradient(#da9d2f, #efd9a6 calc(60 * var(--u)), #f3e6c6);
 }
-.ennichi-in { padding: calc(34 * var(--u)) 0 calc(40 * var(--u)); }
+.ennichi-in { padding: calc(34 * var(--u)) 0 calc(16 * var(--u)); } /* 下の「ほかの模擬店」のボタンを消したので、下の余白を詰める */
 .ennichi-title { display: flex; align-items: baseline; gap: calc(10 * var(--u)); margin: 0 calc(26 * var(--u)) calc(14 * var(--u)) calc(27 * var(--u)); font-family: var(--hud-font); font-size: calc(32 * var(--u)); font-weight: 400; line-height: 1; }
 .ennichi-title small { font-family: var(--text-font); font-weight: 700; font-size: calc(13 * var(--u)); }
 .ennichi-chips { display: flex; gap: calc(6 * var(--u)); padding: 2px calc(26 * var(--u)); overflow-x: auto; scrollbar-width: none; }
@@ -595,7 +595,7 @@ body.mido-page { background: linear-gradient(rgba(20, 12, 18, 0.45), rgba(20, 12
 .ennichi-chips button[aria-pressed="true"] { background: #634A2E; color: #FEEBC4; }
 /* チラシの列：横にすべらせる。傾きと影がはみ出してもいいように、上下に余白 */
 .ennichi-list {
-  display: flex; gap: calc(16 * var(--u)); margin: 0; padding: calc(26 * var(--u)) calc(26 * var(--u)) calc(22 * var(--u));
+  display: flex; gap: calc(16 * var(--u)); margin: 0; padding: calc(26 * var(--u)) calc(26 * var(--u)) calc(14 * var(--u));
   list-style: none; overflow-x: auto; scrollbar-width: none; /* 自動で流すので、ぴたっと止まる（scroll-snap）はつけない */
 }
 .ennichi-list::-webkit-scrollbar { display: none; }
