@@ -202,7 +202,7 @@ export const STAGE = {
     act("24", "13:20", "13:45", "cresc.", "", "", ""),
     act("24", "13:55", "14:25", "MOSAiC", "バンド", "気合い十分ヤル気十分", "ASIAN KUNG-FU GENERATIONコピー", "assets/img/stage/mosaic.webp"),
     act("24", "14:35", "14:55", "+10せんち！", "", "", "", "assets/img/stage/plus10.webp"),
-    act("24", "15:15", "15:30", "Neo abyss", "", "", "", "assets/img/stage/neo-abyss.webp"),
+    act("24", "15:15", "15:30", "Neo abyss", "ダンス", "とりあえずダンスします！！", "皆さんこんにちは！3人組ダンスチームのNeoAbyssと申します！一昨年、昨年に引き続き今年も高専祭の舞台でダンスパフォーマンスをさせていただきます！皆さんが聞いたがあるかもしれない曲に合わせてパフォーマンスします！気になった人は是非足を運んでくださるととても嬉しいです！会場で待ってます！", "assets/img/stage/neo-abyss.webp", [], "neo__abyss"),
     act("24", "15:35", "15:50", "LunaTi☪︎³", "ダンス", "盛り上がれる曲たくさんなので見に来てね〜‼︎💕", "💗せっとりすと💗\nツインテールは20歳まで♡\nくりてぃかる♡ぷりちー \nころころガール\nキスハグ侵略者！\nらぶきゅん♡うぉんてっど\nアイドルライフエクストラパック", "assets/img/stage/luna-ti.webp", ["assets/img/stage/luna-ti-poster.webp"], "luna.tic_idol"),
     act("25", "10:40", "11:10", "イイカンジ", "", "", "", "assets/img/stage/iikanji.webp"),
     act("25", "11:20", "11:50", "Criminals", "", "", ""),
