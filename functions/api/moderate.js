@@ -1,4 +1,4 @@
-import { json, preflight, originOk, rateLimit, gemini } from "../_lib/common.js";
+import { json, preflight, originOk, rateLimit, gemini, MODELS } from "../_lib/common.js";
 
 export const onRequestOptions = preflight;
 
@@ -66,8 +66,8 @@ export async function onRequestPost({ request, env }) {
     const out = await gemini(env, {
       systemInstruction: { parts: [{ text: RUBRIC }] },
       contents: [{ role: "user", parts }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 300, responseMimeType: "application/json", responseSchema: SCHEMA },
-    }, env.GEMINI_MODERATION_MODEL ?? env.GEMINI_MODEL ?? "gemini-2.5-flash");
+      generationConfig: { temperature: 0.1, maxOutputTokens: 1500, responseMimeType: "application/json", responseSchema: SCHEMA },
+    }, env.GEMINI_MODERATION_MODEL ?? MODELS.moderate, "low");
     const r = JSON.parse(out);
     return json(request, 200, {
       verdict: r.verdict === "ok" ? "ok" : "review",

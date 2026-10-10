@@ -33,16 +33,24 @@ export async function rateLimit(request, name, limit, windowSec) {
   return true;
 }
 
-export async function gemini(env, body, model) {
-  const name = model ?? env.GEMINI_MODEL ?? "gemini-2.5-flash-lite";
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${name}:generateContent`, {
+export const MODELS = { ask: "gemini-3.5-flash-lite", moderate: "gemini-3.8-flash" };
+
+async function call(env, name, body) {
+  return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${name}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify(body),
   });
+}
+
+export async function gemini(env, body, model, thinking) {
+  const name = model ?? env.GEMINI_MODEL ?? MODELS.ask;
+  const withThinking = thinking ? { ...body, generationConfig: { ...body.generationConfig, thinkingConfig: { thinkingLevel: thinking } } } : body;
+  let res = await call(env, name, withThinking);
+  if (res.status === 400 && thinking) res = await call(env, name, body);
   if (!res.ok) throw new Error(`gemini ${res.status}`);
   const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+  const text = (data?.candidates?.[0]?.content?.parts ?? []).filter((p) => !p.thought).map((p) => p.text ?? "").join("");
   if (!text) throw new Error("gemini empty");
   return text;
 }

@@ -1,4 +1,4 @@
-import { json, preflight, originOk, rateLimit, gemini } from "../_lib/common.js";
+import { json, preflight, originOk, rateLimit, gemini, MODELS } from "../_lib/common.js";
 
 export const onRequestOptions = preflight;
 
@@ -40,8 +40,8 @@ export async function onRequestPost({ request, env }) {
     const text = await gemini(env, {
       systemInstruction: { parts: [{ text: `${PERSONA}\n\nCONTEXT（学校祭の情報）:\n${context}\n\nLIVE（いまの時刻と最新の予定）:\n${live}` }] },
       contents: turns.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
-      generationConfig: { temperature: 0.6, maxOutputTokens: 500 },
-    });
+      generationConfig: { temperature: 0.6, maxOutputTokens: 1200 },
+    }, env.GEMINI_MODEL ?? MODELS.ask, "minimal");
     return json(request, 200, { text: clip(text, 1500) });
   } catch {
     return json(request, 502, { error: "upstream" });

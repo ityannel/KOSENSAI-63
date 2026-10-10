@@ -186,7 +186,7 @@ act("24", "12:40", "13:10", "Endless bond", "バンド", "一言", "紹介文", 
    npx wrangler@3 pages secret put GEMINI_API_KEY --project-name hakodate-kosensai
    ```
 
-3. 必要なら、モデルを変える（`GEMINI_MODEL`：質問用、`GEMINI_MODERATION_MODEL`：投稿の確認用）。入れなければ、`gemini-2.5-flash-lite` と `gemini-2.5-flash`。
+3. 必要なら、モデルを変える（`GEMINI_MODEL`：質問用、`GEMINI_MODERATION_MODEL`：投稿の確認用）。入れなければ、質問は `gemini-3.5-flash-lite`、投稿の確認は `gemini-3.8-flash`（2026-10-11 に、Google のモデル一覧で調べた最新）。モデルは、古いものから順に止まるので、`functions/_lib/common.js` の `MODELS` を、ときどき見直す。
 4. `bash tools/deploy-cloudflare.sh` で出す。
 
 ### 7-2. 運用
