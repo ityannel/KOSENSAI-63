@@ -2502,8 +2502,7 @@ function renderResults() {
       ${picking ? `<button type="button" class="m-mappick" data-mappick>${I.map}地図で選ぶ</button>` : ""}
       ${picking === "from" && hp ? `<h3>いまここ</h3><ul class="m-list">${itemHtml({ p: hp, kind: "spot" })}</ul>` : ""}
       ${picking === "from" ? `<h3>入口・目印</h3><ul class="m-list">${MAP.spots.map((sp) => itemHtml({ p: place(sp.id), kind: "spot" })).join("")}</ul>` : ""}
-      <h3>お祭りの会場</h3><ul class="m-list">${fest.map((p) => itemHtml({ p })).join("")}</ul>
-      <p class="m-empty">部屋番号（例：L107）や「講義室」「トイレ」でもさがせます</p>`;
+      <h3>お祭りの会場</h3><ul class="m-list">${fest.map((p) => itemHtml({ p })).join("")}</ul>`;
     return;
   }
   const hits = search(q);
