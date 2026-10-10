@@ -1,4 +1,4 @@
-const VERSION = "kosen63-v365";
+const VERSION = "kosen63-v366";
 const CORE = [
   "./", "index.html", "map.html", "mido.html", "rally.html", "vote.html", "terms.html", "favicon.svg", "manifest.webmanifest",
   "assets/style.css", "assets/map.css", "assets/intro.js", "assets/map-wide.js", "assets/test-loader.js",
