@@ -136,6 +136,11 @@ await t("counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "visit
 await t("counter cannot jump", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-3"), { n: 50 }, { merge: true })));
 await t("counter cannot start above 1", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-4"), { n: 9 })));
 await t("counter id must be a date and shard", assertFails(setDoc(doc(nobody, "visit_counts/evil"), { n: 1 })));
+await t("secret counter starts at 1", assertSucceeds(setDoc(doc(nobody, "secret_counts/all-2"), { n: 1 })));
+await t("secret counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "secret_counts/all-2"), { n: increment(1) }, { merge: true })));
+await t("secret counter cannot jump", assertFails(setDoc(doc(nobody, "secret_counts/all-2"), { n: 50 }, { merge: true })));
+await t("secret counter id must be a known spot and shard", assertFails(setDoc(doc(nobody, "secret_counts/evil-1"), { n: 1 })));
+await t("secret counter cannot be read by the public", assertFails(getDoc(doc(nobody, "secret_counts/all-2"))));
 await t("counter doc has only n", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-5"), { n: 1, x: 1 })));
 await t("visitors cannot read counters", assertFails(getDoc(doc(anon, "visit_counts/2026-10-24-3"))));
 await t("staff reads counters", assertSucceeds(getDoc(doc(staff, "visit_counts/2026-10-24-3"))));

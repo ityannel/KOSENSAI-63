@@ -219,6 +219,22 @@ export async function subscribeChatter(callback) {
   }
 }
 
+export async function countSecret(key) {
+  if (params.has("demo") || params.has("preview") || ["localhost", "127.0.0.1"].includes(location.hostname)) return;
+  const KEY = "kosen63-secret-counted";
+  let done = [];
+  try { done = JSON.parse(localStorage.getItem(KEY) ?? "[]"); } catch { return; }
+  if (done.includes(key)) return;
+  try {
+    const db = await getDb();
+    await fs.setDoc(fs.doc(db, "secret_counts", `${key}-${Math.floor(Math.random() * 5)}`), { n: fs.increment(1) }, { merge: true });
+    done.push(key);
+    localStorage.setItem(KEY, JSON.stringify(done));
+  } catch (err) {
+    console.warn("[secret] 数えられませんでした:", err?.code ?? err);
+  }
+}
+
 export function countVisit({ isOff = () => false } = {}) {
   if (params.has("demo") || params.has("preview") || ["localhost", "127.0.0.1"].includes(location.hostname)) return;
   const KEY = "kosen63-beat", DAY_KEY = "kosen63-visit", WIN = 5 * 60000;

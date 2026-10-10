@@ -112,6 +112,7 @@ function findSecret(id) {
   found.push(id);
   try { localStorage.setItem(SECRET_KEY, JSON.stringify(found)); } catch {}
   el.classList.add("found");
+  import("./live.js").then((m) => { m.countSecret(id); if (found.length >= secretNeed(found)) m.countSecret("all"); }).catch(() => {});
   const toast = $("#secret-toast");
   const need = secretNeed(found);
   const done = found.length >= need;

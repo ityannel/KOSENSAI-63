@@ -155,6 +155,11 @@ function startListening() {
     snap.forEach((d) => { const day = d.id.slice(0, 10); state.visits[day] = (state.visits[day] ?? 0) + (d.data().n ?? 0); });
     renderOverview(); drawStats();
   });
+  listen(fs.collection(db, "secret_counts"), (snap) => {
+    state.secret = {};
+    snap.forEach((d) => { const k = d.id.replace(/-\d$/, ""); state.secret[k] = (state.secret[k] ?? 0) + (d.data().n ?? 0); });
+    renderOverview();
+  });
   listen(fs.collection(db, "visit_devices"), (snap) => {
     state.devices = {};
     snap.forEach((d) => { const [y, m, dd, dev] = d.id.split("-"); const day = `${y}-${m}-${dd}`; (state.devices[day] ??= { phone: 0, tablet: 0, pc: 0 })[dev] += d.data().n ?? 0; });
@@ -230,10 +235,14 @@ function renderOverview() {
   const deviceShare = devAll ? `${devPct(dev.phone)}% / ${devPct(dev.pc)}%` : "—";
   const deviceSub = `スマホ ${dev.phone}・PC ${dev.pc}・タブレット ${dev.tablet}（計 ${devAll} 台）`;
   const kpi = (label, value, sub, color, href) => `<a class="kpi" href="${href}" style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
+  const SECRET_NAMES = { window: "窓の猫", cover: "黄色いカバー", dhouse: "Dの家", antenna: "アンテナ", sun: "夕焼け" };
+  const sc = state.secret ?? {};
+  const secretSub = Object.entries(SECRET_NAMES).map(([k, n]) => `${n} ${sc[k] ?? 0}`).join("・");
   $("#kpis").innerHTML = [
     kpi("きょうの閲覧者", visitsToday, "台（1日1回まで）", "var(--teal)", "#overview"),
     kpi("これまでの閲覧者", visitsAll, "のべ", "var(--sun)", "#overview"),
     kpi("スマホ／PC の割合", deviceShare, deviceSub, "var(--teal)", "#overview"),
+    kpi("隠し縁 ぜんぶ見つけた人", sc.all ?? 0, secretSub, "var(--rose)", "#overview"),
     kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts"),
     kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts"),
     kpi("入場制限中の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),
