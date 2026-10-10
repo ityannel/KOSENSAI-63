@@ -49,7 +49,7 @@ export function ticketHtml(e, i, t) {
   const line = e.stageAct ? e.mood : e.copy; // 出演団体のチケットは一言。詳しい紹介文は、押したときの詳しいシートで出す
   return `
     <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.photo ? " has-photo" : ""}${e.more?.length ? " is-stack" : ""}" href="map.html#${esc(e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
-      <div class="tk-shape"><div class="tk-body"><i class="tk-hole" aria-hidden="true"></i>
+      <div class="tk-shape"><div class="tk-body">${on ? `<span class="tk-eq" aria-hidden="true">${Array.from({ length: 22 }, (_, k) => `<i style="--k:${k};--h:${30 + ((k * 37) % 55)}%"></i>`).join("")}</span>` : ""}<i class="tk-hole" aria-hidden="true"></i>
         <p class="tk-stub is-${wd.toLowerCase()}"><span class="tk-wd">${wd}</span><b class="tk-day">${dayOf(e)}</b><span class="tk-time">${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}</b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}`}</span></p>
         <div class="tk-main">
           ${tags.length ? `<p class="tk-tags">${tags.map((x) => `<span>${esc(x)}</span>`).join("")}</p>` : ""}

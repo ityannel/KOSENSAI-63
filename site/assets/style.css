@@ -2236,3 +2236,12 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .en-tags span::before { display: none; }
 .en-paper .en-tags { gap: calc(5 * var(--u)); margin-left: 0; }
 .en-tags span { gap: 0; font-size: calc(10.5 * var(--u)); color: color-mix(in srgb, var(--gc, var(--g)) 62%, #3A2A18); }
+/* いまやっているチケットは、サイネージの「NOW ON STAGE」と同じ動き：黄色い下地、点滅する赤い NOW、下からゆれるバー */
+.tk.is-now .tk-body { background: var(--grain), linear-gradient(135deg, #FFE98A 0%, #FFC93C 48%, #FF9A4D 100%); }
+.tk.is-now .tk-main, .tk.is-now .tk-stub { position: relative; z-index: 1; }
+.tk-eq { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 calc(8 * var(--u)); opacity: .22; pointer-events: none; overflow: hidden; }
+.tk-eq i { flex: 1; margin: 0 calc(1.5 * var(--u)); height: 12%; border-radius: calc(4 * var(--u)) calc(4 * var(--u)) 0 0; background: #C0392B; animation: tk-eqf 1.15s ease-in-out infinite; animation-delay: calc(var(--k) * -.17s); }
+@keyframes tk-eqf { 0%, 100% { height: 10%; } 50% { height: var(--h, 60%); } }
+.tk-badge.is-now { background: #d9334f; color: #fff; animation: tk-blink 1.6s ease-in-out infinite; }
+@keyframes tk-blink { 50% { box-shadow: 0 0 0 calc(5 * var(--u)) rgba(59, 245, 61, .3); } }
+@media (prefers-reduced-motion: reduce) { .tk-eq i, .tk-badge.is-now { animation: none; } }
