@@ -570,3 +570,9 @@ body.is-fw .grain { opacity: .25; }
 body.portrait #wipe.has-spon b { top: 50%; }
 body.portrait #wsp { left: 50%; top: 66%; width: 94%; }
 body.portrait #wsp .tile { height: 440px; }
+.now .kind { flex-wrap: wrap; align-items: center; }
+.now .kind .chip { white-space: nowrap; flex: none; }
+.now .mood { margin-top: 16px; font-size: 38px; font-weight: 700; line-height: 1.4; text-wrap: pretty; word-break: auto-phrase; }
+/* 長い紹介（セットリスト）は、下の帯に隠れないように、行数で切る */
+.now > p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden; }
+body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 3; } /* 急げ！の帯が出ているときは、場所が狭いので短く */

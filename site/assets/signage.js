@@ -279,7 +279,8 @@ function hurryItem(t) {
   return list.sort((a, b) => a.s - b.s)[0] ?? null;
 }
 // 種類・ひとことの札（まだ届いていない団体は、札なし）
-const chips = (x, extra = "") => { const l = [x.kind, x.mood].filter(Boolean).map((t) => `<span class="chip">${esc(t)}</span>`).join("") + extra; return l ? `<div class="kind">${l}</div>` : ""; };
+// 種類と時刻は丸い札、一言は長いので、札にせず1行の文で（札にすると、細長くつぶれる）
+const chips = (x, extra = "") => { const l = [x.kind].filter(Boolean).map((t) => `<span class="chip">${esc(t)}</span>`).join("") + extra; return (l ? `<div class="kind">${l}</div>` : "") + (x.mood ? `<p class="mood">${esc(x.mood)}</p>` : ""); };
 const slideStage = {
   async build() {
     const t = now(), { cur, nxt, onEv, nextEv } = stageState(t);
