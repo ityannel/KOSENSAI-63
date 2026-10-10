@@ -305,6 +305,9 @@ const slideStage = {
     if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, tStart(nextEv), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
     return { dur: hot ? 15000 : 13000, cls: "stage", after(el) {
+      // 出演中の進み具合の棒は、1秒ごとに、いまの時刻に合わせて伸ばす
+      const fill = el.querySelector(".barw .bar i");
+      if (fill && cur) { const upd = () => { if (!el.isConnected) return clearInterval(bid); fill.style.width = `${Math.min(100, Math.max(0, Math.round(((now() - cur.s) / (cur.e - cur.s)) * 1000) / 10))}%`; }; const bid = setInterval(upd, 1000); upd(); }
       const card = el.querySelector(".now.has-ph"), imgs = [...el.querySelectorAll(".now .ph")];
       if (!card) return;
       // 写真の右半分の明るさを測って、文字のある左側にかぶせる色を、白か黒か自動で決める（明るい写真は白＋黒い字、暗い写真は黒＋白い字）
