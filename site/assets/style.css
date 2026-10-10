@@ -2215,3 +2215,13 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .visit-links a:nth-child(4) { --lk: #634A2E; color: #FEEBC4; }
 /* 詳しいシートの企画ロゴ（透明な背景。ふつうは、チケットのすぐ下） */
 .dt-logo { display: block; width: min(86%, calc(300 * var(--u))); height: auto; margin: calc(4 * var(--u)) auto calc(16 * var(--u)); filter: drop-shadow(0 calc(3 * var(--u)) calc(6 * var(--u)) rgba(48, 44, 41, .25)); pointer-events: none; -webkit-user-drag: none; }
+
+/* 縁日の札：役割ごとに形を変える。ジャンル＝店名の下の小さな「点と文字」（札にしない）／待ち時間＝カードの上の縁から出る、小さな見出し（テープと重ならない） */
+.en-paper { gap: calc(5 * var(--u)); }
+.en-paper .en-tags { order: 2; flex-wrap: nowrap; gap: calc(7 * var(--u)); margin-top: calc(-1 * var(--u)); white-space: nowrap; }
+.en-paper .en-name { order: 1; }
+.en-paper .en-note { order: 3; }
+.en-paper .en-group { order: 4; }
+.en-tags span { display: inline-flex; align-items: center; gap: calc(3 * var(--u)); padding: 0; border-radius: 0; background: none; color: #634A2E; font-size: calc(10 * var(--u)); font-weight: 700; line-height: 1.5; }
+.en-tags span::before { content: ""; width: calc(7 * var(--u)); height: calc(7 * var(--u)); border-radius: 50%; background: var(--gc, var(--g)); flex: none; }
+.en-live { right: calc(10 * var(--u)); top: calc(-14 * var(--u)); padding: calc(2 * var(--u)) calc(8 * var(--u)) calc(1 * var(--u)); border-radius: calc(6 * var(--u)) calc(6 * var(--u)) 0 0; font-size: calc(10.5 * var(--u)); letter-spacing: .02em; box-shadow: 0 calc(-1 * var(--u)) 0 rgba(48, 44, 41, .15); }
