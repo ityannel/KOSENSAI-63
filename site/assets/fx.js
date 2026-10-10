@@ -1,9 +1,5 @@
-// 演出：絵の空に上がる花火と、スマホを振る・マウスを速く動かすと揺れる短冊
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// ============================================================
-// 花火
-// ============================================================
 
 const COLORS = [
   "#FFD27A",
@@ -31,9 +27,6 @@ export function createFireworks(canvas) {
   let h = 0;
   let last = 0;
 
-  // ----------------------------------------------------------
-  // resize
-  // ----------------------------------------------------------
 
   function resize() {
     const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -58,9 +51,6 @@ export function createFireworks(canvas) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  // ----------------------------------------------------------
-  // 小さな火の粉を追加
-  // ----------------------------------------------------------
 
   function spark(x, y, color, amount = 1) {
     for (let i = 0; i < amount; i++) {
@@ -91,9 +81,6 @@ export function createFireworks(canvas) {
     }
   }
 
-  // ----------------------------------------------------------
-  // ロケット打ち上げ
-  // ----------------------------------------------------------
 
   function launch() {
     const x = w * (0.12 + Math.random() * 0.76);
@@ -114,9 +101,6 @@ export function createFireworks(canvas) {
     });
   }
 
-  // ----------------------------------------------------------
-  // 花火爆発
-  // ----------------------------------------------------------
 
   function explode(r) {
     const big = Math.random() < 0.22;
@@ -134,9 +118,6 @@ export function createFireworks(canvas) {
     const secondColor =
       COLORS[Math.floor(Math.random() * COLORS.length)];
 
-    // --------------------------------------------------------
-    // 爆発フラッシュ
-    // --------------------------------------------------------
 
     flashes.push({
       x: r.x,
@@ -145,9 +126,6 @@ export function createFireworks(canvas) {
       size: big ? w * 0.045 : w * 0.03,
     });
 
-    // --------------------------------------------------------
-    // 外側へ飛ぶ火花
-    // --------------------------------------------------------
 
     for (let i = 0; i < count; i++) {
       const a =
@@ -197,9 +175,6 @@ export function createFireworks(canvas) {
       });
     }
 
-    // --------------------------------------------------------
-    // 内側の細かい火花
-    // --------------------------------------------------------
 
     for (let i = 0; i < count * 0.45; i++) {
       const a = Math.random() * Math.PI * 2;
@@ -237,9 +212,6 @@ export function createFireworks(canvas) {
       });
     }
 
-    // --------------------------------------------------------
-    // 放射状のリング
-    // --------------------------------------------------------
 
     const ringCount = big ? 32 : 24;
 
@@ -272,9 +244,6 @@ export function createFireworks(canvas) {
       });
     }
 
-    // --------------------------------------------------------
-    // 低確率で二段爆発
-    // --------------------------------------------------------
 
     if (big && Math.random() < 0.35) {
       setTimeout(() => {
@@ -289,9 +258,6 @@ export function createFireworks(canvas) {
     }
   }
 
-  // ----------------------------------------------------------
-  // アニメーション
-  // ----------------------------------------------------------
 
   function frame(t) {
     const k = last
@@ -308,9 +274,6 @@ export function createFireworks(canvas) {
 
     ctx.globalCompositeOperation = "lighter";
 
-    // --------------------------------------------------------
-    // 花火を打ち上げる
-    // --------------------------------------------------------
 
     if (t < until && t > nextLaunch) {
       launch();
@@ -321,9 +284,6 @@ export function createFireworks(canvas) {
         Math.random() * 650;
     }
 
-    // --------------------------------------------------------
-    // ロケット
-    // --------------------------------------------------------
 
     rockets = rockets.filter((r) => {
       r.x += r.vx * k;
@@ -331,7 +291,6 @@ export function createFireworks(canvas) {
 
       r.trailTimer += k;
 
-      // ロケットの尾
       if (r.trailTimer >= 1) {
         r.trailTimer = 0;
 
@@ -343,7 +302,6 @@ export function createFireworks(canvas) {
         );
       }
 
-      // ロケット本体
       ctx.globalAlpha = 1;
 
       ctx.fillStyle = "#FFF3D6";
@@ -355,7 +313,6 @@ export function createFireworks(canvas) {
         7
       );
 
-      // ロケットの光
       ctx.globalAlpha = 0.55;
 
       ctx.beginPath();
@@ -372,7 +329,6 @@ export function createFireworks(canvas) {
 
       ctx.globalAlpha = 1;
 
-      // 爆発
       if (r.y <= r.top) {
         explode(r);
         return false;
@@ -381,9 +337,6 @@ export function createFireworks(canvas) {
       return true;
     });
 
-    // --------------------------------------------------------
-    // 花火の粒子
-    // --------------------------------------------------------
 
     parts = parts.filter((p) => {
       p.px = p.x;
@@ -394,7 +347,6 @@ export function createFireworks(canvas) {
 
       p.vy += p.gravity * k;
 
-      // 空気抵抗
       p.vx *= Math.pow(0.985, k);
       p.vy *= Math.pow(0.985, k);
 
@@ -404,9 +356,6 @@ export function createFireworks(canvas) {
         return false;
       }
 
-      // ------------------------------------------------------
-      // 軌跡
-      // ------------------------------------------------------
 
       ctx.globalAlpha =
         Math.max(0, p.life * 0.45);
@@ -424,9 +373,6 @@ export function createFireworks(canvas) {
 
       ctx.stroke();
 
-      // ------------------------------------------------------
-      // 本体
-      // ------------------------------------------------------
 
       ctx.globalAlpha =
         Math.min(1, p.life * 1.4);
@@ -445,9 +391,6 @@ export function createFireworks(canvas) {
 
       ctx.fill();
 
-      // ------------------------------------------------------
-      // キラッとする粒
-      // ------------------------------------------------------
 
       if (p.sparkle && p.life > 0.25) {
         const pulse =
@@ -477,9 +420,6 @@ export function createFireworks(canvas) {
       return true;
     });
 
-    // --------------------------------------------------------
-    // 爆発フラッシュ
-    // --------------------------------------------------------
 
     flashes = flashes.filter((f) => {
       f.life -= 0.055 * k;
@@ -510,9 +450,6 @@ export function createFireworks(canvas) {
 
     ctx.globalAlpha = 1;
 
-    // --------------------------------------------------------
-    // 次のフレーム
-    // --------------------------------------------------------
 
     if (
       t < until ||
@@ -530,7 +467,6 @@ export function createFireworks(canvas) {
   addEventListener("resize", resize);
 
   return {
-    // ms の間、花火を上げ続ける
     show(ms) {
       if (reduceMotion) return;
 
@@ -553,10 +489,6 @@ export function createFireworks(canvas) {
 }
 
 
-// ============================================================
-// 揺れる短冊
-// ※ スマホの「傾き」は使用しない
-// ============================================================
 
 export function initShake(shakeButton) {
   if (reduceMotion) return;
@@ -569,15 +501,10 @@ export function initShake(shakeButton) {
   let vel = 0;
   let running = false;
 
-  // ----------------------------------------------------------
-  // バネアニメーション
-  // ----------------------------------------------------------
 
   const loop = () => {
-    // バネ
     vel += -angle * 0.06;
 
-    // 空気抵抗
     vel *= 0.92;
 
     angle += vel;
@@ -615,11 +542,6 @@ export function initShake(shakeButton) {
     }
   };
 
-  // ----------------------------------------------------------
-  // スマホ：振る
-  //
-  // deviceorientation は一切使わない。
-  // ----------------------------------------------------------
 
   let lastShake = 0;
 
@@ -635,7 +557,6 @@ export function initShake(shakeButton) {
 
     const now = performance.now();
 
-    // 強く振ったときだけ反応
     if (
       mag > 4 &&
       now - lastShake > 100
@@ -656,9 +577,6 @@ export function initShake(shakeButton) {
     );
   };
 
-  // ----------------------------------------------------------
-  // iPhone / iPad
-  // ----------------------------------------------------------
 
   const touch =
     matchMedia("(pointer: coarse)").matches;
@@ -681,11 +599,9 @@ export function initShake(shakeButton) {
           if (res === "granted") {
             listen();
 
-            // 許可直後に少し揺らす
             push(8);
           }
         } catch {
-          // 拒否された場合は何もしない
         }
 
         shakeButton.hidden = true;
@@ -696,10 +612,6 @@ export function initShake(shakeButton) {
     listen();
   }
 
-  // ----------------------------------------------------------
-  // PC：
-  // マウスを高速で左右に動かす
-  // ----------------------------------------------------------
 
   let last = null;
 
@@ -739,11 +651,6 @@ export function initShake(shakeButton) {
 }
 
 
-// ============================================================
-// 奥行き
-// ※ スマホの傾きは使用しない
-// PCのマウスだけでパララックス
-// ============================================================
 
 export function initParallax() {
   if (reduceMotion) return;
@@ -761,9 +668,6 @@ export function initParallax() {
 
   let running = false;
 
-  // ----------------------------------------------------------
-  // アニメーション
-  // ----------------------------------------------------------
 
   const loop = () => {
     x += (tx - x) * 0.08;
@@ -818,9 +722,6 @@ export function initParallax() {
     }
   };
 
-  // ----------------------------------------------------------
-  // PCのマウスのみ
-  // ----------------------------------------------------------
 
   addEventListener(
     "pointermove",

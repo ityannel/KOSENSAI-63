@@ -17,7 +17,6 @@
   <link rel="stylesheet" href="assets/style.css">
   <script src="assets/theme.js"></script>
   <style>
-    /* ご利用にあたって：ほかの分岐ページ（みどころ・投票）と同じ、下から出てくるシート */
     body.terms-page { background: linear-gradient(#4b5f80, #2f3953); }
     .terms-full { background: var(--grain), linear-gradient(165deg, #4b5f80, #3b4968 50%, #2f3953); color: #634A2E; font-family: var(--text-font); font-weight: 700; line-height: 1.8; }
     .terms-full .mido-in { padding: calc(28 * var(--u)) calc(20 * var(--u)) calc(24 * var(--u)); }
@@ -133,6 +132,5 @@
     addEventListener("pageshow", () => sheet.classList.remove("is-closing"));
   </script>
   <script type="module" src="assets/side.js"></script>
-  <script type="module" src="assets/test-loader.js"></script><!-- ?test=1 のときだけ、テスト用パネル -->
-</body>
+  <script type="module" src="assets/test-loader.js"></script></body>
 </html>

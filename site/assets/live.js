@@ -1,23 +1,6 @@
 import { whileVisible } from "./idle-listen.js";
-// 当日の更新内容を Firestore の site_live/current から受け取る。
-// サーバーのファイルを触らずに、Firebase コンソールで書き換えるだけでトップに反映される。
-//
-// site_live/current の中身:
-//   phase_override : "before" | "during" | "after" | null   表示を強制的に切り替える
-//   notice         : string                                  トップ下部の帯に出すお知らせ
-//   now_events     : [{ title, venue, start, end }]          「今やっていること」を手動で上書き
-//   stream_url     : string                                  YouTube の配信URL
-//   stream_active  : boolean                                 true の間トップに配信を出す
-//   food_reports   : [{ shop, text, photo }]                 いちゃの食レポ
-//   photos         : [{ url, caption }]                      会場の写真
-//   prize_out      : boolean                                 スタンプラリーの景品がなくなった（スタンプカードのページにおわび）
-//
-// 混雑状況は別のコレクション crowd/{会場ID}（本部コンソールから書き込む）
-// 模擬店の待ち時間は shops/{id}（模擬店の人が shop.html から、本部が本部コンソールから書き込む）
-//
-// Firebase に繋がらなくてもページは config.js の内容だけで表示される。
 
-export const FIREBASE_VERSION = "10.12.2"; // 変えたら index.html・map.html の modulepreload の版もそろえる
+export const FIREBASE_VERSION = "10.12.2";
 export const firebaseConfig = {
   apiKey: "AIzaSyCpFQ5nFnW6O0Ful2pAD3nGM-N-qxhS-04",
   authDomain: "enishi-7f43f.firebaseapp.com",
@@ -27,11 +10,9 @@ export const firebaseConfig = {
   appId: "1:799252125591:web:2ff3274c2d7e1fef8bd6d2",
 };
 
-// ?demo=1 で当日の見た目を確認するためのサンプル
 const DEMO = {
   notice: "【デモ】14:00から体育館で抽選会の整理券を配布します",
   notice_level: new URLSearchParams(location.search).has("urgent") ? "urgent" : "info",
-  // 見た目を確かめるとき：?demo=1&ntstyle={"font":"round","size":"l","bg":"#2F6FB8","fg":"#FFFFFF","icon":"mega","link_label":"くわしく","link_url":"https://example.com/"}（デモのときだけ）
   notice_style: (() => { try { return JSON.parse(new URLSearchParams(location.search).get("ntstyle") ?? "null") ?? undefined; } catch { return undefined; } })(),
   stream_url: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
   stream_active: true,
@@ -44,8 +25,6 @@ const DEMO = {
 
 const params = new URLSearchParams(location.search);
 
-// 手元で試すとき（localhost で ?emulator=1）：本物の Firebase ではなく、自分の PC の Firebase エミュレーターにつなぐ
-//   npx firebase-tools emulators:start --only firestore,auth --project enishi-7f43f（リポジトリのいちばん上で）
 export const USE_EMULATOR = ["localhost", "127.0.0.1"].includes(location.hostname) && params.has("emulator");
 export function connectEmulators({ fs: firestore, db, auth, a } = {}) {
   if (!USE_EMULATOR) return;
@@ -59,7 +38,6 @@ export function connectEmulators({ fs: firestore, db, auth, a } = {}) {
   }
 }
 
-// ?demo=1 のときの混雑サンプル（?now= があればその時刻を基準にする）
 const demoNow = params.get("now") ? Date.parse(params.get("now") + (params.get("now").includes("+") ? "" : "+09:00")) : Date.now();
 const DEMO_CROWD = {
   gym2: { level: 2, updated_at: demoNow - 3 * 60 * 1000 },
@@ -69,22 +47,18 @@ const DEMO_CROWD = {
 let dbPromise = null;
 let fs = null;
 
-// Firestore を1つだけ作る（live.js・posts.js・rally.js で共通）。読んだものをこのスマホ（IndexedDB）に覚えておき、
-// 次にページを開いたときは、変わったものだけをサーバーから読む（読みこみの回数＝Firestore の上限・料金を減らす）。
-// 覚えられないブラウザ（シークレットモードなど）では、いつもどおり毎回読む
 export function firestoreFor(firestore, app) {
   if (app.__kosenDb) return app.__kosenDb;
   let db;
   try {
     db = firestore.initializeFirestore(app, { localCache: firestore.persistentLocalCache({ tabManager: firestore.persistentMultipleTabManager() }) });
   } catch {
-    db = firestore.getFirestore(app); // もう作ってあった・覚えておけない
+    db = firestore.getFirestore(app);
   }
   app.__kosenDb = db;
   return db;
 }
 
-// Firebase の読み込みは1回だけ
 function getDb() {
   dbPromise ??= (async () => {
     const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
@@ -93,7 +67,6 @@ function getDb() {
       import(`${base}/firebase-firestore.js`),
     ]);
     fs = firestore;
-    // みんなの声（posts.js）が先に立ち上げていればそれを使う
     const db = firestoreFor(firestore, getApps().find((a) => a.name === "[DEFAULT]") ?? initializeApp(firebaseConfig));
     connectEmulators({ fs: firestore, db });
     return db;
@@ -101,8 +74,6 @@ function getDb() {
   return dbPromise;
 }
 
-// 本部が「全員のキャッシュを削除」を押した（site_live/current の cache_reset_at）：この端末のしまってあるページ・部品（Service Worker）を消して、1回だけ読みこみなおす。
-// 初めて来た人（しまってあるものがない）は、何もしない。スタンプ・投票などの記録は消さない
 async function applyCacheReset(t) {
   if (!t) return;
   try {
@@ -131,7 +102,6 @@ export async function subscribeLive(callback) {
   }
 }
 
-// crowd/{会場ID} = { level: 0〜3, updated_at: Timestamp }
 export async function subscribeCrowd(callback) {
   if (params.has("demo")) return callback(DEMO_CROWD);
   try {
@@ -153,9 +123,6 @@ export async function subscribeCrowd(callback) {
   }
 }
 
-// shops/{id} = { name, status: "normal" | "10min" | "20min" | "soldout", map? }  模擬店の待ち時間（app/ と同じもの）
-// map（なくてもよい）は校内マップのお店との結びつけ：config.js の SHOPS の name・クラス（例 "5SE"）・部屋番号のどれか。
-// ないときは name で探す。pass などほかの項目は読んでも使わない
 const DEMO_SHOPS = [
   { id: "d1", name: "めぇ～どちゅろす", status: "10min" },
   { id: "d2", name: "5SE", status: "20min" },
@@ -184,12 +151,9 @@ export async function subscribeShops(callback) {
   }
 }
 
-// chatter/current = { p1〜p5: string, updated_at }  本部が書く、5人のセリフの実況
-// スタンプラリーの対象のお店とスタッフ番号（rally-data.js が使う）
 export async function subscribeRally(callback) {
   try {
     const db = await getDb();
-    // 初めて開いて電波がないとき、Firestore は「このスマホにしまってあるもの＝ない」をすぐ返す。本当に「ない」のとは区別する（サーバーの答えが来るまで待つ）
     fs.onSnapshot(
       fs.doc(db, "rally", "current"),
       { includeMetadataChanges: true },
@@ -201,8 +165,6 @@ export async function subscribeRally(callback) {
   }
 }
 
-// 本部コンソールの「サイトの設定」（blocks.js が使う）
-//   site_config/current = { blocks: [{ id, show }] }（トップページの欄の並びと、出す・出さない）
 export async function subscribeSiteConfig(callback) {
   try {
     const db = await getDb();
@@ -216,9 +178,7 @@ export async function subscribeSiteConfig(callback) {
   }
 }
 
-// スケジュールの変更（本部コンソールの「スケジュール」）：site_schedule/current = { changes: { [sid]: { start, end } } }
 export async function subscribeSchedule(callback) {
-  // 確かめるとき：?demo=1&sched={"a202610241215":{"start":"2026-10-24T12:25:00+09:00","end":"2026-10-24T12:45:00+09:00"}}
   if (params.has("demo")) { try { return callback(JSON.parse(params.get("sched") ?? "{}")); } catch { return callback({}); } }
   try {
     const db = await getDb();
@@ -232,8 +192,6 @@ export async function subscribeSchedule(callback) {
   }
 }
 
-// スタンプラリーを全員リセットした時刻（rally.js が使う）
-//   rally_control/current = { reset_at }
 export async function subscribeRallyControl(callback) {
   try {
     const db = await getDb();
@@ -261,16 +219,10 @@ export async function subscribeChatter(callback) {
   }
 }
 
-// ---------- 閲覧者数（本部コンソールの「ダッシュボード」「アクセス」） ----------
-// このブラウザを、時間の区切りごとに1回だけ数える（日付・時刻は日本時間）。数を1つ足すだけで、個人を特定するものは送らない。
-// - 1日に1回：visit_counts/{日}-{0〜9} と、どの端末か visit_devices/{日}-{phone|tablet|pc}-{0〜9}
-// - 1時間に1回：visit_hours/{日}-{時}-{0〜2}
-// - 5分に1回（開いて見ている間だけ）：presence/{5分ごとの番号}＝いま見ている端末の数。isOff() が true の間は数えない（本部の停止スイッチ）
-// 同じ文書に書きすぎないよう、いくつかに分けて数える（本部が合計する）。どこまで数えたかは、このブラウザに覚えておく（ページを移っても、読み直しても、二重に数えない）
 export function countVisit({ isOff = () => false } = {}) {
   if (params.has("demo") || params.has("preview") || ["localhost", "127.0.0.1"].includes(location.hostname)) return;
   const KEY = "kosen63-beat", DAY_KEY = "kosen63-visit", WIN = 5 * 60000;
-  try { localStorage.setItem("kosen63-t", "1"); localStorage.removeItem("kosen63-t"); } catch { return; } // 覚えておけないブラウザでは、数えない（開くたびに増えてしまうので）
+  try { localStorage.setItem("kosen63-t", "1"); localStorage.removeItem("kosen63-t"); } catch { return; }
   const inc = { n: fs.increment(1) }, merge = { merge: true }, pick = (n) => Math.floor(Math.random() * n);
   let busy = false;
   const beat = async () => {
@@ -278,24 +230,23 @@ export function countVisit({ isOff = () => false } = {}) {
     busy = true;
     try {
       const now = new Date();
-      const day = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(now); // 2026-10-24
-      const hour = `${day}-${new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tokyo", hour: "2-digit", hourCycle: "h23" }).format(now).slice(0, 2)}`; // 2026-10-24-13
+      const day = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(now);
+      const hour = `${day}-${new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tokyo", hour: "2-digit", hourCycle: "h23" }).format(now).slice(0, 2)}`;
       const win = String(Math.floor(now.getTime() / WIN));
       let last = {};
-      try { last = JSON.parse(localStorage.getItem(KEY) ?? "{}") ?? {}; } catch { /* 読めなければ、数え直す */ }
+      try { last = JSON.parse(localStorage.getItem(KEY) ?? "{}") ?? {}; } catch {  }
       const done = (patch) => { Object.assign(last, patch); localStorage.setItem(KEY, JSON.stringify(last)); };
       const needDay = localStorage.getItem(DAY_KEY) !== day;
-      const needDevice = needDay || last.dev === ""; // 前に、日の数だけ数えて、端末を数えそこねたとき
+      const needDevice = needDay || last.dev === "";
       const needHour = last.hour !== hour, needNow = last.win !== win && !isOff();
       if (!needDay && !needDevice && !needHour && !needNow) return;
       const db = await getDb();
       if (needDay) {
         await fs.setDoc(fs.doc(db, "visit_counts", `${day}-${pick(10)}`), inc, merge);
         localStorage.setItem(DAY_KEY, day);
-        done({ dev: "" }); // 端末は、このあと
+        done({ dev: "" });
       }
       if (needDevice) {
-        // どの端末か：スマホ（指でさわる・幅が狭い）／タブレット（指でさわる・幅が広い）／パソコン
         const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1 && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
         const device = !touch ? "pc" : Math.min(screen.width, screen.height) >= 600 ? "tablet" : "phone";
         await fs.setDoc(fs.doc(db, "visit_devices", `${day}-${device}-${pick(10)}`), inc, merge);
@@ -310,6 +261,6 @@ export function countVisit({ isOff = () => false } = {}) {
     }
   };
   beat();
-  setInterval(beat, 30000 + Math.random() * 10000); // 5分の区切りが変わったら、次の区切りにも数える（全員が同時に書かないよう、少しずらす）
+  setInterval(beat, 30000 + Math.random() * 10000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) beat(); });
 }

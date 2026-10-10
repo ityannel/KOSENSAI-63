@@ -1,10 +1,7 @@
-// トップページの「ご来場の皆さまへ」：駅の案内板のように、絵とひとことの札を並べる。押すと、札がくるっと裏返って、裏にくわしい説明（もう一度押すと表へ）。
-// 文は config.js の VISIT。公開時間・総選挙の締め切りは FESTIVAL・ELECTION から入れる
 import { VISIT, FESTIVAL, ELECTION } from "./config.js";
 
 const grid = document.getElementById("visit-grid");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-// 日時の書き方は、作るのが重いので1回だけ作って使いまわす
 const FMTS = new Map();
 const fmt = (iso, o) => { const k = JSON.stringify(o); if (!FMTS.has(k)) FMTS.set(k, new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", ...o })); return FMTS.get(k).format(new Date(iso)); };
 const HHMM = new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
@@ -15,7 +12,6 @@ const fill = (s) => s
   .replace("{close}", hhmm(FESTIVAL.days[0].close))
   .replace("{voteEnd}", `${md(ELECTION.closes)} ${hhmm(ELECTION.closes)}`);
 
-// 絵（線だけのピクトグラム）。押すと動く部分に a-〇〇 の名前（CSS で動かす）
 const P = {
   clock: '<circle cx="12" cy="12" r="8.5"/><g class="a-spin"><path d="M12 7.5V12l3 2"/></g>',
   car: '<g class="a-lines"><path d="M1.2 9.5h2.3M.5 12.5h2.3"/></g><g class="a-drive"><path d="M4 15.5V12l1.8-4.2A2 2 0 0 1 7.6 6.5h8.8a2 2 0 0 1 1.8 1.3L20 12v3.5M4 15.5h16M4 15.5v2M20 15.5v2M4 12h16"/><circle cx="7.5" cy="15.5" r="1.2"/><circle cx="16.5" cy="15.5" r="1.2"/></g>',
@@ -27,31 +23,27 @@ const P = {
   exit: '<path d="M14 4.5h5.5v15H14"/><g class="a-go"><path d="M4.5 12H14M10.5 8.5L14 12l-3.5 3.5"/></g>',
   nosmoke: '<g class="a-no"><circle cx="12" cy="12" r="8.5"/><path d="M6 12h9M17 12h1"/><path d="M6 6l12 12"/></g>',
 };
-// 押したときに、絵のまわりに飛び出す文字（まんがの音のように）。「×」は禁煙の大きなバツ
 const FX = {
   clock: ["チクタク"], car: ["ブーン"], bus: ["ブロロロ"], fire: ["ドーン！"], camera: ["パシャ！", "パシャ！"],
   mic: ["ワー！", "ワー！", "キャー！"], vote: ["ストン"], exit: ["ダッ！"], nosmoke: ["×"],
 };
 const fx = (k) => (FX[k] ?? []).map((t, i) => `<i class="vi-fx${t === "×" ? " is-batsu" : ""}" style="--n:${i}" aria-hidden="true">${esc(t)}</i>`).join("");
-// WDXL の数字は小さく見えるので、ひとことの中の数字だけ大きく（32 に対して 40 くらい）
 const bigNum = (s) => esc(s).replace(/[0-9][0-9.:]*/g, (m) => `<span class="vi-num">${m}</span>`);
-// 説明の中の「Enistagram」はロゴの絵にする
 const logo = (s) => esc(s).replace(/Enistagram\s*/g, '<img class="vi-logo" src="assets/img/enista-puffy.webp" width="666" height="117" alt="Enistagram">');
 const icon = (k) => `<svg viewBox="0 0 24 24" aria-hidden="true">${P[k] ?? P.clock}</svg>`;
 const TILTS = [-1.5, 1.2, 1, -1.3];
-// 札ごとに色をかえる（うすい紙の色と、絵の丸の濃い色）。チケットの色とそろえたパステル
 const COLORS = [
-  ["#FFE3B8", "#D9892B"], // 時計：オレンジ
-  ["#D5E9F2", "#3F8DB8"], // 車：水色
-  ["#F9D6DA", "#D8637A"], // 花火：ピンク
-  ["#EADFF3", "#8A68B8"], // カメラ：ふじ色
-  ["#FFF1A8", "#C9A11E"], // マイク：レモン
-  ["#DDEFCF", "#5E9C45"], // 投票：わかば
-  ["#FFD3C4", "#D9603F"], // 出口：さんご
-  ["#D3EFE6", "#3E9A86"], // 禁煙：ミント
+  ["#FFE3B8", "#D9892B"],
+  ["#D5E9F2", "#3F8DB8"],
+  ["#F9D6DA", "#D8637A"],
+  ["#EADFF3", "#8A68B8"],
+  ["#FFF1A8", "#C9A11E"],
+  ["#DDEFCF", "#5E9C45"],
+  ["#FFD3C4", "#D9603F"],
+  ["#D3EFE6", "#3E9A86"],
 ];
 
-const opened = new Set(); // 開いた札（スクロールで順に開く。作りなおしても開いたまま）
+const opened = new Set();
 function renderVisit() {
   grid.innerHTML = VISIT.map((v, i) => `
     <li class="${v.wide ? "is-wide" : ""}" style="--tilt:${TILTS[i % TILTS.length]}deg; --paper:${COLORS[i % COLORS.length][0]}; --mark:${COLORS[i % COLORS.length][1]}"><button type="button" class="vi-card" data-vi="${i}" aria-pressed="${opened.has(i)}">
@@ -60,7 +52,6 @@ function renderVisit() {
     </button></li>`).join("");
 }
 
-// スクロールして札が画面に入ったら、順々に開く（絵が動いてから、くるっと裏返る）。タップでも開け閉めできる
 const calmMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const queue = [];
 let running = false;
@@ -90,7 +81,6 @@ if (grid) {
   grid.addEventListener("click", (e) => {
     const b = e.target.closest("[data-vi]");
     if (!b) return;
-    // 表のとき：アイコンの中の絵が動いてから、くるっと裏返る。裏のとき：すぐ表へ
     if (b.getAttribute("aria-pressed") === "true") { b.setAttribute("aria-pressed", "false"); return; }
     if (b.classList.contains("is-play")) return;
     const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;

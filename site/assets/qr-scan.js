@@ -1,8 +1,3 @@
-// ページの中で QR を読む（カメラ）。スタンプカードで使う。地図の「いまここ」QR を読む画面（map.js）と同じ形・同じ読み方
-// Android の Chrome などは BarcodeDetector、iPhone などは jsQR（読むときだけ読み込む）
-// openQrScanner({ title, hint, wrong, noCamera, accept, onRead })
-//   accept(text) … 読めた字を調べて、使える QR なら何か返す（使えなければ null）
-//   onRead(結果) … 読めたら、画面を閉じてから呼ぶ
 let jsqrP = null;
 const loadJsQR = () => (jsqrP ??= new Promise((ok, ng) => {
   const s = document.createElement("script");
@@ -77,7 +72,7 @@ export async function openQrScanner({ title, hint, wrong, noCamera, accept, onRe
   const tick = async () => {
     if (!scan) return;
     let text = null;
-    try { text = await detect(); } catch { /* 次のコマで */ }
+    try { text = await detect(); } catch {  }
     if (!scan) return;
     if (text) {
       const got = accept(text);

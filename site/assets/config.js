@@ -1,14 +1,8 @@
-// =====================================================
-//  第63回 函館高専祭 サイト設定
-//  文章・日程・企画の中身はここを書き換えるだけで反映されます。
-//  「【仮】」と付いているものは未確定のダミーです。
-// =====================================================
 
 export const FESTIVAL = {
   edition: 63,
   theme: "縁",
   themeReading: "えにし",
-  // 各日の公開時間（日本時間）。要項のとおり両日とも 16:00 まで（ポスターの 17:00 ではない）
   days: [
     { label: "10月24日(土)", open: "2026-10-24T12:00:00+09:00", close: "2026-10-24T16:00:00+09:00" },
     { label: "10月25日(日)", open: "2026-10-25T10:00:00+09:00", close: "2026-10-25T16:00:00+09:00" },
@@ -17,7 +11,6 @@ export const FESTIVAL = {
   instagramId: "@KOSEN_GAKUSEIKAI",
 };
 
-// メニュー。PCではポスターの電線に短冊として吊るされる（縦書きになるので短い言葉で）
 export const NAV = [
   { label: "地図", href: "map.html" },
   { label: "混雑", href: "#crowd" },
@@ -28,9 +21,6 @@ export const NAV = [
   { label: "協賛", href: "#sponsors" },
 ];
 
-// 学生主事メッセージ（トップページの絵の下のカード）。body は1行ずつ（Figma のとおりに改行する）
-// トップページの欄（絵の下に並ぶもの）。この順がいつもの並び。本部コンソールの「サイトの設定」で並べかえ・出す／出さないを変えられる
-// [名前, 本部コンソールに出す名前, 説明]。名前は index.html の data-block と同じ
 export const TOP_BLOCKS = [
   ["memory", "思い出", "高専祭が終わったあとだけ出る（Enistagram のいいね順）"],
   ["message", "学生主事より", "学生主事のことば（写真つき）"],
@@ -42,10 +32,7 @@ export const TOP_BLOCKS = [
   ["info", "ご来場の皆さまへ", "注意の札"],
   ["sponsors", "協賛", "協賛企業のロゴ"],
 ];
-// 並びのプリセット（本部コンソールで保存したものがなければ、これ）。開催前は学生主事よりが先、期間中はスタンプカード・混雑が先
 const P = (ids) => ids.map((t) => ({ id: t.replace(/^-/, ""), show: !t.startsWith("-") }));
-// 学科展示（トップの「学科展示」の欄）：「R8高専祭 実施要項 ver5」p.24 より。place は地図の場所の id（押すと地図で見られる）
-// color は学科のボタンの色（吹き出しの地は、この色をうすめて作る）
 export const DEPT_EXHIBITS = [
   { dept: "機械", color: "#D9892B", place: "ex-kikai", where: "生産システム総合演習室（A・Bゾーン）・実習工場",
     items: ["いったいどうなる！？ マシュマロ気圧実験", "うちわに次ぐ高専祭記念！ オリジナルキーホルダー", "機械と言えばここ？ 工場見学", "自分で作って的を撃て！ 輪ゴム銃製作"] },
@@ -66,7 +53,7 @@ export const TOP_PRESETS = {
 
 export const MESSAGE = {
   name: "平沢 学生主事",
-  photo: "assets/img/hirasawa.webp", // 背景を切り抜いた写真（カードの右下）
+  photo: "assets/img/hirasawa.webp",
   body: [
     "近年の日本の15歳人口は約100万人。",
     "このうち高専入学者数は約1万人。",
@@ -77,14 +64,11 @@ export const MESSAGE = {
   ],
 };
 
-// 高専祭の概要【仮】
 export const ABOUT = [
   "函館高専祭は、学生が企画・運営する年に一度のお祭りです。",
   "模擬店、学科展示、ステージパフォーマンスなど、2日間にわたって多彩な企画をお届けします。",
 ];
 
-// 会場（協定を結んでいる教室）
-// alias を書くと「alias（name）」の形で表示されます。alias はネーミングライツの愛称（学校の「ネーミングライツ・広告パートナー」のページのとおり）
 export const VENUES = [
   { id: "zacros", name: "第1講義室", alias: "ZACROS hall" },
   { id: "factory", name: "実習工場" },
@@ -96,21 +80,14 @@ export const VENUES = [
   { id: "ground", name: "総合グラウンド" },
 ];
 
-// 校内マップ：お祭りの場所（建物・部屋・道の図は campus.js、部屋番号は「学生生活の手引き」の平面図のもの）
-// room: その部屋を会場として色を変えて名前を出す（extra: 部屋番号の無い部分を足す）。area: [左, 上, 幅, 高さ] は部屋ではない広い場所（floor も書く）
-// kind: venue 会場 / exhibit 展示 / hq 本部
-// 企画（EVENTS）・注目の模擬店（PICKUP_*）は venue、スタンプのお店は shops で場所につながる。
-// 社会基盤工学科の展示（5か所とも同じ説明）
 const CIVIL = "社会基盤工学科の展示：応用創造デザイン展示・上水道のしくみ・木製橋の実物展示・なんでも相談室（函館高専ってどんな学校？ 在学生が答えます）";
 
 export const MAP = {
-  // tentative: true の場所は、まだ仮なので地図に「【仮】」と出す。room は1つか、部屋番号の配列
   places: [
     { id: "gym2", room: "M120", kind: "venue", name: "太平洋セメントアリーナ", sub: "第二体育館", desc: "ステージパフォーマンス・模擬店総選挙の結果発表・大抽選会" },
     { id: "gym1", room: "M111", kind: "venue", name: "東京水道アリーナ", sub: "第一体育館" },
     { id: "zacros", room: "L107", kind: "venue", name: "ZACROS hall", sub: "第1講義室" },
     { id: "factory", room: ["D102", "D101", "D103", "D104", "D105"], kind: "exhibit", dept: "機械", name: "実習工場見学", sub: "機械の学科展示", desc: "機械と言えばここ？ 工場見学・うちわに次ぐ高専祭記念！ オリジナルキーホルダー" },
-    // 生産システム総合演習室（C101）：上の左の四角が機械（A・Bゾーン）、右の上と下のL字が電気電子（C・D・Eゾーン）
     { id: "ex-kikai", room: "C101", area: [482, 104, 72, 44], kind: "exhibit", dept: "機械", name: "気圧実験と輪ゴム銃", sub: "機械の学科展示", desc: "いったいどうなる！？ マシュマロ気圧実験・自分で作って的を撃て！ 輪ゴム銃製作（A・Bゾーン）" },
     { id: "ex-denki", area: [554, 104, 34.5, 44], extra: [[527, 148, 61.5, 58]], floor: "1F", kind: "exhibit", dept: "電気電子", name: "僕たち小さな発電所", sub: "電気電子の学科展示", desc: "僕たち小さな発電所 ～作れ！回せ！光れ！～　先輩たちから電気電子の基本を学ぼう！ はんだ付けをして電子オルゴール、LED付き手回し発電機を作ろう！（C・D・Eゾーン）" },
     { id: "ex-info", room: "B101", kind: "exhibit", dept: "情報", name: "ゲームと謎解きの展示", sub: "情報の学科展示", desc: "学生が制作したシューティングゲーム・暗号を解くタイムレース！・プログラミングRPGで謎を解く・二人協力型パズルゲーム・情報分野からのクイズ" },
@@ -123,15 +100,12 @@ export const MAP = {
     { id: "ex-truss", floor: "1F", area: [162, 405, 149, 167], poly: [[172, 413], [196, 407], [231, 405], [258, 410], [284, 423], [303, 444], [311, 466], [308, 495], [297, 517], [281, 535], [263, 552], [250, 563], [228, 572], [210, 570], [199, 556], [184, 538], [174, 520], [165, 498], [162, 471], [164, 440]], kind: "exhibit", dept: "社会基盤", name: "木製応急トラス橋", sub: "正面玄関前（社会基盤の学科展示）", desc: "木製橋の実物展示。木材を三角形で組み立てた丈夫な橋を歩いてみよう！（社会基盤の学科展示）" },
     { id: "cafeteria", room: "G101", extra: [[180, 152, 24, 23], [204, 152, 11.5, 29]], kind: "venue", name: "二十一食堂", sub: "学食" },
     { id: "courtyard", floor: "1F", area: [432, 151, 92, 163], kind: "venue", name: "中庭", sub: "B棟とC棟のあいだ" },
-    // 中庭の屋台（入口の近く・左寄り。教室くらいの大きさ）
     { id: "courtyard-shop", floor: "1F", area: [436, 289, 32, 24], kind: "shops", name: "中庭の屋台", sub: "中庭" },
     { id: "library", room: "F101", extra: [[158.5, 274, 48, 52]], kind: "venue", name: "TSKEライブラリー", sub: "図書館" },
     { id: "entrance", floor: "1F", area: [395.75, 422.6, 35.75, 31.4], extra: [[382, 434, 20, 20]], labelRect: [395.75, 422.6, 35.75, 13.4], kind: "venue", name: "玄関ホール", sub: "H棟 学生玄関" },
     { id: "lounge", floor: "1F", area: [382, 454, 20, 21], kind: "room", name: "ラウンジ", sub: "H棟 学生玄関の奥" },
     { id: "hq", floor: "1F", area: [402, 436, 22, 14], kind: "hq", name: "本部", sub: "救護・落とし物・景品交換" },
   ],
-  // 「いまここ」QR を貼る場所（入口・廊下の角）。QR は map.html?here=ID（部屋番号 map.html?here=L107 でもよい）
-  // at は campus.js と同じ座標
   spots: [
     { id: "gate", floor: "1F", at: [360, 1112], name: "正門" },
     { id: "h-gate", floor: "1F", at: [389, 445], name: "学生玄関" },
@@ -149,20 +123,18 @@ export const MAP = {
   ],
 };
 
-// 混雑状況を出す会場（本部が staff/crowd.html から切り替える）
 export const CROWD = {
-  venues: ["gym2", "entrance", "zacros"], // 「体育館」はステージのある第二体育館（太平洋セメントアリーナ）
-  short: { gym2: "体育館", entrance: "玄関", zacros: "講義室" }, // 電柱の看板に出す短い名前
+  venues: ["gym2", "entrance", "zacros"],
+  short: { gym2: "体育館", entrance: "玄関", zacros: "講義室" },
   levels: [
     { label: "空いています", color: "#6CBAB5" },
     { label: "ふつう", color: "#F1D08A" },
     { label: "混雑しています", color: "#F2A96A" },
     { label: "入場制限中", color: "#E0655A" },
   ],
-  staleMinutes: 30, // これ以上更新がないと「情報が古い」と出す
+  staleMinutes: 30,
 };
 
-// 案内の分岐（詳しいページがまだ無いものは、ひとまずこのパネルのまま）
 export const GUIDES = [
   { title: "構内装飾", desc: "校舎を彩るテーマ装飾", href: "#guide", icon: "装" },
   { title: "ステージパフォーマンス", desc: "タイムテーブルと出演者", href: "#schedule", icon: "舞" },
@@ -172,19 +144,14 @@ export const GUIDES = [
   { title: "抽選会", desc: "学内の方限定。景品と生配信のお知らせ", href: "#schedule", icon: "抽", internal: true },
 ];
 
-// タイムテーブル（開催中、トップに「今やっているイベント」として自動表示）。internal: true は学内の方限定（「学内のみ」と出る）
-// 「R8高専祭要項 ver5」とタイムテーブルVer2.0より。大抽選会は「(仮)・押す可能性有」。10/25 のステージ開始は、要項に合わせて 10:40
 export const EVENTS = [
   { title: "ステージパフォーマンス", venue: "gym2", start: "2026-10-24T12:40:00+09:00", end: "2026-10-24T15:50:00+09:00", stage: true },
   { title: "ステージパフォーマンス", venue: "gym2", start: "2026-10-25T10:40:00+09:00", end: "2026-10-25T14:50:00+09:00", stage: true },
   { title: "模擬店総選挙 結果発表", logo: "assets/img/logo-souse.webp", venue: "gym2", start: "2026-10-25T15:40:00+09:00", end: "2026-10-25T15:50:00+09:00", live: true, kind: "発表", copy: "校内随一の模擬店が、今ここに決まる…\n輝く栄光を手にするのは、いったいどこのお店だ！？\nYouTube でも生配信。" },
   { title: "大抽選会", logo: "assets/img/logo-chusen.webp", venue: "gym2", start: "2026-10-25T16:00:00+09:00", end: "2026-10-25T17:00:00+09:00", live: true, internal: true },
-  // 花火は学内の方限定（一般公開は16:00まで）。要項 p.4・p.8。飛行機の関係で遅れることがある
   { title: "花火", venue: "ground", start: "2026-10-25T18:00:00+09:00", end: "2026-10-25T18:30:00+09:00", internal: true, kind: "フィナーレ", copy: "高専祭のしめくくり。\n飛行機の都合で遅れることもあります。" },
 ];
 
-// 「みどころ」のページの一覧にだけ出す企画（トップの「いま・次」・サイネージ・地図には出さない）。パンフレット・要項より。
-// 終日つづくもの（校内装飾）は listOnly：トップのチケットにも出さない
 export const LIST_EVENTS = [
   { title: "ティッシュ＆うちわ販売", venue: "専攻科棟1階", start: "2026-10-24T10:00:00+09:00", end: "2026-10-24T11:30:00+09:00", internal: true, kind: "販売", copy: "あなたの購入したティッシュが、\n豪華賞品に大変身しちゃうかも？" },
   { title: "ティッシュ＆うちわ販売", venue: "専攻科棟1階", start: "2026-10-25T08:30:00+09:00", end: "2026-10-25T09:45:00+09:00", internal: true, kind: "販売", copy: "あなたの購入したティッシュが、\n豪華賞品に大変身しちゃうかも？" },
@@ -192,20 +159,11 @@ export const LIST_EVENTS = [
   { title: "校内装飾", venue: "校内全域", start: "2026-10-25T10:00:00+09:00", end: "2026-10-25T16:00:00+09:00", kind: "展示", listOnly: true, copy: "1・2年生が彩る、\nにぎやかな花道へようこそ♪" },
 ];
 
-// ステージの出演者（stage: true の時間の中）。act("日", "始まり", "終わり", "名前", "種類", "ひとこと", "説明", "写真")
-// 開催中の「NOW／NEXT」、トップページの「みどころ」のチケット、タイムテーブル、地図の検索に出る。
-// 説明の中の「\n」は、チケットでの改行。写真はなくてもよい（例："assets/img/stage/xxx.webp"）
-// 出演者・時間は、要項ver5・タイムテーブルVer2.0のとおり（下の STAGE）
-// 写真は、いちばん目立つ1枚（photo）と、ほかの写真の一覧（more）。チケットには photo を前に、more を後ろに重ねて出す。押すと、photo → more の順にスライドショー。
-// どの写真も「◯◯.webp」（小）と「◯◯-l.webp」（拡大）の2つを置く
-// insta は Instagram のアカウント名（@ なし。例 "luna.tic_idol"）。詳しいシートに、リンクのボタンが出る
 const act = (day, start, end, name, kind, mood, copy, photo = null, more = [], insta = "") =>
   ({ name, kind, mood, copy, photo, more, insta, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` });
 export const STAGE = {
   venue: "gym2",
   tentative: false,
-  // 出演団体と時間：「R8高専祭 実施要項 ver5」と「ステージパフォーマンス タイムスタンプ Ver.2.0（9/18現在）」の本番の時間。
-  // 種類・ひとこと・説明は、団体から届いたら入れる（空のままでも、名前と時間だけで表示できる）
   acts: [
     act("24", "12:40", "13:10", "Endless bond", "バンド", "高専祭初ライブなのでぜひ見に来てほしいです！！！", "セットリスト\n本能\nおやすみ泣き声、さよなら歌姫\n丸の内サディスティック\n雪月花\n憂、燦々", "assets/img/stage/endless-bond.webp", [], "endless_bond__4"),
     act("24", "13:20", "13:45", "cresc.", "バンド", "", "5年生ですが今年でバンド2年目です。高専生活最後のステージ、全力で頑張るのでよろしくお願いします！！", null, [], "cresc_nit"),
@@ -222,10 +180,6 @@ export const STAGE = {
   ],
 };
 
-// 模擬店（「R8高専祭要項 ver1」p.21〜24 の模擬店一覧）
-// cls はお店を出すクラスの教室（1-1 など）。その教室の部屋番号は HOMEROOMS。HOMEROOMS に無いクラスは、
-// 地図では「L棟1階の模擬店」のように、棟と階までを案内する。room は部屋番号がわかっているもの、place は MAP.places の場所
-// 各クラスの教室の部屋番号（「令和8年度教室配置図【学生用】3/23確定版」より）
 export const HOMEROOMS_CONFIRMED = true;
 export const HOMEROOMS = {
   "1-1": "L101", "1-2": "L102", "1-3": "L103", "1-4": "L201", "1-5": "L202",
@@ -234,36 +188,30 @@ export const HOMEROOMS = {
   "4SM": "B304", "4SE": "C215", "4SJ": "H202", "4C": "B103", "4Z": "B204",
   "5SM": "C211", "5SE": "C216", "5SJ": "L402", "5C": "C203", "5Z": "C204",
 };
-// 校内装飾プロジェクトの撮影スポット（要項 p.15）。1年「海」・2年「自分たちの学科・コース」。コンテスト形式で、投票は現地の QR（forms）から。
-// 場所は文化局の区域図から、だいたいの位置【仮】。floor と at（地図の座標）。作品名（title）・投票フォーム（vote）は決まったら入れる
 export const DECOS = {
   themes: { 1: "海", 2: "自分たちの学科・コース" },
-  vote: null, // 例：{ 1: "https://forms.gle/...", 2: "https://forms.gle/..." }
+  vote: null,
   spots: [
-    { cls: "1-1", floor: "2F", at: [413, 434] },  // H棟2階 ホール
-    { cls: "1-2", floor: "1F", at: [404, 462] },  // H棟1階 学生玄関のそば
-    { cls: "1-3", floor: "1F", at: [582, 333] },  // C棟1階 渡り廊下の入口
-    { cls: "1-4", floor: "1F", at: [650, 334.5] }, // C棟とE棟のあいだの渡り廊下
-    { cls: "1-5", floor: "2F", at: [405, 492] },  // H棟2階 L棟へ行く所
-    { cls: "2C", floor: "1F", at: [400, 375] },   // H棟1階 B棟へ行く廊下
-    { cls: "2Z", floor: "1F", at: [488, 322] },   // B棟1階 保健室の前の廊下
-    { cls: "2SJ", floor: "2F", at: [397, 322] },  // B棟2階 キャリアセンターの横
-    { cls: "2SE", floor: "2F", at: [478, 323] },  // B棟2階 物理実験室の前の廊下
-    { cls: "2SM", floor: "2F", at: [558, 332] },  // C棟2階 渡り廊下の入口
+    { cls: "1-1", floor: "2F", at: [413, 434] },
+    { cls: "1-2", floor: "1F", at: [404, 462] },
+    { cls: "1-3", floor: "1F", at: [582, 333] },
+    { cls: "1-4", floor: "1F", at: [650, 334.5] },
+    { cls: "1-5", floor: "2F", at: [405, 492] },
+    { cls: "2C", floor: "1F", at: [400, 375] },
+    { cls: "2Z", floor: "1F", at: [488, 322] },
+    { cls: "2SJ", floor: "2F", at: [397, 322] },
+    { cls: "2SE", floor: "2F", at: [478, 323] },
+    { cls: "2SM", floor: "2F", at: [558, 332] },
   ],
 };
 
-// 模擬店総選挙（投票は実行委員会の Microsoft Forms）。form に URL を入れると、お店のシートに「模擬店総選挙に投票」が出る（opens〜closes のあいだだけ）
-// prefill：Forms の「…」→「事前入力された URL を取得」で作った URL の、お店の名前の所を {shop} にしたもの。あると、お店を選んだ状態でフォームが開く
-//   （選択肢の文字は SHOPS の name と同じにする）。なければ null のままで、form がそのまま開く
 export const ELECTION = {
-  form: null,     // 例："https://forms.office.com/r/XXXXXXXX"
-  prefill: null,  // 例："https://forms.office.com/Pages/ResponsePage.aspx?id=XXXX&rXXXXXXXX={shop}"
-  opens: "2026-10-24T12:00:00+09:00",  // 1日目の公開から
-  closes: "2026-10-25T15:00:00+09:00", // 締め切り（要項：10/25 15:00。結果発表は 15:40）
+  form: null,
+  prefill: null,
+  opens: "2026-10-24T12:00:00+09:00",
+  closes: "2026-10-25T15:00:00+09:00",
 };
 
-// 食べもののジャンル（genre）。一覧で絞りこめる・「甘い」などで探せる。【仮】お店の紹介文から決めたので、ちがっていたら直す
 export const GENRES = [
   { id: "しょっぱい系", color: "#a8612a" },
   { id: "甘い系", color: "#c9407a" },
@@ -303,23 +251,17 @@ export const SHOPS = [
   { place: "courtyard-shop", group: "ラグビー部", name: "やきとり処清", note: "ラグビー魂で焼く、熱いやきとり！！\nやきとり弁当（精肉）、\nやきとり単品（精肉、鳥皮）を提供します！\n味は塩とタレをご用意しております！", food: true, genre: ["しょっぱい系", "がっつり系"] },
   { place: "cafeteria", group: "同窓会", name: "ホームカミングデー", note: "アルバム・写真の展示\n同窓会の活動紹介、同窓生との交流", food: false },
 ];
-// お店の説明文：要項の改行のうち、文の終わり（。！？ ♪ ... など）の改行だけ残す。それ以外は、要項の表のはばで折れていただけなので、つなげる
-// （そのまま出すと、カードのはばで折り返したあとに、要項の改行が重なって「で」だけの行などができる）
 const SENTENCE_END = /(?:[。！？!?♪☆💽🍀🎶✨]|\.\.\.)$/u;
 export const tidyNote = (t) => String(t ?? "").split(/\r?\n/).reduce((out, ln, i) => (i === 0 ? ln : out + (SENTENCE_END.test(out) ? "\n" : "") + ln), "");
 for (const s of SHOPS) if (s.note) s.note = tidyNote(s.note);
 
 
-// みどころ：注目の模擬店・イベント（地図のお店のシートに出る）
-// 例：{ name: "〇〇", group: "〇〇部", venue: "cafeteria", note: "ひとこと" }
 export const PICKUP_SHOPS = [];
 export const PICKUP_EVENTS = [
   { name: "ステージパフォーマンス", venue: "gym2", when: "10/24 12:40〜・10/25 10:40〜", note: "バンド・ダンス・有志企画" },
-  { name: "模擬店総選挙 結果発表", venue: "gym2", when: "10/25 15:40〜", note: "YouTube で生配信" }, // 大抽選会は学内の方限定なので、ここには載せない
+  { name: "模擬店総選挙 結果発表", venue: "gym2", when: "10/25 15:40〜", note: "YouTube で生配信" },
 ];
 
-// ご来場の皆さまへ（トップページの札。絵とひとこと。押すとくわしい説明）。ひとことは「校内は全面禁煙」「火事のときはグラウンドへ」くらい、説明は2〜3行くらいの長さに。「R8高専祭要項 ver1」p.10・13・17〜19 より
-// {hours} は公開時間、{close} は公開の終わりの時刻、{voteEnd} は総選挙の締め切り（下の FESTIVAL・ELECTION から自動で入る）
 export const VISIT = [
   { icon: "clock", title: "公開は{close}まで", detail: "一般公開は両日とも{close}まで。終わったら、校内には残れません。" },
   { icon: "car", title: "車でのご来場はご遠慮ください", detail: "駐車場が限られています。市電やバスなどの公共交通機関でお越しください。函館大学や近隣のコンビニ・スーパーには停めないで！" },
@@ -331,29 +273,22 @@ export const VISIT = [
   { icon: "nosmoke", title: "校内は全面禁煙", detail: "校舎の中も外も、敷地の中はすべて禁煙です。" },
 ];
 
-// 来場者への案内（短く）
 export const NOTICES = [
   "校内は全面禁煙です。",
   "駐車場が限られています。車でのご来場はご遠慮ください。",
   "体調が悪くなったら、近くのスタッフか本部へ。",
 ];
 
-// ごみの捨て方【仮】
 export const GARBAGE = [
   { kind: "燃えるごみ", examples: "紙皿・割り箸・ティッシュ", color: "#E5484D" },
   { kind: "プラスチック", examples: "容器・フォーク・袋", color: "#3E8ED0" },
   { kind: "缶・びん・ペットボトル", examples: "キャップは外してプラへ", color: "#2E9F5B" },
 ];
 
-// 協賛
-// ご利用にあたって（terms.html）：投稿の削除のお願いを受ける Google フォームの回答用URL（tools/make-takedown-form.gs でつくる）。入れるまで、ページには「準備中」と出る
 export const LEGAL = { takedownForm: "" };
 
 export const SPONSORS = {
-  count: 0, // 【仮】確定したら社数を入れる
-  // トップページのいちばん下に、白い札で並べる。logo（画像）があればロゴ、なければ会社名。url があれば押すとその会社のページ
-  // 例: { name: "株式会社〇〇", logo: "assets/img/sponsors/xxx.webp", url: "https://..." }
-  // 【仮】いまは見た目をたしかめるための架空の会社（ロゴも作りもの）。本物の協賛企業が決まったら、全部入れかえる
+  count: 0,
   list: [
     { name: "NORTHWAVE（架空）", logo: "assets/img/sponsors/dummy-northwave.svg" },
     { name: "はこだて電機（架空）", logo: "assets/img/sponsors/dummy-hakodate-denki.svg" },
@@ -366,30 +301,18 @@ export const SPONSORS = {
   ],
 };
 
-// スタンプラリー【仮】条件は未確定
-// スタンプはお店に貼った QR を読むだけで押せる（合言葉を入力する欄はない）。
-// QR の中身は推測できない長いランダムな文字列で、ここにはその「暗号化した値」だけを置く。
-// shops と staffPin は python tools/make-rally-qr.py で作って貼る（印刷用の QR のページも一緒にできる）。
 export const RALLY = {
-  goal: 5, // 何個で達成か（インフォメーションの1個を含む）
+  goal: 5,
   prize: "本部でお菓子と交換できます（なくなりしだい終了）",
   claimPlace: "玄関ホールの本部",
-  // 対象のお店。空のあいだはスタンプを押せない。
-  // place（会場の id）か room（部屋番号）を書くと、校内マップにそのお店の場所が出る。
-  // 例：{ id: "takoyaki", name: "たこ焼き", room: "L103", codes: { "2026-10-24": "…", "2026-10-25": "…" } }
-  // @rally-generated-start（tools/make-rally-qr.py が書きかえる。手で直さない）
   shops: [
     { id: "test-1", name: "テスト店1", codes: { "*": "b348ac37e62946d848d19ca289406ff374168afa487e90045c0bf8531498b7f0" } },
     { id: "test-2", name: "テスト店2", codes: { "*": "f037f1536dd5e456cd4d0f2065bf47b940ea40c1b4052c5d4f8b9edcaade922d" } },
     { id: "test-3", name: "テスト店3", codes: { "*": "ad49e30973257190008bb5b85fd59a7d45b1030883c91a15e176706058578dac" } },
   ],
-  // 引き換えのときにスタッフが入れる番号（PBKDF2 で何十万回も混ぜた値。番号そのものはここに載らない）
   staffPin: { salt: "a7c46213a4132f45007045a91991d333", iterations: 300000, hash: "6388520adc2af640425da9bcce853924c4887f02f4f41c8cb21c0f756da28073" },
-  // @rally-generated-end
 };
 
-// スタンプの場所：校内の数か所（学科展示・模擬店には置かない）。place は地図の場所の id（なければ、地図に印は出ない）。
-// 本部コンソールの「〇か所の QR を整える」が、この場所だけを対象にする（ここを直すと、そのあと整えなおす）
 export const STAMP_PLACES = [
   { id: "gym-n", kind: "venue", name: "体育館入り口", group: "体育館", place: "gym-n" },
   { id: "hq", kind: "info", name: "インフォメーション", group: "本部", place: "hq", where: "玄関ホール" },
@@ -398,10 +321,6 @@ export const STAMP_PLACES = [
   { id: "zacros", kind: "venue", name: "ZACROS hall前", group: "第1講義室", place: "zacros" },
   { id: "noto-lab", kind: "venue", name: "能登研究室前", group: "研究室" },
 ];
-// 校内のディスプレイ（signage.html）：置く場所ごとの道案内。表示は signage.html?at=lecture1（第1講義室前）／soumu（総務課の横）／info（インフォメーション前）
-// dir は矢印の向き（up 上・down 下・left 左・right 右・upleft 左上・upright 右上・downleft 左下・downright 右下）。ディスプレイを見ている人から見た向きで書く。
-// say は短い言葉（1行〜2行）。min は歩く分。here は「スマホで道案内」の QR が開く、いまここの場所（map.html?here=…）
-// 【仮】向きと言葉は、実際の廊下を見て直す。直したら tentative を消す（ディスプレイの右上の「仮」が消える）
 export const SIGNAGE = {
   spots: {
     lecture1: { name: "第1講義室の前", here: "L107", tentative: true, routes: [
@@ -429,7 +348,6 @@ export const SIGNAGE = {
       { to: "ground", dir: "right", say: "外の通路を、グラウンドへ", min: 6 },
     ] },
   },
-  // 行き先の名前（ステージ・企画の会場の id と同じものは、急げ！の案内にも使う）。mark は signage.js のアイコンの名前
   dests: {
     gym2: { name: "ステージ", sub: "太平洋セメントアリーナ（第二体育館）", mark: "mic" },
     zacros: { name: "ZACROS hall", sub: "第1講義室", mark: "building" },
@@ -443,26 +361,18 @@ export const SIGNAGE = {
   },
 };
 
-// 模擬店の id（本部コンソールと同じ：クラス・部屋番号・場所の名前から作る）。模擬店総選挙の投票先に使う
 export const shopIdOf = (sh) => String(sh.cls ?? sh.room ?? sh.place ?? sh.name).toLowerCase().replace(/[^a-z0-9_-]/g, "");
 
-// ---------- 演出 ----------
 export const FX = {
-  // 本物の天気を取ってくる場所（函館高専のあたり）。Open-Meteo（無料・登録不要）を使う
   weather: { lat: 41.82, lon: 140.75, refreshMinutes: 15 },
-  // 花火の時間（学内のみ。要項 p.4：10/25 18:00〜18:30）。この間、絵の空に花火が上がり続ける
   fireworks: { start: "2026-10-25T18:00:00+09:00", minutes: 30 },
 };
 
-// 絵の中の隠しスポット。全部見つけるとごほうび（壁紙）【仮】言葉は差し替えてよい
 export const SECRETS = {
   reward: "ポスターの壁紙をどうぞ。見つけてくれてありがとう！",
   wallpaper: "assets/img/wallpaper.jpg",
 };
 
-// ---------- スケジュールの変更（本部コンソールの「スケジュール」で変えた時間） ----------
-// 出演・企画に、変更を受けつける印（sid）と、もとの時間（o_start・o_end）をつける。
-// 変更は Firestore の site_schedule/current = { changes: { [sid]: { start, end } } }。最後に受けとった変更はこの端末にもしまってあり（SCHEDULE_KEY）、次に開いたときは、読みこんですぐ反映する
 export const SCHEDULE_KEY = "kosen63-schedule";
 const schedItems = () => [["a", STAGE.acts], ["e", EVENTS]].flatMap(([k, list]) => list.map((x) => [k, x]));
 {
@@ -481,4 +391,4 @@ export function applySchedule(changes) {
     x.start = c?.start ?? x.o_start; x.end = c?.end ?? x.o_end;
   }
 }
-try { applySchedule(JSON.parse(localStorage.getItem(SCHEDULE_KEY) ?? "{}")); } catch { /* 保存できない・読めないときは、もとの時間のまま */ }
+try { applySchedule(JSON.parse(localStorage.getItem(SCHEDULE_KEY) ?? "{}")); } catch {  }

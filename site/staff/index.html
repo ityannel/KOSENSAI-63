@@ -13,7 +13,6 @@
   <link rel="stylesheet" href="staff.css">
 </head>
 <body>
-  <!-- ログイン -->
   <section class="gate" id="gate" hidden>
     <div class="gate-card">
       <img class="gate-logo" src="../assets/img/logo-s.webp" width="673" height="657" alt="">
@@ -29,7 +28,6 @@
     </div>
   </section>
 
-  <!-- 本体 -->
   <div class="shell" id="shell" hidden>
     <aside class="rail" aria-label="メニュー">
       <a class="brand" href="#overview">
@@ -69,7 +67,6 @@
         </div>
       </header>
 
-      <!-- ===== ダッシュボード ===== -->
       <section class="view" id="view-overview" data-title="ダッシュボード" data-eyebrow="OVERVIEW">
         <div class="kpis" id="kpis"></div>
         <div class="grid-2">
@@ -80,7 +77,6 @@
         </div>
       </section>
 
-      <!-- ===== アクセス：閲覧の数を、グラフで（stats.js が描く。数が届くたびに、描き直す） ===== -->
       <section class="view" id="view-stats" data-title="アクセス" data-eyebrow="ANALYTICS" hidden>
         <div class="st" id="stats"><p class="muted">読みこんでいます…</p></div>
         <article class="card">
@@ -91,7 +87,6 @@
         </article>
       </section>
 
-      <!-- ===== お知らせ・配信 ===== -->
       <section class="view" id="view-broadcast" data-title="お知らせ・配信" data-eyebrow="BROADCAST" hidden>
         <div class="grid-2">
           <article class="card nt-card">
@@ -187,7 +182,6 @@
         </article>
       </section>
 
-      <!-- ===== 混雑・実況 ===== -->
       <section class="view" id="view-crowd" data-title="混雑・実況" data-eyebrow="CROWD" hidden>
         <article class="card bulk" id="crowd-bulk">
           <header class="card-head"><h2>すべての会場を、一斉に変える</h2></header>
@@ -216,7 +210,6 @@
         </article>
       </section>
 
-      <!-- ===== 投稿 ===== -->
       <section class="view" id="view-posts" data-title="投稿の管理" data-eyebrow="ENISTAGRAM" hidden>
         <article class="card">
           <header class="card-head"><h2>本部として投稿する</h2><span class="pill pill-brand">公式</span></header>
@@ -238,9 +231,6 @@
         <div class="tl" id="post-list"></div>
       </section>
 
-      <!-- ===== 模擬店・印刷 ===== -->
-      <!-- 受付の流れ：来たお店を名前で探す →「印刷する」でセット（三角POP＋お店の人用）を刷る → 渡したら「渡した」 -->
-      <!-- ===== スケジュール ===== -->
       <section class="view" id="view-schedule" data-title="スケジュール" data-eyebrow="SCHEDULE" hidden>
         <article class="card">
           <header class="card-head"><h2>時間を変える</h2></header>
@@ -280,7 +270,6 @@
         </div>
       </section>
 
-      <!-- ===== 印刷・スタンプ ===== -->
       <section class="view" id="view-print" data-title="印刷・スタンプ" data-eyebrow="PRINT" hidden>
         <div class="grid-2">
             <article class="card">
@@ -317,7 +306,6 @@
       </section>
 
 
-      <!-- ===== サイトの設定 ===== -->
       <section class="view" id="view-settings" data-title="サイトの設定" data-eyebrow="SETTINGS" hidden>
         <div class="grid-2">
           <article class="card">
@@ -365,7 +353,6 @@
     </main>
   </div>
 
-  <!-- パスワードをたずねる小窓（スタンプラリーの全員の状況・リセット） -->
   <dialog class="pw-dialog" id="pw-dialog" aria-labelledby="pw-title">
     <form method="dialog" class="stack" id="pw-form">
       <h2 id="pw-title">パスワード</h2>
@@ -379,7 +366,6 @@
     </form>
   </dialog>
 
-  <!-- 印刷の確かめ（受付の「印刷する」・まとめて印刷）。印刷のときはこの中の紙だけが出る -->
   <div class="pr-overlay" id="print-overlay" role="dialog" aria-modal="true" aria-labelledby="pr-title" hidden>
     <header class="pr-bar">
       <div class="pr-bar-text"><small id="pr-kind-label"></small><h2 id="pr-title"></h2><p id="pr-note"></p></div>

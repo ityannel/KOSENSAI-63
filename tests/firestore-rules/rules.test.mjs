@@ -1,6 +1,3 @@
-// firestore.rules のテスト。Java が要る。
-//   cd tests/firestore-rules && npm install && npm test
-// 本部（staff の名簿）・来場者（匿名）・模擬店の人・ログインなし、それぞれができること／できないことを確かめる
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
 import { readFileSync } from "node:fs";
 import { doc, setDoc, getDoc, updateDoc, writeBatch, serverTimestamp, deleteDoc, increment } from "firebase/firestore";
@@ -9,7 +6,7 @@ const env = await initializeTestEnvironment({
   projectId: "enishi-test",
   firestore: { rules: readFileSync(new URL("../../firestore.rules", import.meta.url), "utf8"), host: "127.0.0.1", port: 8089 },
 });
-await env.clearFirestore(); // 前に動かしたときのデータを消してから
+await env.clearFirestore();
 let pass = 0, fail = 0;
 async function t(name, p) {
   try { await p; pass++; console.log("PASS", name); } catch (e) { fail++; console.log("FAIL", name, "-", e.message.split("\n")[0]); }
@@ -113,7 +110,6 @@ await t("presence ok in current window", assertSucceeds(setDoc(doc(nobody, `pres
 await t("presence rejects far window", assertFails(setDoc(doc(nobody, "presence/1"), { n: 1 })));
 
 
-// 本部の公式の投稿に画像：本部だけが、確認なしで公開できる
 const jpg = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
 const officialPost = (db, extra = {}) => ({ kind: "post", place: "", shop: null, stars: null, text: "写真つき", has_photo: true, photo_status: "approved", uid: db === staff ? "staff1" : "anon1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: null, official: true, ...extra });
 async function officialWithPhoto(db, id, postExtra, photo) {
@@ -130,13 +126,11 @@ await t("visitor cannot post as official with a photo", assertFails(officialWith
 await t("empty official post without photo rejected", assertFails(setDoc(doc(staff, "posts/op6"), officialPost(staff, { text: "", has_photo: false, photo_status: "none" }))));
 await t("everyone reads the official photo", assertSucceeds(getDoc(doc(nobody, "post_photos/op1"))));
 
-// 全員のキャッシュ削除：本部が、いま押したときだけ
 await t("staff clears everyone's cache", assertSucceeds(setDoc(doc(staff, "site_live/current"), { cache_reset_at: serverTimestamp(), updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
 await t("cache reset time cannot be faked", assertFails(setDoc(doc(staff, "site_live/current"), { cache_reset_at: new Date(2030, 0, 1), updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
 await t("other writes keep the cache reset time", assertSucceeds(setDoc(doc(staff, "site_live/current"), { notice: "y", updated_at: serverTimestamp(), updated_by: "honbu@example.com" }, { merge: true })));
 await t("visitor cannot clear everyone's cache", assertFails(setDoc(doc(anon, "site_live/current"), { cache_reset_at: serverTimestamp(), updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
 
-// 閲覧者数：1つ足すだけ。読めるのは本部だけ
 await t("anyone starts a visit counter at 1", assertSucceeds(setDoc(doc(nobody, "visit_counts/2026-10-24-3"), { n: 1 })));
 await t("counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "visit_counts/2026-10-24-3"), { n: increment(1) }, { merge: true })));
 await t("counter cannot jump", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-3"), { n: 50 }, { merge: true })));
@@ -159,7 +153,6 @@ await t("hour counter shard is 0-2", assertFails(setDoc(doc(nobody, "visit_hours
 await t("visitors cannot read hour counters", assertFails(getDoc(doc(anon, "visit_hours/2026-10-24-13-1"))));
 await t("staff reads hour counters", assertSucceeds(getDoc(doc(staff, "visit_hours/2026-10-24-13-1"))));
 
-// 本部の公式が、ほかの投稿にいいね・返信
 await t("staff replies officially to a post", assertSucceeds(setDoc(doc(staff, "posts/reply1"), { kind: "post", place: "", shop: null, stars: null, text: "ありがとう！", has_photo: false, photo_status: "none", uid: "staff1", created_at: serverTimestamp(), reports: 0, hidden: false, reply_to: "other", official: true })));
 await t("staff likes a post (one like per login)", assertSucceeds((async () => { const b = writeBatch(staff); b.set(doc(staff, "post_likes/other_staff1"), { post: "other", uid: "staff1", at: serverTimestamp() }); b.update(doc(staff, "posts/other"), { likes: increment(1) }); return b.commit(); })()));
 await t("staff cannot like the same post twice", assertFails((async () => { const b = writeBatch(staff); b.set(doc(staff, "post_likes/other_staff1"), { post: "other", uid: "staff1", at: serverTimestamp() }); b.update(doc(staff, "posts/other"), { likes: increment(1) }); return b.commit(); })()));
@@ -173,7 +166,6 @@ const photoPostStatus = (id, status) => {
   return b.commit();
 };
 
-// 写真の確認：本部が「写真を確認してから出す」をオンにしているあいだだけ、確認待ち（pending）。オフなら、そのまま公開（approved）
 const resetCool = () => env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), "users_meta/anon1"), { last_post: new Date(Date.now() - 120000) }));
 const setReview = (on) => env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), "site_live/current"), { photo_review: on, updated_at: new Date(), updated_by: "x" }, { merge: true }));
 await setReview(true); await resetCool();
@@ -186,7 +178,6 @@ await t("staff can switch photo review", assertSucceeds(setDoc(doc(staff, "site_
 await t("visitors cannot switch photo review", assertFails(setDoc(doc(anon, "site_live/current"), { photo_review: false, updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
 await setReview(false);
 
-// 混雑の「設定しない」（削除）と、スケジュールの変更
 await t("staff can delete crowd (unset)", assertSucceeds(deleteDoc(doc(staff, "crowd/gym2"))));
 await t("anonymous cannot delete crowd", assertFails(deleteDoc(doc(anon, "crowd/entrance"))));
 const sched = { changes: { a202610241215: { start: "2026-10-24T12:25:00+09:00", end: "2026-10-24T12:45:00+09:00" } }, updated_at: serverTimestamp(), updated_by: "honbu@example.com" };
@@ -196,57 +187,41 @@ await t("anonymous cannot write schedule changes", assertFails(setDoc(doc(anon, 
 await t("schedule rejects extra fields", assertFails(setDoc(doc(staff, "site_schedule/current"), { ...sched, secret: 1 })));
 await t("schedule rejects non-map changes", assertFails(setDoc(doc(staff, "site_schedule/current"), { ...sched, changes: "x" })));
 
-// ===================================================================
-// 「攻撃してみる」：なりすまし・水増し・他人の分の書き換えが、ふせげているか
-// ===================================================================
 
-// なりすまし：自分のログインの印とちがう uid で投稿する
 await t("ATTACK: post pretending to be someone else's uid", assertFails(visitorPost(anon, "atk1", { uid: "someone_else" })));
 await t("ATTACK: unauthenticated cannot post at all", assertFails(visitorPost(nobody, "atk2")));
 
-// クールダウンの回避：60秒のあいだ待たず、連続投稿する（ふつうに投稿したすぐあとに、もう一度）
 await resetCool();
 await t("post after cooldown elapsed (baseline)", assertSucceeds(visitorPost(anon, "atk3a")));
 await t("ATTACK: spam-posting right after, within 60s cooldown", assertFails(visitorPost(anon, "atk3b")));
 
-// 投稿を自分のものに見せかけて、users_meta だけ他人になりすまして進める
 await t("ATTACK: cannot update someone else's rate-limit record", assertFails(setDoc(doc(anon, "users_meta/someone_else"), { last_post: serverTimestamp() })));
 
-// NGワードを直接ふくむ投稿（文字どおりの一致は、ふせげている）
 await resetCool();
 await t("ATTACK: post containing a banned word is rejected", assertFails(visitorPost(anon, "atk4", { text: "死ね" })));
 
-// 閲覧者数：増える量を細工する（+50、マイナス、小数、文字列）
 await t("ATTACK: counter increment forged as huge jump", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-3"), { n: increment(50) }, { merge: true })));
 await t("ATTACK: counter forged negative to deflate stats", assertFails(setDoc(doc(nobody, "visit_counts/2026-10-24-3"), { n: increment(-1) }, { merge: true })));
 await t("ATTACK: counter id path traversal", assertFails(setDoc(doc(nobody, "visit_counts/../staff/honbu@example.com"), { n: 1 })));
 
-// スタンプラリー：他人の rally_logs を書き換える、時刻のなりすまし
 await t("ATTACK: write stamps into someone else's rally_logs", assertFails(setDoc(doc(anon, "rally_logs/someone_else"), { stamps: { takoyaki: 1 }, updated_at: serverTimestamp() })));
 await t("ATTACK: forge updated_at (not server time)", assertFails(setDoc(doc(anon, "rally_logs/anon1"), { stamps: {}, updated_at: new Date(2020, 0, 1) })));
 const bigStamps = Object.fromEntries(Array.from({ length: 101 }, (_, i) => [`shop${i}`, Date.now()]));
 await t("ATTACK: oversized stamps map rejected (over the 100 cap)", assertFails(setDoc(doc(anon, "rally_logs/anon1"), { stamps: bigStamps, updated_at: serverTimestamp() })));
-// ★見つかった弱点：スタンプの中身（どのお店をいつ押したか）は、QR を本当に読んだかどうかを裏で確かめていない。
-// クライアントの画面を経由せず、Firestore に直接書き込めば、押していないスタンプを「押した」ことにできてしまう
 await t("VULN: stamps content is not verified against real QR scans — fabricated stamp accepted", assertSucceeds(setDoc(doc(anon, "rally_logs/anon1"), { stamps: { takoyaki: Date.now(), never_scanned_shop: Date.now() }, updated_at: serverTimestamp() })));
-// ★見つかった弱点：claimed_at（景品を引き換えた時刻）も、実際のスタンプ数とは無関係に、本人が自由に書き込める
 await t("VULN: claimed_at can be set without collecting any stamps", assertSucceeds(setDoc(doc(anon, "rally_logs/anon1"), { stamps: {}, claimed_at: Date.now(), updated_at: serverTimestamp() })));
 await t("ATTACK: read someone else's stamp history", assertFails(getDoc(doc(stranger, "rally_logs/anon1"))));
 
-// いいね：他人の「いいね」を勝手に取り消して数を減らす（いいね連打もふせげているか再確認）
 await t("ATTACK: delete someone else's like to deflate count", assertFails(deleteDoc(doc(stranger, "post_likes/other_staff1"))));
 await t("ATTACK: like via update without creating post_likes record", assertFails(updateDoc(doc(anon, "posts/other"), { likes: increment(1) })));
 
-// 模擬店：コードを割られて、自分のお店でないお店の状態を書き換える／お店ごと消す
 await t("ATTACK: shop member edits a different shop without its code", assertFails(updateDoc(doc(anon, "shops/other_shop"), { status: "soldout", updated_at: serverTimestamp() })));
 await t("ATTACK: visitor deletes a shop", assertFails(deleteDoc(doc(anon, "shops/takoyaki"))));
 await t("ATTACK: self-registered stranger escalates to staff-only write", assertFails(setDoc(doc(stranger, "crowd/gym2"), { level: 0, updated_at: serverTimestamp() })));
 
-// 報告（通報）の濫用：post_reports を作らずに reports だけ増やす、他人の名でなりすまし通報
 await t("ATTACK: bump reports without creating a post_reports record", assertFails(updateDoc(doc(anon, "posts/other"), { reports: increment(1) })));
 await t("ATTACK: report id must match reporter's own uid", assertFails(setDoc(doc(anon, "post_reports/other_someone_else"), { post: "other", uid: "anon1", at: serverTimestamp() })));
 
-// お知らせの見た目（notice_style）
 const noticeSt = (db, style, extra = {}) => setDoc(doc(db, "site_live/current"), { notice: "テスト", notice_level: "info", notice_style: style, updated_at: serverTimestamp(), updated_by: "honbu@example.com", ...extra }, { merge: true });
 await t("staff saves a full notice style", assertSucceeds(noticeSt(staff, { font: "round", size: "l", bg: "#2F6FB8", fg: "#FFFFFF", icon: "mega", link_label: "くわしく", link_url: "https://example.com/a", from: 1790000000000, until: 1790003600000, where: ["top", "signage"] })));
 await t("unknown font rejected", assertFails(noticeSt(staff, { font: "comic" })));

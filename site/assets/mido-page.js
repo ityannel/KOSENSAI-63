@@ -1,6 +1,3 @@
-// みどころのページ（mido.html）：タイムテーブルの代わり。時間の決まった企画を、トップページと同じチケットの形で全部並べる（学内のみのものも札つきで）。
-// 上の札で「日にち」「種類」をしぼれる。いまやっているものには NOW、終わったものは「終了」でうすく。30秒ごとに印を進める
-// 時刻は ?now=2026-10-24T13:00 で確かめられる（トップページと同じ）
 import { FESTIVAL } from "./config.js";
 import { ALL_TICKETS as TICKETS, ticketHtml, rowHtml, isOn, isPast, dayOf, esc, venueName } from "./tickets.js";
 import { drawThread, watchThread } from "./thread.js";
@@ -13,18 +10,14 @@ const offset = nowParam ? new Date(nowParam.includes("+") ? nowParam : nowParam 
 const nowMs = () => Date.now() + offset;
 
 const fmt = (iso, o) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", ...o }).format(new Date(iso));
-// 札は1列：すべて（日にちも種類も解除）・日にち・いまやっている・ステージ・企画
 const DAYS = FESTIVAL.days.map((d) => [dayOf({ start: d.open }), `${fmt(d.open, { month: "numeric" })}.${dayOf({ start: d.open })} ${fmt(d.open, { weekday: "short" }).toUpperCase()}`]);
 const CATS = [["now", "いまやっている"], ["stage", "ステージ"], ["event", "企画"]];
 const VIEW_KEY = "kosen63-mido-view";
 const savedView = (() => { try { return localStorage.getItem(VIEW_KEY); } catch { return null; } })();
-// past：終わったものを開いているか。view：チケット（ticket）か一覧（list）か（このブラウザに覚える）
 const state = { day: "all", cat: "all", q: "", past: false, view: savedView === "list" ? "list" : "ticket" };
-// さがす：全角・半角、大文字・小文字、ひらがな・カタカナの違いは気にしない
 const norm = (s) => String(s ?? "").normalize("NFKC").toLowerCase().replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60)).replace(/\s+/g, "");
 const hay = (e) => norm([e.title, e.kind, e.mood, e.copy, venueName(e.venue)].join(" "));
 
-// 開催中は、はじめから今日の分を見せる
 const today = FESTIVAL.days.find((d) => fmt(d.open, { year: "numeric", month: "numeric", day: "numeric" }) === fmt(new Date(nowMs()).toISOString(), { year: "numeric", month: "numeric", day: "numeric" }));
 if (today) state.day = dayOf({ start: today.open });
 
@@ -42,10 +35,8 @@ function render() {
     (state.day === "all" || dayOf(e) === state.day)
     && (state.cat === "all" || (state.cat === "now" ? isOn(e, t) : state.cat === "stage" ? e.stageAct : !e.stageAct))
     && (!q || hay(e).includes(q)));
-  // 終わったものは「終了したイベントを見る」の中にしまう（開くと、上に時間の順で出る）
   const past = list.filter((e) => isPast(e, t));
   const rest = list.filter((e) => !isPast(e, t));
-  // 日にちが変わるところに、その日の見出し
   let lastDay = "";
   const cards = (arr) => arr.map((e, i) => {
     const d = dayOf(e);
@@ -62,7 +53,6 @@ function render() {
   document.getElementById("mido-empty").hidden = list.length > 0;
 }
 
-// 札：もう一度押すと外れる。「すべて」は日にちも種類も外す
 document.getElementById("mido-chips").addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
@@ -76,7 +66,7 @@ document.querySelector(".mido-view").addEventListener("click", (e) => {
   const b = e.target.closest("[data-view]");
   if (!b || b.dataset.view === state.view) return;
   state.view = b.dataset.view;
-  try { localStorage.setItem(VIEW_KEY, state.view); } catch { /* 覚えられなくても動く */ }
+  try { localStorage.setItem(VIEW_KEY, state.view); } catch {  }
   render();
 });
 document.getElementById("mido-tickets").addEventListener("click", (e) => {
@@ -85,7 +75,6 @@ document.getElementById("mido-tickets").addEventListener("click", (e) => {
   render();
 });
 
-// × ：シートを下へしまってから、もとのページへ（トップから来たときは、ブラウザの戻ると同じで元の場所へ）
 const sheet = document.querySelector(".mido-full");
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function close(e) {
@@ -96,15 +85,14 @@ function close(e) {
   if (calm) return go();
   sheet.classList.add("is-closing");
   sheet.addEventListener("animationend", go, { once: true });
-  setTimeout(go, 600); // アニメーションが動かないときのため
+  setTimeout(go, 600);
 }
 document.querySelector(".mido-close").addEventListener("click", close);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !e.target.closest?.("input")) close(e); });
-// 戻る・進むでこのページに戻ってきたときは、しまったままにしない
 addEventListener("pageshow", () => sheet.classList.remove("is-closing"));
 
 render();
 watchThread(document.getElementById("mido-tickets"));
-wireDetails(document.getElementById("mido-tickets"), nowMs); // チケットを押すと詳しいシート
+wireDetails(document.getElementById("mido-tickets"), nowMs);
 setInterval(render, 30000);
-setTimeout(() => watchSchedule(), 1500); // スケジュールの変更
+setTimeout(() => watchSchedule(), 1500);

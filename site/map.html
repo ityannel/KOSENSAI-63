@@ -18,17 +18,15 @@
   <meta name="twitter:image" content="https://hakodate-kosensai.pages.dev/assets/img/ogp.jpg?v=2">
   <meta name="theme-color" content="#ffffff" data-light="#ffffff" data-dark="#202124">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="manifest" href="manifest.webmanifest"><!-- サイトと同じアプリ（下のタブで切りかえ） -->
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/img/icon-180.png">
   <meta name="apple-mobile-web-app-title" content="高専祭">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Firebase（お知らせ・混雑・投稿）は、ページの部品と同時に読みはじめる（版は assets/live.js の FIREBASE_VERSION と同じにする） -->
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js" crossorigin>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js" crossorigin>
-  <!-- ページの部品を最初にまとめて読む（import を1段ずつたどって待たないように） -->
   <link rel="modulepreload" href="assets/map-page.js">
   <link rel="modulepreload" href="assets/config.js">
   <link rel="modulepreload" href="assets/live.js">
@@ -42,21 +40,15 @@
   <link rel="modulepreload" href="assets/qr-scan.js">
   <link rel="modulepreload" href="assets/side.js">
   <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&family=LINE+Seed+JP:wght@400;700;800&family=Noto+Sans+JP:wght@400;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <!-- 地図・Enistagram はトップと同じ字：短い見出し・ボタンは WDXL Lubrifont、文は Zen Kaku Gothic New。
-       場所の名前や投稿はどんな字も出るので、字をしぼらずに読みこむ（Google Fonts が使う字の分だけ小分けにして届ける） -->
   <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;family=Zen+Kaku+Gothic+New:wght@700;900&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <!-- 次に開きそうなページ（下のタブ・同じサイトのリンク）を、押しそうになったら裏で先に用意する（Chrome）。本部用は除く -->
   <script type="speculationrules">
   { "prerender": [{ "where": { "and": [{ "href_matches": "/*" }, { "not": { "href_matches": "/*staff/*" } }, { "not": { "href_matches": "*emulator*" } }] }, "eagerness": "moderate" }] }
   </script>
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/map.css">
-  <script src="assets/theme.js"></script><!-- ライト／ダークと差し色（描く前に決める） -->
-</head>
+  <script src="assets/theme.js"></script></head>
 <body class="mapapp">
-  <!-- PC：前に地図を広げていたら、描く前に広げておく（あとから広がって、がたつかないように）。map.css の body.is-wide -->
   <script src="assets/map-wide.js"></script>
-  <!-- アプリの画面（PC では真ん中のスマホの幅。まわりは side.js の左右の案内） -->
   <div class="app-frame">
   <main class="m-canvas" id="m-canvas">
     <svg id="map-svg" role="application" aria-label="校内マップ。ドラッグで動かし、ピンチかホイールで拡大縮小。部屋を押すと中身と道案内が出ます。"></svg>
@@ -65,7 +57,6 @@
 
   <header class="m-top">
     <div class="m-bar">
-      <!-- 左はしは押しまちがえないように、ボタンではなく虫眼鏡（押すと入力欄）。トップへはいちばん下のタブの「サイト」から -->
       <label class="m-search">
         <svg class="m-glass" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20.5 20.5"/></svg>
         <span class="visually-hidden">場所をさがす</span>
@@ -74,7 +65,6 @@
       <button type="button" class="m-clear" id="m-clear" aria-label="検索をやめる" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="m-chips" id="m-chips" role="toolbar" aria-label="よく探すもの"></div>
-    <!-- 会場の混雑（本部が更新したときだけ出る）。押すとその会場へ -->
     <p class="m-notice" id="m-notice" hidden><span></span><button type="button" data-close aria-label="お知らせを閉じる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></p>
   </header>
 
@@ -87,9 +77,7 @@
     <button type="button" class="m-compass" id="m-compass" aria-label="北を上にする（もう一度押すと校内図の向き）"><i></i><b>N</b></button>
     <button type="button" class="m-fab m-tilt" id="m-tilt" aria-label="地図を傾けて見る" aria-pressed="false">3D</button>
     <button type="button" class="m-fab" id="m-fit" aria-label="校舎と敷地全体を切りかえ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
-    <!-- PC だけ：地図を画面いっぱいに広げる・もどす（スマホ・せまい画面では出さない） -->
     <button type="button" class="m-fab m-wide" id="m-wide" aria-label="地図を画面いっぱいに広げる" aria-pressed="false" title="広げる"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="on" d="M4 12h16M8 7l-5 5 5 5M16 7l5 5-5 5"/><path class="off" d="M3 12h7M21 12h-7M6 7l5 5-5 5M18 7l-5 5 5 5"/></svg></button>
-    <!-- 地図の見かた（色と印の意味）。さがす欄から、右のボタンの列へ -->
     <button type="button" class="m-fab m-help" id="m-help" aria-label="地図の見かた（色と印の意味）">?</button>
   </div>
 
@@ -99,7 +87,6 @@
     <div class="m-sheet-body" id="m-sheet-body"></div>
   </section>
 
-  <!-- Enistagram（エニスタグラム）：来場者の SNS。タイムライン・写真 -->
   <section class="m-feed" id="m-feed" aria-label="Enistagram" hidden>
     <header class="f-head">
       <h2 class="f-logo"><img src="assets/img/enistagram.webp" width="640" height="114" alt="Enistagram"></h2>
@@ -131,6 +118,5 @@
 
   <script type="module" src="assets/map-page.js"></script>
   <script type="module" src="assets/side.js"></script>
-  <script type="module" src="assets/test-loader.js"></script><!-- ?test=1 のときだけ、テスト用パネル -->
-</body>
+  <script type="module" src="assets/test-loader.js"></script></body>
 </html>

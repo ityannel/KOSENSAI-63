@@ -1,6 +1,3 @@
-// みどころのチケット（Figma）。トップページの「みどころ」（main.js）と、みどころのページ（mido-page.js）の両方で使う。
-// 時間の決まった企画：ステージは出演する団体ごと、ほかは企画ごと。
-// トップの3枚（TICKETS）は学内のみのものを出さない。みどころのページ（タイムテーブルの代わり）は全部（ALL_TICKETS）で、学内のみは札で知らせる
 import { EVENTS, LIST_EVENTS, STAGE, VENUES } from "./config.js";
 import { changed } from "./schedule.js";
 
@@ -12,7 +9,6 @@ export const venueName = (id) => {
 };
 const fmt = (iso, o) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", ...o }).format(new Date(iso));
 
-// 種類がまだ届いていない出演は、チケットの色が全部同じにならないように、順に色をかえる（種類が届いたら、そちらの色）
 const HUES = ["band", "acoustic", "comedy", "dance"];
 const ACTS = STAGE.acts.map((a, i) => ({ ...a, title: a.name, venue: STAGE.venue, stageAct: true, hue: HUES[i % HUES.length] }));
 export const ALL_TICKETS = [...EVENTS.filter((e) => !(ACTS.length && e.stage)), ...LIST_EVENTS, ...ACTS]
@@ -21,20 +17,15 @@ export const TICKETS = ALL_TICKETS.filter((e) => !e.internal && !e.listOnly);
 
 export const isOn = (e, t) => Date.parse(e.start) <= t && t < Date.parse(e.end);
 export const isPast = (e, t) => Date.parse(e.end) <= t;
-// いまやっているもの → これから始まるもの（終わったものは入れない）
 export const upcomingTickets = (t) => [...TICKETS.filter((e) => isOn(e, t)), ...TICKETS.filter((e) => Date.parse(e.start) > t)];
 export const dayOf = (e) => fmt(e.start, { day: "numeric" });
 
-// チケットの色（紙の色）：種類ごと。バンド・弾き語りなどの音楽・ダンス・お笑い・展示や発表などの企画
 const CATS = { band: ["ロック", "バンド", "パンク", "合同バンド"], acoustic: ["吹奏楽", "アカペラ", "弾き語り"], dance: ["ダンス"], comedy: ["漫才", "コント"] };
 export const catOf = (e) => Object.keys(CATS).find((c) => CATS[c].includes(e.kind)) ?? e.hue ?? "event";
 
 const TILTS = [-2.8, 1.5, -1.2];
-// 写真の傾き：バンドごとに、少しずつ変える（団体名から決まるので、毎回同じ角度）
 const PTILTS = [4, -3, 5, -5, 3, -2, 6, -4];
 const photoTilt = (name) => PTILTS[[...String(name)].reduce((n, c) => n + c.charCodeAt(0), 0) % PTILTS.length];
-// チケットの写真：いちばん目立つ1枚を前に、ほかの写真（more）は後ろに少しずらして重ねる（最大3枚まで見せる）。
-// 前の写真が持つ data-photos に、見せる順の全部（小さい版の URL）を入れる。押すと、これをスライドショーにする（detail.js）
 export const photosOf = (e) => (e.photo ? [e.photo, ...(e.more ?? [])] : []);
 function photoStack(e) {
   const all = photosOf(e);
@@ -45,8 +36,8 @@ function photoStack(e) {
 export function ticketHtml(e, i, t) {
   const on = isOn(e, t);
   const wd = fmt(e.start, { weekday: "short" }).toUpperCase();
-  const tags = [e.internal && "学内のみ", e.kind, !e.stageAct && e.mood].filter(Boolean); // 出演団体は、一言を紹介文の位置に出す（タグには入れない）
-  const line = e.stageAct ? e.mood : e.copy; // 出演団体のチケットは一言。詳しい紹介文は、押したときの詳しいシートで出す
+  const tags = [e.internal && "学内のみ", e.kind, !e.stageAct && e.mood].filter(Boolean);
+  const line = e.stageAct ? e.mood : e.copy;
   return `
     <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.photo ? " has-photo" : ""}${e.more?.length ? " is-stack" : ""}" href="map.html#${esc(e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
       <div class="tk-shape"><div class="tk-body">${on ? `<span class="tk-eq" aria-hidden="true">${Array.from({ length: 22 }, (_, k) => `<i style="--k:${k};--h:${30 + ((k * 37) % 55)}%"></i>`).join("")}</span>` : ""}<i class="tk-hole" aria-hidden="true"></i>
@@ -63,7 +54,6 @@ export function ticketHtml(e, i, t) {
     </a>`;
 }
 
-// 一覧（みどころのページの切りかえ）：時間・名前・種類・場所を1行ずつ。左の色の帯はチケットの色と同じ
 export function rowHtml(e, t) {
   const on = isOn(e, t);
   const tags = [e.internal && "学内のみ", e.kind, e.mood].filter(Boolean).join("・");

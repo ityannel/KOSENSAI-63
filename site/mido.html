@@ -24,16 +24,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <!-- 見出し・チケットの字（WDXL Lubrifont JP N）と、説明の字（Zen Kaku Gothic New）。使う字だけ。python tools/update-font-subset.py で更新 -->
   <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&amp;display=swap&amp;text=Enistagram" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="assets/style.css">
-  <script src="assets/theme.js"></script><!-- ライト／ダークと差し色（描く前に決める） -->
-</head>
-<!-- みどころのページ：トップページの「みどころ」の続き（サイトの中の1ページ。下のタブは「サイト」のまま）。
-     下からシートが出てくる形。右上の × で下へしまって、もとのページへ戻る。
-     時間の決まった企画を、チケットの形で全部。さがす・日にち・種類・いまやっているものでしぼれる -->
+  <script src="assets/theme.js"></script></head>
 <body class="mido-page" data-page="mido">
   <main class="mido mido-full" id="pickup" aria-labelledby="mido-title">
     <div class="mido-in">
@@ -41,7 +36,6 @@
       <h1 class="mido-title" id="mido-title">みどころを詳しく</h1>
       <div class="mido-tools">
         <label class="mido-search"><span class="visually-hidden">さがす</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></svg><input type="search" id="mido-q" placeholder="団体名・企画名でさがす" enterkeyhint="search" autocomplete="off"></label>
-        <!-- 見せ方の切りかえ：チケット／一覧 -->
         <div class="mido-view" role="group" aria-label="見せ方">
           <button type="button" data-view="ticket" aria-label="チケットで見る" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5a1.5 1.5 0 0 1 1.5-1.5H9a1.5 1.5 0 0 0 3 0h7.5A1.5 1.5 0 0 1 21 7.5v9a1.5 1.5 0 0 1-1.5 1.5H12a1.5 1.5 0 0 0-3 0H4.5A1.5 1.5 0 0 1 3 16.5z"/><path d="M10.5 9v1.5M10.5 13.5V15"/></svg></button>
           <button type="button" data-view="list" aria-label="一覧で見る" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="17.5" r="1.2"/></svg></button>
@@ -53,7 +47,6 @@
     </div>
   </main>
 
-  <!-- 下のタブ：サイト・地図・Enistagram（みどころはサイトの中のページ） -->
   <nav class="site-tabs" id="site-tabs" aria-label="切りかえ">
     <a href="./" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg>サイト</a>
     <a href="map.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/></svg>地図</a>
@@ -63,6 +56,5 @@
   <script type="module" src="assets/mido-page.js"></script>
   <script type="module" src="assets/side.js"></script>
   <script type="module" src="assets/offline.js"></script>
-  <script type="module" src="assets/test-loader.js"></script><!-- ?test=1 のときだけ、テスト用パネル -->
-</body>
+  <script type="module" src="assets/test-loader.js"></script></body>
 </html>

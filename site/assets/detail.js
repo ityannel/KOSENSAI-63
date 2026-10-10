@@ -1,6 +1,3 @@
-// みどころのチケット・縁日のお店を押したときに、下から出てくる詳しいシート。
-// 地図へはいきなり行かず、ここの「地図で場所を見る」から行く。
-// トップページ（main.js・shops-board.js）と、みどころのページ（mido-page.js）で使う
 import { SHOPS, GENRES, HOMEROOMS, MAP, ELECTION } from "./config.js";
 import { ALL_TICKETS, ticketHtml, isOn, isPast, esc, hhmm, venueName, photosOf } from "./tickets.js";
 import { tRange } from "./schedule.js";
@@ -9,7 +6,6 @@ const fmt = (iso, o) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo
 const dayText = (iso) => `${fmt(iso, { month: "numeric" })}.${fmt(iso, { day: "numeric" })} ${fmt(iso, { weekday: "short" }).toUpperCase()}`;
 const mins = (ms) => Math.max(1, Math.round(ms / 60000));
 
-// ---------- シートの外側（1つだけ作って使いまわす） ----------
 let root, sheet, body, lastFocus;
 function build() {
   if (root) return;
@@ -33,9 +29,9 @@ function open(html) {
   body.innerHTML = html;
   root.hidden = false;
   root.classList.remove("is-closing");
-  document.documentElement.classList.add("dt-open"); // うしろのページを動かさない
+  document.documentElement.classList.add("dt-open");
   sheet.scrollTop = 0;
-  sheet.focus({ preventScroll: true }); // シートに合わせる（× に枠が出ないように）
+  sheet.focus({ preventScroll: true });
 }
 function close() {
   if (!root || root.hidden) return;
@@ -53,7 +49,6 @@ const mapLinks = (id) => `
     <a class="mido-more dt-go" href="map.html#${esc(id)}"><span>地図で場所を見る</span></a>
   </div>`;
 
-// ---------- イベント・ステージの団体 ----------
 export function openEvent(e, t = Date.now()) {
   const on = isOn(e, t), past = isPast(e, t);
   const start = Date.parse(e.start);
@@ -75,7 +70,6 @@ export function openEvent(e, t = Date.now()) {
     ${mapLinks(e.venue)}`);
 }
 
-// ---------- 縁日のお店 ----------
 const where = (s) => {
   if (s.place) return MAP.places.find((p) => p.id === s.place)?.name ?? "";
   if (s.bldg) return `${s.bldg}-${s.floor}`;
@@ -88,10 +82,9 @@ function voteUrl(s, now) {
   if (!e?.form || now < Date.parse(e.opens) || now >= Date.parse(e.closes)) return null;
   return e.prefill ? e.prefill.replace("{shop}", encodeURIComponent(s.name)) : e.form;
 }
-// お店のいまの様子（待ち時間・休業中）と、お店のひとこと。シートを開いたときに Firestore から読む（トップを開いただけでは読まない）
 const STATUS = { "10min": ["10分待ち", "#e8a317"], "20min": ["20分以上待ち", "#d93025"], soldout: ["売り切れ", "#6b6b6b"], closed: ["休業中", "#4b5a8a"] };
 let liveList = null, liveP = null;
-const liveWatchers = new Set(); // 縁日の札（shops-board.js）など、お店の様子が届くたびに知りたいところ
+const liveWatchers = new Set();
 function liveShops() {
   liveP ??= import("./live.js").then(({ subscribeShops }) => subscribeShops((list) => {
     liveList = list;
@@ -101,14 +94,12 @@ function liveShops() {
   return liveP;
 }
 const norm = (t) => String(t ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase();
-// 地図（map.js の shopDocFor）と同じ見分け方：map（クラス・部屋番号・名前）か、名前
 function docFor(s) {
   const room = s.room ?? HOMEROOMS[s.cls];
   return liveList?.find((d) => (d.map ? [s.name, s.cls, room].filter(Boolean).some((v) => norm(v) === norm(d.map)) : norm(d.name) === norm(s.name))) ?? null;
 }
-// お店の様子を読み始める（縁日の札から）。届くたびに fn を呼ぶ
 export function watchShops(fn) { liveWatchers.add(fn); if (liveList) fn(); liveShops(); }
-export const liveOf = (s) => { const d = docFor(s); const st = d && STATUS[d.status]; return st ? { label: st[0], color: st[1], at: d.updated_at } : null; }; // 待ちなし・情報なしは null
+export const liveOf = (s) => { const d = docFor(s); const st = d && STATUS[d.status]; return st ? { label: st[0], color: st[1], at: d.updated_at } : null; };
 const ago = (ms) => { const m = Math.floor((Date.now() - ms) / 60000); return m < 1 ? "たった今" : m < 60 ? `${m}分前` : `${Math.floor(m / 60)}時間前`; };
 function fillLive(el) {
   const s = SHOPS[+el.dataset.liveShop];
@@ -137,10 +128,8 @@ export function openShop(s, now = Date.now()) {
   if (live) { if (liveList) fillLive(live); liveShops(); }
 }
 
-// ほかの場所（ご来場の皆さまへの札など）からも、同じシートを使う
 export { open as openSheet };
 
-// 押したチケット・お店から、詳しいシートを開く（リンクの行き先は地図のまま残す。新しいタブで開くときなどはそのまま）
 export function wireDetails(container, getNow = () => Date.now()) {
   container?.addEventListener("click", (ev) => {
     if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
@@ -151,10 +140,6 @@ export function wireDetails(container, getNow = () => Date.now()) {
   });
 }
 
-// ---------- 写真を大きく見る（スライドショー） ----------
-// チケットの写真（.tk-photo）・詳しいシートの写真（.dt-photo-img）を押すと、元の構図のままの大きい写真を出す。
-// 写真が複数あるときは、左右の矢印・スワイプ・← → キーで送れる（data-photos に、見せる順の小さい版の URL が「|」でつながっている）。大きい版は「◯◯.webp」の「◯◯-l.webp」
-// チケットを押したときの動き（シートを開く）より先に受けたいので、capture で拾う
 let zoom, zoomImg, zoomLast, zList = [], zIdx = 0, zName = "";
 const bigOf = (src) => src.replace(/(-l)?\.webp$/, "-l.webp");
 function zoomBuild() {
@@ -171,7 +156,7 @@ function zoomBuild() {
   zoom.addEventListener("click", (e) => {
     if (e.target.closest(".pz-prev")) return zoomGo(-1, e);
     if (e.target.closest(".pz-next")) return zoomGo(1, e);
-    zoomClose(); // 矢印以外は、どこを押してもとじる
+    zoomClose();
   });
   addEventListener("keydown", (e) => {
     if (zoom.hidden) return;
@@ -179,7 +164,6 @@ function zoomBuild() {
     else if (e.key === "ArrowLeft") zoomGo(-1, e);
     else if (e.key === "ArrowRight") zoomGo(1, e);
   }, true);
-  // スワイプ（指で左右）
   let x0 = null;
   zoom.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; }, { passive: true });
   zoom.addEventListener("touchend", (e) => {
@@ -190,7 +174,7 @@ function zoomBuild() {
 }
 function zoomShow() {
   const src = zList[zIdx];
-  zoomImg.src = src; // 大きい版が届くまで、小さい版を出しておく
+  zoomImg.src = src;
   const big = new Image();
   big.onload = () => { if (!zoom.hidden && zList[zIdx] === src) zoomImg.src = big.src; };
   big.src = bigOf(src);
@@ -202,7 +186,7 @@ function zoomGo(d, e) {
   e?.preventDefault?.(); e?.stopPropagation?.();
   if (zList.length < 2) return;
   zIdx = (zIdx + d + zList.length) % zList.length;
-  zoomImg.classList.remove("is-slide-l", "is-slide-r"); void zoomImg.offsetWidth; // アニメーションをやりなおす
+  zoomImg.classList.remove("is-slide-l", "is-slide-r"); void zoomImg.offsetWidth;
   zoomImg.classList.add(d > 0 ? "is-slide-l" : "is-slide-r");
   zoomShow();
 }
@@ -216,11 +200,11 @@ function zoomOpen(thumb) {
   zoomShow();
   zoom.classList.remove("is-closing");
   zoom.hidden = false;
-  zoom.focus({ preventScroll: true }); // 枠が出ないように、× ではなく外側に合わせる
+  zoom.focus({ preventScroll: true });
 }
 function zoomClose() {
   if (!zoom || zoom.hidden) return;
-  if (zoom.dataset.swiped) return; // スワイプの直後のタップで、とじない
+  if (zoom.dataset.swiped) return;
   const done = () => { zoom.hidden = true; zoomLast?.focus?.({ preventScroll: true }); };
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return done();
   zoom.classList.add("is-closing");
@@ -230,6 +214,6 @@ document.addEventListener("click", (e) => {
   const img = e.target.closest?.(".tk-photo:not(.is-back), .dt-photo-img");
   if (!img) return;
   e.preventDefault();
-  e.stopPropagation(); // チケットを押した扱いにしない（シートを開かない）
+  e.stopPropagation();
   zoomOpen(img);
 }, true);

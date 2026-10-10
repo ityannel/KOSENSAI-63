@@ -1,6 +1,3 @@
-// 本部コンソール（staff/index.html）
-// お知らせ・緊急のお知らせ・生配信・表示の切りかえ・混雑・5人の実況・投稿（写真の確認・報告・本部の投稿）・模擬店・文章と書体を、ここ1つで変える。
-// だれが使えるかは firestore.rules（staff コレクションにメールアドレスがある人だけ）で決まる。
 import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/live.js";
 import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES, ELECTION, scheduleItems } from "../assets/config.js";
 import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
@@ -26,9 +23,6 @@ const time = (ms) => (ms ? new Date(ms).toLocaleString("ja-JP", { timeZone: "Asi
 const hhmm = (ms) => new Date(ms).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" });
 const toMs = (v) => v?.toMillis?.() ?? null;
 
-// ---------- 通知音 ----------
-// 新しい投稿（来場者）が来たら「ピンポン」（高い2音）、お店の状況（待ち時間・完売・ひとこと）が変わったら「ポロロン」（低めの3音）。
-// 音は、ブラウザの中で作る（音のファイルは使わない）。ページを開いて最初に押した・触ったあとから鳴る（ブラウザの決まり）。右上のボタンで、オン・オフ
 const SOUND_KEY = "kosen63-staff-sound";
 let audioCtx = null;
 const soundOn = () => { try { return localStorage.getItem(SOUND_KEY) !== "off"; } catch { return true; } };
@@ -51,11 +45,11 @@ function note(freq, at, dur, type, vol) {
 function chime(kind) {
   if (!soundOn()) return;
   try {
-    if (kind === "post") { note(988, 0, 0.35, "sine", 0.2); note(1319, 0.16, 0.5, "sine", 0.2); }                       // ピンポン（高い2音）
-    else { note(392, 0, 0.3, "triangle", 0.22); note(494, 0.13, 0.3, "triangle", 0.22); note(587, 0.26, 0.45, "triangle", 0.22); } // ポロロン（低めの3音）
-  } catch { /* 音を出せないブラウザ */ }
+    if (kind === "post") { note(988, 0, 0.35, "sine", 0.2); note(1319, 0.16, 0.5, "sine", 0.2); }
+    else { note(392, 0, 0.3, "triangle", 0.22); note(494, 0.13, 0.3, "triangle", 0.22); note(587, 0.26, 0.45, "triangle", 0.22); }
+  } catch {  }
 }
-const unlockAudio = () => { try { audio(); } catch { /* 音を出せないブラウザ */ } };
+const unlockAudio = () => { try { audio(); } catch {  } };
 addEventListener("pointerdown", unlockAudio, { once: true });
 addEventListener("keydown", unlockAudio, { once: true });
 function renderSoundToggle() {
@@ -64,13 +58,12 @@ function renderSoundToggle() {
   b.textContent = `通知音：${on ? "オン" : "オフ"}`;
 }
 $("#sound-toggle").addEventListener("click", () => {
-  try { localStorage.setItem(SOUND_KEY, soundOn() ? "off" : "on"); } catch { /* 保存できないブラウザ */ }
+  try { localStorage.setItem(SOUND_KEY, soundOn() ? "off" : "on"); } catch {  }
   renderSoundToggle();
-  chime("post"); // オンにしたときに、音の見本
+  chime("post");
 });
 renderSoundToggle();
 
-// ---------- 小窓 ----------
 let toastTimer = null;
 function toast(text, error = false) {
   const t = $("#toast");
@@ -80,7 +73,6 @@ function toast(text, error = false) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("is-on"), 2600);
 }
-// Firestore に書く。失敗したら理由を出す
 async function write(label, fn) {
   try {
     await fn();
@@ -94,7 +86,6 @@ async function write(label, fn) {
 }
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
-// ---------- 画面の切りかえ（#overview など） ----------
 const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "shops", "schedule", "print", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
@@ -109,10 +100,6 @@ function route() {
 }
 addEventListener("hashchange", route);
 
-// ---------- アクセス（閲覧の数のグラフ。stats.js が描く） ----------
-// 「アクセス」を開いたときに、はじめて読みこむ（ほかの画面だけを使う人の分、読みこみを減らす）。
-// - presence：5分ごとの、サイトを開いていた端末の数。直近2時間半だけを聞く
-// - visit_hours：1時間ごとの数。きょうと、選んだ日だけを聞く
 const hourSubs = new Set();
 let statsListening = false, statsWired = false;
 function watchHours(day) {
@@ -126,7 +113,7 @@ function watchHours(day) {
   });
 }
 function openStats() {
-  if (!a.currentUser) return; // ログインの前は、まだ読めない（ログインしたら startListening が呼ぶ）
+  if (!a.currentUser) return;
   if (!statsWired) {
     statsWired = true;
     wireStats($("#stats"));
@@ -136,7 +123,7 @@ function openStats() {
       watchHours(state.statsDay); drawStats();
     });
     $("#stats-live-off").addEventListener("change", (e) => saveLive(e.target.checked ? "「いまのようす」の集計を止めました" : "「いまのようす」の集計を再開しました", { presence_off: e.target.checked }));
-    setInterval(drawStats, 20000); // 数が届かなくても、時間がたつと5分の区切りがずれていく
+    setInterval(drawStats, 20000);
   }
   if (!statsListening) {
     statsListening = true;
@@ -150,28 +137,26 @@ function openStats() {
 function drawStats() {
   if (!statsListening || $("#view-stats").hidden) return;
   const today = statDay(Date.now());
-  watchHours(today); // 日付が変わったら、新しい日も聞く
+  watchHours(today);
   renderStats($("#stats"), { visits: state.visits, devices: state.devices, hours: state.hours, presence: state.presence, day: state.statsDay ?? today, now: Date.now() });
 }
 
-// 時計（日本時間）
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
-// ---------- データ ----------
 const state = { schedule: {}, myLikes: new Set(), visits: {}, devices: {}, hours: {}, presence: {}, statsDay: null, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
 }
 function startListening() {
-  statsListening = false; hourSubs.clear(); // ログインし直したら、「アクセス」の読みこみもやり直す
+  statsListening = false; hourSubs.clear();
   listen(fs.collection(db, "visit_counts"), (snap) => {
     state.visits = {};
     snap.forEach((d) => { const day = d.id.slice(0, 10); state.visits[day] = (state.visits[day] ?? 0) + (d.data().n ?? 0); });
     renderOverview(); drawStats();
   });
   listen(fs.collection(db, "visit_devices"), (snap) => {
-    state.devices = {}; // { 日付: { phone, tablet, pc } }
+    state.devices = {};
     snap.forEach((d) => { const [y, m, dd, dev] = d.id.split("-"); const day = `${y}-${m}-${dd}`; (state.devices[day] ??= { phone: 0, tablet: 0, pc: 0 })[dev] += d.data().n ?? 0; });
     renderOverview(); drawStats();
   });
@@ -183,7 +168,6 @@ function startListening() {
     renderCrowd(); renderOverview();
   });
   listen(fs.doc(db, "chatter", "current"), (snap) => { state.chatter = snap.data() ?? {}; renderChatter(); renderOverview(); });
-  // 本部のログインでいいねした投稿（公式のいいね）。ハートの色に使う
   listen(fs.query(fs.collection(db, "post_likes"), fs.where("uid", "==", a.currentUser.uid)), (snap) => {
     state.myLikes = new Set();
     snap.forEach((d) => state.myLikes.add(d.data().post));
@@ -191,7 +175,6 @@ function startListening() {
   });
   let postsReady = false;
   listen(fs.query(fs.collection(db, "posts"), fs.orderBy("created_at", "desc"), fs.limit(300)), (snap) => {
-    // 開いた直後の読みこみでは鳴らさない。そのあとに足された来場者の投稿（本部の公式の投稿・自分の書きこみは除く）で鳴らす
     if (postsReady && !snap.metadata.hasPendingWrites && snap.docChanges().some((c) => c.type === "added" && !c.doc.data().official)) chime("post");
     postsReady = true;
     state.posts = [];
@@ -203,7 +186,7 @@ function startListening() {
     renderPosts(); renderOverview();
   });
   let shopsReady = false;
-  const shopSig = new Map(); // お店ごとの、前の待ち時間・ひとこと（変わったときだけ鳴らす）
+  const shopSig = new Map();
   listen(fs.collection(db, "shops"), (snap) => {
     let changed = false;
     snap.docChanges().forEach((c) => {
@@ -211,7 +194,7 @@ function startListening() {
       if (shopsReady && c.type !== "removed" && shopSig.get(c.doc.id) !== sig && !snap.metadata.hasPendingWrites) changed = true;
       shopSig.set(c.doc.id, sig);
     });
-    if (changed) chime("shop"); // 開いた直後の読みこみ・自分の変更では鳴らさない
+    if (changed) chime("shop");
     shopsReady = true;
     state.shops = [];
     snap.forEach((d) => state.shops.push({ id: d.id, ...d.data() }));
@@ -228,11 +211,10 @@ function startListening() {
     snap.forEach((d) => state.codes.push({ code: d.id, ...d.data() }));
     renderShops();
   });
-  listen(fs.doc(db, "site_config", "current"), (snap) => { state.siteConfig = snap.data() ?? null; if (!blocksDirty) { draft = null; renderBlocks(); renderMode(); } }); // 並べかえている途中は描き直さない
+  listen(fs.doc(db, "site_config", "current"), (snap) => { state.siteConfig = snap.data() ?? null; if (!blocksDirty) { draft = null; renderBlocks(); renderMode(); } });
   listen(fs.doc(db, "rally_control", "current"), (snap) => { state.rallyControl = snap.data() ?? null; });
 }
 
-// ---------- ダッシュボード ----------
 function renderOverview() {
   const pending = state.posts.filter((p) => p.photo_status === "pending" && !p.hidden).length;
   const reported = state.posts.filter((p) => p.reports > 0 && !p.hidden).length;
@@ -241,13 +223,12 @@ function renderOverview() {
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
   const visitsToday = state.visits[today] ?? 0;
   const visitsAll = Object.values(state.visits).reduce((a, b) => a + b, 0);
-  // 端末の別（数えはじめたのは 10/7 の公開から。それより前の閲覧は、端末がわからない）
   const dev = { phone: 0, tablet: 0, pc: 0 };
   for (const d of Object.values(state.devices ?? {})) for (const k of Object.keys(dev)) dev[k] += d[k] ?? 0;
   const devAll = dev.phone + dev.tablet + dev.pc;
   const devPct = (n) => Math.round((n / devAll) * 100);
-  const deviceShare = devAll ? `${devPct(dev.phone)}% / ${devPct(dev.pc)}%` : "—"; // スマホ / パソコン
-  const deviceSub = `スマホ ${dev.phone}・PC ${dev.pc}・タブレット ${dev.tablet}（計 ${devAll} 台）`; // 割合だけだと、数が少ないことに気づけないので、台数も出す
+  const deviceShare = devAll ? `${devPct(dev.phone)}% / ${devPct(dev.pc)}%` : "—";
+  const deviceSub = `スマホ ${dev.phone}・PC ${dev.pc}・タブレット ${dev.tablet}（計 ${devAll} 台）`;
   const kpi = (label, value, sub, color, href) => `<a class="kpi" href="${href}" style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
   $("#kpis").innerHTML = [
     kpi("きょうの閲覧者", visitsToday, "台（1日1回まで）", "var(--teal)", "#overview"),
@@ -277,7 +258,6 @@ function renderOverview() {
   ].join("");
 }
 
-// ---------- お知らせ・配信 ----------
 function toEmbedUrl(url) {
   try {
     const u = new URL(url);
@@ -290,7 +270,6 @@ function toEmbedUrl(url) {
     return null;
   }
 }
-// ---------- お知らせの見た目（フォント・大きさ・色・アイコン・リンク・期間・場所。見た目の決まりは ../assets/notice.js） ----------
 const NT_TPL = {
   info: { level: "info", style: { icon: "mega" } },
   event: { level: "info", style: { icon: "star", bg: "#D9669B", fg: "#FFFFFF", font: "round" } },
@@ -309,10 +288,8 @@ function buildNoticeForm() {
   $("#nt-icons").innerHTML = [["", ["なし", ""]], ...Object.entries(NT_ICONS)].map(([k, [l, d]], i) => `<label class="nt-ic" title="${esc(l)}"><input type="radio" name="nt-icon" value="${k}"${i === 0 ? " checked" : ""}><span>${d ? `<svg viewBox="0 0 24 24" aria-label="${esc(l)}"><path d="${d}"/></svg>` : "なし"}</span></label>`).join("");
   $("#nt-wheres").innerHTML = NT_WHERES.map(([k, l]) => `<label><input type="checkbox" name="nt-where" value="${k}"${NT_DEFAULT_WHERE.includes(k) ? " checked" : ""}> ${esc(l)}</label>`).join("");
 }
-// datetime-local（日本時間）⇄ ミリ秒
 const jstMs = (v) => (v ? Date.parse(`${v}:00+09:00`) : 0);
 const jstStr = (ms) => (ms ? new Date(ms + 9 * 3600000).toISOString().slice(0, 16) : "");
-// いまの入力から、保存する notice_style を作る（何も決めていなければ null）。https 以外のリンクは、受けつけない
 function readNoticeStyle() {
   const st = {};
   const font = $("#nt-font").value; if (font) st.font = font;
@@ -343,7 +320,6 @@ function fillNoticeStyle(st = {}) {
   const wh = Array.isArray(st.where) && st.where.length ? st.where : NT_DEFAULT_WHERE;
   $$('[name="nt-where"]').forEach((c) => { c.checked = wh.includes(c.value); });
 }
-// 種類：緊急だけ、緊急（赤い帯・点滅の印・確認つき）。ほかは、ふつう。選ぶと、その種類の見た目が入る
 const ntLevel = () => ($('[name="nt-type"]:checked')?.value === "urgent" ? "urgent" : "info");
 function applyTemplate(key) {
   const t = NT_TPL[key]; if (!t) return;
@@ -361,7 +337,6 @@ function renderBroadcast() {
   const ss = $("#stream-state");
   ss.className = `pill ${l.stream_active && l.stream_url ? "is-live" : ""}`;
   ss.textContent = l.stream_active && l.stream_url ? "配信中" : "止まっている";
-  // 入力欄は、最初に1回だけ今の値で埋める（書いている途中で消えないように）
   if (!broadcastFilled) {
     broadcastFilled = true;
     $("#notice-text").value = l.notice ?? "";
@@ -381,7 +356,7 @@ function previewNotice() {
   const text = $("#notice-text").value.trim();
   const p = $("#notice-preview");
   const live = { notice: text, notice_level: ntLevel(), notice_style: readNoticeStyle() ?? undefined };
-  const n = noticeOf(live, "top"); // 場所・期間は、ここでは見ない（プレビューは、いつも出す）
+  const n = noticeOf(live, "top");
   const view = n ?? noticeOf({ ...live, notice_style: { ...(live.notice_style ?? {}), where: ["top"], from: 0, until: 0 } }, "top");
   p.hidden = !view;
   paintNotice(p, view);
@@ -416,7 +391,6 @@ $("#notice-form").addEventListener("submit", async (e) => {
   const st = readNoticeStyle();
   const label = level === "urgent" ? "緊急のお知らせを出しました" : "お知らせを出しました";
   const ok = await saveLive(label, { notice: text, notice_level: level, notice_style: st ?? fs.deleteField() });
-  // 見た目の保存だけが、ルールに通らないとき（ルールが古い）：文だけでも、出す
   if (!ok && st) await saveLive("見た目は保存できませんでした。文だけ出しました", { notice: text, notice_level: level });
 });
 $("#notice-clear").addEventListener("click", () => {
@@ -444,8 +418,6 @@ $("#phase-form").addEventListener("submit", (e) => {
   saveLive("表示を保存しました", { phase_override: phase || null });
 });
 
-// ---------- スケジュール（出演・企画の時間を変える） ----------
-// site_schedule/current = { changes: { [sid]: { start, end } } }。サイト・地図・みどころ・会場のディスプレイが読む。もとの時間は config.js
 const SCHED_KIND = { a: "ステージ", e: "企画" };
 const schedName = ({ kind, item }) => (kind === "a" ? item.name : item.title);
 const schedCur = (it) => state.schedule[it.item.sid] ?? { start: it.item.o_start, end: it.item.o_end };
@@ -458,7 +430,7 @@ function renderSchedule() {
   const sel = $("#sh-day"), keep = sel.value;
   sel.innerHTML = days.map((d) => `<option value="${d}">${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日</option>`).join("");
   if (keep) sel.value = keep;
-  if ($("#sched-list").contains(document.activeElement) && document.activeElement.matches("input")) return; // 入力中は作りなおさない
+  if ($("#sched-list").contains(document.activeElement) && document.activeElement.matches("input")) return;
   $("#sched-list").innerHTML = days.map((d) => `
     <h3 class="sched-day">${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日</h3>
     ${items.filter((x) => x.item.o_start.startsWith(d)).map((it) => {
@@ -495,7 +467,6 @@ $("#sched-reset").addEventListener("click", () => {
   if (!confirm("変えた時間を、すべてもとにもどしますか？")) return;
   saveSchedule({}, "すべてもとの時間にもどしました");
 });
-// 「この時刻から後ろを、◯分ずらす」（遅れたときに、まとめて）
 $("#sched-shift").addEventListener("submit", (e) => {
   e.preventDefault();
   const day = $("#sh-day").value, from = $("#sh-from").value, min = Number($("#sh-min").value);
@@ -513,7 +484,6 @@ $("#sched-shift").addEventListener("submit", (e) => {
   saveSchedule(changes, `${targets.length}件の時間を${min > 0 ? `${min}分 遅らせ` : `${-min}分 早め`}ました`);
 });
 
-// ---------- 混雑・実況 ----------
 function renderCrowd() {
   const stale = CROWD.staleMinutes * 60000;
   $("#venues").innerHTML = CROWD.venues.map((id) => {
@@ -530,7 +500,6 @@ function renderCrowd() {
       </article>`;
   }).join("");
 }
-// 「設定しない」＝その会場の混雑の文書を消す（サイトには「情報なし」と出る）
 const clearCrowd = (id) => fs.deleteDoc(fs.doc(db, "crowd", id));
 $("#crowd-bulk").addEventListener("click", (e) => {
   const b = e.target.closest("[data-bulk]");
@@ -572,12 +541,9 @@ $("#chatter-clear").addEventListener("click", () => {
   saveChatter(Object.fromEntries(PEOPLE.map((p) => [p, ""])), "いつものセリフに戻しました");
 });
 
-// ---------- 投稿 ----------
 let postFilter = "all";
 const photos = new Map();
 const isOff = (p) => p.hidden || p.reports >= REPORT_HIDE;
-// タイムライン：来場者の画面（Enistagram）と同じ並び。投稿の下にコメントがぶらさがる。いいね・返信は、自動で「公式（enishi）」がしたことになる。
-// 非表示・削除・写真の公開は、各投稿の「…」の中
 const IC = {
   heart: '<svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3z"/></svg>',
   reply: '<svg viewBox="0 0 24 24"><path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z"/></svg>',
@@ -610,11 +576,10 @@ function postActions(p, { reply = false } = {}) {
 }
 const statusTags = (p) => `${p.reports ? `<span class="tag tag-warn">報告 ${p.reports}</span>` : ""}${isOff(p) ? '<span class="tag tag-danger">非表示</span>' : ""}`;
 function renderPosts() {
-  if (document.activeElement?.closest?.(".post-reply")) return; // 公式の返信を書いている途中は、描き直さない
+  if (document.activeElement?.closest?.(".post-reply")) return;
   const reportedIds = new Set(state.posts.filter((p) => p.reports > 0 && !p.hidden).map((p) => p.id));
   $("#count-all-posts").textContent = state.posts.length;
   $("#count-reported").textContent = reportedIds.size;
-  // 投稿（親）ごとに、コメントをまとめる。コメントの親が見つからない（古くて読みこんでいない）ときは、コメントもひとつの投稿として出す
   const ids = new Set(state.posts.map((p) => p.id));
   const kids = new Map();
   state.posts.filter((p) => p.reply_to && ids.has(p.reply_to)).forEach((p) => kids.set(p.reply_to, [...(kids.get(p.reply_to) ?? []), p]));
@@ -663,11 +628,10 @@ $("#post-tabs").addEventListener("click", (e) => {
 $("#post-list").addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]");
   if (!b) return;
-  b.closest("details")?.removeAttribute("open"); // 「…」の中を押したら、閉じる
+  b.closest("details")?.removeAttribute("open");
   const ref = fs.doc(db, "posts", b.dataset.id);
   const post = state.posts.find((p) => p.id === b.dataset.id);
   const acts = {
-    // 公式でいいね：もう一度押すと取り消し（来場者のいいねと同じ仕組み。本部のログインの印で1回）
     like: async () => {
       const uid = a.currentUser.uid;
       const likeRef = fs.doc(db, "post_likes", `${b.dataset.id}_${uid}`);
@@ -683,7 +647,6 @@ $("#post-list").addEventListener("click", (e) => {
     approve: () => write("写真を公開しました", () => fs.updateDoc(ref, { photo_status: "approved" })),
     reject: () => write("写真を出さないことにしました", () => fs.updateDoc(ref, { photo_status: "rejected" })),
     hide: () => write("非表示にしました", () => fs.updateDoc(ref, { hidden: true })),
-    // 表示にもどすときは、報告の数も0にもどす（自動で隠れないように）
     show: () => write("表示にもどしました", () => fs.updateDoc(ref, { hidden: false, reports: 0 })),
     delete: () => {
       const kids = state.posts.filter((x) => x.reply_to === b.dataset.id);
@@ -698,7 +661,6 @@ $("#post-list").addEventListener("click", (e) => {
   };
   acts[b.dataset.act]?.();
 });
-// 公式の返信：その投稿へのコメントとして、「公式」の札つきで出る
 $("#post-list").addEventListener("submit", async (e) => {
   const f = e.target.closest(".post-reply");
   if (!f) return;
@@ -712,7 +674,6 @@ $("#post-list").addEventListener("submit", async (e) => {
   }));
   if (ok) { f.querySelector("textarea").value = ""; f.hidden = true; }
 });
-// 画像（任意）：選ぶと、下に小さく見える。「はずす」で取りやめ
 function clearOfficialFile() {
   $("#official-file").value = "";
   $("#official-thumb").hidden = true;
@@ -748,13 +709,11 @@ $("#official-form").addEventListener("submit", async (e) => {
   if (ok) { $("#official-text").value = ""; $("#official-count").textContent = "0 / 400"; clearOfficialFile(); }
 });
 
-// ---------- 模擬店 ----------
 const SHOP_STATUS = [
   ["normal", "すぐ買える", "#45D483"], ["10min", "10分待ち", "#F5C451"], ["20min", "20分以上", "#F2A96A"], ["soldout", "完売", "#FF6B7A"],
-  ["closed", "休業中", "#8B93C9"], // 混みぐあいとは別（休けい中など）
-  ["none", "設定しない", "#9AA0A6"], // 待ち時間・休業の知らせを消す（サイトには、何も出ない）
+  ["closed", "休業中", "#8B93C9"],
+  ["none", "設定しない", "#9AA0A6"],
 ];
-// 待ち時間の変更：none のときは、状態と更新時刻を消す
 function shopStatusFields(v) {
   return v === "none" ? { status: fs.deleteField(), updated_at: fs.deleteField() } : { status: v, updated_at: fs.serverTimestamp() };
 }
@@ -763,7 +722,6 @@ function setShopStatus(shop, v) {
   if (v === "none" && !shop.exists) return toast(`${shop.name}は、もともと設定されていません`);
   return write(`${shop.name}を「${label}」にしました`, () => shopDocWrite(shop, shopStatusFields(v)));
 }
-// いま出ているお店（探していれば、その結果）を、一斉に変える
 async function bulkShopStatus(v) {
   const q = kana($("#cshops-q").value);
   const shops = (q ? allShops().filter((s) => shopHay(s).includes(q)) : allShops()).filter((s) => v !== "none" || (s.exists && s.status));
@@ -784,8 +742,6 @@ async function bulkShopStatus(v) {
 }
 const shopUrl = (code, shop) => new URL(`../shop.html?shop=${encodeURIComponent(shop)}&code=${encodeURIComponent(code)}`, location.href).href;
 const openCodes = new Set();
-// 地図に載っているお店（config.js の SHOPS）はすべて最初から並べる。shops/{id} の文書は、待ち時間を変えたりコードを渡したりしたときに作る。
-// map には地図がお店を見分ける値（クラス・部屋番号・名前）を入れる（map.js の shopDocFor が見る）
 const shopSlug = (v) => String(v).toLowerCase().replace(/[^a-z0-9_-]/g, "");
 const placeName = (id) => MAP.places.find((p) => p.id === id)?.name ?? id;
 const CATALOG = SHOPS.map((sh) => {
@@ -794,11 +750,9 @@ const CATALOG = SHOPS.map((sh) => {
   return { id: shopSlug(sh.cls ?? sh.room ?? sh.place), kind: "shop", name: sh.name, group: sh.group, map: sh.cls ?? sh.room ?? sh.name,
     ...(room ? { room } : {}), ...(sh.place ? { place: sh.place } : {}), where, catalog: true };
 });
-// スタンプラリーの場所は、config.js の STAMP_PLACES（校内の数か所：体育館入り口・インフォメーション・ライブラリー・正門など）。学科展示・模擬店には置かない
 const SPOTS = STAMP_PLACES.map((p) => ({ id: p.id, kind: p.kind ?? "venue", name: p.name, group: p.group ?? "", place: p.place, where: p.where ?? "" }));
 CATALOG.unshift(...SPOTS.map((x) => ({ ...x, map: x.id, catalog: true })));
 const KIND_TAG = { info: '<i class="tag tag-info">インフォ</i>', venue: '<i class="tag tag-ex">スタンプ</i>' };
-// スタンプの場所すべて（受付・スタンプラリー・印刷）
 function allSpots() {
   const docs = new Map(state.shops.map((d) => [d.id, d]));
   const list = CATALOG.map((c) => ({ ...c, ...(docs.get(c.id) ?? {}), name: c.name, map: c.map, exists: docs.has(c.id) }));
@@ -807,17 +761,15 @@ function allSpots() {
     .sort((x, y) => String(x.name).localeCompare(String(y.name), "ja"));
   return [...list, ...extra];
 }
-const allShops = () => allSpots().filter((s) => s.kind === "shop"); // 模擬店だけ（待ち時間・完売の数）
+const allShops = () => allSpots().filter((s) => s.kind === "shop");
 const findShop = (id) => allSpots().find((s) => s.id === id);
-// お店の文書がまだなければ作る（shop.html はこれがないと使えない）
 function shopDocWrite(shop, fields) {
   const ref = fs.doc(db, "shops", shop.id);
   if (!shop.exists) return fs.setDoc(ref, { name: shop.name, map: shop.map, ...fields });
   return fs.updateDoc(ref, { ...fields, ...("pass" in shop ? { pass: fs.deleteField() } : {}) });
 }
-// 受付：探す・絞りこむ（「まだ」「受付済み」「すべて」）。探しているあいだは、すべてのお店から探す
 let shopFilter = "todo";
-const openMore = new Set(); // 「当日の操作」を開いているお店
+const openMore = new Set();
 const handedAt = (s) => toMs(s.handed_at);
 const kana = (t) => String(t ?? "").normalize("NFKC").toLowerCase().replace(/\s+/g, "").replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 const shopHay = (s) => kana([s.name, s.group, s.id, s.map, s.where, s.room].filter(Boolean).join(" "));
@@ -829,8 +781,7 @@ function visibleShops() {
   if (shopFilter === "done") return shops.filter((s) => handedAt(s)).sort((x, y) => handedAt(y) - handedAt(x));
   return shops;
 }
-// 混雑・実況：模擬店ごとの待ち時間（「すぐ買える」「10分」「20分以上」「完売」）
-let cshopsHold = false; // ひとことを書いている間は、一覧を作り直さない（書きかけが消えないように）
+let cshopsHold = false;
 function renderCrowdShops() {
   if ($("#cshops").contains(document.activeElement) && document.activeElement.matches("input")) { cshopsHold = true; return; }
   cshopsHold = false;
@@ -928,7 +879,7 @@ $("#shop-list").addEventListener("toggle", (e) => {
   if (d) d.open ? openMore.add(d.dataset.more) : openMore.delete(d.dataset.more);
 }, true);
 function newCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // まぎらわしい 0 O 1 I は使わない
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return [...crypto.getRandomValues(new Uint8Array(16))].map((n) => alphabet[n % alphabet.length]).join("");
 }
 $("#shop-list").addEventListener("click", async (e) => {
@@ -989,10 +940,6 @@ $("#shop-list").addEventListener("click", async (e) => {
     });
   }
 });
-// ---------- スタンプラリー（QR の鍵とスタッフ番号） ----------
-// 鍵そのものは rally_keys/{お店の id}（本部だけ）に、サイトが確かめるための暗号化した値は rally/current（だれでも読める）に置く。
-// 暗号化のしかたは tools/make-rally-qr.py と同じ（sha256("kosen63:お店:日付:鍵")、スタッフ番号は PBKDF2-SHA256 30万回）
-// QR は2日とも同じもの（鍵の名前は "fest"＝開催日ならどの日でも使える）
 const FEST = "fest";
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 const sha256 = async (text) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
@@ -1001,14 +948,11 @@ const rallyShopIds = () => (state.rally?.shops ?? []).map((s) => s.id);
 const isRallyShop = (id) => rallyShopIds().includes(id);
 const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 
-// スタンプラリーの対象は、模擬店・インフォメーション・学科展示・会場（太平洋セメントアリーナ、ZACROS hall）のすべて。
-// 模擬店には vote: true を付ける（スタンプを押した模擬店に、模擬店総選挙で1票入れられる。rally.js）。
-// 足りない鍵を作り、rally/current を対象の場所にそろえる（足りなければ何もしない）
-const rallySpots = () => allSpots().filter((x) => STAMP_PLACES.some((p) => p.id === x.id)); // スタンプの場所は、config.js の STAMP_PLACES（校内の数か所）だけ
+const rallySpots = () => allSpots().filter((x) => STAMP_PLACES.some((p) => p.id === x.id));
 function rallyMissing() {
   const cur = new Map((state.rally?.shops ?? []).map((s) => [s.id, s]));
   const spots = rallySpots();
-  const extra = [...cur.keys()].filter((id) => !spots.some((s) => s.id === id)); // 対象でなくなった場所
+  const extra = [...cur.keys()].filter((id) => !spots.some((s) => s.id === id));
   return [...spots.filter((s) => !cur.has(s.id) || !keysOf(s.id)[FEST]), ...extra.map((id) => ({ id }))];
 }
 async function ensureRally() {
@@ -1020,7 +964,7 @@ async function ensureRally() {
     if (!keys[FEST]) {
       keys[FEST] = randomKey();
       batch.set(fs.doc(db, "rally_keys", shop.id), { keys });
-      state.rallyKeys[shop.id] = { keys }; // 読みなおしを待たずに、すぐ印刷に使えるように
+      state.rallyKeys[shop.id] = { keys };
     }
     const codes = { [FEST]: await sha256(`kosen63:${shop.id}:${FEST}:${keys[FEST]}`) };
     const room = shop.catalog ? shop.room : shop.map;
@@ -1042,25 +986,20 @@ function renderRally() {
   $("#rally-all").textContent = missing ? `${missing}か所の QR を整える` : "全部のお店の QR を用意済み";
 }
 $("#rally-all").addEventListener("click", () => write("全部の場所のスタンプの QR を用意しました", ensureRally));
-// 景品がなくなった：スタンプカードのページにおわびを出す（site_live/current の prize_out）
 $("#prize-out").addEventListener("change", (e) => {
   const on = e.target.checked;
   if (!confirm(on ? "「景品はすべてなくなりました」と、スタンプカードのページにおわびを出しますか？" : "景品の受け付けを再開しますか？（おわびを消します）")) { e.target.checked = !on; return; }
   saveLive(on ? "景品の終了を出しました" : "景品の受け付けを再開しました", { prize_out: on });
 });
-// 写真を確認してから出す：ふだんはオフ（来場者の写真は、そのまま公開）。オンのあいだだけ、確認待ちになる
 $("#photo-review").addEventListener("change", (e) => {
   saveLive(e.target.checked ? "写真を、確認してから出すようにしました" : "写真を、そのまま公開にしました", { photo_review: e.target.checked });
 });
-// 全員のキャッシュを削除：次に開いたとき（開いている人は、すぐ）、しまってあるページ・部品を消して読みこみなおす。スタンプ・投票の記録は消えない
 $("#cache-reset").addEventListener("click", () => {
   if (!confirm("全員のキャッシュを削除しますか？（いま開いている人の画面は、読みこみなおされます）")) return;
   saveLive("全員のキャッシュ削除を指示しました", { cache_reset_at: fs.serverTimestamp() });
 });
-// 何個で達成か（「文章と書体」で変えていればそちら）。印刷する紙もこの数にそろえる
-const rallyGoal = () => { return Math.min(RALLY.goal, rallySpots().length || RALLY.goal); }; // スタンプの場所の数をこえない
+const rallyGoal = () => { return Math.min(RALLY.goal, rallySpots().length || RALLY.goal); };
 
-// ---------- 印刷（QR・チラシ） ----------
 const siteUrl = (path = "") => new URL(`../${path}`, location.href).href;
 function qrDataUrl(text, size = 480) {
   if (!window.QRCode) throw new Error("QR を作る部品を読みこめませんでした");
@@ -1068,8 +1007,6 @@ function qrDataUrl(text, size = 480) {
   new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.M });
   return box.querySelector("canvas").toDataURL("image/png");
 }
-// スタンプの QR：まん中に「縁」のはんこ。はんこで隠れても読めるように、誤り訂正を一番強く（H：3割まで欠けても読める）する。
-// はんこは幅の3割弱（面積では1割未満）にとどめる
 function stampQrDataUrl(text, size = 480) {
   if (!window.QRCode) throw new Error("QR を作る部品を読みこめませんでした");
   const box = document.createElement("div");
@@ -1094,7 +1031,7 @@ function stampQrDataUrl(text, size = 480) {
 const printKind = () => $('[name="pr-kind"]:checked').value;
 function syncPrintControls() {
   const kind = printKind();
-  $("#pr-target-box").hidden = kind !== "shopstaff"; // お店の人に渡す紙だけ、「まだ渡していない／すべて」をえらぶ
+  $("#pr-target-box").hidden = kind !== "shopstaff";
   $("#pr-staff-box").hidden = true;
   $("#pr-size-box").hidden = true;
 }
@@ -1116,17 +1053,15 @@ async function ensureShopCode(shopId) {
   const existing = state.codes.find((c) => c.shop === shopId);
   if (existing) return existing.code;
   const shop = findShop(shopId);
-  if (shop && !shop.exists) await shopDocWrite(shop, {}); // 待ち時間の更新時刻（updated_at）は、ここでは付けない
+  if (shop && !shop.exists) await shopDocWrite(shop, {});
   const code = newCode();
   await fs.setDoc(fs.doc(db, "shop_codes", code), { shop: shopId, created_at: fs.serverTimestamp() });
   return code;
 }
 
-// スタンプラリーの紙（三角POP か 貼り紙）：スタンプの場所に貼る
 async function buildShopSet(places, _withStaff = false, format = printFormat()) {
   return places.map((s) => (format === "wall" ? buildWall(s) : buildTents([s]))).join("");
 }
-// お店の人に渡す紙：待ち時間を変える QR（店頭には貼らない）
 async function buildStaffPapers(shops) {
   const pages = [];
   for (const s of shops) {
@@ -1151,20 +1086,14 @@ async function buildStaffPapers(shops) {
   }
   return pages.join("");
 }
-// 三角POP（A4 を3つに折って、下ののりしろで貼り、縦に立てる卓上の札）。3面ともまわりから見えるように、中身は90度まわして縦長に置く
-// 1段目＝お店の名前、2段目＝スタンプラリーのおさそい、3段目＝名前（小さく）とサイトの QR（小さく、下に）
-// 縦書きの中の「QR」や数字は、横に寝かせずに1文字ぶんに立てる（縦中横）
 const tcy = (t) => esc(t).replace(/QR|\d{1,2}/g, (m) => `<span class="tcy">${m}</span>`);
-// 縦書きの数は漢数字で（3 → 三、12 → 十二）
 const kanjiNum = (n) => {
   const d = "〇一二三四五六七八九";
   if (n < 10) return d[n];
   const tens = Math.floor(n / 10), ones = n % 10;
   return `${tens > 1 ? d[tens] : ""}十${ones ? d[ones] : ""}`;
 };
-// スタンプラリーのおさそい（三角POPの3段目と、模擬店セットのきりとり）。文は縦書き、下に QR
 function rallyBody(s) {
-  // 模擬店：スタンプも総選挙の紙も置かない。かわりに、高専祭のサイト（待ち時間・校内マップ）の QR
   if (s.kind === "shop") {
     return `
           <div class="pt-v pt-rally-text">
@@ -1186,7 +1115,6 @@ function rallyBody(s) {
           </div>
           <figure class="pt-rally-qr"><img src="${qr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>`;
 }
-// サイトの QR（小さく横に2つ）：Enistagram と、公式サイト（模擬店は待ち時間、学科展示は展示の一覧、インフォは校内マップ）
 const SITE_LINK = { shop: ["#ennichi", "で待ち時間をチェック"], exhibit: ["map.html?list=exhibit", "で学科展示を見る"], info: ["map.html", "で校内マップを見る"], venue: ["map.html", "で校内マップを見る"] };
 function linksHtml(s) {
   const [path, text] = SITE_LINK[s.kind] ?? SITE_LINK.shop;
@@ -1196,7 +1124,6 @@ function linksHtml(s) {
             <figure class="pl-link"><img class="pl-qr" src="${qrDataUrl(siteUrl(path))}" alt=""><figcaption><b>公式サイト</b><span>${text}</span></figcaption></figure>
           </div>`;
 }
-// 貼り紙（壁に貼る A4 たて）：三角POP と同じ中身を、上から「名前」「スタンプラリー」「サイトの QR（小さく、下に）」の順に
 function buildWall(s) {
   return `
       <section class="sheet pw">
@@ -1255,15 +1182,12 @@ function buildFlyer(size) {
     </div>`;
   return size === "a5" ? `<section class="sheet pf-a5">${flyer}${flyer}</section>` : `<section class="sheet pf-a4">${flyer}</section>`;
 }
-// 来場案内の札の「ひとこと」。{close} は公開の終わりの時刻に
 const VISIT_NOTES = () => {
   const cards = VISIT;
   const close = new Date(FESTIVAL.days[0].close).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" });
   return cards.slice(0, 6).map((c) => String(c.title).replace("{close}", close).replace("{voteEnd}", "締め切り"));
 };
 
-// 印刷の確かめ（上に重ねる画面）。受付の1か所のときは、刷ったあと「渡した」を押す。
-// 店頭の紙の形（三角POP・貼り紙）はここで選ぶ。選んだ形は、このパソコンで覚えておく
 const FORMAT_KEY = "kosen63-print-format";
 const FORMAT_LABEL = { tent: "三角POP", wall: "貼り紙" };
 function printFormat() {
@@ -1272,7 +1196,7 @@ function printFormat() {
   try { return localStorage.getItem(FORMAT_KEY) === "wall" ? "wall" : "tent"; } catch { return "tent"; }
 }
 $$('[name="pr-format"]').forEach((r) => { r.checked = r.value === printFormat(); });
-let current = null; // { kindLabel, title, sub, build, shop, set }
+let current = null;
 let deskShop = null;
 async function showPrint() {
   const c = current;
@@ -1292,7 +1216,7 @@ async function showPrint() {
   $("#pr-print").focus();
 }
 $$('[name="pr-format"]').forEach((r) => r.addEventListener("change", async () => {
-  try { localStorage.setItem(FORMAT_KEY, r.value); } catch { /* 覚えられないブラウザ */ }
+  try { localStorage.setItem(FORMAT_KEY, r.value); } catch {  }
   if (current && !$("#print-overlay").hidden) await showPrint();
 }));
 function closePrint() {
@@ -1305,11 +1229,10 @@ function closePrint() {
 $("#pr-close").addEventListener("click", closePrint);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#print-overlay").hidden) closePrint(); });
 const KIND_NAME = { shop: "模擬店", exhibit: "学科展示", info: "インフォメーション" };
-// 受付の「印刷する」：スタンプの QR を用意してから、その場所の紙（店頭の紙＋模擬店ならお店の人用）を作る
 async function printForDesk(shop) {
   toast(`${shop.name}の紙を作っています…`);
   try {
-    const stamp = STAMP_PLACES.some((p) => p.id === shop.id); // スタンプの場所はスタンプラリーの紙、模擬店はお店の人に渡す紙
+    const stamp = STAMP_PLACES.some((p) => p.id === shop.id);
     if (stamp) await ensureRally();
     current = { kindLabel: `受付：${KIND_NAME[shop.kind] ?? "模擬店"}`, title: shop.name, sub: [shop.group, shop.where].filter(Boolean).join("・"),
       build: stamp ? () => buildShopSet([shop]) : () => buildStaffPapers([shop]), shop, set: stamp };
@@ -1322,7 +1245,7 @@ async function printForDesk(shop) {
 $("#pr-print").addEventListener("click", async () => {
   await document.fonts?.ready;
   window.print();
-  if (deskShop) { // 刷ったら、次は「渡した」
+  if (deskShop) {
     $("#pr-given").hidden = false;
     $("#pr-print").className = "btn btn-ghost";
     $("#pr-note").textContent = "刷れたら、渡して「渡した」を押してください。";
@@ -1334,12 +1257,11 @@ $("#pr-given").addEventListener("click", async () => {
   if (!shop) return;
   if (await write(`${shop.name}に渡しました`, () => shopDocWrite(shop, { handed_at: fs.serverTimestamp() }))) {
     closePrint();
-    $("#shop-q").value = ""; // 次をすぐ探せるように
+    $("#shop-q").value = "";
     renderShops();
     $("#shop-q").focus();
   }
 });
-// まとめて印刷（受付済みにはしない）
 $("#pr-make").addEventListener("click", async () => {
   const kind = printKind();
   const target = $('[name="pr-target"]:checked').value;
@@ -1363,7 +1285,6 @@ $("#pr-make").addEventListener("click", async () => {
     $("#pr-make").disabled = false;
   }
 });
-// 見出しの字（WDXL Lubrifont）は、刷る紙に出る字だけを読みこむ
 function loadPrintFont(text) {
   const chars = [...new Set(text.replace(/\s+/g, ""))].join("");
   let link = document.getElementById("print-font");
@@ -1373,12 +1294,8 @@ function loadPrintFont(text) {
 
 addEventListener("beforeunload", (e) => { if (blocksDirty) e.preventDefault(); });
 
-// ---------- サイトの設定：トップページの並び ----------
-// site_config/current = { blocks: [{ id, show }] }。来場者のトップページは assets/blocks.js がこの順に並べる
-// ⠿ をつかんで上下にドラッグ（マウスでも指でも）。キーボードでは ⠿ を選んで ↑↓
 const BLOCK_INFO = Object.fromEntries(TOP_BLOCKS.map(([id, name, note]) => [id, { name, note }]));
 let blocksDirty = false;
-// 開催前・期間中の2つのプリセット。直しているあいだは draft に入れておき、「保存して公開」で両方まとめて書く
 let draft = null;
 const editing = () => $('[name="blocks-edit"]:checked').value;
 function presetsFromConfig() {
@@ -1389,7 +1306,6 @@ function blocksFromConfig() {
   draft ??= presetsFromConfig();
   const list = (draft[editing()] ?? []).filter((b) => BLOCK_INFO[b?.id]).map((b) => ({ id: b.id, show: b.show !== false }));
   const has = (id) => list.some((b) => b.id === id);
-  // 保存したあとで増えた欄（たとえば学科展示）は、いつもの並びでの場所に入れる（サイトの blocks.js と同じ決まり。うしろに足すと、協賛の下に出てしまう）
   (TOP_PRESETS[editing()] ?? []).filter((b) => BLOCK_INFO[b.id]).forEach(({ id, show }, i, arr) => {
     if (has(id)) return;
     const prev = arr.slice(0, i).reverse().find((b) => has(b.id));
@@ -1409,7 +1325,6 @@ function renderBlocks(list = blocksFromConfig()) {
   const off = list.filter((b) => !b.show).map((b) => BLOCK_INFO[b.id].name);
   $("#blocks-state").textContent = blocksDirty ? "保存していない変更があります" : off.length ? `出していない：${off.join("・")}` : "すべて出している";
 }
-// 番号と「いちばん上（角が丸くなる）」の印
 function numberBlocks() {
   let n = 0;
   $$(".block-row").forEach((row) => {
@@ -1426,7 +1341,6 @@ function touched() {
   numberBlocks();
   $("#blocks-state").textContent = "保存していない変更があります";
 }
-// ドラッグ：⠿ を押したまま動かすと、指のいる行の前後に入れかわる
 $("#blocks-list").addEventListener("pointerdown", (e) => {
   const grip = e.target.closest(".block-grip");
   if (!grip || e.button > 0) return;
@@ -1451,7 +1365,6 @@ $("#blocks-list").addEventListener("pointerdown", (e) => {
   grip.addEventListener("pointerup", up);
   grip.addEventListener("pointercancel", up);
 });
-// キーボード：⠿ を選んで ↑↓
 $("#blocks-list").addEventListener("keydown", (e) => {
   const grip = e.target.closest(".block-grip");
   if (!grip || !["ArrowUp", "ArrowDown"].includes(e.key)) return;
@@ -1485,8 +1398,6 @@ $("#blocks-form").addEventListener("submit", async (e) => {
   }
 });
 
-// ---------- サイトの設定：スタンプラリー（全員） ----------
-// パスワードはページに置かず、PBKDF2（SHA-256・31万回）で混ぜた値だけを置く。押すたびにたずねる
 const ADMIN_PW = { salt: "7c38294656e6170c05a3fea3fa66d5c6", iterations: 310000, hash: "a39c719c9ef8c1d38484993ae43f617e14da38a3374ae3f3a454a13ab12d3842" };
 async function pwHash(pw) {
   const hex = (h) => new Uint8Array(h.match(/../g).map((b) => parseInt(b, 16)));
@@ -1494,7 +1405,6 @@ async function pwHash(pw) {
   const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: hex(ADMIN_PW.salt), iterations: ADMIN_PW.iterations }, key, 256);
   return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-// パスワードをたずねる。合っていれば true、やめたら false
 function askPassword(title, lead) {
   const dlg = $("#pw-dialog"), input = $("#pw-input"), msg = $("#pw-msg");
   $("#pw-title").textContent = title;
@@ -1527,7 +1437,6 @@ function askPassword(title, lead) {
   });
 }
 
-// 全員の状況：rally_logs を全部読んで数える（読むのは本部だけ。firestore.rules）
 const rallyShopName = (id) => (state.rally?.shops ?? RALLY.shops).find((s) => s.id === id)?.name ?? id;
 async function showRallyAll() {
   const box = $("#rally-all-box");
@@ -1567,7 +1476,6 @@ $("#rally-all-show").addEventListener("click", async () => {
   showRallyAll();
 });
 
-// 全員の履歴をリセット：reset_at を今にして（各スマホが、それより前のスタンプを消す）、本部の記録（rally_logs）も全部消す
 $("#rally-all-reset").addEventListener("click", async () => {
   if (!(await askPassword("全員の履歴をリセット", "全員のスタンプと引き換えの記録を消します。元に戻せません。パスワードを入れてください。"))) return;
   if (!confirm("本当に、全員のスタンプラリーの履歴をリセットしますか？\n来場者のスマホに入っているスタンプも、次に開いたときに消えます。元に戻せません。")) return;
@@ -1584,7 +1492,6 @@ $("#rally-all-reset").addEventListener("click", async () => {
   if (ok && !$("#rally-all-box").hidden) showRallyAll();
 });
 
-// ---------- ログイン ----------
 $("#login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("#login-msg").textContent = "";
@@ -1602,7 +1509,6 @@ auth.onAuthStateChanged(a, async (user) => {
   unsubs.splice(0).forEach((u) => u());
   const staffUser = user && !user.isAnonymous ? user : null;
   if (staffUser) {
-    // 本部の名簿にのっているか（のっていなければ、ログインできても何も書けない）
     try {
       const me = await fs.getDoc(fs.doc(db, "staff", staffUser.email));
       if (!me.exists()) throw new Error("not staff");
@@ -1624,5 +1530,4 @@ auth.onAuthStateChanged(a, async (user) => {
   if (location.hash === "#stats") openStats();
 });
 
-// コンソールのタイトルの下の小さい字
 $(".brand small").textContent = `第${FESTIVAL.edition}回 函館高専祭「${FESTIVAL.theme}」`;

@@ -10,7 +10,6 @@
   <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;display=swap" rel="stylesheet">
   <style>
     :root { color-scheme: dark; }
-    /* 背景：夕空の色むらに、粗いノイズ（細かい粒）を重ねる */
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; position: relative; isolation: isolate; background: radial-gradient(60% 45% at 18% 12%, #7b5fa8 0%, transparent 70%), radial-gradient(55% 40% at 88% 38%, #d06f7e 0%, transparent 70%), radial-gradient(70% 45% at 30% 100%, #f0b070 0%, transparent 70%), linear-gradient(#4d3f6e, #b87888 65%, #e2a878); color: #fff; font-family: "WDXL Lubrifont JP N", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif; text-align: center; }
     body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .5; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .12 0 0 0 0 .08 0 0 0 0 .16 0 0 0 1.9 -.75'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
     h1 { margin: 0; font-weight: 400; font-size: min(26vw, 200px); line-height: .95; letter-spacing: .02em; }

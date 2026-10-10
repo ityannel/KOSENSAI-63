@@ -1,6 +1,3 @@
-// 5人に聞く。
-// 絵の下の質問ボタン（または絵の中の人）を押すと、担当の人が吹き出しで答えて、
-// 絵の下のほうに答えのカードが出る。カードの「くわしく」で、今までのパネルを開ける。
 import { FESTIVAL, EVENTS, VENUES, CROWD, RALLY, PICKUP_SHOPS } from "./config.js";
 import { stampCount, stampGoal } from "./rally.js";
 
@@ -10,7 +7,6 @@ const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit
 const venueName = (id) => { const v = VENUES.find((x) => x.id === id); return v ? (v.alias ?? v.name) : (id ?? ""); };
 const link = (href, label) => `<a class="answer-btn" href="${href}">${esc(label)}</a>`;
 
-// 質問 → 答える人。色は短冊と同じ系統
 export const TOPICS = [
   { id: "now", label: "いま何してる？", who: "p4", color: "#E0874A" },
   { id: "crowd", label: "混んでる？", who: "p5", color: "#6CBAB5" },
@@ -20,7 +16,6 @@ export const TOPICS = [
   { id: "more", label: "その他", who: "p1", color: "#F3EEE6" },
 ];
 
-// s = main.js から渡される今の様子 { phase, now, running, next, crowd, live, agoText }
 const ANSWERS = {
   now(s) {
     if (s.phase === "before") {
@@ -68,7 +63,7 @@ const ANSWERS = {
   rally(s) {
     const n = stampCount();
     const g = stampGoal();
-    const out = !!s?.live?.prize_out; // 景品がなくなった
+    const out = !!s?.live?.prize_out;
     const line = n >= g ? (out ? "そろった！ 景品はもう終わっちゃったって…" : `そろった！${RALLY.claimPlace}へ行こう`) : n > 0 ? `スタンプあと${g - n}個！` : "模擬店や学科展示のQRを読むとスタンプがたまるよ";
     return {
       line,
@@ -136,7 +131,7 @@ export function initAsk({ getState, say }) {
     current = id;
     if (speak) say(t.who, a.line, 6000);
     const box = $("#answer");
-    box.setAttribute("aria-live", speak ? "polite" : "off"); // 30秒ごとの更新は読み上げない
+    box.setAttribute("aria-live", speak ? "polite" : "off");
     box.style.setProperty("--c", t.color);
     box.innerHTML = `
       <button type="button" class="answer-close" aria-label="閉じる">×</button>
@@ -148,16 +143,15 @@ export function initAsk({ getState, say }) {
     bar.querySelectorAll(".ask").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.topic === id)));
   };
   const ask = (id) => {
-    if (current === id) return close(); // 同じボタンをもう一度押したら閉じる
+    if (current === id) return close();
     show(id, true);
   };
 
-  // 質問ボタン・絵の中の人・電柱の看板は、どれも「聞く」
   document.addEventListener("click", (e) => {
     const el = e.target.closest("[data-topic]");
     if (el) {
       e.preventDefault();
-      current = el.closest(".askbar") ? current : null; // 人を触ったときは、同じ話題でも開き直す
+      current = el.closest(".askbar") ? current : null;
       ask(el.dataset.topic);
       return;
     }
@@ -166,10 +160,9 @@ export function initAsk({ getState, say }) {
   addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !document.body.classList.contains("panel-open")) close();
   });
-  // 答えを開いたまま時間がたったら、中身を新しくする（混雑やNOWが変わるので）
   setInterval(() => {
     const b = $("#answer");
-    if (!current || b.contains(document.activeElement)) return; // 押している途中は描き直さない
+    if (!current || b.contains(document.activeElement)) return;
     const y = b.scrollTop;
     show(current, false);
     b.scrollTop = y;

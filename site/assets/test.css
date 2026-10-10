@@ -1,4 +1,3 @@
-/* テスト用パネル（?test=1 のときだけ、test.js が読みこむ。全ページ共通：トップ・地図・みどころ・スタンプ・投票・模擬店・規約・サイネージ） */
 .testwin {
   position: fixed; left: 8px; top: 8px; z-index: 200;
   width: min(320px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow-y: auto;
@@ -26,7 +25,6 @@
 .tw-wide { width: 100%; }
 .tw-note { margin: 6px 0 0; font-size: 11px; color: #999; }
 .testwin section > label:not(.tw-row) { display: flex; gap: 6px; align-items: baseline; margin-top: 4px; }
-/* サイネージ（舞台を拡大・縮小するページ）でも、パネルは舞台の外なので、そのままの大きさ */
 .testwin { --tw-z: 9999; z-index: 9999; }
 .testwin .tw-only { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 .testwin .tw-only button[aria-pressed="true"] { background: #FEEBC4; color: #634A2E; }

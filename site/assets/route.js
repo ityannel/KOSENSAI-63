@@ -1,17 +1,14 @@
-// 道案内の計算（画面は map.js）。campus.js の道の線から「道の網」を作り、いちばん近い道順を探す。
-// 場所は { floor, rect: [左, 上, 幅, 高さ] } か { floor, at: [x, y] }。
 import { PATHS, LINKS, BUILDINGS, M_PER_PT } from "./campus.js";
 
-const STAIRS_COST = 40;  // 階段1階分（pt 相当。約13m 歩くのと同じ手間）
-const EV_COST = 70;      // エレベーター（待ち時間ぶん重くする）
-const OUT_COST = 1.15;   // 屋外は少しだけ避ける（雨の日を考えて）
-const WALK_M_PER_MIN = 60; // お祭りの人混みでゆっくり歩く速さ
+const STAIRS_COST = 40;
+const EV_COST = 70;
+const OUT_COST = 1.15;
+const WALK_M_PER_MIN = 60;
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
 const len = (v) => Math.hypot(v[0], v[1]);
 const dist = (a, b) => len(sub(a, b));
 
-// 点 p から線分 ab へのいちばん近い点（t は 0〜1）
 function project(p, a, b) {
   const ab = sub(b, a);
   const l2 = ab[0] ** 2 + ab[1] ** 2 || 1;
@@ -19,7 +16,6 @@ function project(p, a, b) {
   return { t, pt: [a[0] + ab[0] * t, a[1] + ab[1] * t] };
 }
 
-// 四角と点のきょり（中なら 0）
 function rectDist(rect, p) {
   const [x, y, w, h] = rect;
   const dx = Math.max(x - p[0], 0, p[0] - (x + w));
@@ -27,7 +23,6 @@ function rectDist(rect, p) {
   return Math.hypot(dx, dy);
 }
 
-// 2本の線分が交わる点（端が相手の線に乗っている場合も）。なければ null
 function cross(a, b, c, d) {
   const r = sub(b, a), s = sub(d, c);
   const den = r[0] * s[1] - r[1] * s[0];
@@ -42,15 +37,13 @@ function cross(a, b, c, d) {
     }
     return null;
   }
-  return null; // 平行（重なりは端どうしの近さで拾う）
+  return null;
 }
 
-// ---------- 道の網を作る ----------
 function build() {
-  const nodes = [];           // { id, floor, pt }
-  const adj = new Map();      // id -> [{ to, w, out }]
-  const edges = [];           // { floor, a, b, out }  a, b はノード id
-  // ほぼ同じ場所（0.6pt 以内）の点は1つにまとめる
+  const nodes = [];
+  const adj = new Map();
+  const edges = [];
   const node = (floor, pt) => {
     const near = nodes.find((n) => n.floor === floor && dist(n.pt, pt) < 0.6);
     if (near) return near.id;
@@ -67,7 +60,6 @@ function build() {
   for (const [floor, paths] of Object.entries(PATHS)) {
     const segs = [];
     for (const p of paths) for (let i = 1; i < p.pts.length; i++) segs.push({ a: p.pts[i - 1], b: p.pts[i], out: !!p.out, cuts: [0, 1] });
-    // 交わるところ・端が乗っているところで切る
     for (let i = 0; i < segs.length; i++) {
       for (let j = i + 1; j < segs.length; j++) {
         const hit = cross(segs[i].a, segs[i].b, segs[j].a, segs[j].b);
@@ -87,7 +79,6 @@ function build() {
     }
   }
 
-  // 階段・エレベーター：各階のいちばん近い道につなぎ、階と階をつなぐ
   for (const l of LINKS) {
     const ids = [];
     for (const [floor, at] of Object.entries(l.at)) {
@@ -115,7 +106,6 @@ function nearestOnEdges(floor, p, edges, nodes, score = (q) => dist(p, q)) {
   return best;
 }
 
-// 線の途中に点を入れる（網を書きかえる）。入れた点の id を返す
 function splitEdge(near, edges, nodes, adj, node, link) {
   const { e, pt } = near;
   if (dist(pt, nodes[e.a].pt) < 0.5) return e.a;
@@ -133,19 +123,15 @@ function splitEdge(near, edges, nodes, adj, node, link) {
 let NET = null;
 const net = () => (NET ??= build());
 
-// 場所の「入口」：部屋にいちばん近い道の点（同じくらいなら部屋の真ん中に近い方）
 export function doorOf(place) {
   return doorsOf(place)[0] ?? null;
 }
-// 入口の候補（部屋のまわりの道のうち、近いもの）。stub は部屋の真ん中から入口までの手間
 function doorsOf(place) {
   const { edges, nodes } = net();
   const c = centerOf(place);
-  // 建物の中の部屋は廊下からだけ、建物の外（中庭・小屋など）は屋外の道からだけ入る（建物へは出入口を通る）
   const outside = place.outdoor || !buildingAt(place.floor, c);
   const home = buildingAt(place.floor, c);
   const same = (e) => !!e.out === outside;
-  // 点の場所（地図で選んだ所・入口など）から道までの線が、ほかの建物を横切らないこと（外の点なら外を回って入る。渡り廊下も屋内なので横切らない）
   const crosses = (q) => (outside ? !lineClear(place.floor, c, q) : !lineInside(place.floor, c, q, home));
   const onFloor = edges.filter((e) => e.floor === place.floor);
   const cands = [];
@@ -160,33 +146,29 @@ function doorsOf(place) {
   for (const d of cands) {
     if (out.length >= 3 || (out.length && d.stub > out[0].stub + 30)) break;
     if (out.some((o) => dist(o.pt, d.pt) < 10)) continue;
-    if ((!place.rect || outside) && crosses(d.pt)) continue; // 点の場所と、建物の外の場所（小屋など）
+    if ((!place.rect || outside) && crosses(d.pt)) continue;
     out.push(d);
   }
-  return out.length ? out : cands.slice(0, 1); // どれも横切るときは、いちばん近いところ
+  return out.length ? out : cands.slice(0, 1);
 }
 
-// a→b のまっすぐな線が、どの建物も横切らないか（外を歩ける線か）
 function lineClear(floor, a, b) {
   const n = Math.ceil(dist(a, b) / 2);
   for (let i = 1; i < n; i++) if (buildingAt(floor, [a[0] + ((b[0] - a[0]) * i) / n, a[1] + ((b[1] - a[1]) * i) / n])) return false;
   return true;
 }
-// a→b の線が、建物 home の中だけを通るか
 function lineInside(floor, a, b, home) {
   const n = Math.ceil(dist(a, b) / 2);
   for (let i = 1; i < n; i++) if (buildingAt(floor, [a[0] + ((b[0] - a[0]) * i) / n, a[1] + ((b[1] - a[1]) * i) / n]) !== home) return false;
   return true;
 }
 
-// 場所の真ん中（L字などは labelRect＝中に入るいちばん大きい四角の真ん中）
 export const centerOf = (place) => {
   if (place.at) return place.at;
   const [x, y, w, h] = place.labelRect ?? place.rect;
   return [x + w / 2, y + h / 2];
 };
 
-// 2つの入口のあいだの、いちばん近い道（ダイクストラ法）
 function between(da, db, opts) {
   const { nodes, adj } = net();
   const starts = [[da.e.a, dist(da.pt, nodes[da.e.a].pt)], [da.e.b, dist(da.pt, nodes[da.e.b].pt)]];
@@ -196,7 +178,7 @@ function between(da, db, opts) {
   const push = (id, d) => { heap.push([d, id]); heap.sort((x, y) => x[0] - y[0]); };
   for (const [id, d] of starts) if (d < (D.get(id) ?? Infinity)) { D.set(id, d); push(id, d); }
   let best = Infinity, bestEnd = null;
-  if (da.e === db.e) { best = dist(da.pt, db.pt); bestEnd = "direct"; } // 同じ線の上なら直接
+  if (da.e === db.e) { best = dist(da.pt, db.pt); bestEnd = "direct"; }
   while (heap.length) {
     const [d, id] = heap.shift();
     if (done.has(id) || d >= best) continue;
@@ -211,10 +193,8 @@ function between(da, db, opts) {
   return bestEnd == null ? null : { best, bestEnd, prev };
 }
 
-// いちばん近い道順。opts.noStairs でエレベーターだけを使う
 export function findRoute(from, to, opts = {}) {
   const { nodes } = net();
-  // どちらも建物の外で、あいだに建物がなければ、道を使わずまっすぐ歩く（同じ空き地の中など）
   const a0 = centerOf(from), b0 = centerOf(to);
   if (from.floor === to.floor && (from.outdoor || !buildingAt(from.floor, a0)) && (to.outdoor || !buildingAt(to.floor, b0)) && lineClear(from.floor, a0, b0)) {
     const meters = Math.max(5, Math.round((dist(a0, b0) * M_PER_PT) / 5) * 5);
@@ -232,11 +212,9 @@ export function findRoute(from, to, opts = {}) {
   if (!pick) return null;
   const { best, bestEnd, prev, da, db } = pick;
 
-  // 点の並び（階ごとに分ける）
   const chain = [];
   if (bestEnd !== "direct") {
     let cur = bestEnd;
-    // prev の id は1つ前の点なので、あとから id: cur で上書きする（逆だと最後の角が抜けて近道になる）
     while (cur != null) { chain.unshift({ ...(prev.get(cur) ?? {}), id: cur }); cur = prev.get(cur)?.id; }
   }
   const legs = [];
@@ -245,13 +223,12 @@ export function findRoute(from, to, opts = {}) {
     const n = nodes[chain[i].id];
     const step = chain[i + 1];
     if (n.floor !== leg.floor) {
-      // 階段で2階分以上続けて上り下りするときは、途中の階を飛ばして1つにまとめる
       const passing = leg.arrivedBy && walkLength([leg]) < 3;
       if (!passing) legs.push(leg);
       leg = { floor: n.floor, fromFloor: passing ? leg.fromFloor : leg.floor, pts: [n.pt], out: [], arrivedBy: chain[i].via };
     } else {
       leg.pts.push(n.pt);
-      if (chain[i].out) leg.out.push(leg.pts.length - 2); // この点の手前の区間が屋外
+      if (chain[i].out) leg.out.push(leg.pts.length - 2);
     }
     void step;
   }
@@ -267,7 +244,6 @@ export function findRoute(from, to, opts = {}) {
 const dedupe = (pts) => pts.filter((p, i) => i === 0 || dist(p, pts[i - 1]) > 0.3);
 const walkLength = (legs) => legs.reduce((s, l) => s + l.pts.reduce((a, p, i) => a + (i ? dist(p, l.pts[i - 1]) : 0), 0), 0);
 
-// どの建物の中か。外なら null
 export function buildingAt(floor, p) {
   for (const b of BUILDINGS) {
     const f = b[floor];
@@ -286,7 +262,6 @@ function inPoly(p, poly) {
   return inside;
 }
 
-// 細かいジグザグを消す（Douglas-Peucker）
 function simplify(pts, tol) {
   if (pts.length < 3) return pts;
   const [a, b] = [pts[0], pts[pts.length - 1]];
@@ -298,13 +273,8 @@ function simplify(pts, tol) {
   if (far <= tol) return [a, b];
   return [...simplify(pts.slice(0, idx + 1), tol).slice(0, -1), ...simplify(pts.slice(idx), tol)];
 }
-// 向きの変わり方（度）。+ が右、- が左（画面の y は下向き）
 const turnOf = (u, v) => ((((Math.atan2(v[1], v[0]) - Math.atan2(u[1], u[0])) * 180) / Math.PI + 540) % 360) - 180;
 
-// ---------- 道順の説明 ----------
-// 「20m進んで、保健室の角を右へ」「シャイニングロードを130m進んで、右へ」「学生玄関（H棟）から外に出る」のように、曲がるところ・出入りするところごとに区切る。
-// names = { from, to }。hints（なくてもよい）は地図から目印を探す関数：
-//   landmark(floor, pt) 曲がり角のそばの部屋や会場の名前、door(floor, pt) 出入口の名前、road(floor, a, b) a→b が通る道の名前
 export function describe(route, names, hints = {}) {
   const steps = [];
   const m = (pt) => `${Math.max(5, Math.round((pt * M_PER_PT) / 5) * 5)}m`;
@@ -320,13 +290,11 @@ export function describe(route, names, hints = {}) {
       const up = parseInt(leg.floor) > parseInt(leg.fromFloor);
       steps.push({ icon: via?.kind === "ev" ? "ev" : up ? "up" : "down", text: `${via?.kind === "ev" ? "エレベーター" : "階段"}で${parseInt(leg.floor)}階へ`, sub: up ? "上がる" : "下りる", floor: fl, at: leg.pts[0] });
     }
-    // 歩く線（部屋の中の部分は除く）。曲がり角は細かいジグザグを消した線で、出入りはもとの線で見る
     const fromRoom = first && route.from.rect, toRoom = last && route.to.rect;
     let raw = leg.pts.slice(fromRoom ? 1 : 0, toRoom ? -1 : undefined);
-    if (!raw.length) raw = leg.pts.slice(); // 屋外どうしのまっすぐな道順（2点だけ）
+    if (!raw.length) raw = leg.pts.slice();
     if (raw.length < 2) raw.push(raw[0]);
     const pts = simplify(raw, 4);
-    // 線にそって進んだ長さ（点ごと）
     const cum = new Map();
     let acc = 0;
     raw.forEach((p, i) => { if (i) acc += dist(raw[i - 1], p); if (!cum.has(p)) cum.set(p, acc); });
@@ -336,7 +304,6 @@ export function describe(route, names, hints = {}) {
       const dir = !fromRoom || Math.abs(out) < 30 ? "" : `${lr(out)}へ`;
       steps.push({ icon: "start", text: fromRoom && !route.from.outdoor ? `${names.from}を出て${dir || "まっすぐ"}` : `${names.from}から出発`, sub: where(fl, pts[0]), floor: fl, at: pts[0] });
     }
-    // できごと：曲がる・外に出る・中に入る（進んだ長さの順に並べる）
     const events = [];
     for (let i = 1; i < pts.length - 1; i++) {
       const t = turnOf(sub(pts[i], pts[i - 1]), sub(pts[i + 1], pts[i]));
@@ -347,7 +314,6 @@ export function describe(route, names, hints = {}) {
       if (dist(raw[i], raw[i + 1]) < 0.5) continue;
       const isOut = !buildingAt(fl, mid(raw[i], raw[i + 1]));
       if (wasOut !== null && isOut !== wasOut) {
-        // 建物の名前は、中の側の区間から
         const inside = isOut ? mid(raw[Math.max(0, i - 1)], raw[i]) : mid(raw[i], raw[i + 1]);
         events.push({ d: cum.get(raw[i]) ?? 0, kind: isOut ? "exit" : "enter", at: raw[i], bldg: buildingAt(fl, inside)?.name });
       }
@@ -355,7 +321,6 @@ export function describe(route, names, hints = {}) {
     }
     events.sort((a, b) => a.d - b.d);
     let lastD = 0, lastLm = null, lastAt = pts[0];
-    // 「〇〇ロードを20m進んで、」：その区間が名前のある道なら道の名前から
     const go = (run, to, end = "進んで、") => {
       if (run <= 6) return "";
       const road = hints.road?.(fl, lastAt, to);
@@ -365,7 +330,6 @@ export function describe(route, names, hints = {}) {
       const e = events[k], run = e.d - lastD;
       const pre = go(run, e.at);
       if (e.kind === "turn") {
-        // 目印：続けて同じもの・出発地・目的地は使わない
         let lm = hints.landmark?.(fl, e.at);
         if (lm === lastLm || lm === names.to || lm === names.from) lm = null;
         else lastLm = lm;
@@ -377,7 +341,6 @@ export function describe(route, names, hints = {}) {
       const door = hints.door?.(fl, e.at) ?? e.bldg ?? "建物";
       let text = `${pre}${door}から${e.kind === "exit" ? "外に出る" : "中に入る"}`;
       lastD = e.d;
-      // すぐあとに曲がるなら1つにまとめる（「〇〇から外に出て、右へ」）
       const n = events[k + 1];
       if (n?.kind === "turn" && n.d - e.d < 6) {
         text = `${pre}${door}から${e.kind === "exit" ? "外に出て" : "中に入って"}、${lr(n.t)}へ`;

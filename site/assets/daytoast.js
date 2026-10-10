@@ -1,17 +1,14 @@
-// サイトを開いたときの、ひとことのお知らせ：高専祭の10日前から、毎日1回（その日の最初に開いたとき）。当日・2日目もひとこと。
-// 日付は日本時間。テスト：?now=2026-10-20T09:00 を付けると、毎回出る（出した日の記録を見ない）
 import { FESTIVAL } from "./config.js";
 
 const params = new URLSearchParams(location.search);
 const nowParam = params.get("now");
 const now = nowParam ? new Date(nowParam.includes("+") ? nowParam : nowParam + "+09:00") : new Date();
-const ymd = (d) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(d); // 2026-10-20
+const ymd = (d) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(d);
 const dayNo = (s) => Math.round(Date.parse(s + "T00:00:00Z") / 86400000);
 const first = FESTIVAL.days[0], last = FESTIVAL.days.at(-1);
-const today = ymd(now), left = dayNo(ymd(new Date(first.open))) - dayNo(today); // 初日まであと何日（当日は 0）
+const today = ymd(now), left = dayNo(ymd(new Date(first.open))) - dayNo(today);
 const hm = (iso) => new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", hour: "numeric", minute: "2-digit" }).format(new Date(iso));
 
-// 日ごとのひとこと（あと10日〜1日）
 const HINTS = {
   10: ["高専祭まで、あと10日！", "テーマは「縁」。まずは、地図と出し物をのぞいてみよう"],
   9: ["あと9日！", "ステージの出演団体が、みどころで見られるよ"],
@@ -35,12 +32,11 @@ function message() {
 const m = message();
 const KEY = "kosen63-daytoast";
 let seen = null;
-try { seen = localStorage.getItem(KEY); } catch { /* 記録できないときは、毎回出る */ }
+try { seen = localStorage.getItem(KEY); } catch {  }
 if (m && (nowParam || seen !== today)) {
-  try { localStorage.setItem(KEY, today); } catch { /* 保存できないブラウザ */ }
-  // お知らせの帯（notice.js の見た目）に統合：本部のお知らせが無いときだけ、main.js が、この日替わりを帯に出す（9秒で消える。帯を押しても消える）
+  try { localStorage.setItem(KEY, today); } catch {  }
   const icon = m[0].includes("まで") || /あと/.test(m[0]) ? "clock" : "flag";
   const n = { title: m[0], text: m[1], urgent: false, icon, font: "", size: "", bg: "", fg: "", link: null, daily: true };
   n.key = JSON.stringify(n);
-  setTimeout(() => dispatchEvent(new CustomEvent("daily-notice", { detail: n })), 1800); // 絵が出てから
+  setTimeout(() => dispatchEvent(new CustomEvent("daily-notice", { detail: n })), 1800);
 }

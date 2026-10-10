@@ -1,12 +1,3 @@
-// 校内マップ（map.html）。Google マップのように、動かす・拡大する・探す・道案内する。
-//
-// - 図：campus.js（建物・道・階段）と assets/map/rooms.json（部屋の四角）。お祭りの会場は config.js の MAP
-// - いまここ：校内の QR（map.html?here=ID）から来ると、その場所を少しのあいだ（40秒）出す。歩くと場所が変わるので、そのあとは消す
-// - 道案内：「いまここ」（なければ選んだ出発地）から、選んだ場所まで。曲がり角ごとの説明つき
-// - その場で変わるもの：会場の混雑（色）、いまやっている企画（NOW）、スタンプを押したお店
-// - 模擬店：config.js の SHOPS。教室の部屋番号（HOMEROOMS）がわかるまでは「L棟1階の模擬店」のように階までを案内する
-// - 屋外：campus.js の SITE（正門・グラウンド・寮など。構内通行経路図から写したもの）
-// - URL：map.html#ID でその場所を開く。map.html?from=ID&to=ID で道案内を開く（共有ボタンが作る）
 import { paintNotice } from "./notice.js";
 import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION, DEPT_EXHIBITS } from "./config.js";
 import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES } from "./campus.js";
@@ -16,7 +7,7 @@ import { findRoute, describe, centerOf, buildingAt } from "./route.js";
 import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
 
 const HERE_KEY = "kosen63-here";
-const HERE_SEC = 40; // QR を読んでから「いまここ」を出しておく秒数
+const HERE_SEC = 40;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
 const md = (iso) => new Date(iso).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric" });
@@ -24,40 +15,37 @@ const $ = (s) => document.querySelector(s);
 const SEARCH_PH = "場所・お店をさがす";
 
 let getState = () => ({});
-const places = new Map();   // id → 場所
-const byRoom = new Map();   // 部屋番号 → お祭りの場所の id
+const places = new Map();
+const byRoom = new Map();
 let floor = "1F";
-let selected = null;        // 選んでいる場所の id
-let here = null;            // いまここ（場所の id）
-let hereAt = 0;             // QR を読んだ時刻
-let hereT = 0;              // いまここを消すタイマー
-// いまここを消す（QR を読んでから時間がたったら。歩いて場所が変わっているので）
+let selected = null;
+let here = null;
+let hereAt = 0;
+let hereT = 0;
 function forgetHere() {
   if (!here) return;
   here = null;
   clearTimeout(hereT);
-  try { sessionStorage.removeItem(HERE_KEY); } catch { /* 保存できないブラウザ */ }
+  try { sessionStorage.removeItem(HERE_KEY); } catch {  }
   $("#m-locate").classList.remove("has-here");
   renderMap();
-  if (mode !== "route") renderSheet(); // 道案内の途中なら、出発地はそのまま
+  if (mode !== "route") renderSheet();
 }
-// いまここを決める（QR を読んだとき）。HERE_SEC 秒たったら消す
 function setHere(id, at = Date.now()) {
   here = id;
   hereAt = at;
-  try { sessionStorage.setItem(HERE_KEY, JSON.stringify({ id, t: at })); } catch { /* 保存できないブラウザ */ }
+  try { sessionStorage.setItem(HERE_KEY, JSON.stringify({ id, t: at })); } catch {  }
   clearTimeout(hereT);
   hereT = setTimeout(forgetHere, Math.max(0, at + HERE_SEC * 1000 - Date.now()));
   $("#m-locate").classList.add("has-here");
 }
-// 道案内の行き先を覚えておく（スマホのカメラで QR を読むと新しい画面で開くので、そこで続きを出す）
 const ROUTE_KEY = "kosen63-route";
 const ROUTE_KEEP_MIN = 30;
 function saveRoute() {
   try {
     if (mode === "route" && rt.to) localStorage.setItem(ROUTE_KEY, JSON.stringify({ to: rt.to, noStairs: rt.noStairs, t: Date.now() }));
     else localStorage.removeItem(ROUTE_KEY);
-  } catch { /* 保存できないブラウザ */ }
+  } catch {  }
 }
 function savedRoute() {
   try {
@@ -65,11 +53,10 @@ function savedRoute() {
     return r && Date.now() - r.t < ROUTE_KEEP_MIN * 60000 && place(r.to) ? r : null;
   } catch { return null; }
 }
-let mode = "home";          // home / place / route / list
-let listKind = null;        // 一覧で出している種類
-let sheetBack = [];         // 前のシート（× で戻る）。{ mode, selected, listKind, rt }
-let restoring = false;      // 戻している途中（履歴に積まない）
-// いまのシートを履歴に積む（最初の画面は積まない。同じものが続くときも積まない）
+let mode = "home";
+let listKind = null;
+let sheetBack = [];
+let restoring = false;
 function pushSheet() {
   if (restoring || mode === "home") return;
   const cur = { mode, selected, listKind, rt: { ...rt } };
@@ -78,11 +65,10 @@ function pushSheet() {
   sheetBack.push(cur);
   if (sheetBack.length > 20) sheetBack.shift();
 }
-let toiletFilter = "all";   // トイレの一覧：all / f / m / hc
+let toiletFilter = "all";
 let rt = { from: null, to: null, noStairs: false, result: null, steps: [], active: -1 };
-let picking = null;         // 検索で「出発地」「目的地」を選んでいるとき "from" / "to"
+let picking = null;
 
-// ---------- 場所 ----------
 const GENERIC = /^(講義室|教員室|倉庫|準備室|器具庫|書庫|機械室|事務室|空室|WC|[A-Z]\d{3})/;
 const CLASSROOM = /講義室|多目的室/;
 const isToilet = (p) => !!p?.kind?.startsWith("toilet");
@@ -101,7 +87,6 @@ export function titleOf(p) {
   if (p.fest || ["spot", "aed", "vending", "deco", "stairs", "ev", "door"].includes(p.kind) || p.outdoor) return p.name;
   return GENERIC.test(p.name) ? `${p.code} ${p.name === p.code ? "" : p.name}`.trim() : p.name;
 }
-// 建物と階の短い書き方：「B棟」の1階 → B-1F（棟の名前でない建物は「体育館・武道場 1F」）
 function whereOf(b, floor) {
   if (!b) return floor;
   return /^[A-Z]+棟$/.test(b.name) ? `${b.name.replace("棟", "")}-${floor}` : `${b.name} ${floor}`;
@@ -111,15 +96,14 @@ function subOf(p) {
   if (p.kind === "deco") return `${p.sub}・${whereOf(buildingAt(p.floor, p.at), p.floor)}`;
   if (p.kind === "stairs" || p.kind === "ev") return whereOf(buildingAt(p.floor, p.at), p.floor);
   if (p.kind === "door") return "建物の出入口";
-  if (p.outdoor || (p.kind === "spot" && !buildingAt(p.floor, centerOf(p)))) return p.sub || ""; // 屋外は書かなくてもわかる
+  if (p.outdoor || (p.kind === "spot" && !buildingAt(p.floor, centerOf(p)))) return p.sub || "";
   const b = buildingAt(p.floor, centerOf(p));
   const parts = [];
   if (p.fest && p.sub) parts.push(p.sub);
-  if (b && !b.connector) parts.push(whereOf(b, p.floor)); // 建物の外（中庭など）は棟も階も書かない
-  // 部屋番号・クラスは出さない（来場者には意味がないので。検索では部屋番号・クラスでも見つかる）
+  if (b && !b.connector) parts.push(whereOf(b, p.floor));
   return parts.join("　");
 }
-const CLASS_OF = Object.fromEntries(Object.entries(HOMEROOMS).map(([c, r]) => [r, c])); // 部屋番号 → クラス
+const CLASS_OF = Object.fromEntries(Object.entries(HOMEROOMS).map(([c, r]) => [r, c]));
 const bbox = (rects) => {
   const x0 = Math.min(...rects.map((r) => r[0])), y0 = Math.min(...rects.map((r) => r[1]));
   const x1 = Math.max(...rects.map((r) => r[0] + r[2])), y1 = Math.max(...rects.map((r) => r[1] + r[3]));
@@ -127,7 +111,6 @@ const bbox = (rects) => {
 };
 const polyBox = (poly) => bbox(poly.map(([x, y]) => [x, y, 0, 0]));
 
-// 出入口と同じ場所にある目印（QR を貼る場所）
 function doorSpot(e) { return MAP.spots.find((sp) => sp.at && sp.floor === "1F" && Math.hypot(sp.at[0] - e.at[0], sp.at[1] - e.at[1]) < 8) ?? null; }
 function buildPlaces(rooms) {
   const add = (code, floorId, rect) => {
@@ -141,12 +124,10 @@ function buildPlaces(rooms) {
   for (const [code, fix] of Object.entries(ROOM_FIX)) if (!places.has(code)) add(code, fix.floor, fix.rect);
   fillGaps();
   evenToilets();
-  // 四角1つでは表せない部屋（L字など）
   for (const [code, fix] of Object.entries(ROOM_FIX)) {
     const p = places.get(code);
     if (p && fix.extra) Object.assign(p, { rects: [p.rect, ...fix.extra], rect: bbox([p.rect, ...fix.extra]) });
   }
-  // お祭りの場所（部屋1つ・いくつかの部屋・部屋ではない広い場所）
   for (const p of MAP.places) {
     const codes = [p.room ?? []].flat();
     const rs = codes.map((c) => places.get(c)).filter(Boolean);
@@ -155,19 +136,14 @@ function buildPlaces(rooms) {
     places.set(p.id, { ...p, fest: true, code: codes[0] ?? null, codes, floor: p.floor ?? rs[0].floor, rect: bbox(rects), rects, roomName: rs.map((r) => r.name).join("・") || null });
     codes.forEach((c) => byRoom.set(c, p.id));
   }
-  // 入口・目印（QR を貼る場所）と正門
   if (!MAP.spots.some((sp) => sp.id === "gate")) places.set("gate", { id: "gate", kind: "spot", floor: "1F", at: SITE.gate.at, name: SITE.gate.name });
   for (const sp of MAP.spots) places.set(sp.id, { ...sp, kind: "spot" });
-  // 屋外（グラウンド・寮など）
   for (const a of SITE.aed) places.set(a.id, { ...a, kind: "aed" });
   for (const v of SITE.vending ?? []) places.set(v.id, { ...v, kind: "vending" });
-  // 階段・エレベーター（階ごと）。地図の印を押すと、その場所のシートが開く
   for (const l of LINKS) for (const [f, at] of Object.entries(l.at)) {
     places.set(`${l.id}@${f}`, { id: `${l.id}@${f}`, kind: l.kind === "ev" ? "ev" : "stairs", floor: f, at, name: l.kind === "ev" ? "エレベーター" : "階段" });
   }
-  // 建物の出入口（「いまここ」QR の目印と同じ場所なら、そちらを使う）
   ENTRANCES.forEach((e, i) => { if (!doorSpot(e)) places.set(`door-${i}`, { id: `door-${i}`, kind: "door", floor: "1F", at: e.at, name: e.name }); });
-  // 校内装飾の撮影スポット（点の場所）
   for (const d of DECOS.spots) {
     const grade = Number(d.cls[0]);
     places.set(`deco-${d.cls}`, { id: `deco-${d.cls}`, kind: "deco", floor: d.floor, at: d.at, grade, cls: d.cls,
@@ -176,14 +152,12 @@ function buildPlaces(rooms) {
   for (const a of SITE.areas) places.set(a.id, { id: a.id, kind: "outdoor", outdoor: true, floor: "1F", name: a.name, rect: a.rect ?? polyBox(a.poly), sub: a.sub ?? "" });
   for (const f of [...(SITE.footways ?? []), ...(SITE.bikeways ?? []), ...(SITE.roadNames ?? [])]) {
     const r = bbox(f.pts.map(([x, y]) => [x - 5, y, 10, 0]));
-    places.set(f.id, { id: f.id, kind: "outdoor", outdoor: true, floor: "1F", name: f.name, sub: f.sub, rect: r, line: f.pts }); // line：選ぶと道全体に線を引く
+    places.set(f.id, { id: f.id, kind: "outdoor", outdoor: true, floor: "1F", name: f.name, sub: f.sub, rect: r, line: f.pts });
   }
   for (const b of SITE.buildings) if (b.name) places.set(b.id, { id: b.id, kind: "outdoor", outdoor: true, floor: "1F", name: b.name, sub: b.sub ?? "", rect: bbox(b.rects), rects: b.rects });
   attachShops();
   attachRally();
-  // L字などは、名前とピンを中に入るいちばん大きい四角に出す（config の labelRect があればそちら）
   for (const p of places.values()) if (!p.zone && !p.labelRect && p.rects?.length > 1) p.labelRect = innerRect(p.rects);
-  // 会場の中にある小さな部屋（学食の厨房・売店・トイレなど）は会場の一部にする（地図に出さず、探すと会場が出る）
   const fests = [...places.values()].filter((f) => f.fest && !f.zone && f.rects && f.kind !== "hq");
   for (const p of [...places.values()]) {
     if (p.fest || !p.code || !p.rect || byRoom.has(p.id)) continue;
@@ -193,14 +167,12 @@ function buildPlaces(rooms) {
   }
 }
 
-// 図面から取った部屋のあいだには壁の厚みぶんの細い隙間がある。となりの部屋と真ん中で合わせて埋める
 const GAP = 2.6;
 function fillGaps() {
   for (const fl of FLOORS) {
     const rs = [...places.values()].filter((p) => p.floor === fl && p.rect);
-    // 辺ごとに合わせる先を集めてから（元の形で計算して）まとめて動かす。辺は [左, 上, 右, 下]
     const moves = new Map(rs.map((p) => [p, [[], [], [], []]]));
-    for (const ax of [0, 1]) { // 0 なら左右にとなり合う、1 なら上下
+    for (const ax of [0, 1]) {
       const o = 1 - ax;
       for (const a of rs) {
         for (const b of rs) {
@@ -208,21 +180,20 @@ function fillGaps() {
           const gap = B[ax] - (A[ax] + A[ax + 2]);
           if (a === b || gap <= 0 || gap > GAP) continue;
           const lap = Math.min(A[o] + A[o + 2], B[o] + B[o + 2]) - Math.max(A[o], B[o]);
-          if (lap < Math.min(A[o + 2], B[o + 2]) * 0.4) continue; // 角でかすっているだけのものは合わせない
+          if (lap < Math.min(A[o + 2], B[o + 2]) * 0.4) continue;
           const mid = A[ax] + A[ax + 2] + gap / 2;
           moves.get(a)[ax + 2].push(mid);
           moves.get(b)[ax].push(mid);
         }
       }
     }
-    // 建物の外壁との隙間も詰める（外壁＝その外側がどの建物の中でもない辺）
     const walls = BUILDINGS.flatMap((b) => (b[fl] && !b[fl].roof ? b[fl].rects ?? [] : []));
     const inside = (x, y) => walls.some(([bx, by, bw, bh]) => x > bx && x < bx + bw && y > by && y < by + bh);
     for (const p of rs) {
       const R = p.rect, m = moves.get(p);
       for (const W of walls) {
         for (const [side, ax, dir] of [[0, 0, -1], [1, 1, -1], [2, 0, 1], [3, 1, 1]]) {
-          if (m[side].length) continue; // となりの部屋と合わせる方を先に
+          if (m[side].length) continue;
           const o = 1 - ax;
           const edge = dir < 0 ? R[ax] : R[ax] + R[ax + 2];
           const wall = dir < 0 ? W[ax] : W[ax] + W[ax + 2];
@@ -245,13 +216,12 @@ function fillGaps() {
   }
 }
 
-// となり合った男子・女子トイレは、2つ合わせた広さを半分ずつにする（図面の読み取りで大きさがばらつくため）
 function evenToilets() {
   const wc = [...places.values()].filter((p) => p.rect && (p.kind === "toilet-m" || p.kind === "toilet-f"));
   for (const a of wc) {
     for (const b of wc) {
       if (a === b || a.floor !== b.floor || a.kind === b.kind) continue;
-      for (const ax of [0, 1]) { // 0 なら左右に、1 なら上下に並んでいる（a が左・上）
+      for (const ax of [0, 1]) {
         const o = 1 - ax, A = a.rect, B = b.rect;
         if (Math.abs(A[ax] + A[ax + 2] - B[ax]) > 0.6) continue;
         if (Math.abs(A[o] - B[o]) > 1.5 || Math.abs(A[o] + A[o + 2] - B[o] - B[o + 2]) > 1.5) continue;
@@ -264,8 +234,6 @@ function evenToilets() {
   }
 }
 
-// 模擬店を場所につなぐ。教室がわからないものは「〇棟〇階の模擬店」（その階の教室まとめ）にする
-// スタンプラリーの場所（RALLY.shops の place か room）を、その場所に結びつける（地図に印、シートに一覧）
 function attachRally() {
   for (const p of places.values()) delete p.shops;
   for (const x of RALLY.shops) {
@@ -273,13 +241,10 @@ function attachRally() {
     if (p && !(p.shops ?? []).includes(x.id)) p.shops = [...(p.shops ?? []), x.id];
   }
 }
-// スタンプラリーの場所が Firestore から届いた・変わったとき（地図は待たずに先に出しておき、あとから印を足す）
 export function refreshRally() {
   if (!places.size) return;
   attachRally();
   buildIndex();
-  // 地図をもう描いてあれば、いまの階を描き直す（まだなら最初の描画で入る）。
-  // floorLayer を空にするだけだと renderMap が何もしなくなり、そのあと建物を押してもシートが変わらなくなる
   if (floorLayer) drawFloor();
   renderMap();
 }
@@ -289,8 +254,8 @@ function attachShops() {
     let p = sh.place ? places.get(sh.place) : code ? place(code) : null;
     if (!p && sh.bldg) p = zoneFor(sh.bldg, sh.floor);
     if (!p) continue;
-    if (!p.fest) Object.assign(p, { fest: true, roomName: p.name, kind: "shops", rects: p.rects ?? [p.rect] }); // ふつうの部屋がお店になる
-    if (!sh.room && !sh.place && code && !HOMEROOMS_CONFIRMED) p.roomGuess = true; // 教室の場所がまだ仮
+    if (!p.fest) Object.assign(p, { fest: true, roomName: p.name, kind: "shops", rects: p.rects ?? [p.rect] });
+    if (!sh.room && !sh.place && code && !HOMEROOMS_CONFIRMED) p.roomGuess = true;
     (p.shopList ??= []).push(sh);
   }
   for (const p of places.values()) if (p.kind === "shops" && !p.zone && p.shopList.length === 1) p.name = p.shopList[0].name;
@@ -307,7 +272,6 @@ function zoneFor(bldg, fl) {
   return places.get(id);
 }
 const place = (id) => places.get(byRoom.get(id) ?? id) ?? pointPlace(id);
-// 地図で選んだ点（部屋ではない所）。id は "pt-1F-420-600" のように階と座標
 function pointPlace(id) {
   const m = /^pt-(\dF)-(-?\d+)-(-?\d+)$/.exec(id ?? "");
   if (!m || !FLOORS.includes(m[1])) return null;
@@ -316,7 +280,6 @@ function pointPlace(id) {
   return p;
 }
 
-// いくつかの部屋に分かれている場所は、いちばん近い部屋までの道順にする
 function bestRoute(from, to, opts) {
   const split = (p) => (p.rects?.length > 1 ? p.rects.map((r) => ({ ...p, rect: r, labelRect: r })) : [p]);
   let best = null;
@@ -327,14 +290,13 @@ function bestRoute(from, to, opts) {
   return best;
 }
 
-// ---------- 地図の見え方（拡大・移動・回転・傾き） ----------
 const svg = () => $("#map-svg");
-let view = { x: 0, y: 0, k: 1 };   // svg の左上の地図座標と、1pt が何ピクセルか
-let size = { w: 1, h: 1 };         // svg の大きさ（回転・傾きのときは画面より大きくして、すみが空かないようにする）
-let screen = { w: 1, h: 1 };       // 地図の枠（画面）の大きさ
-let offset = { x: 0, y: 0 };       // 地図の枠の左上から見た svg の左上
-let cam = { bearing: 0, tilt: 0 }; // 回転（度。時計回り）と傾き（度。0 が真上から）
-let camM = null;                   // svg の点 → 地図の枠の点（null なら回転も傾きもない）
+let view = { x: 0, y: 0, k: 1 };
+let size = { w: 1, h: 1 };
+let screen = { w: 1, h: 1 };
+let offset = { x: 0, y: 0 };
+let cam = { bearing: 0, tilt: 0 };
+let camM = null;
 let kMin = 0.2;
 const K_MAX = 9, TILT_MAX = 45, TILT_ON = 40;
 
@@ -344,22 +306,18 @@ function measure() {
   kMin = Math.min(screen.w / VIEW[2], screen.h / VIEW[3]) * 0.9;
   layoutCam();
 }
-// 回転と傾きを svg に当てる（画面の真ん中を中心に回し、奥へ倒す）
 function layoutCam() {
   const flat = !cam.bearing && !cam.tilt;
-  const P = screen.h * 1.1; // 目の高さ（遠近の強さ）
+  const P = screen.h * 1.1;
   let w = screen.w, h = screen.h;
   if (!flat && !cam.tilt) {
-    // 回すだけ：画面の対角線の正方形（どう回してもすみまで地図がある）
     w = h = Math.ceil(Math.hypot(screen.w, screen.h)) + 4;
   } else if (!flat) {
-    // いちばん傾けても画面のすみまで地図があるように、正方形で大きく描く
     const s = Math.sin((TILT_MAX * Math.PI) / 180), c = Math.cos((TILT_MAX * Math.PI) / 180);
     const far = ((screen.h / 2) * P) / (P * c - (screen.h / 2) * s);
     const side = (screen.w / 2) * (1 + (far * s) / P);
     w = h = Math.ceil(2 * Math.hypot(side, far) + 40);
   }
-  // 見ている真ん中は変えない
   const cx = view.x + size.w / view.k / 2, cy = view.y + size.h / view.k / 2;
   size = { w, h };
   offset = { x: (screen.w - w) / 2, y: (screen.h - h) / 2 };
@@ -378,13 +336,12 @@ function layoutCam() {
       .translate(-w / 2, -h / 2);
     el.style.transform = camM.toString();
   }
-  el.style.setProperty("--brg", `${-cam.bearing}deg`); // 字と印は回さない（いつも読める向き）
+  el.style.setProperty("--brg", `${-cam.bearing}deg`);
   el.classList.toggle("is-3d", !flat);
   $("#m-compass")?.style.setProperty("--north", `${NORTH + cam.bearing}deg`);
-  $("#m-compass")?.toggleAttribute("data-rotated", Math.abs(normDeg(NORTH + cam.bearing)) > 1); // 北が上でなくなったときだけ、北のボタンを出す
+  $("#m-compass")?.toggleAttribute("data-rotated", Math.abs(normDeg(NORTH + cam.bearing)) > 1);
   $("#m-tilt")?.setAttribute("aria-pressed", String(cam.tilt > 0));
 }
-// 地図の枠の点 → svg の点（傾いた面との交わりを解く）
 function toLocal(sx, sy) {
   const qx = sx - offset.x, qy = sy - offset.y;
   if (!camM) return [qx, qy];
@@ -414,29 +371,25 @@ function animateCam(b1, t1, ms = 380) {
   camAnim = requestAnimationFrame(step);
 }
 
-// ---------- 向き（スマホの方位センサー） ----------
-// いまここの点に向いている方向の扇形を出し、「向きに合わせる」ボタンで地図を自分の向きに回し続ける。
-// iPhone は押したときに許可を聞く。センサーのないパソコンなどでは使えない
-const DECL = -9;            // 函館の磁気の偏角（磁北は真北より約9°西）。センサーの北を地図の北（真北）に直す
-let heading = null;         // 向いている方位（度。真北が 0、時計回り）
-let headingOn = false;      // センサーを読んでいる
-let follow = false;         // 地図を自分の向きに合わせて回し続けている
+const DECL = -9;
+let heading = null;
+let headingOn = false;
+let follow = false;
 let headingRaf = 0;
-const bearingFor = (h) => -(NORTH + h); // 向いている方向が画面の上になる地図の回転
+const bearingFor = (h) => -(NORTH + h);
 function onOrient(e) {
   let h = null;
-  if (typeof e.webkitCompassHeading === "number") h = e.webkitCompassHeading;          // iPhone（磁北から時計回り）
-  else if (e.absolute && typeof e.alpha === "number") h = 360 - e.alpha;               // Android（反時計回り）
+  if (typeof e.webkitCompassHeading === "number") h = e.webkitCompassHeading;
+  else if (e.absolute && typeof e.alpha === "number") h = 360 - e.alpha;
   if (h == null || Number.isNaN(h)) return;
-  h += DECL + (window.screen.orientation?.angle ?? window.orientation ?? 0);           // 横向きに持っているとき
-  heading = heading == null ? normDeg(h) : normDeg(heading + normDeg(h - heading) * 0.25); // 少しなめらかに
+  h += DECL + (window.screen.orientation?.angle ?? window.orientation ?? 0);
+  heading = heading == null ? normDeg(h) : normDeg(heading + normDeg(h - heading) * 0.25);
   if (headingRaf) return;
   headingRaf = requestAnimationFrame(() => {
     headingRaf = 0;
     const cone = document.querySelector("#m-marks .mk-cone");
     if (cone) cone.style.transform = coneTransform(cone.dataset.x, cone.dataset.y);
     else if (here && place(here)?.floor === floor) drawMarks();
-    // 回すアニメの途中はセンサーで回さない（2つの向きが取り合ってがたつくので）
     if (follow && !camAnim && Math.abs(normDeg(bearingFor(heading) - cam.bearing)) > 1.5) setCam(bearingFor(heading), cam.tilt);
   });
 }
@@ -445,9 +398,8 @@ async function startHeading() {
   if (headingOn) return true;
   const DOE = window.DeviceOrientationEvent;
   if (!DOE) return false;
-  // iPhone は許可を聞く。断られても、向きが届くかどうかはあとで確かめる（許可を聞けるが聞かなくても届くブラウザがある）
   if (typeof DOE.requestPermission === "function") {
-    try { await DOE.requestPermission(); } catch { /* 聞けなかった */ }
+    try { await DOE.requestPermission(); } catch {  }
   }
   addEventListener("ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation", onOrient);
   headingOn = true;
@@ -463,12 +415,9 @@ async function toggleFollow() {
   if (follow) { setFollow(false); return; }
   if (!(await startHeading())) { toast("向きのセンサーが使えません"); return; }
   setFollow(true);
-  // しばらくたっても向きがわからない（センサーがない）ときはやめる
   setTimeout(() => { if (follow && heading == null) { setFollow(false); toast("向きがわかりませんでした（センサーがないか、許可されていません）"); } }, 1500);
 }
 
-// 見ている範囲を当てる。動かすだけ（拡大率が同じ）ならすぐ全部。
-// 拡大・縮小が続いているあいだは、地図の範囲だけ毎コマ動かし、字の大きさ（--u）・字の出し入れは 0.16 秒に1回と、止まったあとに（スマホで重くならないように）
 let settleT = 0, settledK = 0, settledAt = 0;
 function applyView() {
   const k = view.k;
@@ -483,29 +432,25 @@ function settleView() {
   settledAt = performance.now();
   svg().style.setProperty("--u", (1 / k).toFixed(5));
   const far = svg().classList.contains("is-far");
-  svg().classList.toggle("is-far", k < (far ? 1.15 : 1.05)); // 遠くから見ているときは小さな印を出さない（境目でちらつかないように少しずらす）
+  svg().classList.toggle("is-far", k < (far ? 1.15 : 1.05));
   updateLabels();
 }
-// 札の列は、名前の字（見えている行）のいちばん上のすぐ上へ。名前が出ていないとき（部屋が画面で小さい）は札も出さない
-const labelTop = new Map();    // 場所の id → 名前の字のいちばん上（名前の真ん中から、画面のピクセル。上がマイナス）
-const labelBottom = new Map(); // 場所の id → 名前の字のいちばん下（印をつけた場所は、札を名前の下に出す）
-let badgeIds = new Set();      // 札の列がある場所（名前を少し上げて、名前と札をまとめて真ん中に）
-// 札の列がその場所の部屋に入るか（名前を上げるかどうか）。名前2行＋札でだいたい 70px の高さ
+const labelTop = new Map();
+const labelBottom = new Map();
+let badgeIds = new Set();
 function badgeFits(id, k, b) {
-  if (svg().classList.contains("is-far")) return false; // 遠くから見ているとき札は出ない（map.css）。名前も下げない
+  if (svg().classList.contains("is-far")) return false;
   const g = document.querySelector(`#m-live .ic-badges[data-for="${CSS.escape(id)}"]`);
   if (!g) return false;
   const side = Math.abs(Math.sin((b * Math.PI) / 180)) > 0.7;
-  const need = markedIds.has(id) ? 120 : 70; // 印（ピン）がある場所は、ピン＋名前＋札の高さ
+  const need = markedIds.has(id) ? 120 : 70;
   return Number(side ? g.dataset.h : g.dataset.w) * k >= Number(g.dataset.rw) + 8 && Number(side ? g.dataset.w : g.dataset.h) * k >= need;
 }
 function updateBadges() {
   document.querySelectorAll("#m-live .ic-badges").forEach((g) => {
     const b = labelTop.get(g.dataset.for);
-    // 部屋が画面で、札の列と名前が入る大きさのときだけ出す（となりにはみ出さないように）
     const fits = b != null && badgeFits(g.dataset.for, view.k, cam.bearing);
     g.classList.toggle("is-hidden", !fits);
-    // ふだんは名前の上。印（ピン・いまここ）をつけた場所は、印が上にあるので名前の下（札の高さの半分 8 ＋すきま 4）
     const y = markedIds.has(g.dataset.for) ? labelBottom.get(g.dataset.for) + 12 : b - 12;
     if (fits) g.querySelector(".row").setAttribute("transform", `translate(0 ${y.toFixed(1)})`);
   });
@@ -518,11 +463,9 @@ function clampView() {
   view.x = cx - vw / 2;
   view.y = cy - vh / 2;
 }
-// 画面の中で、上の検索と下のシートに隠れていない部分（地図の枠の座標）
-// PC：地図を画面いっぱいに広げているか（map.css の body.is-wide。幅 1000px 以上だけ。Enistagram のタブでは、いつもの幅にもどる）
 const isWide = () => document.body.classList.contains("is-wide") && !document.body.classList.contains("is-feed") && matchMedia("(min-width: 1000px)").matches;
 function safeArea() {
-  if (isWide()) { // 検索とシートは左の欄に出ている。地図が見えるのは、その右（右はボタンの列、上はタブの分をあける）
+  if (isWide()) {
     const left = ($(".m-top")?.getBoundingClientRect().right ?? 416) + 16;
     return { left, top: 84, right: Math.max(left + 200, screen.w - 76), bottom: Math.max(300, screen.h - 20) };
   }
@@ -530,24 +473,21 @@ function safeArea() {
   const shown = !$("#m-sheet").hidden;
   const sheet = $("#m-sheet").getBoundingClientRect();
   const tabsTop = $("#m-tabs")?.getBoundingClientRect().top ?? screen.h;
-  const limit = tabsTop - 16; // 下のタブより上
-  // シートが広がり・縮みの途中でも、止まったあとの高さで計算する（42dvh・78dvh は map.css の max-height）
+  const limit = tabsTop - 16;
   const sh = $("#m-sheet");
   const capTop = tabsTop - (sh.classList.contains("is-min") ? 30 : innerHeight * (sh.classList.contains("is-open") ? 0.78 : 0.42));
-  const bottom = !shown ? limit : Math.min(limit, Math.max(sheet.top, capTop) - 12); // PC でもスマホと同じ縦長の画面（map.css）
+  const bottom = !shown ? limit : Math.min(limit, Math.max(sheet.top, capTop) - 12);
   return { left: 12, top, right: screen.w - 70, bottom: Math.max(top + 80, bottom) };
 }
 function viewFor(rect, maxK = 4) {
   const a = safeArea();
   const [x, y, w, h] = rect;
-  // 回っているときは回したあとの外枠で、傾いているときは縦を長めに見て入れる
   const r = (cam.bearing * Math.PI) / 180, cs = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r));
   const bw = w * cs + h * sn, bh = (w * sn + h * cs) / Math.cos((cam.tilt * Math.PI) / 180);
   const k = Math.max(kMin, Math.min(maxK, (a.right - a.left) / Math.max(bw, 1), (a.bottom - a.top) / Math.max(bh, 1)));
   const [lx, ly] = toLocal((a.left + a.right) / 2, (a.top + a.bottom) / 2);
   return { k, x: x + w / 2 - lx / k, y: y + h / 2 - ly / k };
 }
-// 枠の大きさが変わったとき（PC で広げた・もどした）：地図を測り直す。見えているところの真ん中にあった場所が、新しい真ん中に来るようにする
 function relayout(change) {
   const mid = () => { const a = safeArea(); return toLocal((a.left + a.right) / 2, (a.top + a.bottom) / 2); };
   const [lx, ly] = mid();
@@ -565,8 +505,7 @@ function animateTo(target, ms = 420) {
   cancelAnimationFrame(anim);
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) ms = 0;
   const from = { ...view }, t0 = performance.now();
-  if (ms) ms = Math.min(700, Math.max(300, ms * (0.7 + 0.25 * Math.abs(Math.log(target.k / from.k))))); // 遠いほど少し長く
-  // 拡大率は対数で、位置は画面の中心で補間する（Google マップのような動き）
+  if (ms) ms = Math.min(700, Math.max(300, ms * (0.7 + 0.25 * Math.abs(Math.log(target.k / from.k)))));
   const c0 = { x: from.x + size.w / from.k / 2, y: from.y + size.h / from.k / 2 };
   const c1 = { x: target.x + size.w / target.k / 2, y: target.y + size.h / target.k / 2 };
   const step = (now) => {
@@ -580,10 +519,8 @@ function animateTo(target, ms = 420) {
   };
   anim = requestAnimationFrame(step);
 }
-// 全体ボタン：校舎 → 敷地全体 → 校舎 …と切りかえる
 let wholeSite = false;
 const fitAll = () => { wholeSite = !wholeSite; animateTo(viewFor(wholeSite ? VIEW : HOME, 1.2)); };
-// svg の点 (sx, sy) を動かさずに拡大・縮小
 function zoomAt(sx, sy, f) {
   const k = Math.max(kMin, Math.min(K_MAX, view.k * f));
   const wx = view.x + sx / view.k, wy = view.y + sy / view.k;
@@ -591,7 +528,6 @@ function zoomAt(sx, sy, f) {
   clampView();
   applyView();
 }
-// 点 (sx, sy) を動かさずに、なめらかに拡大・縮小（ダブルタップ・キーボード）
 function animateZoomAt(sx, sy, f, ms = 260) {
   cancelAnimationFrame(anim);
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) { zoomAt(sx, sy, f); return; }
@@ -606,7 +542,6 @@ function animateZoomAt(sx, sy, f, ms = 260) {
   };
   anim = requestAnimationFrame(step);
 }
-// 指を離したあとも少しすべらせる（慣性。vx, vy は指の速さ px/ms）
 function fling(vx, vy) {
   cancelAnimationFrame(anim);
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -622,7 +557,6 @@ function fling(vx, vy) {
   };
   anim = requestAnimationFrame(step);
 }
-// 画面の向きで dx, dy ピクセル動かす（回転・傾きしていても見た目どおりに動く）
 function panScreen(dx, dy) {
   const [ax, ay] = toLocal(screen.w / 2, screen.h / 2), [bx, by] = toLocal(screen.w / 2 + dx, screen.h / 2 + dy);
   view.x += (bx - ax) / view.k;
@@ -637,7 +571,6 @@ function initGestures() {
   let start = null, two = null, moved = false, lastTap = 0, lastTapAt = [0, 0], tapT = 0;
   const scr = (e) => { const r = box.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   const oneFinger = (s, target = null, turn = false) => ({ s, p: toLocal(...s), view: { ...view }, cam: { ...cam }, target, turn });
-  // 操作は地図の枠で受ける（傾けたとき、何もない所をつかんでも動かせるように）
   box.addEventListener("contextmenu", (e) => e.preventDefault());
   box.addEventListener("pointerdown", (e) => {
     cancelAnimationFrame(anim);
@@ -646,7 +579,6 @@ function initGestures() {
     pts.set(e.pointerId, scr(e));
     if (pts.size === 1) {
       moved = false;
-      // パソコン：右ボタンか Ctrl・Shift を押しながらドラッグすると、回転（左右）と傾き（上下）
       start = oneFinger(scr(e), e.target, e.button === 2 || e.ctrlKey || e.shiftKey || e.metaKey);
     }
     if (pts.size === 2) {
@@ -667,15 +599,13 @@ function initGestures() {
       const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
       const dAng = normDeg(((Math.atan2(b[1] - a[1], b[0] - a[0]) - two.ang) * 180) / Math.PI);
       const dy = mid[1] - two.mid[1];
-      // はじめの動きで決める：2本指でそろって上下＝傾き、それ以外（開く・閉じる・ひねる）＝拡大と回転
       if (!two.mode) {
         if (Math.abs(Math.log(d / two.d)) > 0.06 || Math.abs(dAng) > 10) two.mode = "zoom";
         else if (Math.abs(dy) > 12) two.mode = "tilt";
         else return;
       }
       if (two.mode === "tilt") { setCam(two.cam.bearing, two.cam.tilt - dy * 0.3); return; }
-      // ひねりは少し回してから効かせる（拡大だけのつもりで回ってしまわないように）
-      if (!two.rot && Math.abs(dAng) > 12) { two.rot = dAng; setFollow(false); } // 自分で回したら、向きに合わせるのをやめる
+      if (!two.rot && Math.abs(dAng) > 12) { two.rot = dAng; setFollow(false); }
       if (two.rot) { cam = { ...cam, bearing: normDeg(two.cam.bearing + dAng - two.rot) }; layoutCam(); }
       const k = Math.max(kMin, Math.min(K_MAX, (two.k * d) / two.d));
       const [lx, ly] = toLocal(...mid);
@@ -689,7 +619,6 @@ function initGestures() {
       moved = true;
       el.classList.add("is-dragging");
       if (start.turn) { setFollow(false); setCam(start.cam.bearing + dx * 0.4, start.cam.tilt - dy * 0.3); return; }
-      // 指の速さ（px/ms）をなめらかに記録（離したあとの慣性に使う）
       const lt = start.lt ?? e.timeStamp, dtm = e.timeStamp - lt;
       if (dtm > 0) start.v = [0, 1].map((i) => 0.8 * ((s[i] - (start.ls ?? start.s)[i]) / dtm) + 0.2 * (start.v?.[i] ?? 0));
       start.ls = s;
@@ -704,7 +633,7 @@ function initGestures() {
     if (!pts.has(e.pointerId)) return;
     pts.delete(e.pointerId);
     el.classList.remove("is-dragging");
-    if (pts.size === 1 && two) {           // 2本指の片方を離したら、残りの指で動かし続ける
+    if (pts.size === 1 && two) {
       start = oneFinger([...pts.values()][0]);
       two = null;
       return;
@@ -713,7 +642,7 @@ function initGestures() {
       if (!moved && start && e.type === "pointerup") {
         const now = Date.now(), at = scr(e);
         const near = Math.hypot(at[0] - lastTapAt[0], at[1] - lastTapAt[1]) < 30;
-        if (now - lastTap < 300 && near) { clearTimeout(tapT); animateZoomAt(...toLocal(...at), 2); lastTap = 0; }   // ダブルタップで拡大
+        if (now - lastTap < 300 && near) { clearTimeout(tapT); animateZoomAt(...toLocal(...at), 2); lastTap = 0; }
         else {
           lastTap = now;
           lastTapAt = at;
@@ -722,9 +651,8 @@ function initGestures() {
           if (mode === "route" && !mapPicking) tapT = setTimeout(() => tap(tg, lp), 300); else tap(tg, lp);
         }
       } else if (moved && !two && start?.v && !start.turn && e.timeStamp - start.lt < 60) {
-        fling(...start.v); // 払ったら、少しすべる
+        fling(...start.v);
       }
-      // 校内図の向き・北が上に近ければ、ぴったり合わせる（真上に近ければ傾きも戻す）
       const snapB = follow ? cam.bearing : Math.abs(cam.bearing) < 4 ? 0 : Math.abs(normDeg(NORTH + cam.bearing)) < 4 ? -NORTH : cam.bearing;
       if (snapB !== cam.bearing || (cam.tilt && cam.tilt < 3)) animateCam(snapB, cam.tilt < 3 ? 0 : cam.tilt, 180);
       start = null;
@@ -736,14 +664,13 @@ function initGestures() {
   let wheelF = 1, wheelAt = null, wheelRaf = 0;
   box.addEventListener("wheel", (e) => {
     e.preventDefault();
-    cancelAnimationFrame(anim); // 飛んでいる途中・すべっている途中でもすぐ効く
+    cancelAnimationFrame(anim);
     cancelAnimationFrame(camAnim);
-    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY; // 行単位のマウス
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
     wheelF *= Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0018));
     wheelAt = toLocal(...scr(e));
-    wheelRaf ||= requestAnimationFrame(() => { wheelRaf = 0; zoomAt(...wheelAt, wheelF); wheelF = 1; }); // 1フレームに1回
+    wheelRaf ||= requestAnimationFrame(() => { wheelRaf = 0; zoomAt(...wheelAt, wheelF); wheelF = 1; });
   }, { passive: false });
-  // キーボード：矢印で移動、Shift＋矢印で回転・傾き、+ − で拡大縮小
   el.tabIndex = 0;
   el.addEventListener("keydown", (e) => {
     const moves = { ArrowLeft: [-60, 0], ArrowRight: [60, 0], ArrowUp: [0, -60], ArrowDown: [0, 60] };
@@ -762,12 +689,10 @@ function initGestures() {
 function tap(target, [lx, ly] = [0, 0]) {
   const f = target?.closest?.("[data-floor-go]");
   if (f) {
-    // 道案内の「3Fへ ›」：その階の最初の案内（階段・エレベーターを出たところ）へ
     const i = rt.steps.findIndex((st) => st.floor === f.dataset.floorGo);
     if (i >= 0) focusStep(i); else setFloor(f.dataset.floorGo);
     return;
   }
-  // 投稿の場所を選んでいるとき：部屋や会場を押したらそこ、それ以外（廊下・道・グラウンド）はその点。どこでもよい
   if (postPick) {
     const id = target?.closest?.("[data-id]")?.dataset.id;
     const p = id && place(id);
@@ -776,7 +701,6 @@ function tap(target, [lx, ly] = [0, 0]) {
     endPostPick(pointPlace(`pt-${floor}-${x}-${y}`).id);
     return;
   }
-  // 地図で出発地・目的地を選んでいるとき：部屋や会場を押したらそこ、それ以外（廊下・道・グラウンド）はその点
   if (mapPicking) {
     const id = target?.closest?.("[data-id]")?.dataset.id;
     const p = id && place(id);
@@ -790,9 +714,6 @@ function tap(target, [lx, ly] = [0, 0]) {
   else if (mode === "place" || mode === "list") closeSheet();
 }
 
-// ---------- 描く ----------
-// 折り返し階段の形。at の近くの外壁（20pt 以内）に長い辺をつける。約3m×4.5m
-// box は [x, y, w, h] か、階ごとの { "1F": [...] }（ない階は 1F の形）
 const boxOf = (l, fl) => (Array.isArray(l.box) ? l.box : l.box ? l.box[fl] ?? l.box["1F"] : null);
 const STAIR_W = 11, STAIR_L = 16, LANDING_D = 4.5, TREAD = 1.6;
 function stairShape(at, fl, link = {}) {
@@ -800,7 +721,6 @@ function stairShape(at, fl, link = {}) {
   const inside = (x, y) => walls.some(([bx, by, bw, bh]) => x > bx && x < bx + bw && y > by && y < by + bh);
   const [x, y] = at;
   const home = walls.find(([bx, by, bw, bh]) => x >= bx && x <= bx + bw && y >= by && y <= by + bh);
-  // 壁の候補（外側が建物でない辺）。[壁の座標, 縦の壁か, 外の向き]
   let best = null;
   if (home) {
     const [bx, by, bw, bh] = home;
@@ -814,7 +734,6 @@ function stairShape(at, fl, link = {}) {
   let r, vert, landStart;
   const box = boxOf(link, fl);
   if (box) {
-    // 形を決めてある階段：ほかの階では stick の壁に合わせて動かす（その階の box があればそのまま）
     r = [...box];
     const c = [r[0] + r[2] / 2, r[1] + r[3] / 2];
     const h = walls.find(([bx, by, bw, bh]) => c[0] >= bx && c[0] <= bx + bw && c[1] >= by && c[1] <= by + bh);
@@ -830,7 +749,7 @@ function stairShape(at, fl, link = {}) {
     return stairDraw(r, vert, landStart, link.landing);
   }
   if (best) {
-    vert = best.vert; // 縦の壁なら、段は縦に上り下りする
+    vert = best.vert;
     const [bx, by, bw, bh] = home;
     if (vert) {
       const sx = best.dir < 0 ? best.pos : best.pos - STAIR_W;
@@ -843,18 +762,16 @@ function stairShape(at, fl, link = {}) {
     vert = true;
     r = [x - STAIR_W / 2, y - STAIR_L / 2, STAIR_W, STAIR_L];
   }
-  // 踊り場は建物の端に近い方のはし
   const [rx0, ry0, rw0, rh0] = r;
   const mid = home ? (vert ? home[1] + home[3] / 2 : home[0] + home[2] / 2) : (vert ? y : x);
-  landStart = vert ? ry0 + rh0 / 2 < mid : rx0 + rw0 / 2 < mid; // true なら踊り場は上（左）
+  landStart = vert ? ry0 + rh0 / 2 < mid : rx0 + rw0 / 2 < mid;
   return stairDraw(r, vert, landStart);
 }
-// 90°に曲がる階段：box の2辺にそって段が並び、corner（tl・tr・bl・br）のすみが踊り場。t は段の幅
 function stairL([x, y, w, h], corner, t) {
   const left = corner[1] === "l", top = corner[0] === "t";
-  const land = [left ? x : x + w - t, top ? y : y + h - t, t, t];                  // 踊り場
-  const up = [land[0], top ? y + t : y, t, h - t];                                 // たての段
-  const side = [left ? x + t : x, land[1], w - t, t];                              // よこの段
+  const land = [left ? x : x + w - t, top ? y : y + h - t, t, t];
+  const up = [land[0], top ? y + t : y, t, h - t];
+  const side = [left ? x + t : x, land[1], w - t, t];
   const lines = [];
   for (let v = up[1]; v <= up[1] + up[3] + 0.01; v += TREAD) lines.push(`M${up[0]} ${v}h${t}`);
   for (let v = side[0]; v <= side[0] + side[2] + 0.01; v += TREAD) lines.push(`M${v} ${side[1]}v${t}`);
@@ -878,14 +795,11 @@ function stairDraw(r, vert, landFar, LANDING = LANDING_D) {
 }
 
 const rectEl = (x, y, w, h, cls, extra = "") => `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}"${extra}/>`;
-// いくつかの四角でできた場所（L字など）は、つなぎ目の線を出さずに外側の輪郭1本で描く
 function shapeEl(rects, cls, extra = "") {
   if (rects.length === 1) return rectEl(...rects[0], cls, extra);
   return `<path class="${cls}" fill-rule="evenodd" d="${outline(rects)}"${extra}/>`;
 }
-// 四角をマス目に分ける（xs・ys が線、on(i, j) がそのマスが中か）
 function grid(rects) {
-  // 1pt 以内でずれている座標はそろえる（細い段差を作らない）
   const snap = (vals) => {
     const out = [];
     for (const v of [...new Set(vals)].sort((a, b) => a - b)) if (!out.length || v - out[out.length - 1] > 1) out.push(v);
@@ -902,7 +816,6 @@ function grid(rects) {
   };
   return { xs, ys, on };
 }
-// L字などの中に入る、いちばん大きい四角（名前やピンはここの真ん中に出す）
 function innerRect(rects) {
   if (rects.length === 1) return rects[0];
   const { xs, ys, on } = grid(rects);
@@ -913,7 +826,6 @@ function innerRect(rects) {
       for (let i = i0; i <= i1 && full; i++) for (let j = j0; j <= j1 && full; j++) full = on(i, j);
       if (!full) continue;
       const r = [xs[i0], ys[j0], xs[i1 + 1] - xs[i0], ys[j1 + 1] - ys[j0]];
-      // 細長いものより、字が入りやすい形を少しだけ好む
       const score = r[2] * r[3] * Math.min(1, Math.min(r[2], r[3]) / 20);
       if (!best || score > best.score) best = { r, score };
     }
@@ -922,7 +834,6 @@ function innerRect(rects) {
 }
 function outline(rects) {
   const { xs, ys, on } = grid(rects);
-  // 塗ってあるマスと塗っていないマスの境目を、時計回りの向きの辺として集める
   const from = new Map();
   const add = (a, b) => { const k = a.join(); (from.get(k) ?? from.set(k, []).get(k)).push(b); };
   for (let i = 0; i < xs.length - 1; i++) {
@@ -935,7 +846,6 @@ function outline(rects) {
       if (!on(i - 1, j)) add([x0, y1], [x0, y0]);
     }
   }
-  // 辺をつないで輪にする（まっすぐ続く点は省く）
   let d = "";
   for (const [k, list] of from) {
     while (list.length) {
@@ -958,25 +868,19 @@ function outline(rects) {
   return d;
 }
 const icon = (x, y, cls, inner) => `<g class="ic ${cls}" style="transform: translate(${x}px, ${y}px) scale(var(--u)) rotate(var(--brg, 0deg))">${inner}</g>`;
-// トイレは男女の人の形、多目的トイレは車いす
 const MAN = '<circle cx="0" cy="-4.2" r="1.7"/><path d="M-2.6-1.8h5.2v4.4h-1.3v4.2h-2.6V2.6h-1.3z"/>';
-const WOMAN = '<circle cx="0" cy="-4.2" r="1.7"/><path d="M-1.6-1.8H1.6L3.6 3.2H1.4V6.8H0.3V3.2H-0.3V6.8H-1.4V3.2H-3.6z"/>'; // 左右そろったスカートと足
-const WHEEL = '<circle cx="-0.3" cy="-4.7" r="1.4"/><path class="ln" d="M-0.9-2.7v3.6h3.4l1.6 3.6"/><circle class="ln" cx="-0.7" cy="2.7" r="3.4"/>'; // 上下左右の真ん中に
-// 男女の形は頭（-5.9）から足（6.8）までなので、0.45 上げて札の真ん中に
+const WOMAN = '<circle cx="0" cy="-4.2" r="1.7"/><path d="M-1.6-1.8H1.6L3.6 3.2H1.4V6.8H0.3V3.2H-0.3V6.8H-1.4V3.2H-3.6z"/>';
+const WHEEL = '<circle cx="-0.3" cy="-4.7" r="1.4"/><path class="ln" d="M-0.9-2.7v3.6h3.4l1.6 3.6"/><circle class="ln" cx="-0.7" cy="2.7" r="3.4"/>';
 const person = (x, cls, inner, id = null) => `<g transform="translate(${x} 0)"${id ? ` data-id="${id}" style="cursor:pointer"` : ""}><rect class="bg ${cls}" x="-6.5" y="-7.5" width="13" height="15" rx="3"/><g class="fig"${cls === "hc" ? "" : ' transform="translate(0 -0.45)"'}>${inner}</g></g>`;
 const ICON = {
   ev: '<rect class="bg" x="-7.5" y="-7.5" width="15" height="15" rx="3"/><text>EV</text>',
-  st: '<rect class="bg" x="-7.5" y="-7.5" width="15" height="15" rx="3"/><path class="steps" d="M-4.5 4.5V1.5H-1.5V-1.5H1.5V-4.5H4.5V4.5z"/>', // ぬりつぶした3段
+  st: '<rect class="bg" x="-7.5" y="-7.5" width="15" height="15" rx="3"/><path class="steps" d="M-4.5 4.5V1.5H-1.5V-1.5H1.5V-4.5H4.5V4.5z"/>',
   door: '<rect class="bg" x="-7.5" y="-7.5" width="15" height="15" rx="3"/><path d="M-3 4.5V-4.5h6v9M-5 4.5h10"/><circle cx="1.4" cy="0.6" r="0.9"/>',
-  // 駐輪場：自転車
   bike: '<rect class="bg" x="-8.5" y="-8.5" width="17" height="17" rx="3.5"/><g class="fg"><circle cx="-3.7" cy="2" r="2.7"/><circle cx="3.7" cy="2" r="2.7"/><path d="M-3.7 2L-1.3-2.2H2.3M-1.3-2.2L0.4 2L2.3-2.2L3.7 2M-2.4-3.8H-0.3M2.3-2.2L1.9-4.2H3.3"/></g>',
-  // 撮影スポット：カメラ
   deco: '<rect class="bg" x="-8.5" y="-8.5" width="17" height="17" rx="4.5"/><g class="fg"><rect x="-5" y="-2.6" width="10" height="7" rx="1.4"/><circle cx="0" cy="0.9" r="1.9"/><path d="M-1.8-2.6l.8-1.5h2l.8 1.5"/></g>',
-  // 自動販売機：箱に取り出し口と、上に並んだ飲み物
   vend: '<rect class="bg" x="-7.5" y="-7.5" width="15" height="15" rx="3"/><rect class="fg" x="-4.5" y="-5" width="9" height="10" rx="1"/><path d="M-3-3v2.5M0-3v2.5M3-3v2.5M-3 3h6"/>',
 };
 
-// 名前の字（部屋の幅に入るくらい拡大したときだけ出す）
 const shortName = (n) => n.replace(/（.*?）|\(.*?\)/g, "").trim() || n;
 const textW = (s, px) => [...s].reduce((a, c) => a + (c.charCodeAt(0) < 0x2000 ? px * 0.6 : px), 0);
 function roomLabel(p, rect = p.labelRect ?? p.rect, text = null) {
@@ -985,7 +889,6 @@ function roomLabel(p, rect = p.labelRect ?? p.rect, text = null) {
   const cx = x + w / 2, cy = y + h / 2;
   const name = text ?? (p.fest ? p.name : shortName(p.name));
   const code = p.code && !p.fest && p.kind !== "shed" && name !== p.code ? p.code : null;
-  // 字が部屋に入る拡大率。kr は地図を 90° 回したとき（部屋の幅と高さが入れかわる）
   const ks = (w, h) => {
     const k1 = Math.max((textW(name, p.fest ? 13 : 12) + 6) / Math.max(4, w), 18 / Math.max(4, h), p.fest ? 0 : 1.1);
     return [k1, code ? Math.max(k1, 34 / Math.max(4, h), (textW(code, 9.5) + 6) / w) : Infinity];
@@ -994,22 +897,18 @@ function roomLabel(p, rect = p.labelRect ?? p.rect, text = null) {
   return `<text class="${p.fest ? "lb-fest" : ""}" x="${cx}" y="${cy}" data-for="${esc(p.id)}" data-k="${k1.toFixed(2)}" data-kr="${k1r.toFixed(2)}" data-k2="${k2}" data-k2r="${k2r}" data-dy="-6">${esc(name)}</text>` +
     (code ? `<text class="lb-code" x="${cx}" y="${cy}" data-for="${esc(p.id)}" data-k="${k2.toFixed(2)}" data-kr="${k2r.toFixed(2)}" data-dy="7">${esc(code)}</text>` : "");
 }
-// 模擬店は、お店の名前（大きく）と団体名（小さく）を並べて出す。
-// 教室がまだわからないもの（その階の教室まとめ）は、まとめた範囲の真ん中に並べる
 function shopLabels(p) {
   const [x, y, w, h] = p.labelRect ?? p.rect;
   const cx = x + w / 2, cy = y + h / 2;
   const lines = [];
-  if (p.kind !== "shops") lines.push({ cls: "lb-fest", text: p.name, px: 13 });   // 会場（中庭・食堂など）の名前
+  if (p.kind !== "shops") lines.push({ cls: "lb-fest", text: p.name, px: 13 });
   for (const x of p.shopList) {
-    // 目立たせるのは団体名：オレンジのまるいラベル（学科展示の学科名と同じ形）、その下にお店の名前
-    if (x.group && x.group !== x.name) lines.push({ cls: "lb-group-pill", text: x.group, px: PILL_PX, pill: true }); // ラベルの大きさは、店も学科展示も同じ
+    if (x.group && x.group !== x.name) lines.push({ cls: "lb-group-pill", text: x.group, px: PILL_PX, pill: true });
     lines.push({ cls: "lb-shop", text: x.name, px: 11 });
   }
   const lh = (l) => (l.pill ? l.px + 7 : l.tight ? l.px + 3 : l.px + 6);
   const total = lines.reduce((a, l) => a + lh(l), 0);
   const maxW = Math.max(...lines.map((l) => textW(l.text, l.px) + (l.pill ? l.px * 0.62 : 0)));
-  // 横は少しはみ出してもよい（名前が見えるほうが大事）
   const ks = (w, h) => Math.max(p.zone ? 1.2 : 0.9, (total + 4) / Math.max(4, h), (maxW * 0.6) / Math.max(w, 50));
   const k = ks(w, h), kr = ks(h, w);
   let dy = -total / 2;
@@ -1019,11 +918,8 @@ function shopLabels(p) {
     return out;
   }).join("");
 }
-// 団体名・学科名のまるいラベルの文字の大きさ（店・学科展示で共通。css の .lb-dept-sub と同じ）
 const PILL_PX = 13;
-// 学科展示は、学科の色（トップの学科のボタンと同じ）で塗る。色は --dc で渡す
 const deptStyle = (p) => { const c = DEPT_EXHIBITS.find((d) => d.dept === p.dept)?.color; return c ? ` style="--dc:${c}"` : ""; };
-// 学科展示：上に学科の名前（学科の色のぷっくりしたラベル）、その下に展示のタイトル
 function deptLabels(p) {
   const [x, y, w, h] = p.labelRect ?? p.rect;
   const cx = x + w / 2, cy = y + h / 2;
@@ -1034,18 +930,14 @@ function deptLabels(p) {
 }
 const festLabels = (p) => [p.shopList?.length ? shopLabels(p) : p.dept ? deptLabels(p) : roomLabel(p)];
 
-// 屋外（敷地・道路・グラウンド・寮など）。どの階でも下に薄く描く（2階より上は薄く、押せない）
 function siteSvg() {
   const out = [`<polygon class="site-bound" points="${SITE.boundary.join(" ")}"/>`];
   for (const pv of SITE.paved ?? []) out.push(`<polygon class="paved" points="${pv.join(" ")}"/>`);
   for (const pk of SITE.parking ?? []) out.push(`<polygon class="parking" points="${pk.join(" ")}"/>`);
   for (const r of SITE.publicRoads) out.push(`<polyline class="road-public" points="${r.pts.join(" ")}"/>`);
-  // 名前のある道は、白い道の両ふちに色をつける（下に少し太い色の線を引いてから白い道をのせる）
   for (const r of SITE.roadNames ?? []) out.push(`<polyline class="road road-named" data-id="${r.id}" style="stroke:${r.color}" points="${r.pts.join(" ")}"/>`);
   for (const r of SITE.roads) out.push(`<polyline class="road" points="${r.join(" ")}"/>`);
   const flabels = [], fways = [];
-  // 道の名前：道の上に、道の向きに沿わせる（地図と一緒に回る。逆さになるときだけ裏返す）。
-  // 字は道幅に入る大きさで地図と一緒に拡大縮小し、読めないほど小さいときは出さない（kmin）
   const roadText = (cls, name, [x, y], [[x0, y0], [x1, y1]], kmin = 1.3, style = "") =>
     `<text class="lb-road ${cls}" x="${x}" y="${y}" data-k="${kmin}"${style ? ` style="${style}"` : ""} data-along="${((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI).toFixed(1)}">${esc(name)}</text>`;
   for (const bw of SITE.bikeways ?? []) {
@@ -1062,14 +954,13 @@ function siteSvg() {
     const shape = a.poly ? `<polygon class="area k-${a.kind}" data-id="${a.id}" points="${a.poly.join(" ")}"/>` : rectEl(...a.rect, `area k-${a.kind}`, ` data-id="${a.id}"`);
     out.push(shape);
     if (a.track) { const [x, y, w, h] = a.track; out.push(`<rect class="track" x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}"/>`); }
-    if (a.icon) labels.push(`<g data-id="${a.id}" style="cursor:pointer">${icon(...a.label, `ic-${a.icon}`, `<title>${esc(a.name)}</title>${ICON[a.icon]}`)}</g>`); // 名前のかわりに印（駐輪場）
-    else if (!a.hideLabel) labels.push(`<text class="lb-area k-${a.kind}" x="${a.label[0]}" y="${a.label[1]}" data-for="${a.id}">${esc(a.name)}</text>`); // hideLabel: 地図に名前を出さない（探せる）
+    if (a.icon) labels.push(`<g data-id="${a.id}" style="cursor:pointer">${icon(...a.label, `ic-${a.icon}`, `<title>${esc(a.name)}</title>${ICON[a.icon]}`)}</g>`);
+    else if (!a.hideLabel) labels.push(`<text class="lb-area k-${a.kind}" x="${a.label[0]}" y="${a.label[1]}" data-for="${a.id}">${esc(a.name)}</text>`);
   }
-  out.push(...fways); // 歩行者専用の道はグラウンドなどの上に
+  out.push(...fways);
   for (const b of SITE.buildings) {
     b.rects.forEach((r) => out.push(rectEl(...r, "bldg-edge")));
     b.rects.forEach((r) => out.push(rectEl(...r, "bldg-fill obldg", b.name ? ` data-id="${b.id}"` : "")));
-    // 「〇棟」の名前は出さない（学生寮などはそのまま）
     if (b.name && !/棟$/.test(b.name)) labels.push(`<text class="lb-bldg" x="${b.label[0]}" y="${b.label[1]}" data-kmax="3.5">${esc(b.name)}</text>`);
   }
   labels.push(...flabels);
@@ -1091,33 +982,28 @@ function drawFloor() {
       if (poly) roofs.push(`<polygon class="bldg-roof" points="${poly}"/>`);
       continue;
     }
-    // 輪郭を先に全部描いてから中を塗る → いくつかの四角が1つの建物に見える
     shapes.forEach((r) => { edges.push(rectEl(...r, "bldg-edge")); fills.push(rectEl(...r, "bldg-fill")); });
     if (poly) { edges.push(`<polygon class="bldg-edge" points="${poly}"/>`); fills.push(`<polygon class="bldg-fill" points="${poly}"/>`); }
     (f.voids ?? []).forEach((r) => voids.push(rectEl(...r, "bldg-void")));
   }
   const outLine = (p) => `<polyline class="out-path" points="${p.pts.join(" ")}"/>`;
   const outs = (PATHS[floor] ?? []).filter((p) => p.out && !p.over).map(outLine);
-  const overs = (PATHS[floor] ?? []).filter((p) => p.over).map(outLine); // 中庭など、屋外の会場の中を通る道
-  // 部屋（広いものから描いて、小さい部屋が上に来るように）。会場になっている部屋は会場として描く
+  const overs = (PATHS[floor] ?? []).filter((p) => p.over).map(outLine);
   const rooms = [...places.values()].filter((p) => p.floor === floor && p.rect && !p.fest && !p.outdoor && p.kind !== "spot" && p.kind !== "aed" && p.kind !== "vending" && !byRoom.has(p.id))
     .sort((a, b) => b.rect[2] * b.rect[3] - a.rect[2] * a.rect[3]);
   const fest = [...places.values()].filter((p) => p.floor === floor && p.fest);
   const roomEls = rooms.map((p) => shapeEl(p.rects ?? [p.rect], `room k-${p.kind}`, ` data-id="${p.id}"`));
-  // まとめた模擬店（〇棟〇階）は離れた教室の集まりなので、1部屋ずつ描く
   const festEls = fest.flatMap((p) => p.poly ? [`<polygon class="room k-${p.kind}" points="${p.poly.join(" ")}" data-id="${p.id}"${deptStyle(p)}/>`] : (p.zone ? p.rects.map((r) => [r]) : [p.rects ?? [p.rect]]).map((rs) => shapeEl(rs, `room k-${p.kind}${p.zone ? " is-zone" : ""}`, ` data-id="${p.id}"${deptStyle(p)}`)));
   const roomLabels = [...rooms.map((p) => roomLabel(p)), ...fest.flatMap(festLabels)];
   const site = siteSvg();
-  // 印：トイレ・エレベーター・階段
   const icons = [];
-  // 男女のトイレが並んでいるところは印を1つにまとめる
   const groups = [];
   for (const p of rooms.filter(isToilet)) {
     const c = centerOf(p);
     const hc = p.kind === "toilet-hc";
     const g = groups.find((g) => g.hc === hc && Math.hypot(g.x - c[0], g.y - c[1]) < 18);
     const kinds = p.kind === "toilet" ? ["toilet-m", "toilet-f"] : [p.kind];
-    const ids = Object.fromEntries(kinds.map((k) => [k.replace("toilet-", ""), p.id])); // 印を押すと、そのトイレ
+    const ids = Object.fromEntries(kinds.map((k) => [k.replace("toilet-", ""), p.id]));
     if (g) { g.n++; g.x += (c[0] - g.x) / g.n; g.y += (c[1] - g.y) / g.n; kinds.forEach((k) => g.kinds.add(k)); g.ids = { ...ids, ...g.ids }; }
     else groups.push({ hc, x: c[0], y: c[1], n: 1, kinds: new Set(kinds), ids });
   }
@@ -1126,14 +1012,12 @@ function drawFloor() {
     const figs = [g.kinds.has("toilet-m") && ["m", MAN], g.kinds.has("toilet-f") && ["f", WOMAN]].filter(Boolean);
     icons.push(icon(g.x, g.y, "ic-wc", figs.map(([c, f], i) => person((i - (figs.length - 1) / 2) * 14, c, f, g.ids[c])).join("")));
   }
-  const tapIcon = (id, html) => `<g data-id="${esc(id)}" style="cursor:pointer">${html}</g>`; // 押せる印
+  const tapIcon = (id, html) => `<g data-id="${esc(id)}" style="cursor:pointer">${html}</g>`;
   if (floor === "1F") ENTRANCES.forEach((e, i) => icons.push(tapIcon(doorSpot(e)?.id ?? `door-${i}`, icon(...e.at, "ic-door", `<title>${esc(e.name)}</title>${ICON.door}`))));
-  // 階段：折り返し階段（2本の段が並び、はしに踊り場）を、いちばん近い外の壁にくっつけて描く。印もその真ん中に出す
   const stairs = [];
   for (const l of LINKS) {
     if (!l.at[floor]) continue;
     if (l.kind === "ev") {
-      // エレベーター：かごの四角に×（図面の記号）
       const [ex, ey, ew, eh] = boxOf(l, floor) ?? [l.at[floor][0] - 3.5, l.at[floor][1] - 3.5, 7, 7];
       stairs.push(rectEl(ex, ey, ew, eh, "ev-area") + `<path class="ev-cross" d="M${ex} ${ey}l${ew} ${eh}M${ex + ew} ${ey}l${-ew} ${eh}"/>`);
       icons.push(tapIcon(`${l.id}@${floor}`, icon(ex + ew / 2, ey + eh / 2, "ic-ev", ICON.ev)));
@@ -1166,13 +1050,12 @@ function drawFloor() {
     <g id="m-aed">${SITE.aed.filter((a) => a.floor === floor).map((a) => `<g data-id="${a.id}" style="cursor:pointer">${icon(...a.at, "ic-aed", '<rect class="bg" x="-12" y="-8" width="24" height="16" rx="4"/><text>AED</text>')}</g>`).join("")}</g>
     <g id="m-marks"></g>`;
   floorLayer = floor;
-  labelKey = ""; // 字を描き直したので、次は必ず出し直す
+  labelKey = "";
   document.querySelectorAll(".m-floor").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.floor === floor)));
   applyView();
 }
 
-// 拡大率に合わせて字を出す・消す（名前と番号を2行で出せるときは上下にずらす）
-let labelKey = ""; // 前に字を出したときの拡大率・向き・印（同じなら何もしない）
+let labelKey = "";
 function updateLabels() {
   const k = view.k, b = cam.bearing;
   const key = `${k}|${b}|${[...markedIds].join()}|${[...badgeIds].join()}`;
@@ -1180,27 +1063,24 @@ function updateLabels() {
   labelKey = key;
   labelTop.clear();
   labelBottom.clear();
-  // 横向き近く（90° 前後）まで回しているときは、部屋の幅と高さを入れかえた拡大率（kr）で字を出す
   const side = Math.abs(Math.sin((b * Math.PI) / 180)) > 0.7;
   const kOf = (t) => Number((side && t.dataset.kr) || t.dataset.k || 0);
   const isTwo = (t) => t.classList.contains("lb-code") || t.hasAttribute("data-fix") || k >= Number((side && t.dataset.k2r) || t.dataset.k2);
-  // 印（いまここの点・ピン）をつけた場所の名前は、いちばん上の行が印の下に来るまでずらす（画面のピクセル）
   const shiftFor = new Map();
   for (const id of markedIds) {
     let top = Infinity;
     document.querySelectorAll(`#m-labels text[data-for="${CSS.escape(id)}"]`).forEach((t) => {
-      if (k < kOf(t)) return; // 出ていない字
+      if (k < kOf(t)) return;
       top = Math.min(top, (isTwo(t) ? Number(t.dataset.dy) : 0) - 7);
     });
     if (top < Infinity) shiftFor.set(id, Math.max(0, 12 - top));
   }
-  for (const id of badgeIds) if (!shiftFor.has(id) && badgeFits(id, k, b)) shiftFor.set(id, 10); // 札の分だけ名前を下げて、札と名前をまとめて部屋の真ん中に
+  for (const id of badgeIds) if (!shiftFor.has(id) && badgeFits(id, k, b)) shiftFor.set(id, 10);
   document.querySelectorAll("#m-labels text").forEach((t) => {
     if (t.dataset.kmax) t.classList.toggle("is-hidden", k > Number(t.dataset.kmax));
-    else if (t.dataset.k) t.classList.toggle("is-hidden", k < kOf(t) / (t.classList.contains("is-hidden") ? 1 : 1.06)); // 出ている字は少し小さくなるまで消さない
-    if (!t.hasAttribute("x") || !t.hasAttribute("y")) return; // アイコンの中の字（アイコンごと回している）
+    else if (t.dataset.k) t.classList.toggle("is-hidden", k < kOf(t) / (t.classList.contains("is-hidden") ? 1 : 1.06));
+    if (!t.hasAttribute("x") || !t.hasAttribute("y")) return;
     if (t.dataset.along) {
-      // 道の名前は道に沿ったまま地図と一緒に回る。画面で逆さになるときだけ 180° 返す
       let a = Number(t.dataset.along);
       if (Math.abs(normDeg(a + b)) > 90) a += 180;
       t.setAttribute("transform", `rotate(${normDeg(a)} ${t.getAttribute("x")} ${t.getAttribute("y")})`);
@@ -1209,20 +1089,18 @@ function updateLabels() {
     if (t.dataset.t0 == null) t.dataset.t0 = t.getAttribute("transform") ?? "";
     const two = t.dataset.k && isTwo(t);
     const dyPx = (two ? Number(t.dataset.dy) : 0) + (shiftFor.get(t.dataset.for) ?? 0), dy = dyPx / k;
-    if (t.dataset.for && !t.classList.contains("is-hidden")) { // 札の列の位置
+    if (t.dataset.for && !t.classList.contains("is-hidden")) {
       const half = t.classList.contains("lb-code") ? 5 : 7;
       labelTop.set(t.dataset.for, Math.min(labelTop.get(t.dataset.for) ?? Infinity, dyPx - half));
       labelBottom.set(t.dataset.for, Math.max(labelBottom.get(t.dataset.for) ?? -Infinity, dyPx + half));
     }
     if (!b && !dy && !t.dataset.t0) { t.removeAttribute("transform"); return; }
-    // 地図を回したぶん字を逆に回す（字の位置を中心に）。2行のずらしは回したあとの上下
     const x = t.getAttribute("x"), y = t.getAttribute("y");
     t.setAttribute("transform", `${b ? `rotate(${-b} ${x} ${y}) ` : ""}${dy ? `translate(0 ${dy}) ` : ""}${t.dataset.t0}`.trim());
   });
-  updateBadges(); // 札の列を名前の下へ
+  updateBadges();
 }
 
-// その場で変わるもの（混雑・NOW・スタンプ・道順・印）
 export function renderMap() {
   if (!floorLayer) return;
   if (floorLayer !== floor) drawFloor();
@@ -1236,16 +1114,14 @@ export function renderMap() {
   });
   const live = [];
   const rowIds = new Set();
-  // 小さな札（NOW・待ち時間・Enistagram の数・スタンプ）は、名前（店名）のすぐ上に1列に並べる（名前に付いている感じ）。
-  // 札の列は名前の真ん中に置き、下へずらす量は updateBadges で名前の行の数に合わせて決める。札は地図を回しても読める向き
   for (const p of places.values()) {
     if (!p.fest || p.floor !== floor) continue;
-    const items = []; // [幅, 中身]
+    const items = [];
     if (s.phase === "during" && s.running?.some((e) => e.venue === p.id)) items.push([32, '<rect class="bg" x="-16" y="-8" width="32" height="16" rx="8"/><text>NOW</text>', "ic-now"]);
-    const wt = worstWait(p, s); // 模擬店の待ち時間・売り切れ
+    const wt = worstWait(p, s);
     if (wt?.short) items.push([34, `<rect class="bg" x="-17" y="-8" width="34" height="16" rx="8"/><text>${wt.short}</text>`, `ic-wait ${wt.cls}`]);
-    const nv = topPosts(s).filter((v) => v.place === p.id).length; // Enistagram の投稿の数（返信は数えない）
-    if (nv) items.push([16, `<circle class="bg" r="8"/><text>${nv > 9 ? "9+" : nv}</text>`, "ic-voice"]); // ただの丸に数字
+    const nv = topPosts(s).filter((v) => v.place === p.id).length;
+    if (nv) items.push([16, `<circle class="bg" r="8"/><text>${nv > 9 ? "9+" : nv}</text>`, "ic-voice"]);
     const shops = p.shops ?? [];
     if (shops.length) {
       const done = shops.filter((id) => s.stamps?.includes(id)).length;
@@ -1257,7 +1133,7 @@ export function renderMap() {
     let x = -total / 2;
     const row = items.map(([w, inner, cls]) => { const g = `<g class="${cls}" transform="translate(${x + w / 2} 0)">${inner}</g>`; x += w + gap; return g; }).join("");
     const [lx, ly, lw, lh] = p.labelRect ?? p.rect;
-    const [, , rw, rh] = p.rect; // 部屋の大きさ（札の列が部屋に入るときだけ出す）
+    const [, , rw, rh] = p.rect;
     live.push(icon(lx + lw / 2, ly + lh / 2, "ic-badges", `<g class="row">${row}</g>`).replace('<g class="ic ', `<g data-for="${esc(p.id)}" data-id="${esc(p.id)}" style="cursor:pointer" data-rw="${total}" data-w="${rw}" data-h="${rh}" class="ic `));
   }
   badgeIds = rowIds;
@@ -1282,29 +1158,23 @@ function drawRoute() {
     if (leg.floor !== floor) return;
     const pts = leg.pts.map((p) => p.join(",")).join(" ");
     parts.push(`<polyline class="rt-case" points="${pts}"/><polyline class="rt-line" points="${pts}"/><polyline class="rt-flow" points="${pts}"/>`);
-    // 階段・エレベーターで別の階へ：押すとその階を出す
     const next = r.legs[i + 1], prev = r.legs[i - 1];
     if (next) parts.push(icon(...leg.pts[leg.pts.length - 1], "ic-floor", `<g data-floor-go="${next.floor}"><rect class="hit" x="-32" y="-38" width="64" height="40"/><rect class="bg" x="-22" y="-26" width="44" height="17" rx="8.5"/><text y="-17.5">${next.floor}へ ›</text></g>`));
     if (prev) parts.push(icon(...leg.pts[0], "ic-floor", `<g data-floor-go="${prev.floor}"><rect class="hit" x="-34" y="0" width="68" height="40"/><rect class="bg" x="-24" y="10" width="48" height="17" rx="8.5"/><text y="18.5">‹ ${prev.floor}から</text></g>`));
   });
-  // 変わっていなければ描き直さない（流れる動きが 30 秒ごとに最初に戻らないように）
   const html = parts.join("");
   if (g._html !== html) g.innerHTML = g._html = html;
 }
 
-// 目印の位置（点の場所はその点、ほかは場所の真ん中）
 const markPoint = (p) => (p.at ? p.at : centerOf(p));
-let markedIds = new Set(); // 名前をずらす場所（今は使わない：名前は動かさない）
-// 部屋・会場・グラウンドなど形のある場所は、ピンや点を置かずに輪郭の色で示す（名前の字を動かさない）。
-// 点の場所（入口・AED・自販機・地図で選んだ点）だけ、ピンや点を置く
+let markedIds = new Set();
 const hasShape = (p) => !p.at && !p.line;
 function drawMarks() {
-  const out = [], hl = [], shapes = new Map(); // shapes: 場所の id → 輪郭の印（is-here / is-start / is-dest）
-  markedIds = new Set(); // 名前をずらす場所（もう使わない。名前は動かさない）
+  const out = [], hl = [], shapes = new Map();
+  markedIds = new Set();
   const hp = here && place(here);
   if (hp && hp.floor === floor) {
     const [x, y] = markPoint(hp);
-    // 向いている方向（扇形）。地図と一緒に回る（字や印のように逆には回さない）
     if (heading != null) out.push(`<g class="ic mk-cone" data-x="${x}" data-y="${y}" style="transform: ${coneTransform(x, y)}"><path d="M0 0L-15-38A41 41 0 0 1 15-38Z"/></g>`);
     if (hasShape(hp)) shapes.set(hp.id, "is-here");
     else out.push(icon(x, y, "mk-here", '<circle class="halo" r="16"/><circle class="dot" r="7"/>'));
@@ -1314,9 +1184,8 @@ function drawMarks() {
     if (hasShape(from)) shapes.set(from.id, "is-start");
     else out.push(icon(...markPoint(from), "mk-start", '<circle class="dot" r="6"/>'));
   }
-  const dest = rt.result ? rt.result.to : mode === "place" ? place(selected) : mode === "route" && rt.to ? place(rt.to) : null; // 道順がまだ（出発地をえらんでいる・同じ場所）でも目的地に印
+  const dest = rt.result ? rt.result.to : mode === "place" ? place(selected) : mode === "route" && rt.to ? place(rt.to) : null;
   if (dest && dest.floor === floor) {
-    // 通り（道）は、ピンではなく道全体に線を引く（道案内のときは着く所にピンも）
     if (dest.line) hl.push(`<polyline class="hl-case" points="${dest.line.join(" ")}"/><polyline class="hl-line" points="${dest.line.join(" ")}"/>`);
     if (dest.line && rt.result) out.push(icon(...rt.result.legs.at(-1).pts.at(-1), "mk-pin", PIN));
     else if (hasShape(dest)) shapes.set(dest.id, "is-dest");
@@ -1324,23 +1193,19 @@ function drawMarks() {
   }
   const st = mode === "route" && rt.steps[rt.active];
   if (st && st.floor === floor) out.push(icon(...st.at, "mk-step", '<circle r="7"/>'));
-  // 変わっていなければ描き直さない（ピンが落ちる動き・いまここの波が、描き直しのたびに最初に戻らないように）
   const hlHtml = hl.join(""), mkHtml = out.join(""), hlEl = $("#m-hl"), mkEl = $("#m-marks");
   if (hlEl._html !== hlHtml) hlEl.innerHTML = hlEl._html = hlHtml;
   if (mkEl._html !== mkHtml) mkEl.innerHTML = mkEl._html = mkHtml;
-  // 輪郭の印をつけ直す
   document.querySelectorAll("#map-svg :is(.is-here, .is-start, .is-dest)").forEach((el) => el.classList.remove("is-here", "is-start", "is-dest"));
   for (const [id, cls] of shapes) document.querySelectorAll(`#map-svg :is(.room, .area, .obldg)[data-id="${CSS.escape(id)}"]`).forEach((el) => el.classList.add(cls));
   drawSelection([...shapes].filter(([, cls]) => cls === "is-dest").map(([id]) => id));
   updateLabels();
 }
-// 選んだ場所（行き先）：部屋の形を上に重ねて、色をのせる。出てきたときだけ、輪郭がすっと締まって波紋が1回広がる。
-// 重ねは「glow（外のぼかし）→ tint（色）→ ripple（波紋）→ line（輪郭）」の順。止まったあとは動かさない（地図を描き直し続けないように）
 function drawSelection(ids) {
   const g = $("#m-sel");
   if (!g) return;
   const key = ids.join();
-  if (g._key === key) return; // 同じ場所のままなら描き直さない（動きが最初に戻らないように）
+  if (g._key === key) return;
   g._key = key;
   const layers = { "sel-glow": [], "sel-tint": [], "sel-ripple": [], "sel-line": [] };
   for (const id of ids) {
@@ -1361,15 +1226,13 @@ function setFloor(f) {
   renderMap();
 }
 
-// ---------- 下のシート ----------
 const sheet = () => $("#m-sheet");
 function setSheet(open) {
   sheet().classList.remove("is-min");
   sheet().classList.toggle("is-open", open);
-  if (!open) $("#m-sheet-body").scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); // 半分ではスクロールできないので上へ
+  if (!open) $("#m-sheet-body").scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   $("#m-grip").setAttribute("aria-label", open ? "たたむ" : "広げる");
 }
-// シートをしまう（つまみだけ残す）
 function minimizeSheet() {
   sheet().classList.remove("is-open");
   sheet().classList.add("is-min");
@@ -1388,7 +1251,6 @@ function closeSheet() {
   setSheet(false);
 }
 
-// 模擬店の待ち時間（app/shop-manager.html でお店の人が入れる shops/{id}）
 const WAIT = {
   normal: { label: "待ちなし", short: "", cls: "w0", rank: 0 },
   "10min": { label: "10分待ち", short: "10分", cls: "w10", rank: 1 },
@@ -1396,7 +1258,6 @@ const WAIT = {
   soldout: { label: "売り切れ", short: "売切", cls: "sold", rank: 3 },
   closed: { label: "休業中", short: "休業", cls: "closed", rank: 3 },
 };
-// shops の1件が、地図のどのお店（SHOPS）のことか。map があればそれ（お店の名前・クラス・部屋番号）、なければ名前で
 function shopDocFor(sh, list) {
   const n = norm(sh.name), room = sh.room ?? HOMEROOMS[sh.cls];
   return (list ?? []).find((d) => {
@@ -1408,25 +1269,22 @@ function shopDocFor(sh, list) {
 function waitOf(sh, s) {
   const d = shopDocFor(sh, s.shops);
   const w = WAIT[d?.status];
-  if (!w || !w.rank) return null; // 待ちなし（すぐ買える）は、何も出さない（情報がないときと同じ見た目）
+  if (!w || !w.rank) return null;
   return { ...w, ago: d.updated_at ? s.agoText(d.updated_at) : "" };
 }
-// お店のひとこと（お店の人が書いたもの）
 function msgHtml(sh, s) {
   const d = sh && shopDocFor(sh, s.shops);
   if (!d?.message) return "";
   return `<p class="sh-msg"><b>お店から</b>${esc(d.message)}${d.message_at ? `<small>${esc(s.agoText(d.message_at))}</small>` : ""}</p>`;
 }
-// 待ち時間・混雑の札：「待ちなし」の横に、いつの情報か（細い字）。会場の混雑も同じ形（ラベルは混みぐあい）
 const statusPill = (x) => x ? `<span class="wait ${x.cls}${x.stale ? " is-stale" : ""}">${esc(x.label)}${x.ago ? `<small>${esc(x.ago)}</small>` : ""}</span>` : "";
-// 場所の中のお店でいちばん待つもの（地図の印に使う）
 function worstWait(p, s) {
   let w = null;
   for (const sh of p.shopList ?? []) { const x = waitOf(sh, s); if (x && (!w || x.rank > w.rank)) w = x; }
   return w;
 }
 
-const CROWD_CLS = ["w0", "w10", "w20", "sold"]; // 混雑の4段階を、模擬店の札と同じ色に（空いている 緑・ふつう 黄・混雑 赤・入場制限 灰）
+const CROWD_CLS = ["w0", "w10", "w20", "sold"];
 function crowdOf(id, s) {
   if (!CROWD.venues.includes(id)) return null;
   const c = s.crowd?.[id];
@@ -1436,7 +1294,6 @@ function crowdOf(id, s) {
   return { ...lv, cls: CROWD_CLS[c.level], ago: c.updated_at ? s.agoText(c.updated_at) : "", stale };
 }
 
-// 模擬店総選挙の投票フォーム（受付中でなければ null）。prefill があれば、そのお店を選んだ状態で開く
 function voteUrl(shop, now) {
   const e = ELECTION;
   if (!e?.form || !shop || now < Date.parse(e.opens) || now >= Date.parse(e.closes)) return null;
@@ -1459,7 +1316,6 @@ const I = {
   down: '<svg viewBox="0 0 24 24"><path d="M4 8h5v5h5v5h6M16 20h4v-4"/></svg>',
   ev: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 10l3-3 3 3M9 14l3 3 3-3"/></svg>',
   goal: '<svg viewBox="0 0 24 24"><path d="M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
-  // ポスト：口をあけて話しているパックマン（口の中に「…」）
   post: '<svg viewBox="0 0 24 24"><path d="M16.6 5.2A9 9 0 1 0 16.6 18.8L9.5 12z"/><circle cx="9" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="13.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="17.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="21.3" cy="12" r="1.35" fill="currentColor" stroke="none"/></svg>',
   comment: '<svg viewBox="0 0 24 24"><path d="M20.5 11.5a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-4.4A8.5 8.5 0 1 1 20.5 11.5z"/></svg>',
   send: '<svg viewBox="0 0 24 24"><path d="M21.5 3L10 14.5M21.5 3l-7 18-4.5-6.5L3.5 10z"/></svg>',
@@ -1472,17 +1328,16 @@ const I = {
   camera: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2.5"/><circle cx="12" cy="13" r="3.5"/><path d="M8.5 6l1.5-2.5h4L15.5 6"/></svg>',
   pen: '<svg viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19zM14 7l3 3"/></svg>',
   qr: '<svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg>',
-  // バリアフリー（車いすの人のマーク）
   access: '<svg viewBox="0 0 24 24"><circle cx="11" cy="4" r="1.7"/><path d="M11 7.5v5.5h5l2.5 5.5 1.8-.6M11 10h4.5M8.3 11.3A5 5 0 1 0 14.9 16.9"/></svg>',
 };
 
-let sheetKey = ""; // いま出しているシートの種類（切りかわったら上から出す）
+let sheetKey = "";
 function renderSheet() {
   const body = $("#m-sheet-body");
   const key = `${mode}|${selected}|${listKind}|${compose?.id}`;
   if (key !== sheetKey) { body.scrollTop = 0; body._html = ""; sheetKey = key; }
   sheet().classList.toggle("is-home", mode === "home");
-  sheet().hidden = mode === "home"; // 最初（何も選んでいないとき）はシートを出さない
+  sheet().hidden = mode === "home";
   const s = getState();
   if (mode === "route") return renderRouteSheet(body, s);
   if (mode === "compose") return renderCompose(body);
@@ -1497,7 +1352,7 @@ function renderSheet() {
   const hp = here && place(here);
   const isHere = hp?.id === p.id;
   const dist = hp && !isHere ? bestRoute(hp, p) : null;
-  const one = p.shopList?.length === 1 && p.shopList[0].name === p.name ? p.shopList[0] : null; // お店1つだけの場所
+  const one = p.shopList?.length === 1 && p.shopList[0].name === p.name ? p.shopList[0] : null;
   const oneWait = one && waitOf(one, s);
   const html = `
     ${p.tentative || p.roomGuess ? `<p class="sh-kind">${p.tentative ? "【場所は仮】" : "【教室は仮】"}</p>` : ""}
@@ -1528,7 +1383,7 @@ function renderSheet() {
     ${p.zone ? `<p class="sh-hint">この階の教室（${esc(p.codes.join("・"))}）のどれかです。どの教室かは、当日は教室の入口の看板を見てください。</p>` : ""}
     ${picks.length ? `<h3 class="sh-h">みどころ</h3><ul class="sh-events">${picks.map((x) => `<li>${esc(x.name)}${x.note ? `<small>　${esc(x.note)}</small>` : ""}</li>`).join("")}</ul>` : ""}
     ${voiceSection(p, s)}`;
-  if (body._html === html) return; // 変わっていなければ描き直さない（読んでいる所・押している所がそのまま）
+  if (body._html === html) return;
   body.innerHTML = body._html = html;
   fillPhotos(body);
 }
@@ -1546,8 +1401,7 @@ function renderHome(body, s) {
     }).join("")}</div>`;
 }
 
-// 種類の一覧（トイレなど）。いまここがあれば近い順
-const TOILET_FILTERS = [["all", "すべて"], ["f", "女性"], ["m", "男性"], ["hc", "多目的"]]; // 多目的は車いすの絵をつける
+const TOILET_FILTERS = [["all", "すべて"], ["f", "女性"], ["m", "男性"], ["hc", "多目的"]];
 function toiletOk(p) {
   if (toiletFilter === "all") return true;
   if (toiletFilter === "hc") return p.kind === "toilet-hc";
@@ -1569,28 +1423,23 @@ function renderListSheet(body) {
     ${listKind === "toilet" ? `<div class="rt-opts">${TOILET_FILTERS.map(([id, l]) => `<button type="button" class="rt-opt" data-tf="${id}" aria-pressed="${toiletFilter === id}">${id === "hc" ? I.access : ""}${l}</button>`).join("")}</div>` : ""}
     <ul class="m-list">${items.map((it) => itemHtml({ ...it, sub: it.p.shopList?.length ? shopsSub(it.p) : undefined })).join("")}</ul>`;
 }
-// ---------- みんなの声（SNS：ポスト・★のレビュー・返信・いいね） ----------
-// 書く入口は「ポスト」1つ。お店の場所では★をつけるとレビューになる（つけなくてもよい）
 const stars = (n) => (n ? `<span class="v-stars" aria-label="★${n}">${"★".repeat(n)}${"☆".repeat(5 - n)}</span>` : "");
 const topPosts = (s) => (s.posts ?? []).filter((x) => x.visible && !x.reply_to);
 const repliesOf = (s, id) => (s.posts ?? []).filter((x) => x.visible && x.reply_to === id).sort((a, b) => a.created_at - b.created_at);
-// いいねを押した直後は、Firestore の数が変わるまで ±1 して見せる
-const likeAdj = new Map(); // id → { base, d }
-const liking = new Set();  // 送っている途中のいいね（2回送らない）
-const popAt = new Map();   // ハートがぽんと動いた時刻（描き直しで動きが切れないように）
+const likeAdj = new Map();
+const liking = new Set();
+const popAt = new Map();
 function likeCount(x) {
   const a = likeAdj.get(x.id);
   if (a && a.base !== x.likes) likeAdj.delete(x.id);
   return (x.likes ?? 0) + (likeAdj.get(x.id)?.d ?? 0);
 }
-// Instagram のように：名前の丸いアイコン・四角い写真（写真がなければ文字のカード）・♡ 💬 ↗・いいね！n件・コメント
-const openCmts = new Set(); // 「コメントをすべて見る」を開いた投稿
+const openCmts = new Set();
 function postHtml(x, s, { withPlace = false, reply = false } = {}) {
   const on = liked(x.id), n = likeCount(x);
   const who = x.author ?? "enishi_guest";
   const heart = `<button type="button" class="v-act v-like${on ? " is-on" : ""}${Date.now() - (popAt.get(x.id) ?? 0) < 400 ? " is-pop" : ""}" data-like="${esc(x.id)}" aria-pressed="${on}" aria-label="いいね">${I.heart}`;
   if (reply) {
-    // コメント：名前・本文・時間、右に小さな ♡
     return `<li class="v-post is-reply" data-post="${esc(x.id)}">${avatar(who, true)}
       <p class="ig-cmt"><b>${esc(who)}${x.official ? VERIFIED : ""}</b> ${esc(x.text)}<small><time>${esc(s.agoText(x.created_at))}</time>${n ? `<span data-likes-of="${esc(x.id)}">いいね！${n}件</span>` : `<span data-likes-of="${esc(x.id)}"></span>`}${x.official ? "" : `<button type="button" class="ig-report" data-report="${esc(x.id)}"${reported(x.id) ? " disabled" : ""}>${reported(x.id) ? "報告しました" : "報告"}</button>`}</small></p>
       ${heart}</button></li>`;
@@ -1599,14 +1448,12 @@ function postHtml(x, s, { withPlace = false, reply = false } = {}) {
   const reps = repliesOf(s, x.id);
   const review = x.kind === "review" && x.stars ? `${stars(x.stars)}${x.shop && titleOf(place(x.place)) !== x.shop ? `<b class="ig-shop">${esc(x.shop)}</b>` : ""}` : "";
   const len = [...(x.text ?? "")].length;
-  // 写真、なければ文字のカード（ロゴの色のグラデーション）
   const shopTag = x.kind === "review" && x.shop && titleOf(place(x.place)) !== x.shop ? `<b class="ig-shop">${esc(x.shop)}</b>` : "";
   const media = x.has_photo
     ? `<div class="ig-media" data-dbl="${esc(x.id)}"><img class="v-photo" data-photo="${esc(x.id)}" alt="投稿の写真"${cachedPhoto(x.id) ? ` src="${cachedPhoto(x.id)}"` : ""}><span class="ig-burst" aria-hidden="true">${I.heart}</span>${x.photo_pending ? '<span class="ig-pending">本部で確認中（あなたにだけ見えています）</span>' : ""}</div>`
     : `<div class="tw-body">${x.kind === "review" && x.stars ? `<p class="tw-review">${stars(x.stars)}${shopTag}</p>` : ""}<p class="tw-text${len <= 25 ? " is-short" : ""}">${esc(x.text ?? "")}</p></div>`;
   const shown = openCmts.has(x.id) ? reps : reps.slice(-2);
-  // キャプション：写真のときは★と本文。文字のカードのときは本文がカードにあるので、店名だけ（なければ出さない）
-  const cap = x.has_photo ? `${review}${esc(x.text ?? "")}` : ""; // 文字だけの投稿は本文が上にあるので、キャプションは出さない
+  const cap = x.has_photo ? `${review}${esc(x.text ?? "")}` : "";
   return `<li class="v-post ig-post${x.has_photo ? "" : " is-text"}" data-post="${esc(x.id)}">
     <header class="ig-head">${avatar(who)}
       <div class="ig-who"><b>${esc(who)}${x.official ? VERIFIED : ""}</b>${p ? `<button type="button" class="ig-loc" data-go="${esc(p.id)}">${esc(titleOf(p))}</button>` : ""}</div>
@@ -1626,7 +1473,6 @@ function postHtml(x, s, { withPlace = false, reply = false } = {}) {
     <div class="v-replybox" data-replybox="${esc(x.id)}" hidden></div>
   </li>`;
 }
-// ポストできる場所：お祭りの場所だけ（会場・学科展示・模擬店・撮影スポット）。ふつうの部屋・トイレ・本部などには出さない
 const canPost = (p) => !!p && (p.fest || p.shopList?.length > 0 || p.kind === "deco") && p.kind !== "hq";
 function voiceSection(p, s) {
   if (!canPost(p)) return "";
@@ -1634,26 +1480,21 @@ function voiceSection(p, s) {
   if (!list.length) return "";
   const revs = list.filter((x) => x.kind === "review" && x.stars);
   const avg = revs.length ? revs.reduce((a, x) => a + x.stars, 0) / revs.length : 0;
-  // Enistagram からの引用（埋め込み）の形：ロゴ「より」の枠の中に投稿を並べ、下から Enistagram を開ける
   return `<figure class="e-embed">
     <figcaption class="e-embed-head"><img src="assets/img/enistagram.webp" width="640" height="114" alt="Enistagram"><span>より・${list.length}件</span>${revs.length ? `<span class="v-avg">★${avg.toFixed(1)}</span>` : ""}</figcaption>
     <ul class="v-list">${list.slice(0, 20).map((x) => postHtml(x, s)).join("")}</ul>
     <button type="button" class="e-embed-more" data-feed-open>Enistagram で見る ›</button>
   </figure>`;
 }
-// 写真はあとから読む（1回読んだら覚えておく）
 function fillPhotos(root) {
   observePhotos(root, (img) => img.closest(".f-cell")?.remove() ?? img.remove());
 }
-// 書く画面（どこでも同じ）。placeId：その場所に書く／pickPlace：場所をえらべる（なくてもよい）／replyTo：コメント（返信）
-// Instagram の新規投稿のように：上に「キャンセル・新規投稿・シェア」、大きな四角で写真、キャプション、「場所を追加」
 function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, draft = null, onPickPlace, onDone, onCancel }) {
   const parent = replyTo && (getState().posts ?? []).find((x) => x.id === replyTo);
   let pid = draft?.place ?? placeId ?? parent?.place ?? "";
   let starsVal = 0, file = null;
   const hp = here && place(here);
   if (replyTo) {
-    // コメント：Instagram のコメント欄のように1行
     root.innerHTML = `<form class="v-form ig-cform">${avatar("enishi_me", true)}
       <textarea name="text" maxlength="${MAX_TEXT}" rows="1" placeholder="${esc(parent?.author ?? "")} さんにコメントを追加…"></textarea>
       <button type="submit" class="ig-post-btn" value="send">投稿する</button>
@@ -1675,7 +1516,6 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
     </form>`;
   }
   const f = root.querySelector("form"), msg = root.querySelector(".v-msg"), box = root.querySelector(".v-shopbox");
-  // お店の場所なら、お店と★（★をつけるとレビュー。もう一度押すと外せる）
   const drawShops = () => {
     if (!box) return;
     const shops = place(pid)?.shopList ?? [];
@@ -1693,15 +1533,14 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
   if (draft?.stars && box?.querySelector("[data-star]")) { starsVal = draft.stars; box.querySelectorAll("[data-star]").forEach((x) => (x.textContent = Number(x.dataset.star) <= starsVal ? "★" : "☆")); }
   if (draft?.shop && f.shop) f.shop.value = draft.shop;
   if (draft?.text) f.text.value = draft.text;
-  // 場所を追加：地図へ移って、地図で場所を選ぶ（書いた文・写真・★はそのまま持っていく）
   root.querySelector("[data-pickplace]")?.addEventListener("click", () => onPickPlace?.({ text: f.text.value, file, place: pid, stars: starsVal, shop: f.shop?.value ?? null }));
   root.querySelector(".ig-placeclear")?.addEventListener("click", () => onPickPlace?.({ text: f.text.value, file, place: "", stars: 0, shop: null }, { reopen: true }));
   const count = root.querySelector(".v-count");
   f.text.addEventListener("input", () => {
-    if (replyTo) { f.text.style.height = "auto"; f.text.style.height = `${Math.min(120, f.text.scrollHeight)}px`; } // コメント欄は書いた分だけのびる
+    if (replyTo) { f.text.style.height = "auto"; f.text.style.height = `${Math.min(120, f.text.scrollHeight)}px`; }
     if (!count) return;
     count.textContent = `${f.text.value.length} / ${MAX_TEXT}`;
-    count.classList.toggle("is-near", f.text.value.length >= MAX_TEXT - 10); // あと少しで書けなくなる
+    count.classList.toggle("is-near", f.text.value.length >= MAX_TEXT - 10);
   });
   const pv = root.querySelector(".v-preview"), un = root.querySelector(".v-unphoto"), empty = root.querySelector(".ig-pick-empty");
   const showPhoto = (fl) => {
@@ -1738,8 +1577,7 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
   if (left) msg.textContent = `続けて書くときは、あと${left}秒待ってください`;
   return f;
 }
-// 場所のシートの「ポスト」：シートを上まで広げて、その中で書く
-let compose = null; // { id: 場所の id }
+let compose = null;
 function openCompose(p) {
   pushSheet();
   mode = "compose";
@@ -1747,23 +1585,19 @@ function openCompose(p) {
   renderSheet();
   setSheet(true);
 }
-const closeCompose = () => $("#m-sheet-x").click(); // 前のシート（その場所）に戻る
+const closeCompose = () => $("#m-sheet-x").click();
 function renderCompose(body) {
-  // 書いている途中に地図の更新などで描き直さない（書いた字が消えないように）
   if (body.querySelector(`[data-compose="${CSS.escape(compose.id)}"]`)) return;
   const p = place(compose.id);
   body.innerHTML = `<div data-compose="${esc(p.id)}"><div class="v-box"></div></div>`;
   composeForm(body.querySelector(".v-box"), { placeId: p.id, onDone: () => { closeCompose(); toast("ありがとう！公開しました"); }, onCancel: closeCompose });
 }
-// いいね・返信・報告（場所のシートとタイムラインで共通）。扱ったら true
-// 「いいね！n件」を出し直す（投稿とコメント）
 function showLikes(id, x) {
   const n = x ? likeCount(x) : 0;
   document.querySelectorAll(`[data-likes-of="${CSS.escape(id)}"]`).forEach((el) => (el.textContent = n ? (el.classList.contains("ig-likes") ? `「いいね！」${n}件` : `いいね！${n}件`) : ""));
 }
 let lastMediaTap = { id: null, t: 0 };
 function voiceClick(e) {
-  // 写真（文字のカード）をダブルタップ：いいね（大きなハートがぽん）
   const md = e.target.closest("[data-dbl]");
   if (md) {
     const id = md.dataset.dbl, now = Date.now();
@@ -1790,7 +1624,7 @@ function voiceClick(e) {
   const lk = e.target.closest("[data-like]");
   if (lk) {
     const id = lk.dataset.like, x = (getState().posts ?? []).find((y) => y.id === id);
-    if (liking.has(id)) return true; // 送っている途中
+    if (liking.has(id)) return true;
     liking.add(id);
     const on = !lk.classList.contains("is-on");
     if (on) { popAt.set(id, Date.now()); lk.classList.remove("is-pop"); void lk.offsetWidth; lk.classList.add("is-pop"); }
@@ -1829,13 +1663,11 @@ function voiceClick(e) {
   }
   return false;
 }
-// 返信を書いている途中か（そのあいだは描き直さない）
 const writing = (root) => !!root?.querySelector(".v-replybox:not([hidden]), [data-compose]");
 
-// ---------- みんなの声タブ（タイムライン・写真） ----------
 let settingTabFromPick = false;
-let tab = "map";           // map / feed
-let feedView = "timeline"; // timeline / photos
+let tab = "map";
+let feedView = "timeline";
 function setTab(t) {
   if (postPick && t === "feed" && !settingTabFromPick) { settingTabFromPick = true; endPostPick(undefined); settingTabFromPick = false; return; }
   tab = t;
@@ -1843,9 +1675,9 @@ function setTab(t) {
   $("#m-feed").hidden = t !== "feed";
   document.querySelectorAll("#m-tabs [data-tab]").forEach((b) => { b.setAttribute("aria-selected", String(b.dataset.tab === t)); if (b.dataset.tab === t) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
   if (t === "feed") { closeResults(); renderFeed(true); }
-  else if (document.body.classList.contains("is-wide")) relayout(); // 広げた地図にもどる：枠の幅が変わるので、測り直す
+  else if (document.body.classList.contains("is-wide")) relayout();
 }
-let feedHtml = ""; // いま出しているタイムラインの中身（同じなら描き直さない）
+let feedHtml = "";
 function renderFeed(force = false) {
   const list = $("#m-feed-list");
   if (tab !== "feed" || (!force && writing(list))) return;
@@ -1865,8 +1697,7 @@ function renderFeed(force = false) {
         : '<p class="f-empty">まだ投稿はありません。<br>右下の「ポスト」から、最初のひとことをどうぞ</p>';
     }
   }
-  if (!force && html === feedHtml) return; // 変わっていなければ描き直さない（読んでいる所・フォーカスがそのまま）
-  // 読んでいる投稿が、新しい投稿が上に入ってもずれないように
+  if (!force && html === feedHtml) return;
   const sc = $("#m-feed"), top = sc.getBoundingClientRect().top + 70;
   const a = [...list.querySelectorAll(".v-list > .v-post")].find((li) => li.getBoundingClientRect().bottom > top);
   const aid = a?.dataset.post, ay = a?.getBoundingClientRect().top;
@@ -1884,8 +1715,7 @@ function openFeedCompose(draft = null) {
   box.scrollTop = 0;
 }
 
-// ---------- 投稿の「場所を追加」：地図に移って、地図で選ぶ ----------
-let postPick = null; // { draft }：地図で場所を選んでいるあいだ
+let postPick = null;
 function startPostPick(draft) {
   postPick = { draft };
   const box = $("#m-feed-compose");
@@ -1908,7 +1738,6 @@ function startPostPick(draft) {
   document.body.classList.add("is-postpick");
   closeResults();
 }
-// id：えらんだ場所（"" は場所なし）／undefined は、やめる（場所はそのまま）。みんなの声に戻って、書いていた続きを開く
 function endPostPick(id) {
   if (!postPick) return;
   const draft = { ...postPick.draft };
@@ -1920,7 +1749,6 @@ function endPostPick(id) {
   openFeedCompose(draft);
 }
 
-// 開催中：いまやっている企画と、このあと1時間に始まる企画（会場の混み具合つき）。待ち時間の長いお店も
 function renderNowSheet(body, s) {
   const venueItem = (e, when, now) => {
     const p = place(e.venue);
@@ -1943,7 +1771,6 @@ function renderNowSheet(body, s) {
     ${soon.length ? `<h3 class="sh-h">このあと1時間</h3><ul class="m-list">${soon.map((e) => venueItem(e, `${tPlain(e)}〜`, false)).join("")}</ul>` : ""}
     ${busy.length ? `<h3 class="sh-h">混んでいる・売り切れ・休業中のお店</h3><ul class="m-list">${busy.map(({ p, w }) => itemHtml({ p, sub: `${w.label}・${p.shopList.map((x) => x.name).join("・")}` })).join("")}</ul>` : ""}`;
 }
-// スタンプ：スタンプラリーのお店と、押したかどうか
 function renderStampSheet(body, s) {
   const n = s.stamps?.length ?? 0;
   const list = RALLY.shops.map((x) => ({ x, p: [...places.values()].find((p) => p.shops?.includes(x.id)) ?? null, on: s.stamps?.includes(x.id) }));
@@ -1953,41 +1780,40 @@ function renderStampSheet(body, s) {
       : '<p class="sh-hint">対象のお店は決まりしだいここに出ます。</p>'}
     <div class="sh-actions"><a class="sh-btn primary" href="rally.html">スタンプカードを開く</a></div>`;
 }
-// 食べもののジャンルの札（しょっぱい系・甘い系…）
 const genreColor = (g) => GENRES.find((x) => x.id === g)?.color ?? "#6b6b6b";
 const genreTags = (x) => (x?.genre?.length ? `<span class="g-tags">${x.genre.map((g) => `<span class="g-tag" style="--g:${genreColor(g)}">${esc(g)}</span>`).join("")}</span>` : "");
-let genreFilter = "all"; // 模擬店の一覧の絞りこみ
+let genreFilter = "all";
 const shopsSub = (p) => { const w = worstWait(p, getState()); return `${w && w.rank ? `${w.label}・` : ""}${subOf(p)}　${p.shopList.map((x) => x.name).join("・")}`; };
 const li = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const fig = (inner, vb = "-8 -8 16 16") => `<svg viewBox="${vb}" class="fig" aria-hidden="true">${inner}</svg>`;
 const LIST_ICON = {
-  venue: li('<path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/>'),        // 会場：マイク
-  exhibit: li('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.4 15h9.2"/>'),                // 学科展示：フラスコ
-  hq: li('<path d="M5.5 21V3.5M5.5 4h11l-2.5 4 2.5 4h-11"/>'),                                                          // 本部：旗
-  shop: li('<path d="M3.5 9L5 4h14l1.5 5M3.5 9h17M3.5 9a2.8 2.8 0 0 0 5.6 0 2.9 2.9 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0M5 12v8h14v-8M10 20v-5h4v5"/>'), // 模擬店：屋台
-  event: li('<path d="M12 3.5l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.5l-5.1 2.7 1-5.7-4.1-4 5.7-.8z"/>'),                         // 企画：星
-  spot: li('<path d="M12 21s6-5.6 6-11a6 6 0 0 0-12 0c0 5.4 6 11 6 11z"/><circle cx="12" cy="10" r="2.2"/>'),              // 目印：ピン
-  shed: li('<path d="M4 21V9l8-5 8 5v12M9.5 21v-6h5v6"/>'),                                                             // 建物
-  outdoor: li('<path d="M12 3l5.5 7.5h-3.5l4.5 6.5H5.5l4.5-6.5H6.5zM12 17v4"/>'),                                          // 屋外：木
-  aed: li('<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/><path d="M12.8 9.5l-2.3 3.4h3l-2.3 3.4"/>'), // AED：ハートにいなずま
-  vending: li('<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M9 7v3M12 7v3M15 7v3M9 16.5h6"/>'),             // 自動販売機
-  now: li('<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>'), // いま：電波
-  next: li('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),                                                // このあと：時計
+  venue: li('<path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/>'),
+  exhibit: li('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.4 15h9.2"/>'),
+  hq: li('<path d="M5.5 21V3.5M5.5 4h11l-2.5 4 2.5 4h-11"/>'),
+  shop: li('<path d="M3.5 9L5 4h14l1.5 5M3.5 9h17M3.5 9a2.8 2.8 0 0 0 5.6 0 2.9 2.9 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0M5 12v8h14v-8M10 20v-5h4v5"/>'),
+  event: li('<path d="M12 3.5l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.5l-5.1 2.7 1-5.7-4.1-4 5.7-.8z"/>'),
+  spot: li('<path d="M12 21s6-5.6 6-11a6 6 0 0 0-12 0c0 5.4 6 11 6 11z"/><circle cx="12" cy="10" r="2.2"/>'),
+  shed: li('<path d="M4 21V9l8-5 8 5v12M9.5 21v-6h5v6"/>'),
+  outdoor: li('<path d="M12 3l5.5 7.5h-3.5l4.5 6.5H5.5l4.5-6.5H6.5zM12 17v4"/>'),
+  aed: li('<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/><path d="M12.8 9.5l-2.3 3.4h3l-2.3 3.4"/>'),
+  vending: li('<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M9 7v3M12 7v3M15 7v3M9 16.5h6"/>'),
+  now: li('<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>'),
+  next: li('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
   "toilet-m": fig(MAN),
   "toilet-f": fig(WOMAN),
   "toilet-hc": fig(WHEEL),
   toilet: fig(`<g transform="translate(-5 0)">${MAN}</g><g transform="translate(5 0)">${WOMAN}</g>`, "-12 -8 24 16"),
 };
 LIST_ICON.shops = LIST_ICON.shop;
-LIST_ICON.stairs = li('<path d="M4 20h4v-4h4v-4h4V8h4"/>');                                        // 階段
-LIST_ICON.ev = li('<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 10l3-3 3 3M9 14l3 3 3-3"/>'); // エレベーター
-LIST_ICON.door = li('<path d="M6 21V4h12v17M3 21h18"/><circle cx="14.5" cy="12.5" r="1" fill="currentColor"/>'); // 出入口
-LIST_ICON.stamp = li('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><path d="M12 9.5v5M9.5 12h5"/>'); // スタンプ：はんこ
-LIST_ICON.bike = li('<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l3.5-7h6M9.5 9L12 16l3.5-7L18 16M8 6.5h3M15.5 9l-.8-3h2.3"/>'); // 駐輪場：自転車
-LIST_ICON.deco = li('<rect x="3" y="7" width="18" height="13" rx="2.5"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8.5 7l1.5-2.5h4L15.5 7"/>'); // 撮影スポット：カメラ
+LIST_ICON.stairs = li('<path d="M4 20h4v-4h4v-4h4V8h4"/>');
+LIST_ICON.ev = li('<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 10l3-3 3 3M9 14l3 3 3-3"/>');
+LIST_ICON.door = li('<path d="M6 21V4h12v17M3 21h18"/><circle cx="14.5" cy="12.5" r="1" fill="currentColor"/>');
+LIST_ICON.stamp = li('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><path d="M12 9.5v5M9.5 12h5"/>');
+LIST_ICON.bike = li('<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l3.5-7h6M9.5 9L12 16l3.5-7L18 16M8 6.5h3M15.5 9l-.8-3h2.3"/>');
+LIST_ICON.deco = li('<rect x="3" y="7" width="18" height="13" rx="2.5"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8.5 7l1.5-2.5h4L15.5 7"/>');
 function itemHtml({ p, r, label, sub, kind }) {
   const k = kind ?? p.kind;
-  const ic = LIST_ICON[k] ?? (k === "room" ? esc(p.code?.[0] ?? "") : ""); // 部屋は棟の文字（H・L…）、ほかは絵
+  const ic = LIST_ICON[k] ?? (k === "room" ? esc(p.code?.[0] ?? "") : "");
   return `<li><button type="button" class="m-item" data-go="${esc(p.id)}"><span class="ico k-${k}${p.grade ? ` g${p.grade}` : ""}">${ic}</span>
     <span class="txt"><b>${esc(label ?? titleOf(p))}</b><small>${esc(sub ?? subOf(p))}</small></span>
     ${r ? `<span class="dist"><b>${r.minutes}分</b><br>${r.meters}m</span>` : ""}</button></li>`;
@@ -2021,8 +1847,6 @@ function renderRouteSheet(body, s) {
       <button type="button" data-step="${i}"><span class="si">${I[st.icon] ?? I.start2}</span><span><b>${esc(st.text)}</b><small>${esc(st.sub ?? "")}・${st.floor}</small></span></button></li>`).join("")}</ol>` : ""}`;
 }
 
-// ---------- 選ぶ・道案内 ----------
-// 道案内の文の目印（曲がり角のそばの部屋・会場、出入口の名前、通る道の名前）
 const ptRectDist = ([x, y, w, h], [px, py]) => Math.hypot(Math.max(x - px, 0, px - (x + w)), Math.max(y - py, 0, py - (y + h)));
 const ptLineDist = (pts, q) => Math.min(...pts.slice(1).map((b, i) => {
   const a = pts[i], ab = [b[0] - a[0], b[1] - a[1]], l2 = ab[0] ** 2 + ab[1] ** 2 || 1;
@@ -2030,13 +1854,12 @@ const ptLineDist = (pts, q) => Math.min(...pts.slice(1).map((b, i) => {
   return Math.hypot(q[0] - (a[0] + ab[0] * t), q[1] - (a[1] + ab[1] * t));
 }));
 const ROUTE_HINTS = {
-  // 曲がり角から 10pt（約3m）以内の部屋・会場（角がその中にあるものは除く）。会場やお店を先に、同じ名前が多い部屋（講義室など）は部屋番号で
   landmark(fl, pt) {
     let best = null;
     for (const p of places.values()) {
       if (p.floor !== fl || !p.rect || p.outdoor || p.point || p.zone || byRoom.has(p.id)) continue;
       const d = Math.min(...(p.rects ?? [p.rect]).map((r) => ptRectDist(r, pt)));
-      if (d > 10 || d < 0.5) continue; // 角のそば（中にいる場所は目印にしない）
+      if (d > 10 || d < 0.5) continue;
       const s = d - (p.fest ? 3 : 0) + (GENERIC.test(p.name) ? 3 : 0);
       if (!best || s < best.s) best = { p, s };
     }
@@ -2044,13 +1867,11 @@ const ROUTE_HINTS = {
     const p = best.p;
     return isToilet(p) ? "トイレ" : p.fest ? titleOf(p) : GENERIC.test(p.name) ? p.code ?? shortName(p.name) : shortName(p.name);
   },
-  // 出入口の名前（地図の入口の印から 14pt 以内）
   door(fl, pt) {
     if (fl !== "1F") return null;
     const e = ENTRANCES.find((x) => Math.hypot(x.at[0] - pt[0], x.at[1] - pt[1]) < 14);
     return e ? e.name : null;
   },
-  // a→b が名前のある道（〇〇ロード）を通るなら、その名前
   road(fl, a, b) {
     if (fl !== "1F" || !a || !b) return null;
     const q = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
@@ -2063,7 +1884,7 @@ function select(id, { fly = true } = {}) {
   if (!p) return;
   if (postPick) { endPostPick(p.id); return; }
   if (picking) { finishPick(p.id); return; }
-  if (mode === "route") {       // 道案内中に部屋を押したら、出発地がまだならそこを出発地に、決まっていれば目的地にする
+  if (mode === "route") {
     if (!rt.from) rt.from = p.id; else rt.to = p.id;
     endMapPick();
     picking = null;
@@ -2079,7 +1900,7 @@ function select(id, { fly = true } = {}) {
   syncUrl();
   renderMap();
   setSheet(false);
-  if (fly) animateTo(p.rect ? viewFor(p.rect, 3.2) : viewFor([p.at[0] - 45, p.at[1] - 45, 90, 90], 2.4)); // 点の場所はまわりも見えるように
+  if (fly) animateTo(p.rect ? viewFor(p.rect, 3.2) : viewFor([p.at[0] - 45, p.at[1] - 45, 90, 90], 2.4));
 }
 
 function startRoute(toId, fromId) {
@@ -2090,10 +1911,8 @@ function startRoute(toId, fromId) {
   listKind = null;
   updateChips();
   computeRoute();
-  // 出発地がまだ決まっていない（いまここがない）：そのまま地図をタップして出発地を選べるようにする
   if (!rt.from) { picking = "from"; beginMapPick(); }
 }
-// シートの高さが変わり終わってから地図を合わせる（途中の高さで計算すると、シートに隠れる）
 function afterSheet(fn) {
   requestAnimationFrame(() => {
     const a = sheet().getAnimations();
@@ -2120,7 +1939,7 @@ function computeRoute() {
 function fitRoute(leg) {
   const xs = leg.pts.map((p) => p[0]), ys = leg.pts.map((p) => p[1]);
   const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
-  const p = 40 / viewFor([x0, y0, w, h], 4).k; // 画面で 40px ぶんあける
+  const p = 40 / viewFor([x0, y0, w, h], 4).k;
   animateTo(viewFor([x0 - p, y0 - p, w + 2 * p, h + 2 * p], 4));
 }
 function focusStep(i) {
@@ -2131,19 +1950,18 @@ function focusStep(i) {
   if (changed) { floor = st.floor; drawFloor(); }
   renderMap();
   renderSheet();
-  setSheet(false); // 広げていたら半分にして、地図を見えるように
+  setSheet(false);
   document.querySelector(`#m-sheet [data-step="${i}"]`)?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   afterSheet(() => animateTo(viewFor([st.at[0] - 25, st.at[1] - 25, 50, 50], 4.5)));
   if (changed) {
     toast(`${parseInt(st.floor)}階の地図に切りかえました`);
     const b = document.querySelector(`.m-floor[data-floor="${st.floor}"]`);
     b?.classList.remove("is-flash");
-    void b?.offsetWidth; // アニメーションをもう一度
+    void b?.offsetWidth;
     b?.classList.add("is-flash");
   }
 }
 
-// 検索で出発地・目的地を選ぶ
 function beginPick(which) {
   picking = which;
   const q = $("#m-q");
@@ -2152,9 +1970,7 @@ function beginPick(which) {
   openResults();
   q.focus();
 }
-// 地図で選ぶ（検索の画面を閉じて、地図をタップしてもらう）
 let mapPicking = false;
-// 帯などは出さない（シートの「出発地を選ぶ」が青く光っているので、そのまま地図を押せばよい）
 function beginMapPick() {
   const which = picking;
   closeResults();
@@ -2191,7 +2007,7 @@ async function share() {
     if (navigator.share) { await navigator.share({ title: "函館高専祭 校内マップ", text, url: url.href }); return; }
     await navigator.clipboard.writeText(url.href);
     toast("リンクをコピーしました");
-  } catch { /* 共有をやめたとき */ }
+  } catch {  }
 }
 let toastT = 0;
 function toast(msg) {
@@ -2203,10 +2019,7 @@ function toast(msg) {
   toastT = setTimeout(() => t.classList.add("is-off"), 2600);
 }
 
-// ---------- QR を読む（いまここ） ----------
-// カメラで校内の「いまここ」QR を読む。読めたら現在地にして、道案内中ならそこから案内しなおす。
-// Android の Chrome などは BarcodeDetector、iPhone などは jsQR（読むときだけ読み込む）
-let scan = null; // { stream, timer }
+let scan = null;
 let jsqrP = null;
 const loadJsQR = () => (jsqrP ??= new Promise((ok, ng) => {
   const s = document.createElement("script");
@@ -2263,7 +2076,7 @@ async function openScanner() {
   const tick = async () => {
     if (!scan) return;
     let text = null;
-    try { text = await detect(); } catch { /* 次のコマで */ }
+    try { text = await detect(); } catch {  }
     if (!scan) return;
     if (text) {
       const id = hereFromText(text);
@@ -2288,7 +2101,6 @@ function closeScanner() {
   dlg.querySelector("video").srcObject = null;
   if (dlg.open) dlg.close();
 }
-// QR を読めた：現在地にして、道案内中ならここから案内しなおす
 function arriveHere(id) {
   setHere(id);
   const p = place(id);
@@ -2313,8 +2125,6 @@ function arriveHere(id) {
   toast(`いまここ：${titleOf(p)}`);
 }
 
-// ---------- 検索 ----------
-// 種類のボタン
 const CHIPS = [
   { id: "now", label: "開催中", icon: LIST_ICON.now, match: (p) => getState().running?.some((e) => e.venue === p.id) },
   { id: "toilet", label: "トイレ", icon: LIST_ICON.toilet, match: (p) => isToilet(p) && !byRoom.has(p.id) },
@@ -2331,16 +2141,13 @@ const CHIPS = [
 function updateChips() {
   document.querySelectorAll(".m-chip").forEach((b) => b.setAttribute("aria-pressed", String(mode === "list" && b.dataset.chip === listKind)));
 }
-// 表記ゆれをそろえる：全角半角・大文字小文字・カタカナ→ひらがな・小さい字→大きい字、のばし棒や記号は消す
 const SMALL = { ぁ: "あ", ぃ: "い", ぅ: "う", ぇ: "え", ぉ: "お", っ: "つ", ゃ: "や", ゅ: "ゆ", ょ: "よ", ゎ: "わ", ゕ: "か", ゖ: "け" };
 const norm = (s) => String(s ?? "").normalize("NFKC").toLowerCase()
   .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
   .replace(/[ぁぃぅぇぉっゃゅょゎゕゖ]/g, (c) => SMALL[c])
   .replace(/[\sー―‐\-－~～〜・･、。,.!！?？「」『』()（）[\]【】☆★♪♡&＆'"/]/g, "");
-// よく使う漢字の読み・言いかえ（ひらがなや別の言い方でも見つかるように）
 const ALIASES = [
   ["体育館", "たいいくかん アリーナ"], ["第一", "だいいち 1"],
-  // ネーミングライツの愛称（愛称でも、ふつうの呼び方でも見つかるように）
   ["東京水道アリーナ", "とうきょうすいどう 第一体育館 たいいくかん"], ["太平洋セメントアリーナ", "たいへいようせめんと 第二体育館 たいいくかん"],
   ["ZACROS", "ざくろす ザクロス 第1講義室"], ["TSKE", "図書館 としょかん"], ["二十一食堂", "にじゅういち 学食 がくしょく"], ["未来コモンズ", "みらい コモンズ こもんず"],
   ["メデック", "めでっく 機械加工室"], ["CASTEM", "きゃすてむ キャステム NCプログラミング室"], ["Murase", "むらせ ムラセ 鋳造室 ちゅうぞう"], ["第二", "だいに 2"], ["第1", "だいいち"], ["第2", "だいに"],
@@ -2356,7 +2163,6 @@ const ALIASES = [
 ];
 const GENRE_YOMI = { しょっぱい系: "しょっぱい 塩 しお", 甘い系: "あまい スイーツ デザート", がっつり系: "がっつり ごはん 主食 おなかいっぱい", ピリ辛系: "ぴりから 辛い からい", おやつ系: "おやつ お菓子 おかし", いやし系: "いやし 休憩 きゅうけい カフェ", ドリンク: "飲み物 のみもの" };
 const aliasOf = (text) => ALIASES.filter(([w]) => text.includes(w)).map(([, a]) => a).join(" ");
-// 名前の中の漢字をひらがなに置きかえた読み（「たこやき」で「たこ焼き」、「ほけんしつ」で「保健室」が出るように）
 const YOMI = [
   ["お好み", "おこのみ"], ["焼き", "やき"], ["焼", "やき"], ["唐揚げ", "からあげ"], ["揚げ", "あげ"], ["綿", "わた"], ["飴", "あめ"],
   ["団子", "だんご"], ["餅", "もち"], ["麺屋", "めんや"], ["麺", "めん"], ["特製", "とくせい"], ["処", "どころ"], ["清", "きよし"], ["茶", "ちゃ"],
@@ -2367,11 +2173,9 @@ const YOMI = [
   ["学生課", "がくせいか"], ["総務課", "そうむか"], ["相談室", "そうだんしつ"], ["実験", "じっけん"], ["研究会", "けんきゅうかい"], ["部", "ぶ"],
 ];
 const yomi = (text) => { let r = text; for (const [w, k] of YOMI) r = r.split(w).join(k); return r === text ? "" : r; };
-// 階の言い方（2F・2階・にかい）
 const floorWords = (f) => (f ? `${f} ${parseInt(f)}階 ${["", "いっかい", "にかい", "さんかい", "よんかい"][parseInt(f)] ?? ""}` : "");
 
 let index = [];
-// 1つの候補：f1 名前（いちばん大事）、f2 団体・部屋・建物・階、f3 説明・言いかえ
 function addItem(item, f1, f2, f3) {
   const all = [f1, f2, f3].join(" ");
   const r1 = yomi(f1), r2 = yomi(f2);
@@ -2381,7 +2185,7 @@ function addItem(item, f1, f2, f3) {
 function buildIndex() {
   index = [];
   for (const p of places.values()) {
-    if (byRoom.has(p.id)) continue; // 会場になっている部屋は会場として出す
+    if (byRoom.has(p.id)) continue;
     const b = buildingAt(p.floor, centerOf(p));
     const cls = CLASS_OF[p.code] ? `${CLASS_OF[p.code]} ${CLASS_OF[p.code].replace(/^(\d)S(?=[MEJ])/, "$1S-")}教室` : "";
     const kindWords = [
@@ -2419,11 +2223,9 @@ function buildIndex() {
     const p = place(e.venue);
     if (p) addItem({ p, kind: "event", label: e.title, sub: `${md(e.start)} ${tPlain(e)}〜・${titleOf(p)}${e.internal ? "・学内のみ" : ""}`, rank: 0.6 }, e.title, titleOf(p), "企画 ステージ イベント");
   }
-  // ステージの出演者（バンド名などでさがせる）
   const sp = place(STAGE.venue);
   if (sp) for (const a of STAGE.acts) addItem({ p: sp, kind: "event", label: a.name, sub: `${md(a.start)} ${tPlain(a)}〜・ステージ${a.kind ? `・${a.kind}` : ""}`, rank: 0.6 }, a.name, titleOf(sp), `ステージ 出演 ${a.kind ?? ""}`);
 }
-// 2文字ずつのかたまりの重なり（打ち間違い・うろ覚え用）
 const bigrams = (s) => { const out = new Set(); for (let i = 0; i < s.length - 1; i++) out.add(s.slice(i, i + 2)); return out; };
 function similar(a, b) {
   if (a.length < 2 || b.length < 2) return 0;
@@ -2432,9 +2234,8 @@ function similar(a, b) {
   for (const x of A) if (B.has(x)) n++;
   return (2 * n) / (A.size + B.size);
 }
-// 1つの言葉がどれだけ合うか（合わなければ 0）
 function termScore(it, t) {
-  if (it.words.some((w) => w === t)) return 100;          // 名前（部屋番号など）とぴったり
+  if (it.words.some((w) => w === t)) return 100;
   if (it.f1 === t) return 100;
   if (it.words.some((w) => w.startsWith(t)) || it.f1.startsWith(t)) return 70;
   if (it.f1.includes(t)) return 50;
@@ -2450,12 +2251,11 @@ function search(q) {
     let s = 0;
     for (const t of terms) {
       const v = termScore(it, t);
-      if (!v) { s = 0; break; }   // 言葉はぜんぶ合っているものだけ
+      if (!v) { s = 0; break; }
       s += v;
     }
     if (s) scored.push({ it, s: s - it.rank * 6 });
   }
-  // 見つからないときは、名前が似ているものを出す（打ち間違い・うろ覚え）。部屋番号のような英数字だけのときは出さない
   const whole = terms.join("");
   if (!scored.length && !/^[a-z0-9]+$/.test(whole) && whole.length >= 3) {
     const seen = new Set(scored.map((x) => x.it));
@@ -2465,10 +2265,9 @@ function search(q) {
       if (sim >= 0.45) scored.push({ it, s: sim * 40 - it.rank * 6 });
     }
   }
-  // 同じ場所・同じ名前が何度も出ないように
   const out = [], keys = new Set();
   for (const x of scored.sort((a, b) => b.s - a.s)) {
-    const k = `${x.it.p.id}|${x.it.label ?? titleOf(x.it.p)}`; // 見た目が同じ（同じ場所・同じ名前）なら1つに
+    const k = `${x.it.p.id}|${x.it.label ?? titleOf(x.it.p)}`;
     if (keys.has(k)) continue;
     keys.add(k);
     out.push(x.it);
@@ -2477,7 +2276,7 @@ function search(q) {
   return out;
 }
 function openResults() {
-  document.body.classList.add("is-searching"); // 検索中は種類のボタンを隠す（結果とかぶらないように）
+  document.body.classList.add("is-searching");
   $("#m-results").hidden = false;
   $("#m-clear").hidden = false;
   renderResults();
@@ -2511,7 +2310,6 @@ function renderResults() {
     : `<p class="m-empty">「${esc(q)}」は見つかりませんでした</p>`;
 }
 
-// ---------- URL ----------
 function syncUrl() {
   const url = new URL(location.href);
   url.searchParams.delete("to");
@@ -2533,14 +2331,12 @@ function fromUrl() {
   return false;
 }
 
-// ---------- はじめ ----------
 export async function initMap(opts) {
   getState = opts.getState;
   const data = await (await fetch("assets/map/rooms.json")).json();
   buildPlaces(data.rooms);
   buildIndex();
 
-  // QR から来た（?here=ID）なら「いまここ」を覚えておく
   const params = new URLSearchParams(location.search);
   const fromQr = params.has("here") && !!place(params.get("here"));
   try {
@@ -2548,7 +2344,7 @@ export async function initMap(opts) {
     const saved = JSON.parse(sessionStorage.getItem(HERE_KEY) ?? "null");
     const id = saved?.id ?? saved?.room;
     if (saved && Date.now() - saved.t < HERE_SEC * 1000 && place(id)) { here = place(id).id; hereAt = saved.t; }
-  } catch { /* 保存できないブラウザ */ }
+  } catch {  }
   if (fromQr) {
     if (!here) { here = place(params.get("here")).id; hereAt = Date.now(); }
     params.delete("here");
@@ -2559,7 +2355,6 @@ export async function initMap(opts) {
     hereT = setTimeout(forgetHere, Math.max(0, hereAt + HERE_SEC * 1000 - Date.now()));
   }
 
-  // 部品
   $("#m-floors").innerHTML = [...FLOORS].reverse().map((f) => `<button type="button" class="m-floor" role="radio" data-floor="${f}" aria-checked="false">${f}<span class="dot" hidden></span></button>`).join("");
   $("#m-chips").innerHTML = CHIPS.map((c) => `<button type="button" class="m-chip" data-chip="${c.id}" aria-pressed="false"><i aria-hidden="true">${c.icon}</i>${esc(c.label)}</button>`).join("");
   $("#m-locate").classList.toggle("has-here", !!here);
@@ -2568,7 +2363,7 @@ export async function initMap(opts) {
   $("#m-chips").addEventListener("click", (e) => {
     const b = e.target.closest(".m-chip");
     if (!b) return;
-    if (picking) closeResults(); // 出発地・目的地をえらんでいる途中なら、やめる
+    if (picking) closeResults();
     if (mode === "list" && listKind === b.dataset.chip) { closeSheet(); return; }
     pushSheet();
     mode = "list";
@@ -2578,27 +2373,23 @@ export async function initMap(opts) {
     syncUrl();
     renderSheet();
     setSheet(true);
-    // その種類の場所を光らせる（なければある階へ）
     const hits = [...places.values()].filter(CHIPS.find((c) => c.id === listKind).match);
     if (hits.length && !hits.some((p) => p.floor === floor)) setFloor(hits[0].floor);
     renderMap();
     hits.forEach((p) => {
       document.querySelectorAll(`#m-rooms [data-id="${CSS.escape(p.id)}"]`).forEach((el) => {
         el.classList.remove("is-found");
-        void el.getBBox(); // 続けて押したときも、最初から光らせる
+        void el.getBBox();
         el.classList.add("is-found");
         setTimeout(() => el.classList.remove("is-found"), 2400);
       });
     });
   });
-  // 右の QR ボタン：いつでも「いまここ」QR を読める（読むとその場所に地図が動く）
   $("#m-locate").addEventListener("click", openScanner);
   $("#m-fit").addEventListener("click", fitAll);
-  // PC：地図を画面いっぱいに広げる・もどす。広げると、検索と場所の情報は左の欄に出る（map.css の body.is-wide）。広げたかどうかは、このブラウザに覚えておく
   const setWide = (on) => {
     relayout(() => {
       document.body.classList.toggle("is-wide", on);
-      // 向きは、枠の形で決める：横長（広げたとき）は校内図の向き＝横長の校舎が横に入る。縦長（もどしたとき）は北が上
       const r = $("#m-canvas").getBoundingClientRect();
       setFollow(false);
       cam = { bearing: r.height > r.width * 1.2 ? -NORTH : 0, tilt: 0 };
@@ -2606,29 +2397,25 @@ export async function initMap(opts) {
     $("#m-wide").setAttribute("aria-pressed", String(on));
     $("#m-wide").setAttribute("aria-label", on ? "地図をもとの大きさにもどす" : "地図を画面いっぱいに広げる");
     $("#m-wide").title = on ? "もどす" : "広げる";
-    try { on ? localStorage.setItem("kosen63-map-wide", "1") : localStorage.removeItem("kosen63-map-wide"); } catch { /* 覚えられないブラウザ */ }
-    if (mode === "home" && !selected) animateTo(viewFor(wholeSite ? VIEW : HOME, 1.2)); // 何も選んでいなければ、校舎ぜんたいを入れ直す
+    try { on ? localStorage.setItem("kosen63-map-wide", "1") : localStorage.removeItem("kosen63-map-wide"); } catch {  }
+    if (mode === "home" && !selected) animateTo(viewFor(wholeSite ? VIEW : HOME, 1.2));
   };
   $("#m-wide").addEventListener("click", () => setWide(!document.body.classList.contains("is-wide")));
   if (document.body.classList.contains("is-wide")) { $("#m-wide").setAttribute("aria-pressed", "true"); $("#m-wide").setAttribute("aria-label", "地図をもとの大きさにもどす"); $("#m-wide").title = "もどす"; }
-  // Esc：広げた地図をもどす（検索の結果や、説明の窓が出ているとき・字を打っているときは、そちらが先）
   addEventListener("keydown", (e) => {
     if (e.key === "Escape" && isWide() && $("#m-results").hidden && !document.querySelector("dialog[open]") && !e.target.closest?.("input, textarea")) setWide(false);
   });
-  // 方位：押すと北が上（真上から）。北が上のときに押すと、校内図の向きに戻す。3D：傾けて見る／真上から見る
   $("#m-compass").addEventListener("click", () => { setFollow(false); animateCam(Math.abs(normDeg(NORTH + cam.bearing)) < 1 ? 0 : -NORTH, 0); });
   $("#m-heading").addEventListener("click", toggleFollow);
-  // QR を読む画面・凡例
   $("#m-scan").addEventListener("close", closeScanner);
   $("#m-scan-x").addEventListener("click", closeScanner);
   $("#m-help").addEventListener("click", openLegend);
-  // 下のタブ（地図／みんなの声）と、みんなの声の中
   $("#m-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
   $("#m-feed-post").addEventListener("click", openFeedCompose);
   $("#m-feed").addEventListener("click", (e) => {
     const fv = e.target.closest("[data-fv]");
     if (fv) { feedView = fv.dataset.fv; renderFeed(true); return; }
-    const op = e.target.closest("[data-open]"); // 写真 → その投稿
+    const op = e.target.closest("[data-open]");
     if (op) {
       feedView = "timeline";
       renderFeed(true);
@@ -2637,28 +2424,25 @@ export async function initMap(opts) {
       li?.classList.add("is-flash");
       return;
     }
-    const go = e.target.closest("[data-go]"); // 投稿の場所 → 地図でその場所
+    const go = e.target.closest("[data-go]");
     if (go) { setTab("map"); select(go.dataset.go); return; }
     voiceClick(e);
   });  $("#m-legend").addEventListener("click", (e) => { if (e.target === e.currentTarget || e.target.closest("[data-close]")) $("#m-legend").close(); });
   $("#m-notice").addEventListener("click", (e) => {
     if (e.target.closest("[data-close]")) { dismissNotice(); return; }
-    if (e.target.closest("a")) return; // お知らせの中のリンクは、そのまま開く
-    $("#m-notice").classList.toggle("is-open"); // 長いお知らせは押すと全部出す
+    if (e.target.closest("a")) return;
+    $("#m-notice").classList.toggle("is-open");
   });
   $("#m-tilt").addEventListener("click", () => animateCam(cam.bearing, cam.tilt > 0 ? 0 : TILT_ON));
-  // シート：上下にスワイプで広げる・たたむ・しまう（スマホ）。つまみを押しても切りかわる
   const sheetUp = () => (sheet().classList.contains("is-min") ? setSheet(false) : setSheet(true));
   const sheetDown = () => (sheet().classList.contains("is-open") ? setSheet(false) : minimizeSheet());
-  // スマホ：シートの上のほう（つまみ・見出し）をつかむと、シートが指について動く。離すと近い位置（しまう・半分・広げる）に止まる。
-  // 中ほどは中身のスクロール。ただし中身がいちばん上のときに下へ引くのと、たたんでいるときは、どこでもつかめる
   const sh = sheet(), sbody = $("#m-sheet-body");
   let drag = null;
   sh.addEventListener("touchstart", (e) => {
     if (e.touches.length !== 1) { drag = null; return; }
     const t = e.touches[0], r = sh.getBoundingClientRect();
     drag = { y0: t.clientY, h0: r.height, top: t.clientY - r.top < 72, scroll0: sbody.scrollTop, active: false, y: t.clientY, t: e.timeStamp, v: 0,
-      max: r.bottom - $(".m-top").getBoundingClientRect().bottom - 8 }; // 上の検索のバーより下まで
+      max: r.bottom - $(".m-top").getBoundingClientRect().bottom - 8 };
   }, { passive: true });
   sh.addEventListener("touchmove", (e) => {
     if (!drag) return;
@@ -2666,16 +2450,16 @@ export async function initMap(opts) {
     if (!drag.active) {
       if (Math.abs(dy) < 6) return;
       const open = sh.classList.contains("is-open");
-      if (!(drag.top || !open || (dy > 0 && drag.scroll0 <= 0))) { drag = null; return; } // 中身のスクロールにまかせる
+      if (!(drag.top || !open || (dy > 0 && drag.scroll0 <= 0))) { drag = null; return; }
       drag.active = true;
       sh.classList.add("is-dragging");
-      sh.classList.remove("is-min"); // しまっていたら中身を出しながら引き上げる
+      sh.classList.remove("is-min");
     }
     e.preventDefault();
     const h = Math.max(30, Math.min(drag.max, drag.h0 - dy));
     sh.style.maxHeight = sh.style.height = `${h}px`;
     const dt = Math.max(1, e.timeStamp - drag.t);
-    drag.v = (y - drag.y) / dt; // 下向きが +（px/ms）
+    drag.v = (y - drag.y) / dt;
     drag.y = y;
     drag.t = e.timeStamp;
   }, { passive: false });
@@ -2683,11 +2467,10 @@ export async function initMap(opts) {
     const d = drag;
     drag = null;
     if (!d?.active) return;
-    const v = e.timeStamp - d.t > 80 ? 0 : d.v; // 止めてから離したときは、払ったことにしない
+    const v = e.timeStamp - d.t > 80 ? 0 : d.v;
     const h = sh.getBoundingClientRect().height, H = innerHeight;
     sh.classList.remove("is-dragging");
     sh.style.maxHeight = sh.style.height = "";
-    // 止まる位置：しまう（つまみだけ）・半分・広げる。勢いよく払ったときはその向きへ1段
     const stops = [["min", 30], ["half", H * 0.42], ["open", Math.min(H * 0.78, d.max)]];
     let i = stops.reduce((best, s, k) => (Math.abs(s[1] - h) < Math.abs(stops[best][1] - h) ? k : best), 0);
     if (v < -0.4) i = Math.max(i, stops.findIndex((s) => s[1] > h + 1) === -1 ? 2 : stops.findIndex((s) => s[1] > h + 1));
@@ -2697,7 +2480,6 @@ export async function initMap(opts) {
   };
   sh.addEventListener("touchend", dragEnd);
   sh.addEventListener("touchcancel", dragEnd);
-  // マウス：つまみを上下にドラッグ、または押す
   let sy = null, swiped = false;
   $("#m-grip").addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse") { sy = e.clientY; swiped = false; } });
   $("#m-grip").addEventListener("click", () => {
@@ -2710,7 +2492,6 @@ export async function initMap(opts) {
     sy = null;
     if (Math.abs(d) > 30) { swiped = true; (d < 0 ? sheetUp : sheetDown)(); }
   });
-  // どのシートにも右上に ×：場所・一覧・道案内は閉じて最初に戻る。最初のシートはしまう
   $("#m-sheet-x").addEventListener("click", () => {
     if (mode === "home") { minimizeSheet(); return; }
     if (picking) closeResults();
@@ -2733,7 +2514,7 @@ export async function initMap(opts) {
       updateChips(); syncUrl(); computeRoute();
     } else {
       rt = { ...rt, from: null, to: null, result: null, steps: [], active: -1 };
-      mode = "home"; // 道案内中の「部屋を押したら目的地」にならないように
+      mode = "home";
       select(prev.selected);
     }
     restoring = false;
@@ -2746,7 +2527,7 @@ export async function initMap(opts) {
     const go = e.target.closest("[data-go]");
     if (go) { select(go.dataset.go); return; }
     if (voiceClick(e)) return;
-    if (e.target.closest("[data-feed-open]")) { setTab("feed"); return; } // 引用の枠 → Enistagram
+    if (e.target.closest("[data-feed-open]")) { setTab("feed"); return; }
     const st = e.target.closest("[data-step]");
     if (st) { focusStep(Number(st.dataset.step)); return; }
     const pk = e.target.closest("[data-pick]");
@@ -2760,7 +2541,6 @@ export async function initMap(opts) {
     if (act === "nostairs") { rt.noStairs = !rt.noStairs; computeRoute(); toast(rt.noStairs ? "階段を使わない道順にしました" : "いちばん近い道順にしました"); }
     if (act === "scan") openScanner();
   });
-  // 検索
   const q = $("#m-q");
   q.addEventListener("focus", () => { if ($("#m-results").hidden) openResults(); });
   q.addEventListener("input", renderResults);
@@ -2779,26 +2559,22 @@ export async function initMap(opts) {
   });
   addEventListener("hashchange", fromUrl);
 
-  // 上の検索のバーの下の端（広げたシートがバーの下にもぐらないように）
   new ResizeObserver(() => document.body.style.setProperty("--m-top-h", `${$(".m-top").getBoundingClientRect().bottom}px`)).observe($(".m-top"));
-  // シートの高さ（お知らせの位置に使う）
   new ResizeObserver(() => document.body.style.setProperty("--m-sheet-h", `${sheet().getBoundingClientRect().height}px`)).observe(sheet());
   measure();
   drawFloor();
   $("#m-loading")?.remove();
   initGestures();
-  // 縦長の画面（スマホ）は北を上に：横に長い校舎が縦になり、大きく見える
   if (screen.h > screen.w * 1.2) { cam = { ...cam, bearing: -NORTH }; layoutCam(); }
   view = viewFor(HOME, 1.2);
   clampView();
   applyView();
   renderMap();
   renderSheet();
-  if (params.get("tab") === "feed") setTab("feed"); // map.html?tab=feed でみんなの声を開く
+  if (params.get("tab") === "feed") setTab("feed");
   const list = params.get("list");
   if (list && CHIPS.some((c) => c.id === list)) { $(`.m-chip[data-chip="${list}"]`)?.click(); return; }
   if (fromUrl()) return;
-  // スマホのカメラで QR を読んで来た：さっきまで道案内をしていたら、ここから続きを出す
   const saved = fromQr && here ? savedRoute() : null;
   if (saved && saved.to !== here) {
     rt.noStairs = !!saved.noStairs;
@@ -2813,15 +2589,12 @@ export async function initMap(opts) {
   }
 }
 
-// 本部からのお知らせ（トップページと同じもの）
-// 地図をふさがないように1行で出し、押すと全部、× で閉じる（同じお知らせは閉じたまま）
 const NOTICE_KEY = "kosen63-notice-closed";
 let noticeKey = null;
-// n は notice.js の noticeOf(live, "map") の答え（出さないときは null）。緊急のときは、閉じたことがあっても出す
 export function setNotice(n) {
   noticeKey = n?.key ?? null;
   let closed = null;
-  try { closed = sessionStorage.getItem(NOTICE_KEY); } catch { /* 保存できないブラウザ */ }
+  try { closed = sessionStorage.getItem(NOTICE_KEY); } catch {  }
   const el = $("#m-notice");
   paintNotice(el, n, el.querySelector("span"));
   el.setAttribute("role", n?.urgent ? "alert" : "status");
@@ -2829,15 +2602,14 @@ export function setNotice(n) {
   document.body.classList.toggle("has-notice", !el.hidden);
 }
 function dismissNotice() {
-  try { sessionStorage.setItem(NOTICE_KEY, noticeKey ?? ""); } catch { /* 保存できないブラウザ */ }
+  try { sessionStorage.setItem(NOTICE_KEY, noticeKey ?? ""); } catch {  }
   $("#m-notice").hidden = true;
   document.body.classList.remove("has-notice");
 }
 
-// 凡例（色と印の意味）
 function openLegend() {
   const sw = (cls) => `<svg viewBox="0 0 28 18" aria-hidden="true"><rect class="lg-sw ${cls}" x="1" y="1" width="26" height="16" rx="3"/></svg>`;
-  const ic = (inner) => `<svg viewBox="-22 -12 44 24" aria-hidden="true" class="lg-ic">${inner}</svg>`; // どの印も地図と同じ大きさ
+  const ic = (inner) => `<svg viewBox="-22 -12 44 24" aria-hidden="true" class="lg-ic">${inner}</svg>`;
   const line = (cls) => `<svg viewBox="0 0 28 18" aria-hidden="true"><path class="${cls}" d="M2 9h24"/></svg>`;
   const rows = [
     ["場所", [

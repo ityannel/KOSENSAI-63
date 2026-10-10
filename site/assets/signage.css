@@ -1,8 +1,6 @@
-/* 校内のディスプレイ（signage.html）。1920×1080 の舞台を、画面に合わせて拡大・縮小する。
-   色・字は本サイトと同じ（縁のティール・夕焼け・レンガ・チョークの白、見出しは WDXL Lubrifont、文は Zen Kaku Gothic New） */
 :root {
   --en: #6CBAB5; --sun: #F2A96A; --brick: #B5655A; --chalk: #F3EEE6; --ink: #634A2E; --paper: #FEEBC4; --road: #2E2F32; --live: #FF6B5E; --led: #3BF53D;
-  --a: var(--en); /* 画面ごとの差し色 */
+  --a: var(--en);
   --hud: "WDXL Lubrifont JP N", "Zen Kaku Gothic New", sans-serif;
   --txt: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
   --e-font: "DynaPuff", "Zen Kaku Gothic New", sans-serif;
@@ -19,19 +17,16 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #15171a; c
 i, em { font-style: normal; }
 [hidden] { display: none !important; }
 
-/* ---------- 背景：ポスターの空の色の流れ（画面ごとに色が変わる）に、紙のざらざら ---------- */
 #bg { position: absolute; inset: 0; background: linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 100%); overflow: hidden; }
 .sun { position: absolute; right: -180px; top: -260px; width: 900px; height: 900px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 244, 214, .85) 0%, rgba(255, 244, 214, .35) 38%, rgba(255, 244, 214, 0) 68%); animation: sun 18s ease-in-out infinite alternate; }
 @keyframes sun { to { transform: translate(-120px, 80px) scale(1.12); } }
 .grain { position: absolute; inset: -60px; background: var(--grain); opacity: .55; mix-blend-mode: multiply; animation: grain 9s steps(6) infinite; }
 @keyframes grain { 0% { transform: translate(0, 0); } 20% { transform: translate(-30px, 20px); } 40% { transform: translate(20px, -40px); } 60% { transform: translate(-40px, -10px); } 80% { transform: translate(30px, 30px); } 100% { transform: translate(0, 0); } }
 
-/* ---------- 画面いっぱいに、うっすら時刻 ---------- */
 #bgclock { position: absolute; z-index: 1; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; color: rgba(255, 244, 214, .17); }
 #bgclock b { font: 400 620px/.9 var(--hud); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
 #bgclock span { margin-top: 10px; font: 400 150px/1 var(--hud); letter-spacing: .12em; }
 
-/* ---------- 画面（スライド） ---------- */
 #slide { position: absolute; z-index: 3; left: 0; right: 0; top: var(--st); bottom: var(--sb); padding: 0 var(--sx); }
 .sl { position: absolute; inset: 0 var(--sx); display: flex; flex-direction: column; }
 .sl.out { animation: slout .5s ease-in both; }
@@ -44,7 +39,6 @@ i, em { font-style: normal; }
 @keyframes drop { from { opacity: 0; transform: translateY(-70px) rotate(-8deg) scale(.7); } }
 .sub { margin-top: 10px; font-size: 34px; opacity: .85; letter-spacing: .05em; }
 
-/* 出てくる動き（.go が付いてから、--i の順にずれて） */
 .rise, .pop, .slide-l, .slide-r, .fade { opacity: 0; }
 .go .rise { animation: rise .8s var(--ease) both; animation-delay: calc(var(--i, 0) * 130ms + .25s); }
 .go .pop { animation: pop .75s var(--spring) both; animation-delay: calc(var(--i, 0) * 130ms + .25s); }
@@ -57,7 +51,6 @@ i, em { font-style: normal; }
 @keyframes slr { from { opacity: 0; transform: translateX(160px); } to { opacity: 1; } }
 @keyframes fadein { to { opacity: 1; } }
 
-/* ---------- つなぎ：色の帯が斜めに走って、「縁」のはんこが押される ---------- */
 #wipe { position: absolute; z-index: 20; inset: 0; pointer-events: none; overflow: hidden; }
 #wipe i { position: absolute; top: -10%; bottom: -10%; left: -35%; width: 170%; transform: translateX(-120%) skewX(-14deg); }
 #wipe i.c1 { background: var(--en); }
@@ -67,9 +60,8 @@ i, em { font-style: normal; }
 #wipe b { position: absolute; left: 50%; top: 50%; width: 420px; height: 420px; margin: -210px 0 0 -210px; display: grid; place-items: center; font: 400 400px/1 var(--hud); color: #FEEBC4; opacity: 0; transform: scale(2.2) rotate(-14deg);
   text-shadow: 10px 10px 0 #d9669b, 20px 20px 0 #2f8fe0, 30px 30px 0 #ffd24a, 40px 40px 0 #ff6b5e; }
 #wipe s { position: absolute; left: 50%; top: 50%; width: var(--s, 30px); height: var(--s, 30px); margin: calc(var(--s, 30px) / -2) 0 0 calc(var(--s, 30px) / -2); border-radius: 50%; background: var(--c); opacity: 0; text-decoration: none; }
-#wipe s:nth-of-type(3n) { border-radius: 6px; } /* 丸だけでなく、四角の紙吹雪も */
+#wipe s:nth-of-type(3n) { border-radius: 6px; }
 
-/* ---------- 開幕・いま ---------- */
 .intro { align-items: center; justify-content: center; text-align: center; }
 .intro .en { display: block; width: 330px; height: 330px; }
 .intro .en img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0) invert(.95) sepia(.25) drop-shadow(0 8px 0 rgba(99, 74, 46, .3)); animation: breathe 5s ease-in-out infinite; }
@@ -82,7 +74,6 @@ i, em { font-style: normal; }
 .intro .ring { position: absolute; left: 50%; top: 50%; border: 3px solid var(--a); border-radius: 50%; opacity: 0; animation: ring 4.2s ease-out infinite; }
 @keyframes ring { 0% { width: 340px; height: 340px; margin: -170px 0 0 -170px; opacity: .7; } 100% { width: 1200px; height: 1200px; margin: -600px 0 0 -600px; opacity: 0; } }
 
-/* ---------- Enistagram の投稿 ---------- */
 
 .posts .row { margin-top: 26px; flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; align-items: stretch; padding-bottom: 14px; }
 .pc { display: flex; flex-direction: column; border-radius: 34px; overflow: hidden; background: var(--grain), var(--paper); color: var(--ink); box-shadow: 0 30px 70px rgba(0, 0, 0, .45); }
@@ -105,11 +96,9 @@ i, em { font-style: normal; }
 .heart svg { width: 42px; height: 42px; fill: #ff3b5c; animation: beat 1.3s ease-in-out infinite; }
 @keyframes beat { 0%, 100% { transform: scale(1); } 20% { transform: scale(1.25); } 40% { transform: scale(.95); } 60% { transform: scale(1.12); } }
 .heart em { font: 700 38px var(--txt); }
-/* 人気の投稿：1位に王冠 */
 
 .crown { position: absolute; z-index: 2; left: 18px; top: 16px; display: grid; place-items: center; min-width: 76px; height: 76px; padding: 0 20px; border-radius: 38px; background: #ffd24a; color: var(--ink); font: 400 40px var(--hud); box-shadow: 0 8px 20px rgba(0, 0, 0, .35); animation: pop .8s var(--spring) both; animation-delay: calc(var(--i) * 190ms + 1s); }
 .pc:nth-child(1) .crown { background: linear-gradient(135deg, #ffe27a, #ffb21f); }
-/* アバター（Enistagram と同じ） */
 .ig-av { flex: none; display: grid; place-items: center; width: 56px; height: 56px; padding: 3px; border-radius: 50%; background: var(--e-grad); }
 .ig-av i { display: grid; place-items: center; width: 100%; height: 100%; border: 3px solid #fff; border-radius: 50%; background: hsl(var(--h) 55% 88%); color: hsl(var(--h) 45% 32%); font: 700 1.3rem var(--e-font); }
 .ig-av i svg { display: block; width: 84%; height: 84%; }
@@ -118,7 +107,6 @@ i, em { font-style: normal; }
 .ig-verified { display: inline-grid; place-items: center; width: 1.05em; height: 1.05em; margin-left: 8px; border-radius: 50%; background: linear-gradient(135deg, #3d86f0, #1361cc); }
 .ig-verified svg { width: 72%; height: 72%; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
 
-/* ---------- ピックアップ模擬店 ---------- */
 
 .shop .body { margin-top: 20px; flex: 1; position: relative; display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
 .shop .ghost { position: absolute; right: -30px; bottom: -120px; font: 400 520px/1 var(--hud); color: rgba(243, 238, 230, .07); white-space: nowrap; pointer-events: none; }
@@ -139,7 +127,6 @@ i, em { font-style: normal; }
 .bubble { position: relative; padding: 24px 32px; border-radius: 28px; background: #fffbf2; color: var(--ink); font-size: 36px; line-height: 1.5; }
 .bubble::after { content: ""; position: absolute; left: 60px; bottom: -22px; border: 22px solid transparent; border-top-color: #fffbf2; border-bottom: 0; }
 
-/* ---------- 混雑状況 ---------- */
 
 .crowd .row { margin-top: 26px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
 .cv { padding: 34px 36px 36px; border-radius: 34px; background: var(--grain), var(--paper); color: var(--ink); box-shadow: 0 26px 60px rgba(0, 0, 0, .4); }
@@ -159,7 +146,6 @@ i, em { font-style: normal; }
 .ls li em { flex: none; padding: 0 16px; border-radius: 999px; font-size: 26px; background: var(--c, #555); color: #fff; }
 .ls p { margin-top: 14px; font-size: 32px; opacity: .8; }
 
-/* ---------- ステージ ---------- */
 
 .stage .grid { margin-top: 24px; flex: 1; display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; padding-bottom: 8px; }
 .now { position: relative; padding: 40px 48px; border-radius: 40px; background: var(--grain), var(--paper); color: var(--ink); box-shadow: 0 30px 70px rgba(0, 0, 0, .45); overflow: hidden; display: flex; flex-direction: column; }
@@ -187,7 +173,6 @@ i, em { font-style: normal; }
 .mini { padding: 4px 38px; font-size: 30px; line-height: 1.7; opacity: .9; }
 .mini em { color: var(--sun); }
 
-/* ---------- 急げ！（下に出る帯。時間が近いとき） ---------- */
 #hurry { position: absolute; z-index: 9; left: 0; right: 0; bottom: 0; height: 128px; display: flex; align-items: center; gap: 36px; padding: 0 64px; background: var(--live); color: #fff; box-shadow: 0 -20px 60px rgba(255, 107, 94, .55); animation: hin .7s var(--spring) both; overflow: hidden; }
 @keyframes hin { from { transform: translateY(100%); } }
 #hurry::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0) 0 60px, rgba(255, 255, 255, .13) 60px 120px); animation: stripes 2.4s linear infinite; }
@@ -202,7 +187,6 @@ i, em { font-style: normal; }
 @keyframes nudge { 50% { transform: translate(22px) rotate(var(--rot, 0deg)); } }
 body.is-hurry #slide { bottom: 160px; }
 
-/* ---------- 道案内 ---------- */
 
 .way .body { margin-top: 20px; flex: 1; display: grid; grid-template-columns: 1fr 360px; gap: 44px; padding-bottom: 6px; }
 .way ul { list-style: none; display: grid; gap: 14px; align-content: start; }
@@ -221,7 +205,6 @@ body.is-hurry #slide { bottom: 160px; }
 .qrbox b { display: block; margin-top: 16px; font: 400 34px/1.3 var(--hud); }
 .qrbox small { display: block; margin-top: 6px; font-size: 24px; color: #6b6560; }
 
-/* ---------- シェア ---------- */
 .share { align-items: center; justify-content: center; }
 .share .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 80px; align-items: center; width: 100%; }
 .share h1 { font: 400 130px/1.15 var(--hud); letter-spacing: .02em; }
@@ -243,31 +226,26 @@ body.is-hurry #slide { bottom: 160px; }
 .scan .cap { position: absolute; left: 0; right: 0; bottom: -86px; text-align: center; font-size: 38px; letter-spacing: .08em; }
 .float { position: absolute; z-index: -1; font-size: 90px; opacity: .9; animation: floaty 7s ease-in-out infinite; animation-delay: calc(var(--i) * -1.3s); }
 @keyframes floaty { 0%, 100% { transform: translateY(0) rotate(-8deg); } 50% { transform: translateY(-50px) rotate(10deg); } }
-/* 数字：見出しと同じ字で、大きく */
 .num { font-family: var(--hud); font-weight: 400; font-size: 1.35em; line-height: 1; letter-spacing: .02em; }
 .heart em, .heart em[data-n] { font: 400 56px/1 var(--hud); }
 .pc-b footer time .num { font-size: 1.4em; }
 #hurry .txt .num { font-size: 1.5em; }
-/* 団体名・企画名は、見出しと同じ字 */
 .nm { font-family: var(--hud); font-weight: 400; letter-spacing: .02em; }
 #hurry .txt b .nm { font-size: 1.2em; }
-/* 線の絵のアイコン（絵文字は使わない） */
 .ic { display: block; width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .tag i { font-size: 28px; }
 .way li .mk { font-size: 46px; color: var(--ink); }
 #hurry .run { width: 96px; height: 96px; font-size: 96px; }
 #hurry .run .ic { stroke-width: 1.6; }
 .float { color: rgba(254, 235, 196, .55); }
-/* 影：本サイトと同じ、ぼかさない・ずらした影（左下へ） */
 .pc, .plate, .cv, .now, .way li, .qrbox, .ls, .scan, .nx, .bubble { box-shadow: none !important; filter: drop-shadow(-14px 10px 0 rgba(48, 44, 41, .55)); }
 .tag { box-shadow: none; filter: drop-shadow(-6px 5px 0 rgba(48, 44, 41, .5)); }
 .ttl, .shop h2 { text-shadow: -5px 4px 0 rgba(48, 44, 41, .5); }
 .shop h2 .ch, .ttl .ch { text-shadow: inherit; }
 #hurry { box-shadow: none; filter: drop-shadow(0 -10px 0 rgba(48, 44, 41, .35)); }
-.elogo { filter: brightness(0) invert(1) drop-shadow(-6px 5px 0 rgba(48, 44, 41, .55)); } /* 白ぬき */
+.elogo { filter: brightness(0) invert(1) drop-shadow(-6px 5px 0 rgba(48, 44, 41, .55)); }
 .intro .en img { filter: brightness(0) invert(.95) sepia(.25) drop-shadow(-8px 6px 0 rgba(48, 44, 41, .55)); }
 .crown { box-shadow: none; filter: drop-shadow(-4px 3px 0 rgba(48, 44, 41, .55)); }
-/* 道案内：余白をたっぷり */
 .sl.way { inset: 0 110px; }
 .way .ttl { font-size: 80px; margin-top: 26px; }
 .way .body { margin-top: 44px; gap: 64px; }
@@ -275,25 +253,20 @@ body.is-hurry #slide { bottom: 160px; }
 .way li { padding: 18px 48px 18px 26px; gap: 34px; }
 .way li .mk { width: 80px; height: 80px; font-size: 48px; }
 .way li .ar { width: 84px; height: 84px; }
-/* 背景：みどころで使っている、ノイズのかかったピンク → 赤いオレンジ → 黄色のグラデーション（ゆっくり流れる） */
 #bg { background: #d98a2e url("img/mido-bg.webp") center 0 / 100% auto no-repeat; animation: bgflow 90s ease-in-out infinite alternate; }
 @keyframes bgflow { to { background-position: center 100%; } }
 .sun, .grain { display: none; }
-/* 写真つきの投稿のときは、写真を背景にうっすら */
 #bgphoto { position: absolute; inset: -60px; background: center / cover no-repeat; filter: blur(16px) saturate(1.1); opacity: 0; transform: scale(1.05); transition: opacity 1.4s ease; animation: bgzoom 20s ease-in-out infinite alternate; }
 #bgphoto.on { opacity: .4; }
 @keyframes bgzoom { to { transform: scale(1.18); } }
-/* 文字が多い左上は透明（透明度100%）、右下へ向かって少しずつ写真が見える（透明度0%へ） */
 #bgphoto { -webkit-mask-image: linear-gradient(135deg, transparent 12%, rgba(0, 0, 0, .55) 50%, #000 90%); mask-image: linear-gradient(135deg, transparent 12%, rgba(0, 0, 0, .55) 50%, #000 90%); }
 #bgphoto.on { opacity: .6; }
 .cv .al { min-height: 1.3em; }
 .lists.one { grid-template-columns: 1fr; }
-/* ようこそ画面の日時：板をやめて、見出しと同じ字・白・はっきりした影 */
 .intro .big { padding: 0; background: none; border-radius: 0; gap: 28px; align-items: baseline; color: var(--paper); text-shadow: -6px 5px 0 rgba(48, 44, 41, .55); }
 .intro .big b { font: 400 120px/1 var(--hud); color: inherit; text-shadow: inherit; letter-spacing: .02em; }
 .intro .big span { font: 400 58px/1 var(--hud); letter-spacing: .08em; }
 .intro .big .d { font-size: 76px; }
-/* このあとの出演：紙のカードを、どんどん並べる */
 .nxt { gap: 22px; }
 .nx { display: flex; align-items: center; gap: 28px; padding: 16px 32px; border: 0; background: var(--grain), var(--paper); color: var(--ink); }
 .nx .t { flex: none; font: 400 58px/1 var(--hud); color: var(--brick); letter-spacing: .02em; }
@@ -304,7 +277,6 @@ body.is-hurry #slide { bottom: 160px; }
 .nx.hot { background: var(--live); color: #fff; }
 .nx.hot .t, .nx.hot small { color: #fff; }
 .mini { color: var(--paper); text-shadow: -3px 3px 0 rgba(48, 44, 41, .5); }
-/* 模擬店の画面の、道順の地図 */
 .mapbox { position: relative; height: 340px; border-radius: 32px; background: var(--grain), var(--paper); overflow: hidden; box-shadow: none !important; filter: drop-shadow(-14px 10px 0 rgba(48, 44, 41, .55)); }
 .mapbox svg { display: block; width: 100%; height: 100%; }
 .mapbox .bd { fill: #e4cf9f; stroke: #c3a56c; stroke-width: .6; }
@@ -323,7 +295,6 @@ body.is-hurry #slide { bottom: 160px; }
 .mapbox .dot { fill: #d9334f; stroke: #fff; opacity: 0; }
 .mapbox .fl { position: absolute; left: 16px; top: 12px; padding: 4px 18px; border-radius: 999px; background: var(--ink); color: var(--paper); font: 400 34px/1.2 var(--hud); }
 .mapbox .mn { position: absolute; right: 16px; bottom: 12px; padding: 4px 18px; border-radius: 999px; background: #d9334f; color: #fff; font-size: 28px; }
-/* NOW（いちばん目立つ・黄色）→ NEXT（紙の色・ふつう）→ THEN（うすく・小さめ）*/
 .now:not(.wait) { background: var(--grain), #FFD24A; }
 .now:not(.wait) .lab { background: #d9334f; color: #fff; }
 .nx.is-next { background: var(--grain), var(--paper); }
@@ -333,18 +304,15 @@ body.is-hurry #slide { bottom: 160px; }
 .nx.is-then b { font-size: 36px; }
 .nx.is-then small { color: rgba(99, 74, 46, .7); }
 .nx.is-then i { font-size: 22px; }
-/* 進み具合のバーの両端に、始まり・終わりの時刻 */
 .barw { margin-top: auto; display: flex; align-items: center; gap: 22px; }
 .barw time { flex: none; font: 400 46px/1 var(--hud); color: var(--ink); letter-spacing: .02em; }
 .barw .bar { flex: 1; margin-top: 0; height: 22px; border-radius: 11px; }
 .barw .bar i { border-radius: 11px; }
 .now:not(.wait) { background: var(--grain), linear-gradient(135deg, #FFE98A 0%, #FFC93C 48%, #FF9A4D 100%); }
-/* Enistagram のロゴの大きさ */
 .elogo-s { display: block; height: 40px; width: auto; }
 .tag:has(.elogo-s) { padding-block: 9px; gap: 18px; }
 .tag:has(.elogo-s) i { width: 44px; height: 44px; }
 .elogo { display: inline-block; height: 130px; width: auto; vertical-align: middle; margin: 6px 0; }
-/* 階が変わるところ：階段の左下に低い階、右上に高い階（動きはなし） */
 .mapbox .stairs { position: absolute; inset: 0; display: none; place-items: center; background: rgba(254, 235, 196, .94); }
 .mapbox .stairs.on { display: grid; animation: fadein .25s ease both; }
 .stairs .sq { position: relative; width: 300px; }
@@ -353,10 +321,8 @@ body.is-hurry #slide { bottom: 160px; }
 .stairs .fp { position: absolute; padding: 4px 18px; border-radius: 999px; background: var(--ink); color: var(--paper); font: 400 40px/1.2 var(--hud); }
 .stairs .lo { left: -86px; bottom: -14px; }
 .stairs .hi { right: -86px; top: -14px; }
-/* 歩く時間は、「C棟2階」のとなりに */
 .plate.wkp { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .plate .wk { flex: none; padding: 6px 22px; border-radius: 999px; background: #d9334f; color: #fff; font-size: 32px; }
-/* シェア：絵文字が降ってきて積もる。1・2・3は白 */
 .share .rain { position: absolute; left: calc(-1 * var(--sx)); right: calc(-1 * var(--sx)); top: calc(-1 * var(--st)); bottom: calc(-1 * var(--sb)); pointer-events: none; overflow: hidden; }
 .share .rain span { position: absolute; left: var(--x); top: var(--y); line-height: 1; opacity: 0; transform: translateY(-1200px) rotate(0deg); animation: rainfall var(--t) cubic-bezier(.4, 0, .9, .6) var(--d) both; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
 @keyframes rainfall { 0% { opacity: 1; transform: translateY(-1200px) rotate(0deg); } 80% { opacity: 1; transform: translateY(0) rotate(var(--r)); } 90% { transform: translateY(-26px) rotate(var(--r)); } 100% { opacity: 1; transform: translateY(0) rotate(var(--r)); } }
@@ -365,47 +331,37 @@ body.is-hurry #slide { bottom: 160px; }
 .share h1 .elogo { display: block; margin: 4px 0 0; }
 .share .wrap { position: relative; z-index: 1; }
 .stairs .sd { fill: #d9334f; stroke: #fff; stroke-width: 3; }
-/* 物理で動かす絵文字：位置は JS が transform で決める */
 .share .rain span { left: 0; top: 0; opacity: 1; animation: none; transform: translateY(-400px); display: block; text-align: center; line-height: 1; will-change: transform; }
 .share .rain { left: 0; right: auto; top: 0; bottom: auto; width: 1920px; height: 1080px; margin-left: -64px; margin-top: -48px; }
 .share .rain .rainc { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
-/* 絵文字が積もっても読めるように、文字にはっきりした影 */
 .share h1, .share .how div, .share .scan .cap { text-shadow: -5px 4px 0 rgba(48, 44, 41, .65); }
 .share .elogo { filter: brightness(0) invert(1) drop-shadow(-6px 5px 0 rgba(48, 44, 41, .75)); }
-/* 写真：読み込めたものは、そのまま見せる（以前は、表示の切りかえ用の印がなく、透明のままで真っ黒に見えていた） */
 .pc-ph img { opacity: 1; }
-/* 順位の札：「1位」が折り返さないように */
 .crown { display: flex; align-items: baseline; justify-content: center; gap: 4px; white-space: nowrap; height: 78px; min-width: 96px; padding: 0 24px; border-radius: 39px; line-height: 78px; }
 .crown b { font: 400 54px/78px var(--hud); }
 .crown b .num { font-size: 1em; }
 .crown small { font: 700 28px/78px var(--txt); }
-/* 改行：途中で1文字だけ残らないように。長い店名は小さめにして、まとまりで折り返す */
 .shop h2.long { font-size: 84px; line-height: 1.2; text-wrap: balance; word-break: auto-phrase; }
 .shop .note { word-break: auto-phrase; text-wrap: pretty; }
 .shop .note span { display: block; }
 .shop .note .num { display: inline; }
 .now p, .pc-b p, .pc-ph.txt q, .bubble, .nx i, .way li .sy { word-break: auto-phrase; text-wrap: pretty; }
 .ttl { text-wrap: balance; }
-.ttl .lat, .shop h2 .lat { font-size: 1.25em; line-height: .8; } /* 見出しの英字は、日本語より小さく見えるので、大きく */
-/* 開幕までのカウントダウン：白（#FFFFFF）・影なし・WDXL */
+.ttl .lat, .shop h2 .lat { font-size: 1.25em; line-height: .8; }
 .intro .big .cd { font: 400 150px/1 var(--hud); color: #FFFFFF; text-shadow: none; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
 .intro .big:has(.cd) { flex-direction: column; align-items: center; gap: 6px; }
 .intro .big:has(.cd) > span { font: 400 54px/1 var(--hud); color: #FFFFFF; }
-/* ビートで波打つ棒：右上の小さなものをやめて、カード全体に薄く */
 .now .eq { position: absolute; inset: 0; right: auto; top: auto; width: auto; height: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 0; padding: 0 22px; opacity: .17; pointer-events: none; }
 .now .eq i { flex: 1; margin: 0 4px; width: auto; border-radius: 14px 14px 0 0; background: var(--brick); height: 14%; animation: eqf 1.15s ease-in-out infinite; animation-delay: calc(var(--k) * -.17s); }
 @keyframes eqf { 0%, 100% { height: 10%; } 50% { height: var(--h, 60%); } }
 .now > :not(.eq) { position: relative; z-index: 1; }
 .now .eq { left: 0; right: 0; top: 0; bottom: 0; opacity: .22; }
-/* スケジュールの変更：新しい時間を上に大きく、もとの時間を下に小さく取り消し線 */
 .t-chg { display: inline-flex; flex-direction: column; align-items: flex-start; line-height: 1; vertical-align: top; }
 .t-chg .t-new { font-weight: inherit; }
 .t-chg .t-old { display: block; margin-top: 4px; font: 700 .42em/1 var(--txt); opacity: .75; text-decoration: line-through; text-decoration-thickness: 3px; white-space: nowrap; }
 .barw time .t-chg { align-items: center; }
 .nx .t .t-chg .t-old { font-size: 24px; }
 .chip .t-chg .t-old { font-size: .72em; }
-/* 切りかえの「縁」のはんこと、協賛企業のロゴ。はんこが押されたあと、左へふわっと動き、その右にロゴが乗る（動かす順は signage.js の cover）。
-   札はなく、ロゴを大きく・背景なしで出す。どんな色のロゴでも読めるように、ロゴの形に沿って白い縁取りをつけ、サイトと同じ硬い影を落とす */
 #wipe.has-spon b { top: 50%; }
 #wsp { position: absolute; left: 71%; top: 50%; width: 960px; opacity: 0; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 26px; }
 #wsp > span { font: 400 66px/1 var(--hud); letter-spacing: .12em; color: #fff; text-shadow: -5px 4px 0 rgba(48, 44, 41, .6); }
@@ -413,7 +369,6 @@ body.is-hurry #slide { bottom: 160px; }
 #wsp .tile img { display: block; width: 100%; height: 100%; object-fit: contain;
   filter: drop-shadow(7px 0 0 #fff) drop-shadow(-7px 0 0 #fff) drop-shadow(0 7px 0 #fff) drop-shadow(0 -7px 0 #fff) drop-shadow(-16px 13px 0 rgba(48, 44, 41, .55)); }
 
-/* ---------- 縦のディスプレイ（1080×1920）：横の画面と同じ作りを、縦に並べなおす ---------- */
 body.portrait #stage { --sx: 76px; --st: 96px; --sb: 84px; }
 body.portrait #bgclock b { font-size: 300px; }
 body.portrait #bgclock span { font-size: 96px; }
@@ -421,48 +376,39 @@ body.portrait .share .rain { left: 0; right: auto; top: 0; bottom: auto; width: 
 body.portrait .share .rain .rainc { width: var(--sw); height: var(--sh); }
 body.portrait .ttl { font-size: 80px; }
 body.portrait .tag { font-size: 28px; }
-/* ようこそ */
 body.portrait .intro h1 { font-size: 104px; }
 body.portrait .intro .big .cd { font-size: 120px; }
 body.portrait .intro .big b { font-size: 100px; }
 body.portrait .intro .big .d { font-size: 64px; }
-/* 投稿（最新・人気）：カードを縦に3枚、写真は左・文は右 */
 body.portrait .posts .row { grid-template-columns: 1fr; grid-auto-rows: 1fr; gap: 28px; }
 body.portrait .pc { flex-direction: row; }
 body.portrait .pc-ph { flex: 0 0 44%; }
 body.portrait .pc-b { padding: 22px 26px; }
-/* ステージ */
 body.portrait .stage .grid { grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: 28px; }
 body.portrait .now h2 { font-size: 84px; }
 body.portrait .now { min-height: 560px; }
-/* 模擬店 */
 body.portrait .shop .body { grid-template-columns: 1fr; align-items: start; gap: 36px; margin-top: 30px; }
 body.portrait .shop h2 { font-size: 92px; }
 body.portrait .shop h2.long { font-size: 72px; }
 body.portrait .shop .note { font-size: 40px; }
 body.portrait .mapbox { height: 520px; }
 body.portrait .shop .ghost { font-size: 380px; }
-/* 混雑 */
 body.portrait .crowd .row { grid-template-columns: 1fr; gap: 24px; }
 body.portrait .lists { grid-template-columns: 1fr; }
-/* 道案内 */
 body.portrait .way .ttl { font-size: 64px; }
 body.portrait .way .body { grid-template-columns: 1fr; gap: 30px; }
 body.portrait .qrbox { justify-self: center; width: 420px; }
-/* シェア */
 body.portrait .share .wrap { grid-template-columns: 1fr; gap: 64px; justify-items: center; }
 body.portrait .share h1 { font-size: 112px; text-align: center; }
 body.portrait .share .elogo { height: 112px; margin-inline: auto; }
 body.portrait .share .how { font-size: 38px; }
 body.portrait .scan img { width: 500px; height: 500px; }
-/* 急げ！の帯 */
 body.portrait #hurry { height: 150px; padding: 0 36px; gap: 22px; }
 body.portrait #hurry .big { font-size: 60px; }
 body.portrait #hurry .txt { font-size: 34px; }
 body.portrait #hurry .run { width: 70px; height: 70px; font-size: 70px; }
 body.portrait #hurry .arr { width: 74px; height: 74px; }
 body.portrait.is-hurry #slide { bottom: 180px; }
-/* 縦：下に余ったところを、カードを伸ばして使う */
 body.portrait .crowd .row { flex: 1; grid-auto-rows: 1fr; margin-bottom: 14px; }
 body.portrait .crowd .cv { display: flex; flex-direction: column; justify-content: center; }
 body.portrait .crowd .lists { flex: none; }
@@ -470,7 +416,6 @@ body.portrait .shop .body { flex: 1; align-content: space-between; }
 body.portrait .mapbox { height: 660px; }
 body.portrait .stage .nxt { justify-content: space-between; }
 body.portrait .stage .nx { flex: 1; }
-/* 「このあと」の行（NEXT・THEN）：少し小さく、左寄せ。出演名は大きく、行のあいだにゆとり */
 .stage .nxt { gap: 28px; }
 .nx { padding: 14px 28px; gap: 26px; justify-content: flex-start; text-align: left; }
 .nx .t { font-size: 44px; }
@@ -482,7 +427,6 @@ body.portrait .stage .nx { flex: 1; }
 .nx.is-then b { font-size: 48px; }
 body.portrait .stage .nxt { justify-content: flex-start; gap: 34px; }
 body.portrait .stage .nx { flex: none; }
-/* 縦の模擬店：店名をもっと大きく、下に余白 */
 body.portrait .shop h2 { font-size: 136px; line-height: 1.1; }
 body.portrait .shop h2.long { font-size: 104px; line-height: 1.15; }
 body.portrait .shop .grp { margin-top: 22px; }
@@ -491,7 +435,6 @@ body.portrait .shop .note { margin-top: 34px; font-size: 44px; }
 body.portrait .shop .body { padding-bottom: 72px; }
 body.portrait .mapbox { height: 560px; }
 
-/* ---------- 余白をたっぷり（全体を見なおし） ---------- */
 .ttl { margin-top: 28px; }
 .posts .row, .crowd .row, .stage .grid { margin-top: 44px; }
 .posts .row { gap: 48px; }
@@ -525,7 +468,6 @@ body.portrait #hurry { padding: 0 52px; }
 body.portrait.is-hurry #slide { bottom: 210px; }
 body.is-hurry #slide { bottom: 176px; }
 #hurry { padding: 0 100px; }
-/* 縦の投稿：実際のタイムラインと同じ形（上に名前、まん中に写真か文字のカード、下に♥と文）。3枚が画面におさまるように */
 body.portrait .posts .row { grid-template-columns: 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 30px; flex: 1; min-height: 0; margin-bottom: 8px; }
 body.portrait .pc { flex-direction: column; min-height: 0; }
 body.portrait .pc-b { display: contents; }
@@ -536,10 +478,8 @@ body.portrait .pc-b footer { order: 4; margin-top: 0; padding: 10px 28px 16px; }
 body.portrait .pc-ph.txt { padding: 20px 40px; }
 body.portrait .pc-ph.txt q { font-size: 42px; -webkit-line-clamp: 4; }
 body.portrait .crown { left: auto; right: 22px; top: 100px; }
-/* 「このあと」の時刻：変更ありも、なしも、同じ大きさ */
 .nx .t .num, .nx .t .t-chg .num, .nx .t .t-chg .t-new { font-size: 1em; line-height: 1; }
 .nx .t .t-chg { font-size: inherit; }
-/* 一般公開が終わったあと */
 .closing { align-items: center; justify-content: center; text-align: center; }
 .closing .en { display: block; width: 300px; height: 300px; }
 .closing .en img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0) invert(.95) sepia(.25) drop-shadow(-8px 6px 0 rgba(48, 44, 41, .55)); }
@@ -548,17 +488,15 @@ body.portrait .crown { left: auto; right: 22px; top: 100px; }
 body.portrait .closing h1 { font-size: 88px; }
 body.portrait .closing p { font-size: 52px; }
 
-/* 花火 */
 #fw { position: absolute; inset: 0; width: var(--sw, 1920px); height: var(--sh, 1080px); pointer-events: none; }
 body.is-fw .sun { opacity: 0; }
-body.is-fw #bgclock { opacity: 0; transition: opacity .6s; } /* 花火のあいだは、うしろの時計も出さない（「花火！」の字だけ） */
+body.is-fw #bgclock { opacity: 0; transition: opacity .6s; }
 .fwslide { align-items: center; justify-content: center; text-align: center; }
 .fwt { font: 400 380px/1 var(--hud); color: #ffe27a; text-shadow: -12px 10px 0 rgba(48, 44, 41, .6), 0 0 90px rgba(255, 190, 80, .7); animation: fwpulse 1.6s ease-in-out infinite; }
 @keyframes fwpulse { 50% { transform: scale(1.05); } }
 body.portrait .fwt { font-size: 300px; }
 body.is-fw #bg { background: linear-gradient(180deg, #060a22 0%, #1d1448 60%, #3a1d5c 100%); animation: none; }
 body.is-fw .grain { opacity: .25; }
-/* 本部のお知らせ（舞台の上に、帯で）。色・字・大きさは notice.js が当てる */
 #sg-notice { position: absolute; z-index: 40; left: 0; right: 0; top: 0; padding: 22px 80px; text-align: center; background: #9C3B2E; color: #fff; font: 700 54px/1.35 var(--txt); box-shadow: 0 8px 28px rgba(0, 0, 0, .35); animation: sgn-in .5s cubic-bezier(.2, .8, .2, 1) both; }
 #sg-notice[hidden] { display: none; }
 #sg-notice.is-urgent { background: #C8102E; }
@@ -566,30 +504,25 @@ body.is-fw .grain { opacity: .25; }
 #sg-notice .nt-link { pointer-events: none; }
 @keyframes sgn-in { from { translate: 0 -100%; } }
 @keyframes notice-blink { 50% { opacity: .35; } }
-/* 縦のディスプレイ：幅が狭いので、「縁」は上へ、ロゴはその下に（左右に並べない） */
 body.portrait #wipe.has-spon b { top: 50%; }
 body.portrait #wsp { left: 50%; top: 66%; width: 94%; }
 body.portrait #wsp .tile { height: 440px; }
 .now .kind { flex-wrap: wrap; align-items: center; }
 .now .kind .chip { white-space: nowrap; flex: none; }
 .now .mood { margin-top: 16px; font-size: 38px; font-weight: 700; line-height: 1.4; text-wrap: pretty; word-break: auto-phrase; }
-/* 長い紹介（セットリスト）は、下の帯に隠れないように、行数で切る */
 .now > p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden; }
-body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 3; } /* 急げ！の帯が出ているときは、場所が狭いので短く */
+body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 3; }
 .now > p:not(.mood) { -webkit-line-clamp: 8; }
-body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 8; } /* 行数は signage.js の fitNow が、はみ出さない数に決める */
-/* ステージのカードを少しつめて、紹介（セットリスト）の入る場所を作る */
+body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 8; }
 .now { padding: 30px 44px; }
 .now h2 { margin-top: 14px; font-size: 88px; }
 .now .kind { margin-top: 10px; }
 .now .mood { margin-top: 10px; font-size: 34px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .now > p:not(.mood) { margin-top: 12px; font-size: 34px; line-height: 1.45; }
-/* 出演団体の写真があるとき：カードの右上に、少し傾けて貼る（文字は、写真をよける） */
 .now .ph { position: absolute; z-index: 1; top: 34px; right: 40px; width: 300px; max-height: 400px; object-fit: cover; border-radius: 18px; border: 7px solid #fff; rotate: 3deg; filter: drop-shadow(-8px 6px 0 rgba(48, 44, 41, .35)); }
 .now.has-ph > :not(.ph):not(.eq):not(.lab):not(.barw) { max-width: calc(100% - 350px); }
 .now .ph { opacity: 0; rotate: var(--tilt, 3deg); transition: opacity .7s ease; }
 .now .ph.on { opacity: 1; }
-/* 出演団体の写真は、カードの背景いっぱいに。文字のある左側から、かぶせる色を透明度 0 → 100 で消していく（色と文字の色は、写真の明るさで白か黒に） */
 .now.has-ph { --ov: 255, 248, 232; color: var(--ink); }
 .now.has-ph[data-tone="dark"] { --ov: 28, 24, 21; color: #fff; }
 .now .ph { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; max-height: none; object-fit: cover; object-position: 70% 30%; border: 0; border-radius: 0; rotate: 0deg; filter: none; opacity: 0; transition: opacity .7s ease; }
@@ -597,25 +530,21 @@ body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 8; } /* 行数は signag
 .now.has-ph::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(var(--ov), .7) 0%, rgba(var(--ov), .7) 38%, rgba(var(--ov), 0) 100%); }
 .now.has-ph > :not(.ph):not(.eq) { position: relative; z-index: 2; }
 .now.has-ph > :not(.ph):not(.eq):not(.lab):not(.barw) { max-width: none; }
-/* スピーカーの音のようなバーは、写真の上でも動かす（カードの下半分に。暗い写真は白、明るい写真は赤茶） */
 .now.has-ph .eq { display: flex; z-index: 1; top: auto; height: 46%; opacity: .5; }
 .now.has-ph .eq i { background: #C0392B; }
 .now.has-ph[data-tone="dark"] .eq i { background: #fff; }
 .now.has-ph[data-tone="dark"] .eq { opacity: .32; }
 .now.has-ph[data-tone="dark"] .kind .chip { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .5); color: #fff; }
 .now.has-ph[data-tone="dark"] .barw time { color: #fff; }
-/* 「このあと」の行にも、出演団体の写真を、うっすら背景に（右へいくほど見える） */
 .nx.has-ph { position: relative; overflow: hidden; }
 .nx.has-ph::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: var(--ph) 70% 30% / cover no-repeat; opacity: .22; -webkit-mask-image: linear-gradient(90deg, transparent 15%, #000 100%); mask-image: linear-gradient(90deg, transparent 15%, #000 100%); }
 .nx.has-ph > * { position: relative; z-index: 1; }
 .barw .bar i { transition: width 1s linear; }
-/* 写真つきのカードの手直し：バーは右の写真のところだけ・うすく、進み具合の棒は写真の上でも見えるように、ジャンルの札は明るい写真でも読めるように */
 .now.has-ph .eq { height: 34%; opacity: .4; -webkit-mask-image: linear-gradient(90deg, transparent 38%, #000 80%); mask-image: linear-gradient(90deg, transparent 38%, #000 80%); }
 .now.has-ph[data-tone="dark"] .eq { opacity: .3; }
 .now.has-ph .barw .bar { background: rgba(99, 74, 46, .28); }
 .now.has-ph[data-tone="dark"] .barw .bar { background: rgba(255, 255, 255, .28); }
 .now.has-ph .barw time .t-old { display: none; }
 .now.has-ph[data-tone="light"] .kind .chip { background: #fff; border-color: #634A2E; color: #634A2E; }
-/* 右の列は、左のカードの下の端まで、同じ高さで並べる。画面の下にも余白を */
 .stage .grid { padding-bottom: 28px; }
 .nxt > .nx { flex: 1 1 0; max-height: 190px; }

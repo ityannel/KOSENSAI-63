@@ -1,9 +1,5 @@
-// チケットの穴に通した「赤い糸」（縁）。チケットが時間の順に並んでいるので、糸がタイムラインになる。
-// 糸はチケットのうしろに描くので、チケットとチケットのあいだでは、くねくね曲がって見える。
-// 穴の中は、チケットの影で暗くなるので、穴の丸の中だけ、同じ糸をチケットの手前にもう一度描く（穴を通っているように見える）
-// 日にちの見出しやボタンのところで、糸を切る（日ごとに1本）
 const NS = "http://www.w3.org/2000/svg";
-const jobs = new Map(); // 描き直しをまとめる（1フレームに1回）
+const jobs = new Map();
 
 export function drawThread(box) {
   if (!box || jobs.has(box)) return;
@@ -24,13 +20,12 @@ function draw(box) {
     front.setAttribute("class", "tk-thread tk-thread-front");
     front.setAttribute("aria-hidden", "true");
   }
-  box.append(front); // いつもいちばん最後（チケットの手前）
-  if (box.classList.contains("is-list")) { svg.remove(); front.remove(); return; } // 一覧のときは糸を出さない
+  box.append(front);
+  if (box.classList.contains("is-list")) { svg.remove(); front.remove(); return; }
   const b = box.getBoundingClientRect();
   if (!b.width) return;
   svg.setAttribute("viewBox", `0 0 ${b.width} ${b.height}`);
-  const u = b.width / 356; // チケットの幅（Figma の 356）あたりの大きさ
-  // 糸を通す穴の中心を、上から順に。見出しなどがあったら、そこで糸を分ける
+  const u = b.width / 356;
   const runs = [[]];
   for (const el of box.children) {
     if (el === svg || el === front) continue;
@@ -40,11 +35,11 @@ function draw(box) {
     runs.at(-1).push([r.left + r.width / 2 - b.left, r.top + r.height / 2 - b.top]);
   }
   const d = runs.filter((p) => p.length).map((p) => {
-    const tail = 26 * u; // 上と下に少し垂らす
+    const tail = 26 * u;
     let s = `M${p[0][0] + 6 * u} ${p[0][1] - tail} Q${p[0][0] - 8 * u} ${p[0][1] - tail / 2} ${p[0][0]} ${p[0][1]}`;
     for (let i = 1; i < p.length; i++) {
       const [x0, y0] = p[i - 1], [x1, y1] = p[i];
-      const w = (i % 2 ? 1 : -1) * 22 * u; // 左右にゆれる
+      const w = (i % 2 ? 1 : -1) * 22 * u;
       s += ` C${x0 + w} ${y0 + (y1 - y0) * 0.45} ${x1 - w} ${y0 + (y1 - y0) * 0.55} ${x1} ${y1}`;
     }
     const [xl, yl] = p.at(-1);
@@ -53,11 +48,10 @@ function draw(box) {
   const sw = `stroke-width:${(2.6 * u).toFixed(2)}px`;
   svg.innerHTML = `<path d="${d}" style="${sw}"/>`;
   front.setAttribute("viewBox", `0 0 ${b.width} ${b.height}`);
-  const hr = 4.5 * u * 0.92; // 穴の半径（CSS の --hr）より少し小さく
+  const hr = 4.5 * u * 0.92;
   front.innerHTML = `<clipPath id="tk-holes"><!-- 穴の丸 -->${runs.flat().map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${hr}"/>`).join("")}</clipPath><path d="${d}" style="${sw}" clip-path="url(#tk-holes)"/>`;
 }
 
-// 大きさが変わったとき・字や写真が読みこまれたときも描き直す
 const watched = new WeakSet();
 export function watchThread(box) {
   if (!box || watched.has(box)) return;

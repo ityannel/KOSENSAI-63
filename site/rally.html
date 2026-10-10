@@ -13,32 +13,24 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <!-- 見出し・チケットの字（WDXL Lubrifont JP N）と、説明の字（Zen Kaku Gothic New）。使う字だけ。python tools/update-font-subset.py で更新 -->
   <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&amp;display=swap&amp;text=Enistagram" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="assets/style.css">
-  <script src="assets/theme.js"></script><!-- ライト／ダークと差し色（描く前に決める） -->
-</head>
-<!-- スタンプカードのページ：模擬店スタンプラリー（サイトの中の1ページ。下のタブは「サイト」のまま）。
-     みどころのページと同じく、下からシートが出てくる形。右上の × で下へしまって、もとのページへ戻る。
-     お店の QR（rally.html?s=店ID&c=合言葉）を読むと、ここが開いてスタンプが押される -->
+  <script src="assets/theme.js"></script></head>
 <body class="mido-page rally-page" data-page="rally">
   <main class="mido mido-full rally-full" id="rally" aria-labelledby="rally-title">
     <div class="mido-in">
       <a class="mido-close" href="./#ennichi" aria-label="とじる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></a>
       <h1 class="mido-title" id="rally-title">スタンプカード</h1>
       <p class="rally-lead">校内の数か所に置いてある<b>QR</b>を読むと、スタンプが押されます。はじめの1個は、玄関のインフォメーションで。</p>
-      <!-- カード：押すと、くるっと裏返る（裏はあそびかた） -->
       <div class="rc-wrap" id="rc"></div>
-      <!-- スタンプを押すのは、お店の QR を読むこのボタンひとつ（スマホのカメラアプリで読んでも押せる） -->
       <button type="button" class="qr-btn rally-scan" id="rally-scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M8 8h3v3H8zM13 8h3v3h-3zM8 13h3v3H8zM13 13h1.5M16 13v3h-3"/></svg>QR を読む</button>
       <p class="rally-sorry" id="rally-sorry" hidden><b>おわび</b>スタンプラリーの景品は、すべてなくなりました。たくさん参加していただき、ありがとうございました。スタンプは、このまま集められます。</p>
       <p class="rally-msg" id="rally-msg" role="status"></p>
     </div>
   </main>
 
-  <!-- 下のタブ：サイト・地図・Enistagram（スタンプカードはサイトの中のページ） -->
   <nav class="site-tabs" id="site-tabs" aria-label="切りかえ">
     <a href="./" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg>サイト</a>
     <a href="map.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/></svg>地図</a>
@@ -48,6 +40,5 @@
   <script type="module" src="assets/rally-page.js"></script>
   <script type="module" src="assets/side.js"></script>
   <script type="module" src="assets/offline.js"></script>
-  <script type="module" src="assets/test-loader.js"></script><!-- ?test=1 のときだけ、テスト用パネル -->
-</body>
+  <script type="module" src="assets/test-loader.js"></script></body>
 </html>

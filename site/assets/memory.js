@@ -1,6 +1,3 @@
-// トップページの「思い出」：高専祭が終わったあと（2日目の閉場のあと）だけ出る欄。
-// Enistagram の、みんなの投稿から、いいねの多い写真を6枚（写真がなければ、文の投稿を3つ）。「Enistagram で見る」で、全部へ。
-// 終わるまでは、欄ごと隠れたまま（投稿も読まない）。?now=2026-10-26T10:00 で、終わったあとの見た目を確かめられる
 import { FESTIVAL } from "./config.js";
 import { subscribePosts, observePhotos, cachedPhoto } from "./posts.js";
 
@@ -26,12 +23,11 @@ function render(list) {
       ${p.text.trim() ? `<p>${esc(p.text.trim().slice(0, photos ? 40 : 90))}</p>` : ""}
       <small>${esc(p.author)}${p.likes ? `　♡ ${p.likes}` : ""}</small>
     </a></li>`).join("");
-  observePhotos(grid, (img) => img.remove()); // 読めない写真は、文だけのカードに
+  observePhotos(grid, (img) => img.remove());
   sec.hidden = false;
 }
 
 if (sec && grid) {
-  // 閉場のあとだけ。まだ開催中のページを開いたまま閉場をむかえた人にも、そのとき出る（投稿は、出るときに初めて読む）
   let started = false;
   const check = () => {
     if (started || now() <= CLOSE) return;

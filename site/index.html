@@ -31,16 +31,13 @@
   <meta name="apple-mobile-web-app-title" content="高専祭">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Firebase（お知らせ・混雑・投稿）は、ページの部品と同時に読みはじめる（版は assets/live.js の FIREBASE_VERSION と同じにする） -->
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js" crossorigin>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js" crossorigin>
-  <!-- 次に開きそうなページ（下のタブ・同じサイトのリンク）を、押しそうになったら裏で先に用意する（Chrome）。本部用は除く -->
   <script type="speculationrules">
   { "prerender": [{ "where": { "and": [{ "href_matches": "/*" }, { "not": { "href_matches": "/*staff/*" } }, { "not": { "href_matches": "*emulator*" } }] }, "eagerness": "moderate" }] }
   </script>
-  <!-- ページの部品を最初にまとめて読む（import を1段ずつたどって待たないように） -->
   <link rel="modulepreload" href="assets/main.js">
   <link rel="modulepreload" href="assets/config.js">
   <link rel="modulepreload" href="assets/live.js">
@@ -60,33 +57,20 @@
   <link rel="modulepreload" href="assets/app.js">
   <link rel="modulepreload" href="assets/side.js">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <!-- カウントダウンの字（Figma と同じ WDXL Lubrifont JP N）。全部だと10MBあるので、使う字だけを読み込む。
-       config.js の企画名・会場名を変えたら python tools/update-font-subset.py を動かす -->
   <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <!-- 下のタブの「Enistagram」の字（ロゴと同じ DynaPuff。使う字だけ） -->
   <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&amp;display=swap&amp;text=Enistagram" rel="stylesheet" media="print" onload="this.media='all'">
-  <!-- 学生主事メッセージの字（Figma と同じ Zen Kaku Gothic New。使う字だけ。python tools/update-font-subset.py で更新） -->
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="preload" as="image" href="assets/img/scene.webp">
   <link rel="stylesheet" href="assets/style.css">
-  <script src="assets/theme.js"></script><!-- ライト／ダークと差し色（描く前に決める） -->
-</head>
+  <script src="assets/theme.js"></script></head>
 <body data-phase="before">
-  <!-- 初めての人にだけ、最初は絵だけを見せる。JSが途中で止まっても6秒後には必ず全部出す -->
-  <script src="assets/intro.js"></script><!-- 初めてだけの演出 -->
-  <!-- ===== 最初の画面は絵の1枚。下へスクロールすると Enistagram =====
-       ふだんは Figma のデザインどおり「絵・縁・カウントダウン」だけ。
-       画面に触れると、カウントダウンが消えて、下から質問ボタンがせり上がる（body.awake）。 -->
-  <main class="scene">
-    <!-- 絵（世界）。高さいっぱいに表示して、スマホでは左右が少し切れる -->
+  <script src="assets/intro.js"></script>  <main class="scene">
     <div class="stage" id="stage">
-      <!-- 絵の電線を画面の端まで延ばす（絵の外だけに見える） -->
       <svg class="wires" viewBox="0 0 1215 1845" aria-hidden="true" preserveAspectRatio="none">
         <line x1="-4000" y1="1561.2" x2="5000" y2="-246.0" />
         <line x1="-4000" y1="1602.4" x2="5000" y2="-235.4" />
-        <line x1="1215" y1="575.1" x2="5000" y2="5.5" /><!-- 3本目は、絵の中の電柱から右にだけ伸びている -->
+        <line x1="1215" y1="575.1" x2="5000" y2="5.5" />
       </svg>
-      <!-- 絵は3枚重ね：空 → （星） → 街と5人。空は2枚を重ねて、時間帯や天気でゆっくり入れ替える -->
       <div class="poster-clip">
         <img class="layer-sky" id="sky-a" width="1215" height="1845" alt="">
         <img class="layer-sky" id="sky-b" width="1215" height="1845" alt="">
@@ -94,24 +78,18 @@
         <img class="layer-scene" src="assets/img/scene.webp" width="1215" height="1845"
           alt="夕焼けの空の下、電線の張る坂道を5人の学生が駆けていく絵">
       </div>
-      <!-- 花火（開幕の瞬間と、花火の時間） -->
       <canvas class="fireworks" id="fireworks" aria-hidden="true"></canvas>
       <p class="opening-text" id="opening-text" aria-hidden="true">開幕</p>
-      <!-- 絵の中の触れる場所（人・建物・隠しスポット） -->
       <div class="hotspots" id="hotspots"></div>
-      <!-- 触れたときだけ出るもの：電柱の看板（混雑）と、電線の短冊（メニュー） -->
       <a class="pole-sign awake-only" id="pole-sign" href="#crowd" data-topic="crowd" aria-label="会場の混雑状況を聞く"></a>
       <nav class="tanzaku-nav awake-only" id="tanzaku-nav" aria-label="メニュー"></nav>
     </div>
 
-    <!-- 絵の上の表示。見えている範囲（スマホなら画面の幅）に合わせて置く -->
     <div class="hud" id="hud">
       <h1 class="visually-hidden">第63回 函館高専祭「縁」</h1>
       <p class="notice-bar" id="notice-bar" hidden></p>
-      <!-- 開催中：「縁」の上に「●開催中！」 -->
       <p class="live-badge phase-during ui"><span class="live-dot"></span><span id="live-badge">開催中！</span></p>
 
-      <!-- 「縁」のロゴ（開催中に生配信があるときは、配信と入れ替わる） -->
       <a class="logo" href="#pickup">
         <img src="assets/img/logo.webp" width="673" height="657" alt="第63回 函館高専祭 縁（みどころへ）">
       </a>
@@ -119,9 +97,7 @@
         <div id="live-stream"></div>
       </div>
 
-      <!-- 下のほうを少し暗くして、道路の上の小さい字を読みやすく -->
       <div class="hud-shade" aria-hidden="true"></div>
-      <!-- 下の道路の上の表示（開催前・中・後で入れ替わる）。触れると消える -->
       <div class="slot ui">
         <div class="phase-before">
           <p class="slot-label">高専祭まであと</p>
@@ -142,23 +118,17 @@
       </div>
 
       <p class="sky-caption awake-only" id="sky-caption"></p>
-      <!-- 下にスクロールできることの案内（押すものではない）。少しスクロールすると消える -->
       <div class="scroll-hint ui" aria-hidden="true" style="--d: 1.6s"><svg viewBox="0 0 16 96"><path class="track" d="M8 3V90"/><path class="run" d="M8 3V90" pathLength="1"/><path class="head" d="M3.5 85.5L8 90.5l4.5-5"/></svg></div>
       <button type="button" class="shake-btn awake-only" id="shake-btn" hidden>スマホを振ると短冊がゆれるよ</button>
       <p class="secret-toast" id="secret-toast" role="status" hidden></p>
 
-      <!-- 5人の答え（質問ボタンか、絵の中の人を押すと出る） -->
       <section class="answer" id="answer" hidden aria-live="polite"></section>
-      <!-- 5人への質問ボタン。触れると下からせり上がる -->
       <nav class="askbar" id="askbar" aria-label="5人に聞く"></nav>
     </div>
   </main>
 
-  <!-- 函館の本物の天気（雨・雪）を画面全体に -->
   <canvas class="weather-fx" id="weather-fx" aria-hidden="true"></canvas>
 
-  <!-- ===== 絵のすぐ下（Figma「通常」のデザイン）：日付 → 道路の影から出てきた人 → 校内マップ・Enistagram の入口 → 学生主事より =====
-       夕焼けの背景ごと、画面の幅に合わせて大きさが変わる（中の位置は Figma の 402px 幅の数字） -->
   <section class="k-top" id="days" aria-label="日程と入口">
     <img class="k-bg" src="assets/img/top-bg.webp" width="804" height="2106" alt="" loading="lazy" decoding="async">
     <div class="k-band">
@@ -168,14 +138,9 @@
     <img class="k-sil" src="assets/img/top-sil.webp" width="1017" height="262" alt="" loading="lazy" decoding="async">
     <a class="k-btn is-map" href="map.html"><img src="assets/img/btn-map.svg" width="246" height="221" alt="校内マップ"></a>
     <a class="k-btn is-enista" href="map.html?tab=feed" aria-label="Enistagram（学生の投稿を見る）"><img src="assets/img/btn-enista.svg" width="291" height="152" alt=""><img class="k-logo" src="assets/img/enista-puffy.webp" width="666" height="117" alt=""></a>
-    <!-- 道を歩く小さな人（マップの上を走る人・横に腰かける人・Enistagram の前に立つ人） -->
     <img class="k-figs" src="assets/img/top-figs.webp" width="315" height="569" alt="" loading="lazy" decoding="async">
   </section>
 
-  <!-- ===== トップの欄（学生主事より・スタンプカード・いまの混雑・みどころ・縁日・ご来場の皆さまへ・協賛）=====
-       並び順と、出す・出さないは本部コンソールの「サイトの設定」で変えられる（assets/blocks.js が並べかえる。data-block が欄の名前）。
-       いちばん上の欄は、上の絵に少し重なって、上の角だけ丸くなる（前の学生主事よりと同じ形） -->
-  <!-- ===== 思い出：高専祭が終わったあとだけ出る（memory.js）。Enistagram の、いいねの多い写真 ===== -->
   <section class="memory" id="memory" data-block="memory" aria-labelledby="memory-title" hidden>
     <div class="memory-in">
       <h2 class="memory-title" id="memory-title">思い出</h2>
@@ -185,17 +150,14 @@
     </div>
   </section>
 
-  <!-- ===== 学生主事より ===== -->
   <section class="k-msgsec" id="message-sec" data-block="message" aria-label="学生主事より">
     <figure class="k-msg" id="message"></figure>
   </section>
 
-  <!-- ===== スタンプラリーの入口：学生主事よりのすぐ下に、スタンプカードだけをぽんと置く（押すとスタンプカードのページ） ===== -->
   <section class="stampsec" id="stamp" data-block="stamp" aria-label="スタンプカード">
     <div class="stampsec-in"><div class="rc-mini-box" id="rally-mini"></div></div>
   </section>
 
-  <!-- ===== いまの混雑：本部がコンソールで変えると、すぐここに出る（1つも更新されていないあいだは出さない） ===== -->
   <section class="crowdnow" id="crowd-now" data-block="crowd" aria-labelledby="crowdnow-title" hidden>
     <div class="crowdnow-in">
       <h2 class="crowdnow-title" id="crowdnow-title">いまの混雑</h2>
@@ -203,7 +165,6 @@
     </div>
   </section>
 
-  <!-- ===== みどころ（Figma）：時間の決まった企画をチケットの形で。いま・次のものを3枚（時間で自動で入れかわる） ===== -->
   <section class="mido" id="pickup" data-block="pickup" aria-labelledby="mido-title">
     <div class="mido-in">
       <h2 class="mido-title" id="mido-title">みどころ</h2>
@@ -212,7 +173,6 @@
     </div>
   </section>
 
-  <!-- ===== 縁日（模擬店の紹介）：掲示板にチラシを貼ったように、横にすべらせて見る。押すと地図でお店の場所 ===== -->
   <section class="ennichi" id="ennichi" data-block="ennichi" aria-labelledby="ennichi-title">
     <div class="ennichi-in">
       <h2 class="ennichi-title" id="ennichi-title">縁日<small>模擬店</small></h2>
@@ -221,7 +181,6 @@
     </div>
   </section>
 
-  <!-- ===== 学科展示：5学科の展示と場所。スクロールすると、カードが順に出てくる（文は config.js の DEPT_EXHIBITS） ===== -->
   <section class="dept" id="exhibit" data-block="exhibit" aria-labelledby="dept-title">
     <div class="dept-in">
       <h2 class="dept-title" id="dept-title">学科展示</h2>
@@ -229,12 +188,10 @@
     </div>
   </section>
 
-  <!-- ===== ご来場の皆さまへ：駅の案内板のように、絵とひとことの札。押すとくわしい説明（要項より） ===== -->
   <section class="visit" id="info" data-block="info" aria-labelledby="visit-title">
     <div class="visit-in">
       <h2 class="visit-title" id="visit-title">ご来場の皆さまへ</h2>
       <ul class="visit-grid" id="visit-grid">
-        <!-- JS が動かなくても読めるように、来場案内を静的に書いておく（visit.js が動くと、絵と札に置きかわる） -->
         <li class="visit-static"><dl>
           <dt>会場</dt><dd>函館工業高等専門学校（〒042-8501 函館市戸倉町14-1）</dd>
           <dt>開催日時</dt><dd>2026年10月24日(土) 12:00〜16:00／10月25日(日) 10:00〜16:00</dd>
@@ -242,7 +199,6 @@
           <dt>ご注意</dt><dd>校内は全面禁煙です。お酒・たばこは持ちこめません。ステージ・会場のルールにしたがってください。</dd>
         </dl></li>
       </ul>
-      <!-- アクセスと公式のリンク（JS が動いても、いつも出す） -->
       <p class="visit-links"><a href="https://www.google.com/maps/search/?api=1&amp;query=%E5%87%BD%E9%A4%A8%E5%B7%A5%E6%A5%AD%E9%AB%98%E7%AD%89%E5%B0%82%E9%96%80%E5%AD%A6%E6%A0%A1" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/></svg>Google マップ</a><a href="https://www.hakodate-ct.ac.jp/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-5 9 5-9 5zM7 12.5V17c0 1.2 2.2 2.5 5 2.5s5-1.3 5-2.5v-4.5M21 10v5"/></svg>学校サイト</a><a href="https://www.instagram.com/kosen_gakuseikai/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><path d="M16.8 7.2h.01"/></svg>インスタ</a>
 <a href="https://x.com/hnct_gakuseikai" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h4.2l11.8 16h-4.2z"/><path d="M19.4 4l-6.2 7M4.6 20l6.2-7"/></svg>エックス</a></p>
       <a class="mido-more" href="terms.html"><span>利用規約を見る</span></a>
@@ -250,23 +206,19 @@
   </section>
 
 
-  <!-- ===== 絵の下：ふつうにスクロールして読むところ（URLの #about などで、その場所へ飛ぶ） ===== -->
   <div class="sections">
 
 
-  <!-- 一度削除（戻すときは hidden を外す） -->
   <section class="sec" id="about" hidden aria-labelledby="about-title">
     <h2 class="panel-title" id="about-title"><span>ABOUT</span>高専祭について</h2>
     <div id="about-body" class="prose"></div>
   </section>
 
-  <!-- 一度削除：みどころのページ（mido.html）がタイムテーブルの代わり（戻すときは hidden を外す） -->
   <section class="sec" id="schedule" hidden aria-labelledby="schedule-title">
     <h2 class="panel-title" id="schedule-title"><span>TIMETABLE</span>タイムテーブル</h2>
     <div id="timetable"></div>
   </section>
 
-  <!-- Enistagram の最新の投稿（地図の Enistagram と同じもの）。一度削除（戻すときは hidden を外し、下の home-feed.js と side.js のメニューを戻す） -->
   <section class="sec e-home" id="enistagram" hidden aria-labelledby="e-home-title">
     <div class="e-home-head">
       <h2 id="e-home-title"><img src="assets/img/enistagram.webp" width="640" height="114" alt="Enistagram"><span>の最新の投稿</span></h2>
@@ -276,22 +228,18 @@
     <a class="e-home-more" href="map.html?tab=feed">地図の Enistagram でポストする</a>
   </section>
 
-  <!-- 一度削除（戻すときは hidden を外す） -->
   <section class="sec" id="crowd" hidden aria-labelledby="crowd-title">
     <h2 class="panel-title" id="crowd-title"><span>CROWD</span>会場の混雑状況</h2>
     <div class="crowd-grid" id="crowd-list"></div>
     <p class="crowd-note">本部がリアルタイムで更新しています。</p>
   </section>
 
-  <!-- スタンプラリーは、スタンプカードのページ（rally.html）へ移した -->
 
-  <!-- 一度削除（戻すときは hidden を外す） -->
   <section class="sec" id="guide" hidden aria-labelledby="guide-title">
     <h2 class="panel-title" id="guide-title"><span>GUIDE</span>企画案内</h2>
     <div class="guide-grid" id="guide-grid"></div>
   </section>
 
-  <!-- 一度削除（戻すときは hidden を外す） -->
   <section class="sec" id="report" hidden aria-labelledby="report-title">
     <h2 class="panel-title" id="report-title"><span>REPORT</span>いちゃの食レポ・会場の様子</h2>
     <div id="food-reports" class="report-list"></div>
@@ -299,7 +247,6 @@
     <div id="photo-grid" class="photo-grid"></div>
   </section>
 
-  <!-- 一度削除：下の「ご来場の皆さまへ」（絵とひとことの札）が代わり（戻すときは hidden を外して id を info に） -->
   <section class="sec" id="info-old" hidden aria-labelledby="info-title">
     <h2 class="panel-title" id="info-title"><span>INFO</span>ご来場の皆さまへ</h2>
     <ul class="notice-list" id="notice-list"></ul>
@@ -312,7 +259,6 @@
 
   </div>
 
-  <!-- ===== 協賛：協賛企業のロゴを並べる（要項 p.10「公式ホームページへの企業ロゴ掲載」）。ページのいちばん下 ===== -->
   <section class="spon" id="sponsors" data-block="sponsors" aria-labelledby="sponsors-title">
     <div class="spon-in">
       <h2 class="spon-title" id="sponsors-title">協賛</h2>
@@ -321,10 +267,8 @@
     </div>
   </section>
 
-  <!-- ===== アプリとして使う（ホーム画面に追加）：いつも、版権表示のすぐ上に出す。アプリとして開いているときだけ、出さない ===== -->
   <section class="spon spon-install" id="install-sec" aria-label="アプリとして使う">
     <div class="spon-in">
-      <!-- アプリとして使う（ホーム画面に追加）。入れられるときだけ出る。クリーム色の紙の札（ほかのボタンと同じ形） -->
       <aside class="install" id="install" data-mode="other">
         <img src="assets/img/icon-192.png" width="192" height="192" alt="">
         <div class="install-text">
@@ -337,8 +281,6 @@
     </div>
   </section>
 
-  <!-- 隠し縁を全部見つけたときだけ開くパネル -->
-  <!-- ===== いちばん下：並べかえても、いつも最後（色を分けた版権表示） ===== -->
   <footer class="k-foot"><p class="k-foot-in">© 2026 函館工業高等専門学校 学生会 / Hakodate Kosen Gakuseikai. All Rights Reserved.</p></footer>
 
   <div class="panel-backdrop" id="panel-backdrop" hidden></div>
@@ -350,7 +292,6 @@
 
   <div class="stamp-toast" id="stamp-toast" hidden></div>
 
-  <!-- 下のタブ：サイト・地図・Enistagram（地図のページにも同じタブ） -->
   <nav class="site-tabs" id="site-tabs" aria-label="切りかえ">
     <a href="./" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg>サイト</a>
     <a href="map.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/></svg>地図</a>
@@ -358,8 +299,7 @@
   </nav>
 
   <script type="module" src="assets/main.js"></script>
-  <script type="module" src="assets/blocks.js"></script><!-- トップの欄の並び（本部の「サイトの設定」） -->
-  <!-- 一度削除（Enistagram の欄）<script type="module" src="assets/home-feed.js"></script> -->
+  <script type="module" src="assets/blocks.js"></script>  <!-- 一度削除（Enistagram の欄）<script type="module" src="assets/home-feed.js"></script> -->
   <script type="module" src="assets/shops-board.js"></script>
   <script type="module" src="assets/visit.js"></script>
   <script type="module" src="assets/exhibit.js"></script>
@@ -367,6 +307,5 @@
   <script type="module" src="assets/memory.js"></script>
   <script type="module" src="assets/app.js"></script>
   <script type="module" src="assets/side.js"></script>
-  <script type="module" src="assets/test-loader.js"></script><!-- ?test=1 のときだけ、テスト用パネル -->
-</body>
+  <script type="module" src="assets/test-loader.js"></script></body>
 </html>

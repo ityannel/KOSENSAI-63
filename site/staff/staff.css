@@ -1,6 +1,3 @@
-/* 本部コンソール（staff/index.html）
-   本サイトと同じ見た目：クリーム色の紙（ざらざら）・こげ茶の字・ずらした影。
-   字：見出し・数字は WDXL Lubrifont、文は Zen Kaku Gothic New */
 :root {
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .34 0 0 0 0 .18 0 0 0 1.5 -.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --iro: linear-gradient(115deg, rgba(216, 69, 127, .16), rgba(226, 98, 46, .12) 35%, rgba(227, 164, 58, .12) 65%, rgba(223, 194, 122, .16));
@@ -44,7 +41,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .small { font-size: .85rem; }
 .eyebrow { margin: 0; font-family: var(--mono); font-size: .72rem; letter-spacing: .22em; color: var(--teal); }
 
-/* ---------- ボタン・入力 ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   min-height: 42px; padding: 0 18px; border: 1px solid transparent; border-radius: 999px;
@@ -75,7 +71,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .field textarea { resize: vertical; line-height: 1.6; }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(94, 211, 195, .18); }
 
-/* 2つ・4つから選ぶ（セグメント） */
 .seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-2); }
 .seg label { position: relative; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
@@ -84,7 +79,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .seg input:focus-visible + span { outline: 2px solid var(--teal); }
 .seg .seg-danger input:checked + span { background: var(--red); color: #fff; box-shadow: none; }
 
-/* スイッチ */
 .switch { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
 .switch input { position: absolute; opacity: 0; }
 .switch-ui { position: relative; flex: none; width: 46px; height: 26px; margin-top: 2px; border-radius: 999px; background: var(--line-2); transition: background .2s; }
@@ -94,7 +88,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .switch input:focus-visible + .switch-ui { outline: 2px solid var(--teal); outline-offset: 2px; }
 .switch small { display: block; color: var(--sub); font-size: .8rem; }
 
-/* ---------- ログイン ---------- */
 .gate { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
 .gate-card {
   width: min(420px, 100%); padding: 36px 30px 28px; border: 1px solid var(--line); border-radius: 24px;
@@ -106,7 +99,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .gate-card form { text-align: left; }
 .gate-msg { min-height: 1.5em; margin: 14px 0 0; color: var(--rose); font-weight: 700; font-size: .9rem; }
 
-/* ---------- 枠 ---------- */
 .shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
 .rail {
   position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 18px; padding: 22px 14px;
@@ -155,7 +147,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .pill-brand::before { display: none; }
 @keyframes blink { 50% { opacity: .3; } }
 
-/* ---------- ダッシュボード ---------- */
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
 .kpi { position: relative; overflow: hidden; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); text-decoration: none; transition: border-color .15s, transform .15s; }
 .kpi:hover { border-color: var(--line-2); transform: translateY(-2px); }
@@ -168,14 +159,12 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .status-list > div:first-child { border-top: 0; }
 .status-list dt { color: var(--sub); font-weight: 700; font-size: .85rem; }
 .status-list dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-/* ---------- お知らせ・配信 ---------- */
 .preview-bar { padding: 10px 14px; border-radius: 10px; background: #2F3440; font-weight: 700; text-align: center; }
 .preview-bar.is-urgent { background: var(--red); }
 .preview-bar.is-urgent::before { content: "緊急"; margin-right: .6em; padding: 0 .5em; border-radius: 4px; background: #fff; color: var(--red); font-size: .85em; }
 .embed { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; background: #000; }
 .embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
-/* ---------- 混雑 ---------- */
 .crowd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
 .venue h3 { margin: 0; font-family: var(--head); font-weight: 900; font-size: 1.1rem; }
 .venue .now { margin: 2px 0 14px; color: var(--sub); font-size: .85rem; }
@@ -193,7 +182,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .chatter { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
 .chatter .row { grid-column: 1 / -1; }
 
-/* ---------- 投稿 ---------- */
 .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 .tabs button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--sub); font-weight: 700; cursor: pointer; }
 .tabs button b { margin-left: 4px; font-family: var(--mono); color: var(--ink); }
@@ -216,7 +204,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .tag-brand { background: linear-gradient(90deg, #3E6BD6, #C8323A); color: #fff; }
 .empty { grid-column: 1 / -1; padding: 40px; border: 1px dashed var(--line-2); border-radius: var(--radius); color: var(--sub); text-align: center; }
 
-/* ---------- 模擬店・印刷（受付） ---------- */
 .shops-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
 .shops-main { display: grid; gap: 12px; min-width: 0; }
 .shops-side { position: sticky; top: 16px; display: grid; gap: 14px; }
@@ -258,7 +245,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .qr-box { display: grid; place-items: center; gap: 8px; padding: 14px; border-radius: 14px; background: #fff; color: #111; }
 .qr-box small { max-width: 220px; word-break: break-all; font-family: var(--mono); font-size: .7rem; }
 
-/* ---------- 文章と書体 ---------- */
 .font-sample { margin-top: 8px; padding: 14px; border-radius: 12px; background: #FEEBC4; color: #634A2E; font-size: 1.35rem; line-height: 1.35; min-height: 64px; }
 .font-sample.is-text { font-weight: 700; font-size: 1rem; }
 .font-sample.is-body { font-size: .95rem; }
@@ -273,14 +259,12 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .savebar .muted { margin-right: auto; padding-left: 8px; }
 #text-fields { display: grid; gap: 18px; margin-top: 18px; }
 
-/* ---------- スタンプラリー ---------- */
 .pin-view { display: inline-flex; align-items: baseline; gap: 10px; padding: 8px 14px; border: 1px dashed var(--sun); border-radius: 12px; background: rgba(242, 169, 106, .08); }
 .prize-out { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
 .prize-out input:checked + .switch-ui { background: var(--rose, #FF6B7A); }
 .pin-view b { font-family: var(--mono); font-size: 1.4rem; letter-spacing: .12em; color: var(--sun); }
 .pin-view small { color: var(--sub); font-size: .75rem; }
 
-/* ---------- 印刷（上に重ねて確かめる画面） ---------- */
 .seg-col { display: grid; border-radius: 16px; }
 .seg-col span { border-radius: 12px; }
 .seg-col small { display: block; font-weight: 400; font-size: .75rem; color: var(--sub); }
@@ -302,9 +286,7 @@ body.is-printing { overflow: hidden; }
 .print-area .sheet { zoom: .55; margin: 0 auto 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
 .print-area .empty { background: transparent; }
 
-/* 紙（A4）。画面では縮めて見せ、印刷ではそのままの大きさ */
 .sheet {
-  /* 白黒で刷るので、色は黒と白だけ。強調は色でなく、太さ・枠・白抜きで */
   --ink: #000; --red: #000; --paper: #fff; --cream: #fff;
   position: relative; box-sizing: border-box; width: 210mm; height: 297mm; overflow: hidden; padding: 14mm;
   background: var(--paper); color: var(--ink); font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif; font-weight: 700;
@@ -312,7 +294,7 @@ body.is-printing { overflow: hidden; }
 }
 .sheet .ps-head { display: flex; align-items: center; gap: 4mm; padding-bottom: 4mm; border-bottom: .6mm solid var(--ink); }
 .sheet .ps-head img { width: 18mm; height: auto; }
-.sheet .ps-head img, .sheet .pf-head img { filter: grayscale(1) brightness(.35); } /* 色のロゴは白黒だと薄くなるので、濃い黒に */
+.sheet .ps-head img, .sheet .pf-head img { filter: grayscale(1) brightness(.35); }
 .sheet .ps-head b { display: block; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 7mm; }
 .sheet .ps-head small { display: block; font-size: 3.6mm; opacity: .75; }
 .sheet .ps-name { margin: 2mm 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 17mm; line-height: 1.1; word-break: auto-phrase; }
@@ -336,7 +318,6 @@ body.is-printing { overflow: hidden; }
 .ps-url { margin: 8mm 0 0; font-family: "Roboto Mono", monospace; font-size: 3mm; word-break: break-all; opacity: .7; }
 .ps-foot { position: absolute; left: 14mm; right: 14mm; bottom: 12mm; margin: 0; font-size: 3.6mm; text-align: center; opacity: .75; }
 
-/* 来場者向けの案内チラシ */
 .pf { display: flex; flex-direction: column; height: 100%; }
 .pf-a5 { display: grid; grid-template-rows: 1fr 1fr; padding: 0; }
 .pf-a5 .pf { padding: 9mm 12mm; zoom: .7; height: calc(148.5mm / .7); }
@@ -355,13 +336,9 @@ body.is-printing { overflow: hidden; }
 .pf-notes { margin: 7mm 0 0; padding: 4mm 4mm 4mm 10mm; border: .5mm solid var(--ink); border-radius: 4mm; font-size: 4.2mm; line-height: 1.7; }
 .pf-foot { margin: auto 0 0; padding-top: 4mm; font-size: 4mm; text-align: center; opacity: .75; }
 
-/* 三角POP：A4 を 3 段（点線で山折り）＋下ののりしろ。縦に立てるので、各面の中身は -90度まわす（紙の右の辺が下になる） */
 .sheet.pt { --ph: calc((297mm - 11mm) / 3); display: grid; grid-template-rows: repeat(3, var(--ph)) 11mm; padding: 0; }
 .sheet.pt { position: relative; }
 .pt-panel { border-bottom: .3mm dashed #888; }
-/* 各面の中身は、まわす前の箱（幅 --ph × 高さ 200mm）を紙のまん中（上から 48.5〜248.5mm）に置き、
-   まわしてから、その面（k 段目）の高さへずらす。まわす前の箱が A4 の外にはみ出すと、
-   印刷のときにページの切れ目で中身が欠けるので（画面では正しく見えても）、はみ出さない位置に置く */
 .pt-face {
   position: absolute; left: calc((210mm - var(--ph)) / 2); top: 48.5mm; box-sizing: border-box; width: var(--ph); height: 200mm; padding: 8mm 7mm;
   display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5mm; text-align: center;
@@ -374,14 +351,13 @@ body.is-printing { overflow: hidden; }
 .tcy { text-combine-upright: all; }
 .pt-name { justify-content: flex-start; gap: 8mm; }
 .pt-logo { width: 26mm; height: auto; filter: grayscale(1) brightness(.35); }
-.pt-name-v { max-height: 145mm; text-align: start; }  /* 店名と部活名をまとめて左右の中央に、文字は上から */
+.pt-name-v { max-height: 145mm; text-align: start; }
 .pt-shop { margin: 0 0 0 4mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 16mm; line-height: 1.15; word-break: auto-phrase; }
 .pt-group { margin: 0; font-size: 7.5mm; line-height: 1.3; }
 .pt-links { justify-content: space-between; gap: 6mm; }
 .pt-links-name { flex: 1; min-height: 0; max-height: 135mm; text-align: start; }
 .pt-links-name .pt-shop { font-size: 12mm; margin: 0 0 0 3mm; }
 .pt-links-name .pt-group { font-size: 5.5mm; }
-/* サイトの QR：小さく横に2つ（三角POP の3段目の下・貼り紙の下） */
 .pl-links { display: flex; justify-content: center; gap: 8mm; }
 .pl-link { display: flex; flex-direction: column; align-items: center; gap: 1.5mm; width: 32mm; margin: 0; text-align: center; }
 .pl-qr { width: 26mm; height: 26mm; image-rendering: pixelated; }
@@ -399,7 +375,6 @@ body.is-printing { overflow: hidden; }
 .pt-rally-qr img { width: 52mm; height: 52mm; image-rendering: pixelated; }
 .pt-rally-qr figcaption { margin-top: 2mm; font-size: 4.4mm; }
 .pt-glue { display: grid; place-items: center; font-size: 3.2mm; letter-spacing: .4em; color: #666; }
-/* 貼り紙（壁に貼る A4 たて）：三角POP と同じ中身を上から順に。名前は横書き、スタンプラリーは縦書きの文と QR */
 .sheet.pw { display: grid; grid-template-rows: auto 1fr auto auto; gap: 8mm; padding: 14mm 14mm 10mm; }
 .pw-name { display: flex; align-items: center; gap: 7mm; padding-bottom: 6mm; border-bottom: .6mm solid var(--ink); }
 .pw-logo { flex: none; width: 30mm; height: auto; filter: grayscale(1) brightness(.35); }
@@ -426,7 +401,6 @@ body.is-printing { overflow: hidden; }
   .print-area .empty { display: none; }
 }
 
-/* ---------- お知らせの小窓 ---------- */
 .toast {
   position: fixed; left: 50%; bottom: 24px; z-index: 50; translate: -50% 20px; opacity: 0; pointer-events: none;
   padding: 12px 20px; border-radius: 999px; background: #EAF0F7; color: #0B0E14; font-weight: 800; box-shadow: var(--shadow); transition: opacity .2s, translate .2s;
@@ -439,7 +413,6 @@ body.is-printing { overflow: hidden; }
   .shops-side { position: static; }
 }
 
-/* ---------- スマホ：メニューは下に ---------- */
 .only-sp { display: none; }
 @media (max-width: 860px) {
   .only-sp { display: inline-flex; }
@@ -463,15 +436,12 @@ body.is-printing { overflow: hidden; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
-/* ---------- サイトの設定 ---------- */
-/* パスワードをたずねる小窓 */
 .pw-dialog { width: min(92vw, 400px); padding: 22px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
 .pw-dialog::backdrop { background: rgba(4, 6, 10, .7); backdrop-filter: blur(2px); }
 .pw-dialog h2 { margin: 0; font-family: var(--head); font-weight: 900; font-size: 1.15rem; }
 .pw-dialog p { margin: 0; }
 .pw-msg { min-height: 1.4em; color: #FF8A97; font-weight: 700; font-size: .85rem; }
 .pw-actions { justify-content: flex-end; }
-/* 全員の状況 */
 .rally-all { display: grid; gap: 12px; }
 .rally-kpis { grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .rally-kpis .kpi { padding: 12px 14px; }
@@ -484,7 +454,6 @@ body.is-printing { overflow: hidden; }
 .rally-table .bar { display: block; height: 8px; width: calc(var(--p) * 100%); min-width: 2px; border-radius: 999px; background: var(--teal); }
 .rally-table tr + tr { border-top: 1px solid var(--line); }
 .rally-foot { font-size: .78rem; }
-/* トップページの並び：⠿ をつかんで上下にドラッグ */
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .blocks { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .block-row { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); transition: opacity .15s, box-shadow .15s; }
@@ -501,17 +470,12 @@ body.is-printing { overflow: hidden; }
 .block-show { align-items: center; }
 .seg span small { font-weight: 500; font-size: .72rem; opacity: .8; }
 
-/* =====================================================
-   本サイトの見た目に合わせる（紙・こげ茶・ずらした影・WDXL の見出し）
-   印刷する紙（.sheet）は白黒のまま
-   ===================================================== */
 .eyebrow { font-family: var(--head); font-weight: 400; letter-spacing: .2em; color: var(--sub); }
 h1, h2, h3 { font-weight: 400; }
 .topbar h1, .gate-card h1, .brand b, .card-head h2, .side-details summary h2, .venue h3, .shop h3, .topbar h1 { font-size: clamp(1.7rem, 3vw, 2.3rem); }
 .card-head h2 { font-size: 1.35rem; }
 .clock { color: var(--ink); }
 
-/* 紙の札 */
 .card, .kpi, .post, .shop, .cshop, .block-row, .card-edit, .gate-card, .pw-dialog {
   border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--grain), var(--iro), var(--panel); box-shadow: var(--shadow);
 }
@@ -526,7 +490,6 @@ h1, h2, h3 { font-weight: 400; }
 .kpi b { font-weight: 400; font-size: 2.3rem; }
 .status-list > div { border-top: 1px dashed var(--line-2); }
 
-/* 左のメニュー */
 .rail { border-right: 2px solid var(--ink); background: var(--grain), var(--panel); backdrop-filter: none; }
 .nav a { color: var(--ink); border-radius: 999px; font-family: var(--head); font-weight: 400; font-size: 1.05rem; }
 .nav a:hover { background: var(--panel-2); color: var(--ink); }
@@ -537,7 +500,6 @@ h1, h2, h3 { font-weight: 400; }
 .me { border: 1.5px solid var(--ink); background: var(--panel-2); }
 .me-who { color: var(--ink); }
 
-/* ボタン：ずらした影。押すと影の方へ沈む */
 .btn { border: 1.5px solid var(--ink); font-family: var(--head); font-weight: 400; font-size: 1rem; letter-spacing: .02em; box-shadow: -3px 2px 0 var(--press); transition: translate .12s, box-shadow .12s, background .15s; }
 .btn:active { transform: none; translate: -3px 2px; box-shadow: 0 0 0 var(--press); }
 .btn-primary { background: var(--grain), #634A2E; color: #FEEBC4; box-shadow: -3px 2px 0 var(--press); }
@@ -550,7 +512,6 @@ h1, h2, h3 { font-weight: 400; }
 .btn-ok:hover { background: #e2f3e8; }
 .btn-sm { font-size: .9rem; }
 
-/* 入力 */
 .field > span { color: var(--sub); }
 .field input, .field textarea, .field select, .desk-search, .cshop-msg input { border: 1.5px solid var(--line-2); background: var(--bg-2); color: var(--ink); font-weight: 700; }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--ink); box-shadow: -3px 2px 0 var(--press); }
@@ -559,7 +520,6 @@ h1, h2, h3 { font-weight: 400; }
 .desk-search svg { stroke: var(--ink); }
 .desk-search input { color: var(--ink); border: 0; }
 
-/* 切りかえ・タブ・スイッチ */
 .seg { border: 1.5px solid var(--ink); background: var(--bg-2); }
 .seg span { color: var(--ink); font-family: var(--head); font-weight: 400; }
 .seg input:checked + span { background: var(--grain), #634A2E; color: #FEEBC4; box-shadow: none; }
@@ -574,7 +534,6 @@ h1, h2, h3 { font-weight: 400; }
 .switch input:checked + .switch-ui { background: var(--red); }
 .switch input:focus-visible + .switch-ui { outline-color: var(--ink); }
 
-/* 札・ピル */
 .pill { border: 1.5px solid var(--line-2); background: var(--panel-2); color: var(--ink); font-weight: 700; }
 .pill::before { background: var(--dim); }
 .pill.is-on { background: #e2f3e8; border-color: var(--green); color: var(--green); }
@@ -593,7 +552,6 @@ h1, h2, h3 { font-weight: 400; }
 .preview-bar.is-urgent { background: var(--red); color: #fff; }
 .preview-bar.is-urgent::before { background: #fff; color: var(--red); }
 
-/* 混雑・お店のボタン */
 .levels button, .shop-status button { border: 1.5px solid var(--ink); background: var(--panel); color: var(--ink); font-family: var(--head); font-weight: 400; box-shadow: -3px 2px 0 var(--press); transition: translate .12s, box-shadow .12s; }
 .levels button:active, .shop-status button:active { translate: -3px 2px; box-shadow: 0 0 0 var(--press); }
 .levels button[aria-pressed="true"], .shop-status button[aria-pressed="true"] { background: var(--c); border-color: var(--ink); color: #2b1d0e; }
@@ -605,18 +563,15 @@ h1, h2, h3 { font-weight: 400; }
 .pin-view b { color: var(--sun); font-weight: 400; }
 .prize-out { border-top: 1px dashed var(--line-2); }
 
-/* 投稿 */
 .post-photo { background: repeating-conic-gradient(#efe0bd 0 25%, #f6e8c8 0 50%) 0 0 / 22px 22px; }
 .post-photo .flag { background: rgba(255, 251, 242, .92); backdrop-filter: none; }
 .post { overflow: hidden; }
 
-/* 数字の表 */
 .rally-table .bar { background: var(--red); }
 .rally-table tr + tr { border-top: 1px dashed var(--line-2); }
 .rally-table .num { font-family: var(--head); }
 .rally-kpis .kpi b { font-size: 1.9rem; }
 
-/* 並びかえ */
 .block-row.is-top { border-color: var(--red); box-shadow: -4px 3px 0 var(--red); }
 .block-row.is-dragging { background: var(--panel-2); box-shadow: -6px 5px 0 var(--press); }
 .block-grip { color: var(--ink); }
@@ -624,11 +579,9 @@ h1, h2, h3 { font-weight: 400; }
 .block-no { color: var(--red); font-weight: 400; }
 .block-row.is-top .block-name b::after { background: var(--red); color: #fff; }
 
-/* 文章と書体 */
 .savebar { border: 1.5px solid var(--ink); background: var(--grain), var(--panel); backdrop-filter: none; box-shadow: var(--shadow); }
 .changed > span::after { background: #fdecd8; color: var(--sun); }
 
-/* 小窓・印刷の確かめ */
 .toast { background: #634A2E; color: #FEEBC4; box-shadow: var(--shadow); font-family: var(--head); font-weight: 400; }
 .toast.is-error { background: var(--red); color: #fff; }
 .pw-dialog { color: var(--ink); }
@@ -639,7 +592,6 @@ h1, h2, h3 { font-weight: 400; }
 .pr-bar-text small { color: var(--red); }
 .print-area .sheet { box-shadow: -6px 5px 0 var(--press); }
 
-/* ログイン */
 .gate { background: none; }
 .gate-msg { color: var(--red); }
 
@@ -654,10 +606,8 @@ h1, h2, h3 { font-weight: 400; }
 .post-reply textarea { width: 100%; padding: 8px 12px; border: 1.5px solid var(--line-2); border-radius: var(--radius-sm); background: var(--bg-2); color: var(--ink); font: inherit; font-size: 15px; resize: vertical; }
 .post-reply[hidden] { display: none; }
 
-/* 模擬店の画面は、受付と一覧だけ（印刷は「印刷・スタンプ」へ分けた） */
 .shops-layout { grid-template-columns: minmax(0, 1fr); }
 
-/* ---------- 投稿の管理：来場者のタイムラインと同じ並び（投稿の下にコメント）。非表示・削除は「…」の中 ---------- */
 .tl { display: grid; gap: 18px; max-width: 640px; margin: 0 auto; width: 100%; }
 .tl-thread { position: relative; padding: 0; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--grain), var(--iro), var(--panel); box-shadow: var(--shadow); }
 .tl-thread.is-off { opacity: .6; }
@@ -703,16 +653,14 @@ h1, h2, h3 { font-weight: 400; }
 .post-reply { padding: 0 14px 14px; border-top: 1px dashed var(--line-2); }
 .tl-replybar { display: flex; align-items: center; gap: 8px; padding-top: 10px; }
 .tl-replybar textarea { flex: 1; min-width: 0; padding: 8px 12px; border: 1.5px solid var(--line-2); border-radius: 999px; background: var(--bg-2); color: var(--ink); font: inherit; font-size: 15px; resize: none; }
-.tl-thread:has(.tl-menu[open]) { z-index: 6; } /* 「…」のメニューが、次の投稿の下にかくれない */
+.tl-thread:has(.tl-menu[open]) { z-index: 6; }
 
-/* 混雑の一斉変更・設定しない */
 .bulk { margin-bottom: 14px; }
 .bulk-levels { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .levels .clear, .shop-status .clear { border-style: dashed; }
 .venue .clear { margin-top: 8px; width: 100%; padding: 8px; border: 1px dashed var(--line); border-radius: 8px; background: transparent; color: var(--muted, #9aa0a6); cursor: pointer; font-weight: 700; }
 .cshops-bulk { margin: 0 0 12px; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; align-items: center; }
 .cshops-bulk b { margin-right: 6px; font-size: .85rem; }
-/* スケジュール */
 .sched-shift { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 10px; }
 .sched-day { margin: 18px 0 8px; font-size: 1.05rem; }
 .sched-row { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 14px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--card, var(--bg-2)); }
@@ -725,11 +673,6 @@ h1, h2, h3 { font-weight: 400; }
 .sched-row s { opacity: .65; }
 @media (max-width: 760px) { .sched-row { grid-template-columns: 1fr; } }
 
-/* =====================================================
-   アクセス（stats.js）：閲覧の数のグラフ
-   色：1系列のグラフは青。端末は スマホ＝青・パソコン＝橙・タブレット＝緑（色の見え方がちがう人にも区別できる組み合わせ。順番は変えない）
-   棒は細く（24px まで）、上だけ丸く。目もりの線は、うすい実線。字は、いつもの字の色（グラフの色は使わない）
-   ===================================================== */
 #view-stats { --st-main: #C8323A; --st-1: #2f6fc4; --st-2: #E2622E; --st-3: #1f9a78; --st-surface: #FFFBF2; --st-grid: rgba(99, 74, 46, .14); }
 .st { display: grid; gap: 18px; }
 .kpi.is-static:hover { border-color: var(--line); }
@@ -737,16 +680,13 @@ h1, h2, h3 { font-weight: 400; }
 .st .card-head { flex-wrap: wrap; gap: 4px 12px; }
 .st .card-head small { margin-left: 0; font-size: .78rem; }
 .st-note { margin: 10px 0 0; font-size: .8rem; }
-/* 日を選ぶ：その下の「時間ごと」「端末」が変わる */
 .st-filter { display: flex; align-items: center; gap: 10px; font-size: .85rem; color: var(--sub); }
 .st-filter select { padding: 7px 12px; border: 1.5px solid var(--line-2); border-radius: 999px; background: var(--bg-2); font-size: .9rem; cursor: pointer; }
-/* グラフの枠：左に目もりの数、右に描くところ。下に、時間や日付の字の帯（枠の高さに入れておく） */
 .st-chart { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 8px; padding: 22px 12px 26px 0; }
 .st-y { position: relative; min-width: 2.2em; height: 180px; font-size: .7rem; color: var(--sub); font-variant-numeric: tabular-nums; }
 .st-y span { position: absolute; right: 0; translate: 0 50%; line-height: 1; }
 .st-plot { position: relative; height: 180px; border-bottom: 1px solid var(--line-2); }
 .st-grid { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--st-grid); pointer-events: none; }
-/* 棒：1本ずつが、合わせる的（棒より広い、列ぜんぶ） */
 .st-cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
 .st-col { position: relative; display: flex; align-items: flex-end; justify-content: center; height: 100%; padding: 0; border: 0; background: none; cursor: default; }
 .st-bar { position: relative; display: block; width: min(24px, 100% - 2px); height: var(--h); border-radius: 4px 4px 0 0; background: var(--st-main); transition: height .4s cubic-bezier(.2, .8, .2, 1); }
@@ -755,7 +695,6 @@ h1, h2, h3 { font-weight: 400; }
 .st-bar b { position: absolute; left: 50%; bottom: calc(100% + 3px); translate: -50% 0; font: 700 .72rem/1 var(--font); color: var(--ink); white-space: nowrap; }
 .st-col small { position: absolute; top: calc(100% + 7px); left: 50%; translate: -50% 0; font-size: .7rem; line-height: 1; color: var(--sub); white-space: nowrap; }
 .st-col.is-now small { color: var(--ink); font-weight: 900; }
-/* 線：2px の線と、うすい面。右はしの点が「いま」 */
 .st-chart.is-line { padding-right: 18px; }
 .st-chart.is-line svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .st-line { fill: none; stroke: var(--st-main); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
@@ -765,7 +704,6 @@ h1, h2, h3 { font-weight: 400; }
 .st-cross { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid var(--line-2); pointer-events: none; }
 .st-xl { position: absolute; left: 0; right: 0; top: calc(100% + 7px); height: 0; }
 .st-xl span { position: absolute; translate: -50% 0; font-size: .7rem; line-height: 1; color: var(--sub); white-space: nowrap; }
-/* 端末：横の積み上げ（あいだは 2px あける。線で囲まない） */
 .st-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 6px; padding: 0; list-style: none; font-size: .8rem; }
 .st-legend i { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
 .st .is-phone { background: var(--st-1); color: #fff; }
@@ -781,12 +719,10 @@ h1, h2, h3 { font-weight: 400; }
 .st-seg:only-child { border-radius: 4px; }
 .st-seg:hover { filter: brightness(1.12); }
 .st-none { grid-column: 2 / -1; margin: 0; font-size: .8rem; }
-/* 合わせたときの札：数を大きく、何の数かを小さく */
 .st-tip { position: fixed; z-index: 90; display: grid; gap: 1px; padding: 6px 11px 7px; border-radius: 8px; background: var(--ink); color: #FFFBF2; text-align: center; pointer-events: none; box-shadow: var(--shadow); }
 .st-tip[hidden] { display: none; }
 .st-tip b { font: 900 1rem/1.2 var(--font); }
 .st-tip span { font-size: .72rem; line-height: 1.3; opacity: .85; }
-/* 表で見る：グラフと同じ数 */
 .st-table { margin-top: 6px; font-size: .8rem; }
 .st-table summary { width: fit-content; color: var(--sub); cursor: pointer; }
 .st-table table { margin-top: 8px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -797,7 +733,6 @@ h1, h2, h3 { font-weight: 400; }
 @media (prefers-reduced-motion: reduce) { .st-bar { transition: none; } }
 #view-stats .switch { margin-top: 14px; }
 
-/* ---------- お知らせの見た目（フォント・大きさ・色・アイコン・リンク・期間・場所） ---------- */
 .nt-set { display: grid; gap: 12px; margin: 0; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
 .nt-set legend { padding: 0 6px; font-size: .8rem; font-weight: 700; color: var(--sub); }
 .nt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
@@ -814,12 +749,10 @@ h1, h2, h3 { font-weight: 400; }
 .nt-custom label { display: inline-flex; align-items: center; gap: 6px; }
 .nt-custom input[type="color"] { width: 38px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
 .nt-wheres label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: .88rem; cursor: pointer; }
-/* 入力欄用の「幅いっぱい」の設定を、チェックボックス・色えらびには当てない（文字が縦に折れないように） */
 .field .nt-wheres input, .field .nt-custom input[type="checkbox"] { width: auto; padding: 0; flex: none; }
 .field .nt-custom input[type="color"] { width: 38px; height: 28px; padding: 0; }
 .nt-wheres label, .nt-custom label { white-space: nowrap; }
 
-/* お知らせのカード：画面いっぱいに広げ、左（種類・文・プレビュー・ボタン）と右（見た目・リンク・期間と場所）の2列に */
 .grid-2 > .nt-card { grid-column: 1 / -1; }
 .nt-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 18px 26px; align-items: start; }
 .nt-main { position: sticky; top: 12px; }

@@ -1,20 +1,13 @@
-// 本部コンソールの「アクセス」：閲覧の数を、グラフで見る。数は Firestore から届くたびに描き直す（staff.js が renderStats を呼ぶ）。
-// - いまのようす：5分ごとの、サイトを開いていた端末の数（presence）。直近2時間
-// - 時間ごと：選んだ日の、1時間ごとの端末の数（visit_hours）
-// - 日ごと：1日ごとの端末の数（visit_counts）
-// - 端末：スマホ・パソコン・タブレットの割合（visit_devices）
-// グラフは外の部品を使わず、HTML と SVG で描く。棒にマウス（またはキーボードの Tab）を合わせると数が出る。同じ数は「表で見る」にもある。
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const WIN = 5 * 60000; // 「いまのようす」の1区切り（5分）
+const WIN = 5 * 60000;
 const JST = "Asia/Tokyo";
-const dayKey = (ms) => new Intl.DateTimeFormat("sv-SE", { timeZone: JST }).format(new Date(ms)); // 2026-10-24
+const dayKey = (ms) => new Intl.DateTimeFormat("sv-SE", { timeZone: JST }).format(new Date(ms));
 const hourOf = (ms) => new Intl.DateTimeFormat("en-GB", { timeZone: JST, hour: "2-digit", hourCycle: "h23" }).format(new Date(ms)).slice(0, 2);
 const hm = (ms) => new Intl.DateTimeFormat("ja-JP", { timeZone: JST, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(ms));
-const md = (day) => `${Number(day.slice(5, 7))}/${Number(day.slice(8, 10))}`; // 10/24
-const mdw = (day) => `${md(day)}（${"日月火水木金土"[new Date(`${day}T12:00:00Z`).getUTCDay()]}）`; // 10/24（土）
+const md = (day) => `${Number(day.slice(5, 7))}/${Number(day.slice(8, 10))}`;
+const mdw = (day) => `${md(day)}（${"日月火水木金土"[new Date(`${day}T12:00:00Z`).getUTCDay()]}）`;
 const num = (n) => Number(n ?? 0).toLocaleString("ja-JP");
 
-// 目もりの上限と刻み：きりのいい数（1・2・5 × 10 の何乗）で、3〜4本
 function scale(max) {
   const m = Math.max(1, max);
   const raw = m / 4, p = 10 ** Math.floor(Math.log10(raw)), f = raw / p;
@@ -26,7 +19,6 @@ const yAxis = (s) => `<div class="st-y" aria-hidden="true">${s.ticks.map((t) => 
 const grid = (s) => s.ticks.slice(1).map((t) => `<i class="st-grid" style="bottom:${(t / s.top) * 100}%"></i>`).join("");
 const table = (head, rows) => `<details class="st-table"><summary>表で見る</summary><table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => (i ? `<td>${esc(c)}</td>` : `<th>${esc(c)}</th>`)).join("")}</tr>`).join("")}</tbody></table></details>`;
 
-// 棒グラフ：items = [{ label（下の字）, tip（合わせたときの見出し）, value, mark（数を棒の上にも出す）, now（いまの棒） }]
 function columns(items, { unit, every = 1, label }) {
   const s = scale(Math.max(0, ...items.map((x) => x.value)));
   const cols = items.map((x, i) => `<button type="button" class="st-col${x.now ? " is-now" : ""}" data-tip="${esc(x.tip)}" data-val="${esc(num(x.value))}${esc(unit)}" style="--h:${(x.value / s.top) * 100}%" aria-label="${esc(x.tip)} ${esc(num(x.value))}${esc(unit)}">
@@ -34,12 +26,10 @@ function columns(items, { unit, every = 1, label }) {
   return `<div class="st-chart" role="group" aria-label="${esc(label)}">${yAxis(s)}<div class="st-plot">${grid(s)}<div class="st-cols" style="--n:${items.length}">${cols}</div></div></div>`;
 }
 
-// ---------- いまのようす（直近2時間・5分ごと）：線と、うすい面。右はしの点が「いま」 ----------
 function nowSeries(presence, now) {
   const w1 = Math.floor(now / WIN), N = 24;
   return Array.from({ length: N }, (_, k) => { const w = w1 - (N - 1 - k); return { w, n: presence[w] ?? 0, from: w * WIN }; });
 }
-// いま見ている人：いまの5分は、まだ数えている途中なので、前の5分と多いほう
 const nowCount = (presence, now) => { const w = Math.floor(now / WIN); return Math.max(presence[w] ?? 0, presence[w - 1] ?? 0); };
 function nowChart(series) {
   const s = scale(Math.max(0, ...series.map((p) => p.n)));
@@ -57,7 +47,6 @@ function nowChart(series) {
     </div></div>`;
 }
 
-// ---------- 端末：横の積み上げ棒（割合）。色は、スマホ・パソコン・タブレットで決まっていて、変わらない ----------
 const DEVICES = [["phone", "スマホ"], ["pc", "パソコン"], ["tablet", "タブレット"]];
 function deviceRow(name, d) {
   const all = DEVICES.reduce((a, [k]) => a + (d?.[k] ?? 0), 0);
@@ -66,8 +55,6 @@ function deviceRow(name, d) {
   return `<div class="st-dev"><span class="st-dev-name">${esc(name)}</span><div class="st-stack">${segs}</div><span class="st-dev-sum">${num(all)}台</span></div>`;
 }
 
-// ---------- 全部を描く ----------
-// data = { visits: { 日: 台 }, devices: { 日: { phone, tablet, pc } }, hours: { 日: { "13": 台 } }, presence: { 窓の番号: 台 }, day: 選んでいる日, now: いまの時刻（ms） }
 export function renderStats(root, data) {
   const { visits, devices, hours, presence, now } = data;
   const today = dayKey(now);
@@ -77,7 +64,6 @@ export function renderStats(root, data) {
   const total = Object.values(visits).reduce((a, b) => a + b, 0);
   const series = nowSeries(presence, now);
 
-  // 数字の札
   const tiles = [
     ["いま見ている", num(nowCount(presence, now)), "台（直近5分）"],
     ["この1時間", num(hours[today]?.[hNow] ?? 0), `台（${Number(hNow)}時台）`],
@@ -85,10 +71,8 @@ export function renderStats(root, data) {
     ["これまで", num(total), "台（のべ）"],
   ].map(([l, v, s]) => `<div class="kpi is-static"><small>${l}</small><b>${v}</b><span>${s}</span></div>`).join("");
 
-  // 時間ごと（0〜23時）
   const hourMax = Math.max(0, ...Object.values(H));
   const hourItems = Array.from({ length: 24 }, (_, h) => { const k = String(h).padStart(2, "0"), v = H[k] ?? 0; const cur = day === today && k === hNow; return { label: `${h}時`, tip: `${md(day)} ${h}時台`, value: v, now: cur, mark: v > 0 && (v === hourMax || cur) }; });
-  // 日ごと
   const dayMax = Math.max(0, ...days.map((d) => visits[d] ?? 0));
   const dayItems = days.map((d) => { const v = visits[d] ?? 0; return { label: md(d), tip: mdw(d), value: v, now: d === today, mark: v > 0 && (v === dayMax || d === today) }; });
   const devAll = { phone: 0, tablet: 0, pc: 0 };
@@ -122,15 +106,13 @@ export function renderStats(root, data) {
       ${columns(dayItems, { unit: "台", every: Math.ceil(days.length / 12), label: "1日ごとの端末の数" })}
       ${table(["日", "台"], [...dayItems].reverse().map((x) => [x.tip, num(x.value)]))}
     </article>`;
-  if (root._html === html) return; // 変わっていなければ、描き直さない（合わせている札や、開いた表が閉じないように）
-  if (root.contains(document.activeElement) && document.activeElement.tagName === "SELECT") return; // 日を選んでいる途中は、待つ
+  if (root._html === html) return;
+  if (root.contains(document.activeElement) && document.activeElement.tagName === "SELECT") return;
   const open = [...root.querySelectorAll("details")].map((d) => d.open);
   root.innerHTML = root._html = html;
   root.querySelectorAll("details").forEach((d, i) => { d.open = !!open[i]; });
 }
 
-// ---------- 合わせたときの、数の札（1つを使いまわす） ----------
-// 棒・積み上げの一部は、それ自体が当たり判定（マウスでもキーボードの Tab でも同じ）。線のグラフは、いちばん近い時間に縦の線が合う
 export function wireStats(root) {
   const tip = document.createElement("div");
   tip.className = "st-tip"; tip.hidden = true;

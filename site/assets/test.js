@@ -1,12 +1,8 @@
-// テスト用の操作パネル。URL に ?test=1 を付けたときだけ読み込まれる（来場者には出ない）。全ページ共通（test-loader.js が読みこむ）。
-// ページごとに動かせるもの（花火・メニュー・短冊＝トップ、画面送り＝サイネージ）は、各ページが globalThis.kosenHooks に入れておいたものだけ、パネルに出る。
-// 時刻・空・天気・デモデータは URL の値を変えて読み込み直す。花火やメニューなどはその場で動かす。
 import { RALLY, FESTIVAL } from "./config.js";
 
 const params = new URLSearchParams(location.search);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-// よく使う時刻（日本時間）
 export const TIMES = [
   ["いま（本当の時刻）", ""],
   ["開幕前（11:50）", "2026-10-24T11:50"],
@@ -23,23 +19,19 @@ export const TIMES = [
   ["花火（18:10）", "2026-10-25T18:10"],
   ["終了後", "2026-10-26T10:00"],
 ];
-// サイネージ：置く場所と、流す画面
 const PLACES = [["なし（道案内は出ない）", ""], ["第1講義室の前", "lecture1"], ["総務課の横の廊下の角", "soumu"], ["インフォメーション前", "info"]];
 const SCREENS = [["全部流す", ""], ["ようこそ", "intro"], ["ステージ", "stage"], ["最新の投稿", "posts"], ["人気の投稿", "popular"], ["模擬店", "shop"], ["混雑", "crowd"], ["道案内", "way"], ["シェア", "share"]];
 const hooksOf = () => globalThis.kosenHooks ?? {};
 const loadCss = () => { if (!document.querySelector("link[data-test-css]")) { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = new URL("./test.css", import.meta.url).href; l.dataset.testCss = ""; document.head.append(l); } };
 export const SKIES = [["自動", ""], ["明け方", "dawn"], ["昼", "day"], ["夕焼け", "sunset"], ["日暮れ", "dusk"], ["夜", "night"]];
 export const WEATHERS = [["本物", ""], ["晴れ", "clear"], ["くもり", "cloudy"], ["霧", "fog"], ["雨", "rain"], ["雪", "snow"], ["雷", "thunder"]];
-// トップページの場所（スクロールで出るもの）と、押すと開くパネル
 export const PANELS = [["日程・入口", "days"], ["みどころ", "pickup"], ["縁日（模擬店）", "ennichi"], ["ご来場の皆さまへ", "info"], ["協賛", "sponsors"],
   ["（パネル）高専祭について", "about"], ["（パネル）タイムテーブル", "schedule"], ["（パネル）Enistagram", "enistagram"], ["（パネル）混雑状況", "crowd"],
   ["（パネル）企画案内", "guide"], ["（パネル）食レポ・写真", "report"], ["（パネル）隠し縁のごほうび", "secret"]];
-// ほかのページ（今の設定のまま開く）
 export const PAGES = [["トップページ", "./"], ["校内マップ", "map.html"], ["Enistagram", "map.html?tab=feed"], ["みどころ", "mido.html"], ["スタンプカード", "rally.html"],
   ["模擬店総選挙", "vote.html"], ["模擬店用のページ", "shop.html"], ["ご利用にあたって", "terms.html"], ["会場ディスプレイ（サイネージ）", "signage.html"], ["本部コンソール", "staff/"]];
 const local = ["localhost", "127.0.0.1"].includes(location.hostname);
 
-// URL の値を変えて読み込み直す（test=1 は残す）
 function reloadWith(changes) {
   const p = new URLSearchParams(location.search);
   for (const [k, v] of Object.entries(changes)) {
@@ -50,10 +42,9 @@ function reloadWith(changes) {
   location.href = `${location.pathname}?${p}`;
 }
 function store(fn) {
-  try { fn(localStorage); } catch { /* 保存できないブラウザ */ }
+  try { fn(localStorage); } catch {  }
 }
 
-// スタンプ・隠し縁・最初の演出（このブラウザに保存されている分を直接いじって、読み込み直す）
 const setStamps = (ids) => {
   store((ls) => ls.setItem("kosen63-rally", JSON.stringify({ stamps: Object.fromEntries(ids.map((id) => [id, Date.now()])), claimedAt: null })));
   location.reload();
@@ -70,15 +61,12 @@ const STORAGE_ACTIONS = {
   secretReset: () => { store((ls) => ls.removeItem("kosen63-secrets")); location.reload(); },
   intro: () => { store((ls) => ls.removeItem("kosen63-intro-seen")); location.reload(); },
 };
-// トップの場所（見えていればそこへ）か、パネル（#about など）を開く
 function goTo(id) {
   const el = document.getElementById(id);
   if (el && !el.hidden) el.scrollIntoView({ behavior: "smooth", block: "start" });
   else location.hash = id;
 }
 
-// 本部コンソールの「プレビュー」から動かす（?preview=1 で iframe の中に開いたとき）。
-// 同じサイトの本部コンソールからのメッセージだけを受け付ける。できることはテスト用パネルと同じ
 export function initPreviewBridge(hooks) {
   if (window.parent === window) return;
   const actions = {
@@ -100,7 +88,7 @@ export function initPreviewBridge(hooks) {
 export function initTest() {
   loadCss();
   const hooks = hooksOf();
-  const sg = hooks.signage; // サイネージのときだけ
+  const sg = hooks.signage;
   const now = params.get("now") ?? params.get("t") ?? "";
   if (sg) { document.documentElement.style.cursor = "auto"; document.body.style.cursor = "auto"; }
   const box = document.createElement("aside");
@@ -187,7 +175,6 @@ export function initTest() {
   document.body.append(box);
   const $ = (s) => box.querySelector(s);
 
-  // たたむ（たたんだ状態は覚えておく）
   const fold = (on) => { box.classList.toggle("is-folded", on); store((ls) => ls.setItem("kosen63-test-folded", on ? "1" : "")); };
   let folded = false;
   store((ls) => { folded = !!ls.getItem("kosen63-test-folded"); });
@@ -195,49 +182,41 @@ export function initTest() {
   $(".tw-fold").addEventListener("click", () => fold(!box.classList.contains("is-folded")));
   $(".tw-head b").addEventListener("click", () => fold(false));
 
-  // 時刻
   $("#tw-time").addEventListener("change", (e) => { if (e.target.value !== "__custom") reloadWith({ now: e.target.value }); });
   $("#tw-dt-go").addEventListener("click", () => reloadWith({ now: $("#tw-dt").value }));
   box.querySelectorAll("[data-shift]").forEach((b) => b.addEventListener("click", () => {
     const base = now ? new Date(now + "+09:00") : new Date();
     const t = new Date(base.getTime() + Number(b.dataset.shift) * 60000);
-    const jst = new Date(t.getTime() + 9 * 3600000).toISOString().slice(0, 16); // 日本時間の YYYY-MM-DDTHH:MM
+    const jst = new Date(t.getTime() + 9 * 3600000).toISOString().slice(0, 16);
     reloadWith({ now: jst });
   }));
 
-  // 空・天気
   $("#tw-sky").addEventListener("change", (e) => reloadWith({ sky: e.target.value }));
   $("#tw-weather").addEventListener("change", (e) => reloadWith({ weather: e.target.value, wind: e.target.value ? $("#tw-wind").value : "" }));
   $("#tw-wind").addEventListener("input", (e) => ($("#tw-wind-v").textContent = e.target.value));
 
-  // データ
   $("#tw-demo").addEventListener("change", (e) => reloadWith({ demo: e.target.checked, urgent: e.target.checked && $("#tw-urgent").checked }));
   $("#tw-urgent").addEventListener("change", (e) => reloadWith({ urgent: e.target.checked }));
   $("#tw-emu")?.addEventListener("change", (e) => reloadWith({ emulator: e.target.checked }));
 
-  // 演出
   $("#tw-fire")?.addEventListener("click", () => hooks.playOpening());
   $("#tw-intro")?.addEventListener("click", () => STORAGE_ACTIONS.intro());
   $("#tw-wake")?.addEventListener("click", () => hooks.setAwake(true));
   $("#tw-sleep")?.addEventListener("click", () => hooks.setAwake(false));
   $("#tw-shake")?.addEventListener("click", () => hooks.shake?.push(12));
   $("#tw-rain")?.addEventListener("click", () => reloadWith({ weather: $("#tw-weather").value || "clear", wind: $("#tw-wind").value }));
-  // サイネージ
   $("#tw-at")?.addEventListener("change", (e) => reloadWith({ at: e.target.value }));
   $("#tw-o")?.addEventListener("change", (e) => reloadWith({ o: e.target.value }));
   box.querySelectorAll("[data-only]").forEach((b) => b.addEventListener("click", () => reloadWith({ only: b.dataset.only })));
   box.querySelectorAll("[data-step]").forEach((b) => b.addEventListener("click", () => sg?.step(+b.dataset.step)));
-  box.addEventListener("click", (e) => e.stopPropagation()); // 画面クリックで全画面にするページで、パネルを押しても起こさない
+  box.addEventListener("click", (e) => e.stopPropagation());
 
-  // スタンプ・隠し縁
   $("#tw-stamp1").addEventListener("click", () => STORAGE_ACTIONS.stamp1());
   $("#tw-stampall").addEventListener("click", () => STORAGE_ACTIONS.stampAll());
   $("#tw-stamp0").addEventListener("click", () => STORAGE_ACTIONS.stampClear());
   $("#tw-secret").addEventListener("click", () => STORAGE_ACTIONS.secretReset());
 
-  // パネル
   $("#tw-open")?.addEventListener("click", () => goTo($("#tw-panel").value));
-  // ほかのページへ。時刻・空・天気・デモなどの設定はそのまま持っていく
   $("#tw-go").addEventListener("click", () => {
     const target = new URL($("#tw-page").value, location.href);
     new URLSearchParams(location.search).forEach((v, k) => { if (!target.searchParams.has(k)) target.searchParams.set(k, v); });
@@ -246,11 +225,9 @@ export function initTest() {
 
   $("#tw-reset").addEventListener("click", () => { location.href = location.pathname; });
 
-  // 今の状態
   const state = () => {
     const b = document.body.dataset;
     const open = FESTIVAL.days.map((d) => d.label).join("・");
-    // ページにあるものだけ出す（開催前・開催中などはトップ、空・天気は theme.js のあるページ）
     const parts = [{ before: "開催前", during: "開催中", after: "終了後" }[b.phase], b.skyimg && `空:${b.skyimg}`, b.weather && `天気:${b.weather}`, document.body.classList.contains("awake") && "メニュー", `${innerWidth}×${innerHeight}`];
     $("#tw-state").textContent = parts.filter(Boolean).join(" / ");
     $("#tw-state").title = `開催日：${open}`;

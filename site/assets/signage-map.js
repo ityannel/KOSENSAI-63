@@ -1,5 +1,3 @@
-// 会場ディスプレイ（signage）の模擬店の画面に出す、小さな地図：ディスプレイの場所（?at=）から、そのお店の教室までの道順を、線が伸びていくようにたどる。
-// 図は campus.js（建物の形）と assets/map/rooms.json（部屋の四角）、道順は route.js（校内マップと同じ計算）を使う。
 import { BUILDINGS, ROOM_FIX } from "./campus.js";
 import { findRoute } from "./route.js";
 import { MAP } from "./config.js";
@@ -7,14 +5,12 @@ import { MAP } from "./config.js";
 let roomsP = null;
 const loadRooms = () => (roomsP ??= fetch("assets/map/rooms.json").then((r) => r.json()).then((j) => j.rooms ?? {}).catch(() => ({})));
 
-// 部屋番号 → 場所（findRoute に渡す形）。四角が取れていない部屋は、名前の位置の点にする
 function roomPlace(code, R) {
   const fix = ROOM_FIX[code], r = R[code];
   if (!r && !fix) return null;
   const floor = fix?.floor ?? r.floor, rect = fix?.rect ?? r.rect;
   return rect ? { id: code, code, floor, rect } : r?.label ? { id: code, code, floor, at: r.label, kind: "spot" } : null;
 }
-// ディスプレイの場所（config.js の SIGNAGE の here）：「いまここ」の目印（MAP.spots）か、部屋番号
 function spotPlace(key, R) {
   const sp = MAP.spots.find((s) => s.id === key);
   return sp?.at ? { ...sp, kind: "spot" } : roomPlace(key, R);
@@ -35,7 +31,6 @@ function buildingsSvg(floor) {
   return out.join("");
 }
 
-// fromKey：ディスプレイの場所（here）、toRoom：お店の教室の部屋番号。道順が出せなければ null
 export async function routeMap(fromKey, toRoom) {
   const R = await loadRooms();
   const from = spotPlace(fromKey, R), to = roomPlace(toRoom, R);
@@ -43,7 +38,6 @@ export async function routeMap(fromKey, toRoom) {
   let route = null;
   try { route = findRoute(from, to); } catch (e) { console.warn("[signage-map]", e); }
   if (!route?.legs?.length) return null;
-  // 見せる範囲：道順の全体＋余白。入れ物（700×340）の縦横比にそろえる
   const pts = route.legs.flatMap((l) => l.pts);
   const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
   let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
@@ -51,7 +45,7 @@ export async function routeMap(fromKey, toRoom) {
   x0 -= pad; x1 += pad; y0 -= pad; y1 += pad;
   let w = x1 - x0, h = y1 - y0;
   if (w / h < AR) { const nw = h * AR; x0 -= (nw - w) / 2; w = nw; } else { const nh = w / AR; y0 -= (nh - h) / 2; h = nh; }
-  const s = w / 700; // 線の太さなどの基準（図の大きさに合わせる）
+  const s = w / 700;
   const floors = [...new Set([from.floor ?? "1F", ...route.legs.map((l) => l.floor), to.floor])];
   const [fx, fy] = center(from), [tx, ty] = center(to);
   const groups = floors.map((f) => `<g class="mf" data-f="${f}">${f === "1F" ? "" : buildingsSvg("1F").replace(/class="bd/g, 'class="bd g')}${buildingsSvg(f)}
@@ -65,7 +59,6 @@ export async function routeMap(fromKey, toRoom) {
     </svg><span class="fl">${from.floor ?? "1F"}</span>
     <div class="stairs" aria-hidden="true"><div class="sq"><svg viewBox="0 0 130 100"><path class="stp" d="M8 90H36V68H62V46H88V24H122"/><circle class="sd" cx="14" cy="76" r="8"/></svg><span class="fp lo"></span><span class="fp hi"></span></div></div>`;
 
-  // 線をたどる：階が変わるところは少し止めて、階の表示も切りかえる。終わったら少し見せて、またはじめから
   function play(root) {
     const svg = root.querySelector(".mapbox svg");
     if (!svg) return;
@@ -76,7 +69,7 @@ export async function routeMap(fromKey, toRoom) {
       return { g, d, L, f: g.dataset.f, len: len(route.legs[i].pts) };
     });
     const total = items.reduce((a, x) => a + x.len, 0) || 1;
-    const MOVE = 6200, PAUSE = 1500, HOLD = 2600; // PAUSE：階が変わるところで、階段をのぼる（おりる）動きを見せる時間
+    const MOVE = 6200, PAUSE = 1500, HOLD = 2600;
     const span = MOVE + PAUSE * (items.length - 1);
     const showFloor = (f) => { svg.querySelectorAll(".mf").forEach((g) => g.classList.toggle("on", g.dataset.f === f)); svg.querySelectorAll(".st").forEach((g) => (g.style.opacity = g.dataset.f === f ? 1 : 0)); if (fl) fl.textContent = f; };
     let t0 = performance.now() + 1000;
@@ -100,15 +93,14 @@ export async function routeMap(fromKey, toRoom) {
       });
       const it = items[cur.i], e = 1 - (1 - cur.k) ** 2, pt = it.d.getPointAtLength(it.L * e);
       showFloor(it.f);
-      // 階が変わるところ：階段をのぼる（おりる）動き。ほかのときはしまう
       if (stairs) {
         const on = !!climb;
         if (on && !stairs.classList.contains("on")) {
-          const [lo, hi] = [climb.from, climb.to].sort((a, b) => parseInt(a) - parseInt(b)); // 低い階は階段の左下、高い階は右上
+          const [lo, hi] = [climb.from, climb.to].sort((a, b) => parseInt(a) - parseInt(b));
           stairs.querySelector(".lo").textContent = lo; stairs.querySelector(".hi").textContent = hi;
         }
         stairs.classList.toggle("on", on);
-        if (on) { // 赤い点が、階段の上を、なめらかにのぼる（おりるときは逆）
+        if (on) {
           const e = climb.k < 0.5 ? 2 * climb.k * climb.k : 1 - (-2 * climb.k + 2) ** 2 / 2, p = parseInt(climb.to) > parseInt(climb.from) ? e : 1 - e;
           const sd = stairs.querySelector(".sd");
           sd.setAttribute("cx", 14 + 100 * p); sd.setAttribute("cy", 76 - 66 * p);

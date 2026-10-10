@@ -1,16 +1,10 @@
-// PC（横に広い画面）だけ：真ん中のスマホの画面の左右に、ロゴと日付（左）・タブとメニュー（右）を出す。
-// うしろは、いまの空の絵（ポスターと同じ。theme.js の差し色 data-tint で入れかわる）と、ゆれる短冊。
-// トップページと地図のページの両方で読む。表示するかどうかは style.css（幅 1000px 以上）
 import { FESTIVAL } from "./config.js";
 
-const onTop = !!document.querySelector(".scene"); // トップページ
-const onMido = ["mido", "rally", "vote"].includes(document.body.dataset.page); // みどころ・スタンプカードのページ（サイトの中のページ）
+const onTop = !!document.querySelector(".scene");
+const onMido = ["mido", "rally", "vote"].includes(document.body.dataset.page);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 
-// メニュー：トップページのセクション（地図のページからはトップページのその場所へ）
-// 一度削除したもの：高専祭について（about）・タイムテーブル（schedule）・Enistagram の欄（enistagram）・混雑状況（crowd）・スタンプラリー（rally）・企画案内（guide）・会場の様子（report）
-// トップページの上から順に。いま読んでいるところに印がつく
 const MENU = [
   ["memory", "思い出", "MEMORIES", svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>')],
   ["days", "日程", "SCHEDULE", svg('<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/>')],
@@ -21,14 +15,13 @@ const MENU = [
   ["exhibit", "学科展示", "DEPARTMENTS", svg('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 15h9"/>')],
   ["info", "ご来場の皆さまへ", "INFO", svg('<path d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>')],
   ["sponsors", "協賛", "SPONSORS", svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>')],
-].filter(([id]) => !onTop || document.getElementById(id)) // トップページにない場所は出さない
-  .filter(([id]) => id !== "memory" || afterClose()); // 「思い出」は、高専祭が終わったあと（2日目の閉場のあと）だけ。みどころなど、トップ以外のページでも
+].filter(([id]) => !onTop || document.getElementById(id))
+  .filter(([id]) => id !== "memory" || afterClose());
 function afterClose() {
-  const np = new URLSearchParams(location.search).get("now"); // ?now= で、時刻を決めて確かめられる
+  const np = new URLSearchParams(location.search).get("now");
   const now = np ? Date.parse(np.includes("+") ? np : `${np}+09:00`) : Date.now();
   return now > Date.parse(FESTIVAL.days.at(-1).close);
 }
-// ほかのページ・地図のよく使うところ（すぐ開ける）
 const MORE = [
   ["mido.html", "みどころを詳しく", "TIMETABLE", svg('<path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="M14.5 7.5v9" stroke-dasharray="1.6 2.2"/>')],
   ["map.html?list=now", "いまやっている", "NOW ON", svg('<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>')],
@@ -36,11 +29,9 @@ const MORE = [
   ["rally.html", "スタンプカード", "STAMP CARD", svg('<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8.5" cy="12" r="2.3"/><circle cx="15.5" cy="12" r="2.3"/>')],
   ["map.html?list=toilet", "トイレ", "RESTROOMS", svg('<circle cx="7.5" cy="5" r="1.7"/><circle cx="16.5" cy="5" r="1.7"/><path d="M7.5 8.5v11M5 9h5l-.3 5.5M16.5 8.5l-2.8 7h5.6zM16.5 15.5v4"/>')],
 ];
-// MORE の各行が出る条件：トップページの、その欄が出ているとき（"now" は開催中だけ、"*" はいつも）
 const MORE_NEEDS = { "mido.html": "pickup", "map.html?list=now": "now", "map.html?list=food": "ennichi", "rally.html": "stamp", "map.html?list=toilet": "*" };
 const COLORS = ["var(--sky-1)", "var(--sky-3)", "var(--sun)", "#E7A0A0", "var(--en)"];
 
-// 日付：10.24 SAT
 const WD = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const dayOf = (iso) => {
   const d = new Date(iso);
@@ -50,38 +41,27 @@ const dayOf = (iso) => {
 };
 const days = FESTIVAL.days.map((d) => dayOf(d.open));
 
-// タブ（サイト・地図・Enistagram）。地図のページでは、地図と Enistagram はページを読み直さずに切りかえる
 const TABS = [
   ["site", "サイト", onTop ? "#" : "./", svg('<path d="M3.5 11L12 4l8.5 7M6 9.5V20h4.5v-5.5h3V20H18V9.5"/>')],
   ["map", "地図", "map.html", svg('<path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/>')],
   ["feed", "Enistagram", "map.html?tab=feed", svg('<path d="M16.6 5.2A9 9 0 1 0 16.6 18.8L9.5 12z"/><circle cx="9" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="13.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="17.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="21.3" cy="12" r="1.35" fill="currentColor" stroke="none"/>')],
 ];
 
-// ゆれる短冊（飾り）：左右に4枚ずつ。位置（画面の幅の %）・ひもの長さ・色・ゆれの速さ
 const TZ = [[6, 40, 0], [14, 90, 1], [22, 30, 2], [30, 70, 3], [70, 60, 4], [78, 26, 0], [86, 84, 2], [94, 44, 1]];
 
-// ---------- うしろの世界（PC）：空の絵の上に、奥から順に 星 → 遠くの山 → 電線 → 短冊 → ただよう灯り ----------
-// 画面に固定するのは、空・星・山（.pc-bg）と、短冊・ただよう灯り（.pc-fg）。電線（.pc-rig）だけは、ページの上に置いて、スクロールで絵といっしょに動く
-// いつも同じ並びになるように、決まった種から数を作る（開くたびに星や灯りの場所が変わらない）
 let seed = 63;
 const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 const f1 = (n) => Number(n.toFixed(1));
 
-// 電線：絵と同じ場所・同じ大きさの箱に引く。絵の電線が、そのまま左右へ続いて見える。
-// 線の位置は、絵（scene.webp）の中の電線を測って合わせた：上の2本は絵の左から右までまっすぐ（左右とも続く）。
-// 3本目は、絵の中の電柱から右にだけ伸びているので、右にだけ引く（左にも引くと、絵の左はしで線が合わない）
-const WIRES = [[-4000, 1561.2, 5000, -246.0], [-4000, 1602.4, 5000, -235.4], [600, 667.6, 5000, 5.5]]; // 絵（1215×1845）の中の座標
+const WIRES = [[-4000, 1561.2, 5000, -246.0], [-4000, 1602.4, 5000, -235.4], [600, 667.6, 5000, 5.5]];
 const rigHtml = `<div class="pc-rig" aria-hidden="true">
     <svg class="pc-wires" viewBox="0 0 1215 1845" preserveAspectRatio="none">${WIRES.map(([x1, y1, x2, y2]) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`).join("")}</svg>
   </div>`;
 
-// 星：夜と日暮れだけ見える。3組に分けて、ばらばらにまたたく
 const starsHtml = [0, 1, 2].map((g) => `<i class="pc-stars" style="--dur:${3.5 + g * 1.7}s; box-shadow:${Array.from({ length: 26 }, () => `${f1(rnd() * 100)}vw ${f1(rnd() * 58)}vh 0 ${rnd() < 0.18 ? 0.7 : 0}px #fff`).join(",")}"></i>`).join("");
 
-// 遠くの山：左に函館山、右に低い山なみ（形だけ。建物や電柱は描かない）
 const farSvg = `<svg viewBox="0 0 1440 220" preserveAspectRatio="none"><path d="M-60 220V152C30 146 104 100 186 93C246 88 296 101 348 96C420 90 470 118 540 150C590 172 640 198 706 220ZM880 220C968 170 1060 140 1160 150C1262 160 1360 124 1500 110V220Z"/></svg>`;
 
-// ただよう灯り：下から上へ、ゆっくりのぼっていく小さな光（夕方〜夜ほど、はっきり）
 const motesHtml = Array.from({ length: 14 }, () => `<i class="pc-mote" style="--x:${f1(rnd() * 100)}%; --s:${Math.round(5 + rnd() * 11)}px; --dur:${Math.round(24 + rnd() * 26)}s; --delay:${-Math.round(rnd() * 48)}s; --drift:${Math.round((rnd() - 0.5) * 140)}px; --o:${(0.3 + rnd() * 0.4).toFixed(2)}"></i>`).join("");
 
 document.body.insertAdjacentHTML("beforeend", `
@@ -107,9 +87,7 @@ document.body.insertAdjacentHTML("beforeend", `
     <ul class="pc-menu" id="pc-more">${MORE.map(([href, ja, en, icon], i) => `<li data-need="${MORE_NEEDS[href] ?? "*"}"><a href="${href}"${href === `${document.body.dataset.page}.html` ? ' aria-current="true"' : ""}><span class="pc-ic" style="--c:${COLORS[(i + 3) % COLORS.length]}">${icon}</span><span class="pc-txt"><b>${esc(ja)}</b></span></a></li>`).join("")}</ul>
   </nav>`);
 
-// メニューの順番は、トップページの欄の並びに合わせる（本部コンソールの「サイトの設定」で変わる。blocks.js が知らせる）。出していない欄は、メニューからも消す
-// 日程（いちばん上の絵）はいつも最初。ほかのページでは、前にトップページで読んだ並び（このスマホ・PC に覚えてある）
-const SEC_OF = { memory: "memory", message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", exhibit: "exhibit", info: "info", sponsors: "sponsors" }; // 欄の名前 → メニューの行き先
+const SEC_OF = { memory: "memory", message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", exhibit: "exhibit", info: "info", sponsors: "sponsors" };
 function orderMenu(blocks) {
   if (!Array.isArray(blocks)) return;
   const ul = document.querySelector(".pc-menu");
@@ -121,10 +99,9 @@ function orderMenu(blocks) {
     item.hidden = b.show === false || b.visible === false;
   }
 }
-// MORE：いまトップページに出ている欄だけ。欄を出していなければ、その行きさき（みどころ・模擬店・スタンプなど）の入口も出さない。「いまやっている」は開催中だけ
 function syncMore(blocks) {
   const on = new Set((Array.isArray(blocks) ? blocks : []).filter((b) => b?.show !== false && b?.visible !== false).map((b) => b.id));
-  const known = Array.isArray(blocks) && blocks.length > 0; // 並びを知らないときは、全部出す
+  const known = Array.isArray(blocks) && blocks.length > 0;
   const during = (document.body.dataset.phase ?? "") ? document.body.dataset.phase === "during" : Date.now() >= Date.parse(FESTIVAL.days[0].open) && Date.now() <= Date.parse(FESTIVAL.days.at(-1).close);
   const ul = document.getElementById("pc-more");
   ul.querySelectorAll("li").forEach((li) => {
@@ -137,15 +114,13 @@ function syncMore(blocks) {
 }
 let lastBlocks = null;
 const sync = (blocks) => { lastBlocks = blocks ?? lastBlocks; orderMenu(lastBlocks); syncMore(lastBlocks); };
-try { sync(window.kosenBlocks ?? JSON.parse(localStorage.getItem("kosen63-blocks") ?? "null")); } catch { /* 覚えていない */ }
+try { sync(window.kosenBlocks ?? JSON.parse(localStorage.getItem("kosen63-blocks") ?? "null")); } catch {  }
 document.addEventListener("blocks:order", (e) => sync(e.detail));
-new MutationObserver(() => syncMore(lastBlocks)).observe(document.body, { attributes: true, attributeFilter: ["data-phase"] }); // 開催前 → 開催中に変わったら、「いまやっている」を出す
+new MutationObserver(() => syncMore(lastBlocks)).observe(document.body, { attributes: true, attributeFilter: ["data-phase"] });
 
-// 左の「縁」のロゴで遊ぶ：マウスの方へ3Dで傾いて光が動く。押すと、ぷにっとつぶれて短冊が飛び散る。何回も続けて押すと一回転
 const logo = document.querySelector(".pc-logo");
 const logoIn = logo.querySelector(".pc-logo-in");
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
-// うしろの世界は、マウスの動きで少しずれる（手前の灯りほど大きく、奥の山は小さく → 奥行き）。style.css が --px --py を使う
 const pcLayers = [document.querySelector(".pc-bg"), document.querySelector(".pc-fg")];
 let par = null, parFrame = 0;
 addEventListener("pointermove", (e) => {
@@ -173,9 +148,8 @@ logo.addEventListener("click", () => {
   const spin = taps.length >= 5;
   if (spin) taps = [];
   logoIn.classList.remove("is-pop", "is-spin");
-  void logoIn.offsetWidth; // アニメーションを最初から
+  void logoIn.offsetWidth;
   logoIn.classList.add(spin ? "is-spin" : "is-pop");
-  // 短冊と丸を飛び散らせる（ロゴの真ん中から）
   const pane = logo.closest(".pc-side");
   const r = logo.getBoundingClientRect(), p = pane.getBoundingClientRect();
   const n = spin ? 28 : 14;
@@ -190,7 +164,6 @@ logo.addEventListener("click", () => {
   }
 });
 
-// いまのタブに印
 function markTab() {
   const now = onTop || onMido ? "site" : document.body.classList.contains("is-feed") ? "feed" : "map";
   document.querySelectorAll("[data-pc-tab]").forEach((a) => (a.dataset.pcTab === now ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
@@ -198,20 +171,18 @@ function markTab() {
 markTab();
 if (!onTop && !onMido) {
   new MutationObserver(markTab).observe(document.body, { attributes: true, attributeFilter: ["class"] });
-  // 地図のページの中の切りかえは、下のタブ（隠れている）を押したのと同じにする
   document.querySelector(".pc-tabs").addEventListener("click", (e) => {
     const a = e.target.closest("[data-pc-tab]");
     const inner = a && document.querySelector(`#m-tabs [data-tab="${a.dataset.pcTab}"]`);
     if (inner) { e.preventDefault(); inner.click(); }
   });
 } else if (onTop) {
-  // トップページ：「サイト」はいちばん上へ。メニューは、いま読んでいるセクションに印
   document.querySelector('[data-pc-tab="site"]').addEventListener("click", (e) => { e.preventDefault(); scrollTo({ top: 0 }); });
   const links = new Map([...document.querySelectorAll("[data-pc-sec]")].map((a) => [a.dataset.pcSec, a]));
   const seen = new Map();
   const io = new IntersectionObserver((es) => {
     for (const e of es) seen.set(e.target.id, e.isIntersecting);
-    const cur = [...document.querySelectorAll("[data-pc-sec]")].map((a) => a.dataset.pcSec).find((id) => seen.get(id)); // メニューのいまの順で
+    const cur = [...document.querySelectorAll("[data-pc-sec]")].map((a) => a.dataset.pcSec).find((id) => seen.get(id));
     links.forEach((a, id) => (id === cur ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
   }, { rootMargin: "-35% 0px -55% 0px" });
   links.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el); });

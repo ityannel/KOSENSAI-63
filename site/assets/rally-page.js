@@ -1,7 +1,5 @@
-// スタンプカードのページ（rally.html）：みどころのページと同じく、下から出てくるシート。× で下へしまって、もとのページへ戻る
 import { initRallyPage } from "./rally.js";
 
-// 試すとき：?now=2026-10-24T13:00 で、その時刻として動かす（QR の鍵は日ごとに変わるので）
 const nowParam = new URLSearchParams(location.search).get("now");
 const offset = nowParam && !Number.isNaN(Date.parse(nowParam)) ? Date.parse(nowParam) - Date.now() : 0;
 initRallyPage(() => Date.now() + offset);
@@ -16,7 +14,7 @@ function close(e) {
   if (calm) return go();
   sheet.classList.add("is-closing");
   sheet.addEventListener("animationend", go, { once: true });
-  setTimeout(go, 600); // アニメーションが動かないときのため
+  setTimeout(go, 600);
 }
 document.querySelector(".mido-close").addEventListener("click", close);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !e.target.closest?.("input")) close(e); });

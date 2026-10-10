@@ -1,32 +1,27 @@
-// 校内のディスプレイ（signage.html）：Enistagram の最新・人気の投稿、混雑、ピックアップ模擬店、ステージの「いま・次」、道案内、シェアの QR を、
-// 色の帯の「つなぎ」をはさんで、ずっと流す。データは本サイトと同じ Firestore（読むだけ）。使い方は signage.html の先頭に書いてある
 import { noticeOf, paintNotice } from "./notice.js";
 import { FESTIVAL, STAGE, EVENTS, SPONSORS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
 import { avatar, VERIFIED } from "./avatar.js";
 import { routeMap } from "./signage-map.js";
-import { watchSchedule, tStart, tEnd, tRange } from "./schedule.js"; // スケジュールの変更（本部コンソール）
+import { watchSchedule, tStart, tEnd, tRange } from "./schedule.js";
 
 const params = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ---------- 時刻（?now=2026-10-24T13:20 で、その時刻として動かして確かめられる。ほかのページと同じ書き方。?t= でも同じ） ----------
 const T_PARAM = params.get("now") ?? params.get("t");
 const T0 = T_PARAM ? Date.parse(T_PARAM.includes("+") ? T_PARAM : `${T_PARAM}+09:00`) : null;
 const BOOT = Date.now();
 const now = () => (T0 ? T0 + (Date.now() - BOOT) : Date.now());
 const jp = (ms, o) => new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", ...o }).format(new Date(ms));
 const hm = (ms) => jp(ms, { hour: "2-digit", minute: "2-digit", hour12: false });
-const dateEn = (ms) => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short" }).formatToParts(new Date(ms)).map((x) => [x.type, x.value])); return `${p.month}.${p.day} ${p.weekday.toUpperCase()}`; }; // 10.24 SAT
+const dateEn = (ms) => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short" }).formatToParts(new Date(ms)).map((x) => [x.type, x.value])); return `${p.month}.${p.day} ${p.weekday.toUpperCase()}`; };
 const dayOf = (ms) => jp(ms, { month: "numeric", day: "numeric", weekday: "short" });
 const ago = (ms) => { const m = Math.max(0, Math.round((Date.now() - ms) / 60000)); return m < 1 ? "いま" : m < 60 ? `${m}分前` : `${Math.floor(m / 60)}時間前`; };
 
-// ---------- 画面の大きさに合わせる ----------
 const stage = $("#stage");
-// 縦のディスプレイ：画面が縦長なら、自動で縦の並び（1080×1920）にする。?o=portrait（縦）／?o=landscape（横）で、決めてもよい
 let SW = 1920, SH = 1080;
 const fit = () => {
   const o = params.get("o"), portrait = o ? o === "portrait" : innerHeight > innerWidth;
@@ -38,27 +33,23 @@ const fit = () => {
 addEventListener("resize", fit); fit();
 addEventListener("click", () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); });
 navigator.wakeLock?.request?.("screen").catch(() => {});
-setTimeout(() => location.reload(), 3 * 3600 * 1000); // 長く流しっぱなしでも、新しい版・メモリのために、ときどき読みこみなおす
+setTimeout(() => location.reload(), 3 * 3600 * 1000);
 
-// ---------- 時計 ----------
 const tick = () => { $("#clock-t").textContent = hm(now()); $("#clock-d").textContent = dateEn(now()); };
 tick(); setInterval(tick, 5000);
 
-// ---------- データ ----------
 let posts = [], crowd = {}, shopDocs = [];
 const visibleTop = () => posts.filter((p) => p.visible && !p.reply_to && (p.text.trim() || p.has_photo));
-let gotPosts = () => {}; // 最初の投稿が届いたら、流しはじめる（届く前に始めると、投稿の画面が空でとばされる）
+let gotPosts = () => {};
 const firstPosts = new Promise((r) => { gotPosts = r; });
 subscribePosts((list) => {
   if (!list) return;
   posts = list; gotPosts();
-  // 写真は、流れる前に先に読んでおく（出す直前に読むと間に合わず、真っ黒の枠になる）。新しい順・いいねの多い順に
   const top = visibleTop().filter((p) => p.has_photo);
   [...top.sort((a, b) => b.created_at - a.created_at).slice(0, 24), ...top.sort((a, b) => b.likes - a.likes).slice(0, 12)].forEach((p) => loadPhoto(p.id).catch(() => {}));
 });
 subscribeCrowd((d) => { crowd = d ?? {}; });
 subscribeShops((l) => { shopDocs = l ?? []; });
-// 本部のお知らせ（「全員のキャッシュ削除」を受けとるのも、この購読）。画面の上に、帯で出す。見た目・期間・場所は notice.js
 let liveNow = null;
 const sgNotice = document.createElement("div");
 sgNotice.id = "sg-notice"; sgNotice.hidden = true;
@@ -86,11 +77,8 @@ const placeName = (id) => {
   return /^pt-/.test(id) ? "校内" : id;
 };
 
-// ---------- 場所（?at=） ----------
 const at = params.get("at");
 const spot = SIGNAGE.spots[at] ?? null;
-// ---------- 小道具 ----------
-// アイコン（絵文字は使わない。線の絵）
 const IC = {
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
   building: '<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3"/>',
@@ -110,7 +98,6 @@ const IC = {
   run: '<circle cx="14" cy="4.5" r="2"/><path d="M12 9l-3 3 3 2-1 5M12 9l4 2 3-1M9 12l-4 1M12 14l4 5"/>',
 };
 const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${IC[n] ?? IC.info}</svg>`;
-// 数字は、見出しと同じ字（WDXL Lubrifont）で、少し大きく。文の中の数字（12:15・3分・2F など）を .num で包む
 function numify(root) {
   const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (/\d/.test(n.nodeValue) && !n.parentElement.closest(".num, em[data-n], #bgclock, .cd, script, style") ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
   const nodes = []; while (walk.nextNode()) nodes.push(walk.currentNode);
@@ -132,13 +119,12 @@ const qr = (text, size = 440) => {
   return box.querySelector("canvas")?.toDataURL("image/png") ?? "";
 };
 const siteUrl = (path) => new URL(path, location.href).href;
-async function photos(list) { // 写真は、出す前に読んでおく（空の枠が出ないように。2.5秒まで待つ）
+async function photos(list) {
   const got = {};
   await Promise.race([Promise.all(list.filter((p) => p.has_photo).map((p) => loadPhoto(p.id).then((s) => { got[p.id] = s; }).catch(() => {}))), sleep(7000)]);
   return got;
 }
 
-// ---------- 投稿の画面 ----------
 function postCard(p, i, got, crown) {
   const hue = [...p.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 17);
   const photo = p.has_photo && got[p.id];
@@ -167,7 +153,7 @@ const slidePosts = {
     const rot = all.map((_, k) => all[(newOffset + k) % all.length]);
     newOffset += 3;
     const got = await photos(rot.slice(0, 6));
-    const pick = rot.filter((p) => !p.has_photo || got[p.id]).slice(0, 3); // 写真が読めなかった投稿は、出さない（真っ黒の枠にしない）
+    const pick = rot.filter((p) => !p.has_photo || got[p.id]).slice(0, 3);
     if (!pick.length) return null;
     return { dur: 15000, cls: "posts", after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
       <span class="tag slide-l"><i>${ic("image")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　最新の投稿</span>
@@ -180,8 +166,8 @@ const slidePopular = {
     const all = visibleTop();
     const liked = all.filter((p) => p.likes > 0).sort((a, b) => b.likes - a.likes || b.created_at - a.created_at);
     const got = await photos(liked.slice(0, 6));
-    const pick = liked.filter((p) => !p.has_photo || got[p.id]).slice(0, 3); // 写真が読めなかった投稿は、出さない
-    if (pick.length < 2) return null; // いいねが集まっていないときは出さない（最新の画面があるので）
+    const pick = liked.filter((p) => !p.has_photo || got[p.id]).slice(0, 3);
+    if (pick.length < 2) return null;
     return { dur: 14000, cls: "posts popular", after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
       <span class="tag slide-l"><i>${ic("heart")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　人気の投稿</span>
       <h1 class="ttl">${chars("いま、いちばん人気！")}</h1>
@@ -189,16 +175,15 @@ const slidePopular = {
   },
 };
 
-// ---------- ピックアップ模擬店 ----------
 let shopOrder = [], shopPtr = 0;
 function nextShop() {
   if (!shopOrder.length) shopOrder = SHOPS.map((_, i) => i).sort(() => Math.random() - 0.5);
   for (let n = 0; n < shopOrder.length; n++) {
     const s = SHOPS[shopOrder[shopPtr++ % shopOrder.length]];
     const st = shopDoc(s)?.status;
-    if (st !== "soldout" && st !== "closed") return s; // 売り切れ・休業のお店は、ピックアップしない
+    if (st !== "soldout" && st !== "closed") return s;
   }
-  return SHOPS[shopOrder[shopPtr++ % shopOrder.length]]; // 全部が売り切れ・休業のとき（開催前など）も、画面を出す
+  return SHOPS[shopOrder[shopPtr++ % shopOrder.length]];
 }
 const slideShop = {
   async build() {
@@ -206,9 +191,8 @@ const slideShop = {
     if (!s) return null;
     const d = shopDoc(s);
     const room = s.room ?? HOMEROOMS[s.cls];
-    const where = `${s.bldg ? `${s.bldg}棟` : ""}${s.floor ? String(s.floor).replace(/F$/, "階") : ""}` || s.where || ""; // 場所は「B棟3階」だけ（部屋番号・「場所」の文字は出さない）
-    const w = d && d.status !== "closed" && WAIT[d.status]; // 休業中の札は出さない（開催前は、全部が休業中のことがある）
-    // ディスプレイの場所から、そのお店の教室までの道順の地図（場所と、教室の部屋番号がわかるときだけ）
+    const where = `${s.bldg ? `${s.bldg}棟` : ""}${s.floor ? String(s.floor).replace(/F$/, "階") : ""}` || s.where || "";
+    const w = d && d.status !== "closed" && WAIT[d.status];
     const rm = spot && room && !/^pt-/.test(room) ? await routeMap(spot.here, room).catch((e) => { console.warn(e); return null; }) : null;
     const lines = String(s.note ?? "").split(/\n/).filter(Boolean);
     const name = flat(s.name);
@@ -230,7 +214,6 @@ const slideShop = {
   },
 };
 
-// ---------- 混雑 ----------
 const slideCrowd = {
   async build() {
     const cards = CROWD.venues.map((id, i) => {
@@ -260,7 +243,6 @@ const slideCrowd = {
   },
 };
 
-// ---------- ステージ・企画 ----------
 let ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
 let EVS = EVENTS.filter((e) => !e.stage).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
 function stageState(t) {
@@ -270,7 +252,6 @@ function stageState(t) {
   const nextEv = EVS.filter((e) => e.s > t).sort((a, b) => a.s - b.s)[0] ?? null;
   return { cur, nxt, onEv, nextEv };
 }
-// 急げ！：10分以内に始まるもの（ステージの出演は、いまの出演のあいだは出さない）
 function hurryItem(t) {
   const { cur, nxt, nextEv } = stageState(t);
   const list = [];
@@ -278,10 +259,8 @@ function hurryItem(t) {
   if (nextEv && nextEv.s - t <= 10 * 60000) list.push({ title: nextEv.title, venue: nextEv.venue, s: nextEv.s });
   return list.sort((a, b) => a.s - b.s)[0] ?? null;
 }
-// 種類・ひとことの札（まだ届いていない団体は、札なし）
-// 種類と時刻は丸い札、一言は長いので、札にせず1行の文で（札にすると、細長くつぶれる）
 const phList = (x) => [x.photo, ...(x.more ?? [])].filter(Boolean);
-const phOf = (x) => phList(x).map((s, k) => `<img class="ph${k ? "" : " on"}" src="/${esc(String(s).replace(/^\//, ""))}" alt="" decoding="async">`).join(""); // 出演団体の写真は、あるぶん全部を、カードの背景に（1枚ずつ、順にかわる）
+const phOf = (x) => phList(x).map((s, k) => `<img class="ph${k ? "" : " on"}" src="/${esc(String(s).replace(/^\//, ""))}" alt="" decoding="async">`).join("");
 const chips = (x, extra = "") => { const l = [x.kind].filter(Boolean).map((t) => `<span class="chip">${esc(t)}</span>`).join("") + extra; return (l ? `<div class="kind">${l}</div>` : "") + (x.mood ? `<p class="mood">${esc(x.mood)}</p>` : ""); };
 const slideStage = {
   async build() {
@@ -297,20 +276,17 @@ const slideStage = {
         ? `<div class="now wait slide-l${nxt.photo ? " has-ph" : ""}"><span class="lab">${dayOf(nxt.s) === dayOf(t) ? "NEXT" : `あした ${dayOf(nxt.s)}`}</span>${phOf(nxt)}
           <h2 class="nm">${esc(nxt.name)}</h2>${chips(nxt, `<span class="chip">${tRange(nxt)}</span>`)}
           ${nxt.copy ? `<p>${esc(nxt.copy).replace(/\n/g, "<br>")}</p>` : ""}</div>`
-        : `<div class="now wait slide-l"><span class="lab">STAGE</span><h2>おやすみ</h2></div>`; // 出演がないときだけ
-    // このあとの出演を、次の1つだけでなく、どんどん並べる（企画があれば、その分は1つ減らす）
+        : `<div class="now wait slide-l"><span class="lab">STAGE</span><h2>おやすみ</h2></div>`;
     const row = (small, title, time, sub, hotRow, n, photo = "") => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} ${hotRow ? "hot" : ""}${photo ? " has-ph" : ""} rise" style="--i:${n}${photo ? `;--ph:url('/${esc(String(photo).replace(/^\//, ""))}')` : ""}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
-    const later = ACTS.filter((a) => a.s > t).slice(cur ? 0 : 1).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0)); // 出演中でなければ、次の出演は左のカードに出すので、右には2つ目から // 急げ！の帯が出ているときは、場所が狭いので1つ減らす
+    const later = ACTS.filter((a) => a.s > t).slice(cur ? 0 : 1).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0));
     const nx = later.map((a, k) => row(dayOf(a.s) !== dayOf(t) ? `あした ${dayOf(a.s)}` : k === 0 && cur ? "NEXT" : "THEN", a.name, tStart(a), [a.kind, a.mood].filter(Boolean).join("　"), k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k, a.photo));
     if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, tStart(nextEv), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
     return { dur: hot ? 15000 : 13000, cls: "stage", after(el) {
-      // 出演中の進み具合の棒は、1秒ごとに、いまの時刻に合わせて伸ばす
       const fill = el.querySelector(".barw .bar i");
       if (fill && cur) { const upd = () => { if (!el.isConnected) return clearInterval(bid); fill.style.width = `${Math.min(100, Math.max(0, Math.round(((now() - cur.s) / (cur.e - cur.s)) * 1000) / 10))}%`; }; const bid = setInterval(upd, 1000); upd(); }
       const card = el.querySelector(".now.has-ph"), imgs = [...el.querySelectorAll(".now .ph")];
       if (!card) return;
-      // 写真の右半分の明るさを測って、文字のある左側にかぶせる色を、白か黒か自動で決める（明るい写真は白＋黒い字、暗い写真は黒＋白い字）
       const tone = (img) => { try { const c = document.createElement("canvas"); c.width = c.height = 24; const g = c.getContext("2d"); g.drawImage(img, img.naturalWidth * 0.4, 0, img.naturalWidth * 0.6, img.naturalHeight, 0, 0, 24, 24); const d = g.getImageData(0, 0, 24, 24).data; let s = 0; for (let i = 0; i < d.length; i += 4) s += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; return s / (d.length / 4) > 140 ? "light" : "dark"; } catch { return "dark"; } };
       const paint = (img) => { card.dataset.tone = img.dataset.tone ?? "dark"; };
       imgs.forEach((img) => { const set = () => { img.dataset.tone = tone(img); if (img.classList.contains("on")) paint(img); }; img.complete ? set() : img.addEventListener("load", set, { once: true }); });
@@ -323,7 +299,6 @@ const slideStage = {
       <div class="grid">${main}<div class="nxt">${nx.join("")}${mini}</div></div>` };
   },
 };
-// 画面の下の「急げ！」の帯
 let hurryKey = "";
 function paintHurry() {
   const h = hurryItem(now());
@@ -341,7 +316,6 @@ function paintHurry() {
   numify(el);
 }
 
-// 本部がスケジュールを変えたら、出演・企画の一覧を作りなおす（画面は、次に作るときから新しい時間）
 function rebuildSchedule() {
   ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
   EVS = EVENTS.filter((e) => !e.stage).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
@@ -349,13 +323,12 @@ function rebuildSchedule() {
 watchSchedule(rebuildSchedule);
 rebuildSchedule();
 
-// ---------- 道案内 ----------
 const slideWay = {
   async build() {
     if (!spot) return null;
     const url = siteUrl(`map.html?here=${encodeURIComponent(spot.here)}`);
     const t = now(), hot = hurryItem(t)?.venue;
-    const routes = [...spot.routes].sort((x, y) => (y.to === hot) - (x.to === hot)).slice(0, hot ? 4 : 5); // 急げ！の帯が出ているときは、場所が狭いので4つ。行き先の優先は、急ぐ先を上に
+    const routes = [...spot.routes].sort((x, y) => (y.to === hot) - (x.to === hot)).slice(0, hot ? 4 : 5);
     return { dur: 14000, cls: "way", html: `
       <span class="tag slide-l"><i>${ic("compass")}</i>道案内</span>
       <h1 class="ttl">${chars(`${spot.name}から`)}</h1>
@@ -367,15 +340,11 @@ const slideWay = {
   },
 };
 
-// ---------- シェア ----------
-// 顔の絵文字が上からたくさん降ってきて、画面いっぱいに積もっていく（あとから降るものほど、上に重なる）
 const FACES = ["😀", "😃", "😄", "😁", "😆", "🥳", "😍", "🤩", "😎", "😊", "😋", "😜", "🤪", "😂", "🥰", "😇", "🤗", "😺", "😻", "🙌", "😆", "😄", "🤣", "😏", "🥹"];
 const OTHERS = ["📷", "🍡", "🎤", "✨", "❤️", "🎆", "🎵", "🎉", "⭐", "🎈"];
-// 物理：丸い剛体として、重力で落ちて、ぶつかり合って、積もる（重ならない）。シェア画面の間だけ動かす
 function emojiRain(root) {
   const box = root.querySelector(".rain");
   if (!box) return;
-  // 描くのは、1枚の canvas（絵文字を1つずつ DOM にすると、表示の PC によっては重いので）
   const cv = document.createElement("canvas"), W0 = SW, H0 = SH;
   cv.width = W0; cv.height = H0; cv.className = "rainc";
   box.append(cv);
@@ -385,7 +354,7 @@ function emojiRain(root) {
   let spawned = 0, last = performance.now(), nextSpawn = last + 700, calm = 0;
   function spawn() {
     const size = 140 + Math.random() * 90, r = size * 0.43;
-    const pool = Math.random() < 0.82 ? FACES : OTHERS; // 主に顔の絵文字
+    const pool = Math.random() < 0.82 ? FACES : OTHERS;
     const spr = document.createElement("canvas"), s = Math.round(size * 1.25);
     spr.width = spr.height = s;
     const g = spr.getContext("2d");
@@ -397,7 +366,7 @@ function emojiRain(root) {
   function step() {
     for (const b of bodies) { b.vy += G * DT; b.x += b.vx * DT; b.y += b.vy * DT; b.a += b.av * DT; }
     for (let it = 0; it < 6; it++) {
-      for (const b of bodies) { // 壁と床
+      for (const b of bodies) {
         if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * 0.3; }
         if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx) * 0.3; }
         if (b.y > FLOOR - b.r) { b.y = FLOOR - b.r; if (b.vy > 0) b.vy = -b.vy * 0.18; b.vx *= 0.94; b.av *= 0.9; }
@@ -407,10 +376,10 @@ function emojiRain(root) {
           const p = bodies[i], q = bodies[k], dx = q.x - p.x, dy = q.y - p.y, min = p.r + q.r, d2 = dx * dx + dy * dy;
           if (d2 >= min * min || d2 === 0) continue;
           const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, over = (min - d) / 2;
-          p.x -= nx * over; p.y -= ny * over; q.x += nx * over; q.y += ny * over; // めりこみを押し戻す
-          const rv = (q.vx - p.vx) * nx + (q.vy - p.vy) * ny; // ぶつかる向きの速さ
+          p.x -= nx * over; p.y -= ny * over; q.x += nx * over; q.y += ny * over;
+          const rv = (q.vx - p.vx) * nx + (q.vy - p.vy) * ny;
           if (rv < 0) { const j = -rv * 0.6; p.vx -= nx * j; p.vy -= ny * j; q.vx += nx * j; q.vy += ny * j; }
-          const tv = (q.vx - p.vx) * -ny + (q.vy - p.vy) * nx; // 横にこすれる分は、回る向きへ
+          const tv = (q.vx - p.vx) * -ny + (q.vy - p.vy) * nx;
           p.av += tv * 0.0016; q.av += tv * 0.0016;
           p.vx *= 0.995; q.vx *= 0.995;
         }
@@ -434,7 +403,7 @@ function emojiRain(root) {
       fast = Math.max(fast, Math.abs(b.vx) + Math.abs(b.vy));
     }
     calm = fast < 12 && spawned >= N ? calm + 1 : 0;
-    if (calm < 60) requestAnimationFrame(frame); // 全部おちついたら止める
+    if (calm < 60) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 }
@@ -457,7 +426,6 @@ const slideShare = {
   },
 };
 
-// ---------- はじまり（「ようこそ」と「縁」のロゴだけ） ----------
 const slideIntro = {
   async build() {
     return { dur: 7000, cls: "intro", html: `
@@ -466,7 +434,6 @@ const slideIntro = {
   },
 };
 
-// ---------- 一般公開の終了（その日の公開時間が終わってから、5分間だけ。そのあとは、ふだんの画面に戻って案内を続ける） ----------
 const CLOSING_MIN = 5;
 function closedState(t) {
   const days = FESTIVAL.days.map((d) => ({ close: Date.parse(d.close) }));
@@ -483,15 +450,13 @@ const slideClosing = {
   },
 };
 
-// ---------- 花火（学内の方限定）：花火の時間は、画面に「花火！」とだけ出し、背景に花火を打ち上げる ----------
 const fwEvent = () => EVENTS.find((e) => e.title === "花火");
 function fireworksNow(t = now()) { const e = fwEvent(); return !!e && t >= Date.parse(e.start) && t < Date.parse(e.end); }
 const slideFireworks = {
   async build() {
-    return { dur: 90000, cls: "fwslide", html: `<h1 class="fwt">${chars("花火！")}</h1>` }; // 「花火！」の字だけ（時間・場所の案内は出さない）
+    return { dur: 90000, cls: "fwslide", html: `<h1 class="fwt">${chars("花火！")}</h1>` };
   },
 };
-// 背景の花火：1枚の canvas に、ロケットが昇って開く（花火の時間のあいだだけ動かす）
 const fwCv = $("#fw"), fwCtx = fwCv.getContext("2d");
 let fwOn = false;
 function fwStart() {
@@ -537,50 +502,44 @@ const fwStop = () => { fwOn = false; };
 function syncFireworks() { const on = fireworksNow(); document.body.classList.toggle("is-fw", on); on ? fwStart() : fwStop(); }
 setInterval(syncFireworks, 2000); syncFireworks();
 
-// ---------- 流れ ----------
 const SLIDES = { intro: slideIntro, stage: slideStage, closing: slideClosing, fireworks: slideFireworks, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
 function plan() {
-  if (closedState(now())) return ["closing"]; // 一般公開が終わって5分間は、この1枚だけ
-  if (fireworksNow()) return ["fireworks"]; // 花火の時間は、この1枚だけ（背景に花火）
+  if (closedState(now())) return ["closing"];
+  if (fireworksNow()) return ["fireworks"];
   const base = ["intro", "stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
-  if (hurryItem(now())) base.splice(5, 0, "stage"); // 急げ！のときは、ステージの画面を多めに
+  if (hurryItem(now())) base.splice(5, 0, "stage");
   return base;
 }
 let order = [], idx = -1, timer = null, busy = false, dir = 1;
 const slide = $("#slide"), wipe = $("#wipe");
 
-// 画面の切りかえ：「縁」のはんこと一緒に、「Sponsored by」と協賛企業のロゴを1社ずつ（1周で8社が、ひととおり出る）
 const SPON = SPONSORS.list.filter((x) => x.logo).slice(0, 8);
-SPON.forEach((x) => { const im = new Image(); im.src = x.logo; }); // 先に読んでおく
+SPON.forEach((x) => { const im = new Image(); im.src = x.logo; });
 let wipeN = 0;
 async function cover() {
-  wipe.querySelectorAll("i.b2").forEach((b) => b.getAnimations().forEach((x) => x.cancel())); // 前の切りかえの虹の帯を、もとにもどす
+  wipe.querySelectorAll("i.b2").forEach((b) => b.getAnimations().forEach((x) => x.cancel()));
   const wsp = wipe.querySelector("#wsp"), sp = SPON.length ? SPON[wipeN++ % SPON.length] : null;
   if (wsp) wsp.getAnimations({ subtree: true }).forEach((a) => a.cancel());
   wipe.classList.toggle("has-spon", !!(wsp && sp));
   const portrait = document.body.classList.contains("portrait");
   if (wsp && sp) {
     wsp.querySelector("img").src = sp.logo; wsp.querySelector("img").alt = sp.name ?? "";
-    // 「縁」が左へ動いたあと（1.7秒ごろ）、右（縦の画面は下）から、ふわっと乗る
     const from = portrait ? "translate(-50%, calc(-50% + 90px)) scale(.85)" : "translate(calc(-50% + 110px), -50%) scale(.85)";
     wsp.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: "translate(-50%, -50%) scale(1.02)", offset: .7 }, { opacity: 1, transform: "translate(-50%, -50%) scale(1)" }], { duration: 900, delay: 1700, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
   }
   const bars = [...wipe.querySelectorAll("i:not(.b2)")], seal = wipe.querySelector("b");
   const inn = bars.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(0) skewX(-14deg)" }], { duration: 520, delay: k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }));
   seal.animate([{ opacity: 0, transform: "scale(2.2) rotate(-14deg)" }, { opacity: 1, transform: "scale(1) rotate(-6deg)", offset: .55 }, { opacity: 1, transform: "scale(1) rotate(-6deg)" }], { duration: 900, delay: 330, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
-  // ロゴが出るときは、押されたあと、左へふわっと動く（縦の画面は、上へ）。少し小さくなって、ロゴに場所をゆずる
   if (sp) seal.animate([{ transform: "translate(0, 0) scale(1) rotate(-6deg)" }, { transform: portrait ? "translate(0, -300px) scale(.8) rotate(-4deg)" : "translate(-470px, 0) scale(1) rotate(-4deg)" }], { duration: 1000, delay: 1250, easing: "cubic-bezier(.45,0,.2,1)", fill: "forwards" });
-  // 紙吹雪：はんこが押されるときに、いろいろな色が四方へ散る
   const COL = ["#d9669b", "#2f8fe0", "#a061c9", "#ffd24a", "#3BF53D", "#FEEBC4", "#ff6b5e"];
   wipe.querySelectorAll("s").forEach((d, k, all) => {
     const ang = (k / all.length) * Math.PI * 2 + 0.3, far = 360 + (k % 3) * 120;
     d.style.setProperty("--c", COL[k % COL.length]); d.style.setProperty("--s", `${22 + (k % 4) * 8}px`);
     d.animate([{ opacity: 1, transform: "translate(0, 0) scale(.3) rotate(0)" }, { opacity: 1, transform: `translate(${Math.cos(ang) * far}px, ${Math.sin(ang) * far}px) scale(1) rotate(${k * 70}deg)`, offset: .7 }, { opacity: 0, transform: `translate(${Math.cos(ang) * far * 1.15}px, ${Math.sin(ang) * far * 1.15 + 60}px) scale(.8) rotate(${k * 90}deg)` }], { duration: 1000, delay: 480, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
   });
-  await Promise.all(inn.map((a) => a.finished.catch(() => {}))); // 全画面にしたときなどに、動きが取り消されても止まらない
-  if (sp) await sleep(2800); // 「縁」が動いて、ロゴが乗るまで待ち、しっかり見せる（帯がおおったまま、止める）
+  await Promise.all(inn.map((a) => a.finished.catch(() => {})));
+  if (sp) await sleep(2800);
   return () => {
-    // 次の画面が映るとき：「縁」とロゴは、そのまま残し、虹色の帯がその上を通って消していく（帯が全部おおったところで、下のものを片づける）
     const top = [...wipe.querySelectorAll("i.b2")];
     const pass = top.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 1100, delay: k * 70, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" }));
     setTimeout(() => {
@@ -591,18 +550,14 @@ async function cover() {
     return Promise.all(pass.map((a) => a.finished.catch(() => {})));
   };
 }
-// 画面ごとの背景（ポスターの空の色。上→下）。差し色はその上の色
 const BG = { intro: ["#3f9f99", "#9BD7D0"], posts: ["#2f8fe0", "#9BD7D0"], popular: ["#d9669b", "#F2A96A"], shop: ["#ee7b30", "#efc696"], crowd: ["#3f9f99", "#F1D08A"],
   stage: ["#ee7b30", "#B5655A"], way: ["#B5655A", "#F2A96A"], share: ["#a061c9", "#2f8fe0"], fireworks: ["#0b1030", "#3a1d5c"], closing: ["#3f9f99", "#9BD7D0"] };
-// ステージのカードの紹介（セットリストなど）が長くて、画面の下からはみ出す・下の帯に隠れるときは、行を減らして「…」で省略する
 function fitNow(el) {
   const limit = () => slide.getBoundingClientRect().bottom - 28;
-  // 右の「このあと」の列が、画面の下からはみ出すときは、いちばん下から減らす（カードも、その高さにそろうので）
   const nxs = [...el.querySelectorAll(".nx")];
   while (nxs.length > 1 && nxs[nxs.length - 1].getBoundingClientRect().bottom > limit()) nxs.pop().remove();
   const p = el.querySelector(".now > p:not(.mood)");
   if (!p) return;
-  // 紹介の最後の行が、画面の下（と、カードの下の余白）に収まる行数まで減らす。1行でも入らなければ出さない
   const pad = parseFloat(getComputedStyle(p.parentElement).paddingBottom) || 0;
   const over = () => p.getBoundingClientRect().bottom + pad > limit();
   let n = 8;
@@ -616,7 +571,6 @@ async function show(i, first = false) {
   try {
     if (!order.length || i >= order.length) { order = params.get("only") ? [params.get("only")] : plan(); i = 0; }
     if (i < 0) i = order.length - 1;
-    // 出す中身を先に作る（写真を読む・QR を作る）。作れない（データがない）画面は、とばす
     let built = null, tries = 0;
     while (!built && tries++ < order.length) {
       built = await SLIDES[order[i]].build().catch((e) => { console.warn(e); return null; });
@@ -632,9 +586,8 @@ async function show(i, first = false) {
     const el = slide.firstElementChild;
     numify(el);
     fitNow(el);
-    // 写真つきの投稿の画面では、その写真を、背景にうっすら重ねる
     const bp = $("#bgphoto");
-    if (!bp) { /* 古い signage.html（背景の写真の場所がない）のとき */ } else if (built.bgPhoto) { bp.style.backgroundImage = `url("${built.bgPhoto}")`; bp.classList.add("on"); } else bp.classList.remove("on");
+    if (!bp) {  } else if (built.bgPhoto) { bp.style.backgroundImage = `url("${built.bgPhoto}")`; bp.classList.add("on"); } else bp.classList.remove("on");
     idx = i;
     if (uncover) { const p = uncover(); await sleep(120); el.classList.add("go"); built.after?.(el); await p; } else { el.classList.add("go"); built.after?.(el); }
     if (!params.get("only")) timer = setTimeout(() => { dir = 1; go(idx + 1); }, built.dur);
@@ -650,10 +603,9 @@ addEventListener("keydown", (e) => {
 setInterval(paintHurry, 15000);
 
 (async () => {
-  await Promise.race([firstPosts, sleep(7000)]); await sleep(1200); // データ（投稿・混雑・お店）が届くのを待ってから始める
+  await Promise.race([firstPosts, sleep(7000)]); await sleep(1200);
   paintHurry();
   show(0, true);
 })();
 
-// ---------- テスト用パネル（?test=1 のときだけ。全ページ共通の test-loader.js が読みこむ）：画面を送る操作だけ、ここから渡す ----------
 globalThis.kosenHooks = { signage: { step: (d) => { dir = d; go(idx + d); } } };

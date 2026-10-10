@@ -1,12 +1,8 @@
-// 函館の本物の天気を、絵に降らせる。
-// Open-Meteo（無料・登録不要）から今の天気を取り、雨・雪・霧・雷を画面全体に重ねる。
-// 風が強いほど短冊が大きく速く揺れる。?weather=rain|snow|fog|thunder|clear&wind=12 で確認できる。
 import { FX } from "./config.js";
 
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const params = new URLSearchParams(location.search);
 
-// WMO の天気コード → この画面での扱い
 function classify(code) {
   if (code === 0) return { kind: "clear", label: "晴れ" };
   if (code <= 3) return { kind: "cloudy", label: "くもり" };
@@ -18,7 +14,6 @@ function classify(code) {
   return { kind: "cloudy", label: "くもり" };
 }
 
-// 本部の管理画面で「天気を固定」したとき（全員の画面）。URL の ?weather= のほうが強い
 let override = null;
 let reload = () => {};
 export function setWeatherOverride(next) {
@@ -41,7 +36,6 @@ async function fetchWeather() {
   return { ...classify(current.weather_code), wind: current.wind_speed_10m };
 }
 
-// ---------- 雨・雪を描く ----------
 function createPrecip(canvas) {
   const ctx = canvas.getContext("2d");
   let drops = [];
@@ -51,7 +45,7 @@ function createPrecip(canvas) {
 
   function resize() {
     const dpr = Math.min(devicePixelRatio || 1, 2);
-    w = canvas.clientWidth || innerWidth; h = canvas.clientHeight || innerHeight; // PC ではスマホの幅の画面だけ（style.css）
+    w = canvas.clientWidth || innerWidth; h = canvas.clientHeight || innerHeight;
     canvas.width = w * dpr; canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
@@ -66,7 +60,7 @@ function createPrecip(canvas) {
     };
   }
   function frame(t) {
-    const k = last ? Math.min(3, (t - last) / 16.7) : 1; // 60fps を1とした経過（90・120Hz の画面でも同じ速さ）
+    const k = last ? Math.min(3, (t - last) / 16.7) : 1;
     last = t;
     ctx.clearRect(0, 0, w, h);
     const snow = state.kind === "snow";
@@ -111,7 +105,6 @@ function createPrecip(canvas) {
   };
 }
 
-// 雷：ときどき画面が光る
 let thunderTimer = null;
 function thunder(on) {
   clearTimeout(thunderTimer);
@@ -124,12 +117,10 @@ function thunder(on) {
   thunderTimer = setTimeout(flash, 3000);
 }
 
-// onChange({ kind, label, wind }) で、空の説明文などを更新してもらう
 export function initWeather(canvas, onChange) {
   const precip = createPrecip(canvas);
   const apply = (wx) => {
     document.body.dataset.weather = wx.kind;
-    // 風が強いほど短冊が大きく速く揺れる（普段は ±5度）
     const amp = Math.min(22, 5 + Math.max(0, wx.wind - 3) * 1.6);
     document.body.style.setProperty("--amp", `${amp.toFixed(1)}deg`);
     document.body.style.setProperty("--wind-speed", String(Math.max(0.45, 1 - Math.max(0, wx.wind - 3) * 0.05)));

@@ -1,9 +1,7 @@
-// トップページの下の「Enistagram の最新の投稿」。地図の Enistagram と同じ投稿（返信はのぞく）を新しい順に少しだけ出す。
-// 押すと地図の Enistagram（map.html?tab=feed）が開く。Firebase は、この場所が見えそうになってから読む
 import { VENUES } from "./config.js";
 import { subscribePosts, observePhotos, cachedPhoto } from "./posts.js";
 
-const SHOW = 6; // 出す数
+const SHOW = 6;
 const list = document.getElementById("e-home-list");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
