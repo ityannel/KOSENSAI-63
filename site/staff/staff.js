@@ -433,6 +433,7 @@ const schedCur = (it) => state.schedule[it.item.sid] ?? { start: it.item.o_start
 const hmOf = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false });
 const isoAt = (orig, hhmmText) => `${orig.slice(0, 10)}T${hhmmText}:00+09:00`;
 const saveSchedule = (changes, label) => write(label, () => fs.setDoc(fs.doc(db, "site_schedule", "current"), { changes, ...stamp() }));
+const isDeleted = (it) => !!state.schedule[it.item.sid]?.deleted;
 function renderSchedule() {
   const items = scheduleItems().sort((x, y) => Date.parse(x.item.o_start) - Date.parse(y.item.o_start));
   const days = [...new Set(items.map((x) => x.item.o_start.slice(0, 10)))];
@@ -443,12 +444,19 @@ function renderSchedule() {
   $("#sched-list").innerHTML = days.map((d) => `
     <h3 class="sched-day">${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日</h3>
     ${items.filter((x) => x.item.o_start.startsWith(d)).map((it) => {
-      const c = schedCur(it), chg = c.start !== it.item.o_start || c.end !== it.item.o_end;
-      return `<div class="sched-row${chg ? " is-chg" : ""}">
+      const c = schedCur(it), del = isDeleted(it), added = !!it.item.added;
+      const chg = !added && (c.start !== it.item.o_start || c.end !== it.item.o_end);
+      const sid = esc(it.item.sid);
+      const sub = added ? `${esc(it.item.kind || "")}${it.kind === "e" ? `　${esc(venueName(it.item.venue))}` : ""}　追加した予定` : `もとの時間 ${hmOf(it.item.o_start)}〜${hmOf(it.item.o_end)}${chg ? `　→　<b style="display:inline">${hmOf(c.start)}〜${hmOf(c.end)}</b>` : ""}`;
+      return `<div class="sched-row${chg ? " is-chg" : ""}${del ? " is-del" : ""}${added ? " is-added" : ""}">
         <span class="kind">${SCHED_KIND[it.kind]}</span>
-        <div><b>${esc(schedName(it))}</b><small>もとの時間 ${hmOf(it.item.o_start)}〜${hmOf(it.item.o_end)}${chg ? `　→　<b style="display:inline">${hmOf(c.start)}〜${hmOf(c.end)}</b>` : ""}</small></div>
-        <div class="times"><input type="time" value="${hmOf(c.start)}" data-sid="${esc(it.item.sid)}" data-end="0" aria-label="始まり"> 〜 <input type="time" value="${hmOf(c.end)}" data-sid="${esc(it.item.sid)}" data-end="1" aria-label="終わり"></div>
-        <button class="btn btn-ghost btn-sm" type="button" data-sched-reset="${esc(it.item.sid)}"${chg ? "" : " disabled"}>もとにもどす</button>
+        <div><b>${esc(schedName(it))}${del ? " （削除済み）" : ""}</b><small>${sub}</small></div>
+        <div class="times"><input type="time" value="${hmOf(c.start)}" data-sid="${sid}" data-end="0" aria-label="始まり"${del ? " disabled" : ""}> 〜 <input type="time" value="${hmOf(c.end)}" data-sid="${sid}" data-end="1" aria-label="終わり"${del ? " disabled" : ""}></div>
+        <div class="acts">
+          ${del ? `<button class="btn btn-ghost btn-sm" type="button" data-sched-reset="${sid}">もとにもどす</button>` : `
+          ${added ? `<button class="btn btn-ghost btn-sm" type="button" data-sched-edit="${sid}">編集</button>` : `<button class="btn btn-ghost btn-sm" type="button" data-sched-reset="${sid}"${chg ? "" : " disabled"}>もとにもどす</button>`}
+          <button class="btn btn-ghost btn-sm btn-danger" type="button" data-sched-del="${sid}">削除</button>`}
+        </div>
       </div>`;
     }).join("")}`).join("");
 }
@@ -461,26 +469,82 @@ $("#sched-list").addEventListener("change", (e) => {
   if (a2.value <= a1.value) return toast("終わりは、始まりより後にしてください", true);
   const start = isoAt(it.item.o_start, a1.value), end = isoAt(it.item.o_end, a2.value);
   const changes = { ...state.schedule };
-  if (start === it.item.o_start && end === it.item.o_end) delete changes[it.item.sid]; else changes[it.item.sid] = { start, end };
+  if (it.item.added) changes[it.item.sid] = { ...changes[it.item.sid], start, end };
+  else if (start === it.item.o_start && end === it.item.o_end) delete changes[it.item.sid]; else changes[it.item.sid] = { start, end };
   saveSchedule(changes, `${schedName(it)}の時間を ${a1.value}〜${a2.value} にしました`);
 });
 $("#sched-list").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-sched-reset]");
-  if (!b) return;
-  const changes = { ...state.schedule };
-  delete changes[b.dataset.schedReset];
-  saveSchedule(changes, "もとの時間にもどしました");
+  const reset = e.target.closest("[data-sched-reset]"), del = e.target.closest("[data-sched-del]"), edit = e.target.closest("[data-sched-edit]");
+  if (reset) {
+    const changes = { ...state.schedule };
+    delete changes[reset.dataset.schedReset];
+    return saveSchedule(changes, "もとにもどしました");
+  }
+  if (del) {
+    const it = scheduleItems().find((x) => x.item.sid === del.dataset.schedDel);
+    if (!it) return;
+    if (!confirm(`「${schedName(it)}」を削除しますか？${it.item.added ? "（追加した予定は、完全に消えます）" : "（もとからある予定は、あとで「もとにもどす」で戻せます）"}`)) return;
+    const changes = { ...state.schedule };
+    if (it.item.added) delete changes[it.item.sid];
+    else changes[it.item.sid] = { ...(changes[it.item.sid] ?? { start: it.item.o_start, end: it.item.o_end }), deleted: true };
+    return saveSchedule(changes, `${schedName(it)}を削除しました`);
+  }
+  if (edit) {
+    const it = scheduleItems().find((x) => x.item.sid === edit.dataset.schedEdit), c = state.schedule[edit.dataset.schedEdit];
+    if (!it || !c) return;
+    $("#sa-kind").value = c.k; syncAddForm();
+    $("#sa-day").value = c.start.slice(0, 10); $("#sa-start").value = hmOf(c.start); $("#sa-end").value = hmOf(c.end);
+    $("#sa-title").value = c.title ?? ""; $("#sa-tag").value = c.tag ?? ""; $("#sa-text").value = c.text ?? "";
+    if (c.k === "e") $("#sa-venue").value = c.venue;
+    addEditing = edit.dataset.schedEdit;
+    $("#sa-head").textContent = "予定を編集する"; $("#sa-submit").textContent = "保存する"; $("#sa-cancel").hidden = false;
+    $("#sched-add").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 });
+let addEditing = null;
+function syncAddForm() {
+  $("#sa-venue-wrap").hidden = $("#sa-kind").value === "a";
+  const days = FESTIVAL.days.map((d) => d.open.slice(0, 10)), sel = $("#sa-day"), keep = sel.value;
+  sel.innerHTML = days.map((d) => `<option value="${d}">${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日</option>`).join("");
+  if (keep) sel.value = keep;
+  const v = $("#sa-venue");
+  if (!v.options.length) v.innerHTML = VENUES.map((x) => `<option value="${esc(x.id)}">${esc(venueName(x.id))}</option>`).join("");
+}
+function resetAddForm() {
+  addEditing = null;
+  $("#sched-add").reset(); syncAddForm();
+  $("#sa-head").textContent = "予定を追加する"; $("#sa-submit").textContent = "追加する"; $("#sa-cancel").hidden = true;
+}
+$("#sa-kind").addEventListener("change", syncAddForm);
+$("#sa-cancel").addEventListener("click", resetAddForm);
+$("#sched-add").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const day = $("#sa-day").value, s = $("#sa-start").value, en = $("#sa-end").value, title = $("#sa-title").value.trim();
+  if (!title) return toast("名前を入れてください", true);
+  if (!s || !en) return toast("時間を入れてください", true);
+  if (en <= s) return toast("終わりは、始まりより後にしてください", true);
+  const k = $("#sa-kind").value;
+  const entry = { add: 1, k, title, tag: $("#sa-tag").value.trim(), text: $("#sa-text").value.trim(), start: `${day}T${s}:00+09:00`, end: `${day}T${en}:00+09:00` };
+  if (k === "e") entry.venue = $("#sa-venue").value;
+  const added = Object.keys(state.schedule).filter((x) => x.startsWith("+")).length;
+  if (!addEditing && added >= 60) return toast("追加できる予定は60件までです", true);
+  const id = addEditing ?? `+${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+  const label = addEditing ? `${title}を保存しました` : `${title}を追加しました`;
+  saveSchedule({ ...state.schedule, [id]: entry }, label);
+  resetAddForm();
+});
+syncAddForm();
 $("#sched-reset").addEventListener("click", () => {
-  if (!Object.keys(state.schedule).length) return toast("変えたものはありません");
-  if (!confirm("変えた時間を、すべてもとにもどしますか？")) return;
-  saveSchedule({}, "すべてもとの時間にもどしました");
+  const keep = Object.fromEntries(Object.entries(state.schedule).filter(([k]) => k.startsWith("+")));
+  if (Object.keys(keep).length === Object.keys(state.schedule).length) return toast("変えたものはありません");
+  if (!confirm("もとからある予定の、変えた時間と削除を、すべてもとにもどしますか？（追加した予定は残ります）")) return;
+  saveSchedule(keep, "すべてもとにもどしました");
 });
 $("#sched-shift").addEventListener("submit", (e) => {
   e.preventDefault();
   const day = $("#sh-day").value, from = $("#sh-from").value, min = Number($("#sh-min").value);
   if (!from || !Number.isFinite(min) || !min) return toast("時刻とずらす分を入れてください", true);
-  const targets = scheduleItems().filter((x) => x.item.o_start.startsWith(day) && hmOf(schedCur(x).start) >= from);
+  const targets = scheduleItems().filter((x) => x.item.o_start.startsWith(day) && !isDeleted(x) && hmOf(schedCur(x).start) >= from);
   if (!targets.length) return toast("その時刻より後の出演・企画がありません", true);
   if (!confirm(`${Number(day.slice(5, 7))}月${Number(day.slice(8, 10))}日の ${from} 以降 ${targets.length}件を、${min > 0 ? `${min}分 遅らせ` : `${-min}分 早め`}ますか？`)) return;
   const changes = { ...state.schedule };
@@ -488,7 +552,8 @@ $("#sched-shift").addEventListener("submit", (e) => {
     const c = schedCur(x);
     const shift = (iso) => new Date(Date.parse(iso) + min * 60000).toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" }).replace(" ", "T") + "+09:00";
     const ns = { start: shift(c.start), end: shift(c.end) };
-    if (ns.start === x.item.o_start && ns.end === x.item.o_end) delete changes[x.item.sid]; else changes[x.item.sid] = ns;
+    if (x.item.added) changes[x.item.sid] = { ...changes[x.item.sid], ...ns };
+    else if (ns.start === x.item.o_start && ns.end === x.item.o_end) delete changes[x.item.sid]; else changes[x.item.sid] = ns;
   }
   saveSchedule(changes, `${targets.length}件の時間を${min > 0 ? `${min}分 遅らせ` : `${-min}分 早め`}ました`);
 });

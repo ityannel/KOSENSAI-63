@@ -426,14 +426,6 @@ const slideShare = {
   },
 };
 
-const slideIntro = {
-  async build() {
-    return { dur: 7000, cls: "intro", html: `
-      <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>
-      <h1>${chars("ようこそ")}</h1>` };
-  },
-};
-
 const CLOSING_MIN = 5;
 function closedState(t) {
   const days = FESTIVAL.days.map((d) => ({ close: Date.parse(d.close) }));
@@ -502,12 +494,12 @@ const fwStop = () => { fwOn = false; };
 function syncFireworks() { const on = fireworksNow(); document.body.classList.toggle("is-fw", on); on ? fwStart() : fwStop(); }
 setInterval(syncFireworks, 2000); syncFireworks();
 
-const SLIDES = { intro: slideIntro, stage: slideStage, closing: slideClosing, fireworks: slideFireworks, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
+const SLIDES = { stage: slideStage, closing: slideClosing, fireworks: slideFireworks, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
 function plan() {
   if (closedState(now())) return ["closing"];
   if (fireworksNow()) return ["fireworks"];
-  const base = ["intro", "stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
-  if (hurryItem(now())) base.splice(5, 0, "stage");
+  const base = ["stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
+  if (hurryItem(now())) base.splice(4, 0, "stage");
   return base;
 }
 let order = [], idx = -1, timer = null, busy = false, dir = 1;

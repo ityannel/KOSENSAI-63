@@ -243,6 +243,21 @@
             <button class="btn btn-ghost" type="button" id="sched-reset">すべてもとの時間にもどす</button>
           </form>
         </article>
+        <article class="card">
+          <header class="card-head"><h2 id="sa-head">予定を追加する</h2></header>
+          <p class="muted small">出演や企画を、あとから足せます。足したものは、トップページ・地図・みどころ・会場のディスプレイにすぐ反映されます。</p>
+          <form class="sched-add" id="sched-add">
+            <label class="field"><span>種類</span><select id="sa-kind"><option value="a">ステージの出演</option><option value="e">企画</option></select></label>
+            <label class="field"><span>日</span><select id="sa-day"></select></label>
+            <label class="field"><span>始まり</span><input type="time" id="sa-start" required></label>
+            <label class="field"><span>終わり</span><input type="time" id="sa-end" required></label>
+            <label class="field wide"><span>名前</span><input id="sa-title" maxlength="40" required placeholder="例：飛び入りライブ"></label>
+            <label class="field"><span>ジャンル（空でもOK）</span><input id="sa-tag" maxlength="12" placeholder="例：バンド"></label>
+            <label class="field" id="sa-venue-wrap"><span>場所</span><select id="sa-venue"></select></label>
+            <label class="field wide"><span>ひとこと・説明</span><textarea id="sa-text" rows="2" maxlength="200"></textarea></label>
+            <div class="sched-add-btns"><button class="btn btn-primary" type="submit" id="sa-submit">追加する</button><button class="btn btn-ghost" type="button" id="sa-cancel" hidden>編集をやめる</button></div>
+          </form>
+        </article>
         <div id="sched-list"></div>
       </section>
 

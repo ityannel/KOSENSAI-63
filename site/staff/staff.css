@@ -761,3 +761,14 @@ h1, h2, h3 { font-weight: 400; }
 .nt-types span { text-align: center; padding: 7px 4px; }
 .nt-set { gap: 10px; padding: 10px 12px 12px; }
 @media (max-width: 900px) { .nt-form { grid-template-columns: minmax(0, 1fr); } .nt-main { position: static; } }
+.sched-row { grid-template-columns: 74px minmax(0, 1fr) auto auto; }
+.sched-row .acts { display: flex; gap: 6px; }
+.sched-row.is-del { opacity: .55; }
+.sched-row.is-del b { text-decoration: line-through; }
+.sched-row.is-added { border-color: var(--teal, #3F9F99); box-shadow: inset 4px 0 0 var(--teal, #3F9F99); }
+.btn-danger { color: #c0392b; }
+.sched-add { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end; margin-top: 12px; }
+.sched-add .wide { grid-column: 1 / -1; }
+.sched-add textarea, .sched-add input, .sched-add select { width: 100%; box-sizing: border-box; }
+.sched-add-btns { grid-column: 1 / -1; display: flex; gap: 10px; }
+@media (max-width: 720px) { .sched-row { grid-template-columns: 1fr; } }

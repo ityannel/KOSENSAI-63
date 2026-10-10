@@ -374,21 +374,40 @@ export const SECRETS = {
 };
 
 export const SCHEDULE_KEY = "kosen63-schedule";
-const schedItems = () => [["a", STAGE.acts], ["e", EVENTS]].flatMap(([k, list]) => list.map((x) => [k, x]));
+const ORIG_ACTS = [...STAGE.acts], ORIG_EVENTS = [...EVENTS];
+const origItems = () => [["a", ORIG_ACTS], ["e", ORIG_EVENTS]].flatMap(([k, list]) => list.map((x) => [k, x]));
 {
   const seen = new Map();
-  for (const [k, x] of schedItems()) {
+  for (const [k, x] of origItems()) {
     const base = `${k}${String(x.start).replace(/\D/g, "").slice(0, 12)}`, n = seen.get(base) ?? 0;
     seen.set(base, n + 1);
     x.sid = n ? `${base}_${n}` : base;
     x.o_start = x.start; x.o_end = x.end;
   }
 }
-export const scheduleItems = () => schedItems().map(([kind, item]) => ({ kind, item }));
+let ADDED = [];
+export const scheduleItems = () => [...origItems().map(([kind, item]) => ({ kind, item })), ...ADDED];
+const okIso = (s) => typeof s === "string" && Number.isFinite(Date.parse(s));
+const clip = (s, n) => String(s ?? "").slice(0, n);
 export function applySchedule(changes) {
-  for (const [, x] of schedItems()) {
-    const c = changes?.[x.sid];
-    x.start = c?.start ?? x.o_start; x.end = c?.end ?? x.o_end;
+  const added = [];
+  for (const [key, c] of Object.entries(changes ?? {})) {
+    if (!key.startsWith("+") || !c || typeof c !== "object" || !okIso(c.start) || !okIso(c.end) || Date.parse(c.end) <= Date.parse(c.start) || !clip(c.title, 1)) continue;
+    const base = { sid: key, start: c.start, end: c.end, o_start: c.start, o_end: c.end, added: true };
+    if (c.k === "a") added.push({ kind: "a", item: { ...base, name: clip(c.title, 40), kind: clip(c.tag, 12), mood: clip(c.text, 200), copy: "", photo: null, more: [], insta: "" } });
+    else added.push({ kind: "e", item: { ...base, title: clip(c.title, 40), venue: VENUES.some((v) => v.id === c.venue) ? c.venue : STAGE.venue, kind: clip(c.tag, 12), copy: clip(c.text, 200) } });
   }
+  ADDED = added;
+  for (const [, x] of origItems()) {
+    const c = changes?.[x.sid];
+    x.start = c?.start ?? x.o_start; x.end = c?.end ?? x.o_end; x.deleted = !!c?.deleted;
+  }
+  const byStart = (a, b) => Date.parse(a.start) - Date.parse(b.start);
+  const addedActs = added.filter((x) => x.kind === "a").map((x) => x.item), addedEvents = added.filter((x) => x.kind === "e").map((x) => x.item);
+  const acts = [...ORIG_ACTS.filter((x) => !x.deleted), ...addedActs], events = [...ORIG_EVENTS.filter((x) => !x.deleted), ...addedEvents];
+  if (addedActs.length) acts.sort(byStart);
+  if (addedEvents.length) events.sort(byStart);
+  STAGE.acts.splice(0, STAGE.acts.length, ...acts);
+  EVENTS.splice(0, EVENTS.length, ...events);
 }
 try { applySchedule(JSON.parse(localStorage.getItem(SCHEDULE_KEY) ?? "{}")); } catch {  }
