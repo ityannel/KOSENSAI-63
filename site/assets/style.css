@@ -2213,3 +2213,5 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .visit-links a:nth-child(2) { --lk: #E9B13C; color: #4A3B36; }
 .visit-links a:nth-child(3) { --lk: #D8457F; }
 .visit-links a:nth-child(4) { --lk: #634A2E; color: #FEEBC4; }
+/* 詳しいシートの企画ロゴ（透明な背景。ふつうは、チケットのすぐ下） */
+.dt-logo { display: block; width: min(86%, calc(300 * var(--u))); height: auto; margin: calc(4 * var(--u)) auto calc(16 * var(--u)); filter: drop-shadow(0 calc(3 * var(--u)) calc(6 * var(--u)) rgba(48, 44, 41, .25)); pointer-events: none; -webkit-user-drag: none; }

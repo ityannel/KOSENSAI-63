@@ -177,10 +177,10 @@ export const GUIDES = [
 export const EVENTS = [
   { title: "ステージパフォーマンス", venue: "gym2", start: "2026-10-24T12:40:00+09:00", end: "2026-10-24T15:50:00+09:00", stage: true },
   { title: "ステージパフォーマンス", venue: "gym2", start: "2026-10-25T10:40:00+09:00", end: "2026-10-25T14:50:00+09:00", stage: true },
-  { title: "模擬店総選挙 結果発表", venue: "gym2", start: "2026-10-25T15:40:00+09:00", end: "2026-10-25T15:50:00+09:00", live: true, kind: "発表", copy: "いちばん人気の模擬店はどこ？\nYouTube でも生配信。" },
-  { title: "大抽選会", venue: "gym2", start: "2026-10-25T16:00:00+09:00", end: "2026-10-25T17:00:00+09:00", live: true, internal: true },
+  { title: "模擬店総選挙 結果発表", logo: "assets/img/logo-souse.webp", venue: "gym2", start: "2026-10-25T15:40:00+09:00", end: "2026-10-25T15:50:00+09:00", live: true, kind: "発表", copy: "いちばん人気の模擬店はどこ？\nYouTube でも生配信。" },
+  { title: "大抽選会", logo: "assets/img/logo-chusen.webp", venue: "gym2", start: "2026-10-25T16:00:00+09:00", end: "2026-10-25T17:00:00+09:00", live: true, internal: true },
   // 花火は学内の方限定（一般公開は16:00まで）。要項 p.4・p.8。飛行機の関係で遅れることがある
-  { title: "花火", venue: "ground", start: "2026-10-25T18:00:00+09:00", end: "2026-10-25T18:30:00+09:00", internal: true, kind: "フィナーレ", copy: "高専祭のしめくくり。\n飛行機の都合で遅れることもあります。" },
+  { title: "花火", logo: "assets/img/logo-hanabi.webp", venue: "ground", start: "2026-10-25T18:00:00+09:00", end: "2026-10-25T18:30:00+09:00", internal: true, kind: "フィナーレ", copy: "高専祭のしめくくり。\n飛行機の都合で遅れることもあります。" },
 ];
 
 // ステージの出演者（stage: true の時間の中）。act("日", "始まり", "終わり", "名前", "種類", "ひとこと", "説明", "写真")

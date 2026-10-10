@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<!-- 企画のロゴ（仮）の元。?v=名前 で1つずつ、透明な背景で描く（tools/make-event-logos.sh が site/assets/img/logo-◯◯.webp にする）。
+     どれも、サイトの太い字（WDXL）が土台。企画ごとに、色・形・飾りを変えてある -->
+<link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: transparent; }
+  body { width: 900px; height: 420px; display: grid; place-items: center; font-family: "WDXL Lubrifont JP N", sans-serif; }
+  .lg { position: relative; text-align: center; font-weight: 400; line-height: 1.05; letter-spacing: .03em; }
+  .lg svg { position: absolute; overflow: visible; }
+
+  /* 花火：夜空の紫から、金へ。光がまわりに放射する。字は、にじむ光でふちどる */
+  .hanabi { font-size: 230px; background: linear-gradient(180deg, #fff7c2 8%, #ffd24a 45%, #ff8a3d 78%, #d9669b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 6px #2a1d5e; paint-order: stroke fill; filter: drop-shadow(0 0 14px rgba(255, 210, 74, .9)) drop-shadow(8px 8px 0 #7b3fb3); padding: 10px 40px; }
+  .hanabi svg { left: 50%; top: 50%; width: 520px; height: 520px; margin: -260px 0 0 -260px; z-index: -1; }
+
+  /* ステージ：斜めに突き出す大きな字。青とピンクのずれた影。スポットライトと音符 */
+  .stage { font-size: 170px; color: #fff; rotate: -6deg; text-shadow: 7px 7px 0 #2f8fe0, 14px 14px 0 #d9669b, 21px 21px 0 #1c1b3a; -webkit-text-stroke: 5px #1c1b3a; paint-order: stroke fill; padding: 20px 60px; }
+  .stage i { position: absolute; font-style: normal; color: #ffd24a; text-shadow: 4px 4px 0 #1c1b3a; font-size: 70px; }
+
+  /* ティッシュ＆うちわ：水玉の帯と、うちわ。やわらかい赤とクリーム色、ふちは茶 */
+  .tissue { font-size: 118px; color: #FEEBC4; -webkit-text-stroke: 7px #7a3a2a; paint-order: stroke fill; text-shadow: 7px 7px 0 #ff6b5e; padding: 14px 50px 26px; rotate: -3deg; }
+  .tissue::before { content: ""; position: absolute; inset: 8px 10px 8px 10px; z-index: -1; border-radius: 40px; background: radial-gradient(circle at 12px 12px, #fff 4px, transparent 5px) 0 0 / 28px 28px, #ff9d8f; border: 6px solid #7a3a2a; box-shadow: 10px 10px 0 rgba(48, 44, 41, .5); }
+
+  /* 校内装飾：花道。うす緑の波の帯に、深い緑の字。花と若葉 */
+  .decor { font-size: 170px; color: #1f7a5a; -webkit-text-stroke: 4px #fffaf0; paint-order: stroke fill; text-shadow: 6px 6px 0 #9bd9c3, 12px 12px 0 #f7c6d9; padding: 6px 50px 40px; rotate: 2deg; }
+  .decor::after { content: ""; position: absolute; left: 20px; right: 20px; bottom: 6px; height: 26px; background: radial-gradient(circle at 14px -2px, transparent 15px, #3E9A86 16px, #3E9A86 22px, transparent 23px) 0 0 / 44px 26px repeat-x; }
+  .decor b { position: absolute; width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle, #ffd24a 0 22%, transparent 24%), radial-gradient(circle, #f7a8c8 0 60%, transparent 62%); box-shadow: 3px 3px 0 rgba(48, 44, 41, .4); }
+</style></head>
+<body><div class="lg" id="lg"></div>
+<script>
+  const v = new URLSearchParams(location.search).get("v") || "hanabi";
+  const el = document.getElementById("lg");
+  el.className = "lg " + v;
+  if (v === "hanabi") {
+    const rays = Array.from({ length: 16 }, (_, k) => { const a = k * 22.5 * Math.PI / 180, r1 = 150, r2 = k % 2 ? 210 : 255; return `<line x1="${260 + Math.cos(a) * r1}" y1="${260 + Math.sin(a) * r1}" x2="${260 + Math.cos(a) * r2}" y2="${260 + Math.sin(a) * r2}" stroke="${k % 2 ? "#ffd24a" : "#ff6b5e"}" stroke-width="${k % 2 ? 8 : 12}" stroke-linecap="round"/>`; }).join("");
+    el.innerHTML = `<svg viewBox="0 0 520 520" aria-hidden="true">${rays}<circle cx="60" cy="90" r="9" fill="#ffd24a"/><circle cx="470" cy="430" r="11" fill="#d9669b"/><circle cx="450" cy="70" r="8" fill="#9bd7d0"/></svg>花火`;
+  } else if (v === "stage") {
+    el.innerHTML = `ステージ<i style="left:-20px;top:-26px">♪</i><i style="right:-10px;bottom:-20px;font-size:90px">♬</i>`;
+  } else if (v === "tissue") {
+    el.innerHTML = `ティッシュ<br>＆うちわ`;
+  } else if (v === "decor") {
+    el.innerHTML = `校内装飾<b style="left:-14px;top:-12px"></b><b style="right:-18px;top:30px;width:54px;height:54px"></b><b style="left:30px;bottom:-20px;width:44px;height:44px"></b>`;
+  }
+</script></body></html>

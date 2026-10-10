@@ -60,6 +60,7 @@ export function openEvent(e, t = Date.now()) {
   const state = on ? "" : past ? "終了しました" : start - t < 3 * 3600000 ? `あと${mins(start - t)}分で始まります` : "";
   open(`
     <div class="dt-ticket" aria-hidden="true">${ticketHtml(e, 0, t)}</div>
+    ${e.logo ? `<img class="dt-logo" src="${esc(e.logo)}" alt="${esc(e.title)}" decoding="async">` : ""}
     ${e.photo ? (() => { const all = photosOf(e); return `<figure class="dt-photo"><img class="dt-photo-img" data-photos="${esc(all.join("|"))}" src="${esc(e.photo.replace(/\.webp$/, "-l.webp"))}" alt="${esc(e.title)}の写真（押すと画面いっぱいに表示）" decoding="async"></figure>`; })() : ""}
     <h2 class="dt-title" id="dt-title">${esc(e.title)}${on ? ' <span class="dt-now">NOW</span>' : ""}</h2>
     ${state ? `<p class="dt-state">${esc(state)}</p>` : ""}
