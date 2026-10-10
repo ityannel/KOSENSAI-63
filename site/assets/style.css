@@ -1976,3 +1976,4 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .sc-save:active { translate: -4px 3px; filter: none; }
 .sc-ios { margin: 14px 0 0; font-size: 0.8rem; line-height: 1.6; color: #7A6247; }
 @media (prefers-reduced-motion: reduce) { .sc-seals i.new, #secret:not([hidden]) .sc-seals i.on { animation: none; } }
+.secret-toast[hidden] { display: none; }
