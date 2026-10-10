@@ -294,14 +294,14 @@ const slideStage = {
           ${cur.copy ? `<p>${esc(cur.copy).replace(/\n/g, "<br>")}</p>` : ""}
           <div class="barw"><time>${tStart(cur)}</time><div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div><time>${tEnd(cur)}</time></div></div>`
       : nxt
-        ? `<div class="now wait slide-l${nxt.photo ? " has-ph" : ""}"><span class="lab">NEXT</span>${phOf(nxt)}
+        ? `<div class="now wait slide-l${nxt.photo ? " has-ph" : ""}"><span class="lab">${dayOf(nxt.s) === dayOf(t) ? "NEXT" : `あした ${dayOf(nxt.s)}`}</span>${phOf(nxt)}
           <h2 class="nm">${esc(nxt.name)}</h2>${chips(nxt, `<span class="chip">${tRange(nxt)}</span>`)}
           ${nxt.copy ? `<p>${esc(nxt.copy).replace(/\n/g, "<br>")}</p>` : ""}</div>`
         : `<div class="now wait slide-l"><span class="lab">STAGE</span><h2>おやすみ</h2></div>`; // 出演がないときだけ
     // このあとの出演を、次の1つだけでなく、どんどん並べる（企画があれば、その分は1つ減らす）
     const row = (small, title, time, sub, hotRow, n, photo = "") => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} ${hotRow ? "hot" : ""}${photo ? " has-ph" : ""} rise" style="--i:${n}${photo ? `;--ph:url('/${esc(String(photo).replace(/^\//, ""))}')` : ""}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
     const later = ACTS.filter((a) => a.s > t).slice(cur ? 0 : 1).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0)); // 出演中でなければ、次の出演は左のカードに出すので、右には2つ目から // 急げ！の帯が出ているときは、場所が狭いので1つ減らす
-    const nx = later.map((a, k) => row(k === 0 && cur ? "NEXT" : "THEN", a.name, tStart(a), [a.kind, a.mood].filter(Boolean).join("　"), k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k, a.photo));
+    const nx = later.map((a, k) => row(dayOf(a.s) !== dayOf(t) ? `あした ${dayOf(a.s)}` : k === 0 && cur ? "NEXT" : "THEN", a.name, tStart(a), [a.kind, a.mood].filter(Boolean).join("　"), k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k, a.photo));
     if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, tStart(nextEv), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
     return { dur: hot ? 15000 : 13000, cls: "stage", after(el) {
@@ -596,7 +596,7 @@ const BG = { intro: ["#3f9f99", "#9BD7D0"], posts: ["#2f8fe0", "#9BD7D0"], popul
   stage: ["#ee7b30", "#B5655A"], way: ["#B5655A", "#F2A96A"], share: ["#a061c9", "#2f8fe0"], fireworks: ["#0b1030", "#3a1d5c"], closing: ["#3f9f99", "#9BD7D0"] };
 // ステージのカードの紹介（セットリストなど）が長くて、画面の下からはみ出す・下の帯に隠れるときは、行を減らして「…」で省略する
 function fitNow(el) {
-  const limit = () => slide.getBoundingClientRect().bottom - 8;
+  const limit = () => slide.getBoundingClientRect().bottom - 28;
   // 右の「このあと」の列が、画面の下からはみ出すときは、いちばん下から減らす（カードも、その高さにそろうので）
   const nxs = [...el.querySelectorAll(".nx")];
   while (nxs.length > 1 && nxs[nxs.length - 1].getBoundingClientRect().bottom > limit()) nxs.pop().remove();
