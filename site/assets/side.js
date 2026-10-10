@@ -21,7 +21,13 @@ const MENU = [
   ["exhibit", "学科展示", "DEPARTMENTS", svg('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 15h9"/>')],
   ["info", "ご来場の皆さまへ", "INFO", svg('<path d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>')],
   ["sponsors", "協賛", "SPONSORS", svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>')],
-].filter(([id]) => !onTop || document.getElementById(id)); // トップページにない場所は出さない
+].filter(([id]) => !onTop || document.getElementById(id)) // トップページにない場所は出さない
+  .filter(([id]) => id !== "memory" || afterClose()); // 「思い出」は、高専祭が終わったあと（2日目の閉場のあと）だけ。みどころなど、トップ以外のページでも
+function afterClose() {
+  const np = new URLSearchParams(location.search).get("now"); // ?now= で、時刻を決めて確かめられる
+  const now = np ? Date.parse(np.includes("+") ? np : `${np}+09:00`) : Date.now();
+  return now > Date.parse(FESTIVAL.days.at(-1).close);
+}
 // ほかのページ・地図のよく使うところ（すぐ開ける）
 const MORE = [
   ["mido.html", "みどころを詳しく", "TIMETABLE", svg('<path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="M14.5 7.5v9" stroke-dasharray="1.6 2.2"/>')],

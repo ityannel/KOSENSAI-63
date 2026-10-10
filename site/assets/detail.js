@@ -71,7 +71,6 @@ export function openEvent(e, t = Date.now()) {
     </dl>
     ${e.copy ? `<p class="dt-copy">${esc(e.copy).replace(/\n/g, "<br>")}</p>` : ""}
     ${/^[\w.]{1,30}$/.test(e.insta ?? "") ? `<div class="dt-links"><a class="mido-more dt-go dt-insta" href="https://www.instagram.com/${esc(e.insta)}/" target="_blank" rel="noopener noreferrer"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><path d="M16.8 7.2h.01"/></svg>Instagram　@${esc(e.insta)}</span></a></div>` : ""}
-    ${e.internal ? '<p class="dt-note">学内の方限定の企画です。</p>' : ""}
     ${e.live ? '<p class="dt-note">YouTube で生配信します（配信中はトップページに出ます）。</p>' : ""}
     ${mapLinks(e.venue)}`);
 }
