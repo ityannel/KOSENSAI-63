@@ -280,7 +280,8 @@ function hurryItem(t) {
 }
 // 種類・ひとことの札（まだ届いていない団体は、札なし）
 // 種類と時刻は丸い札、一言は長いので、札にせず1行の文で（札にすると、細長くつぶれる）
-const phOf = (x) => (x.photo ? `<img class="ph" src="/${esc(String(x.photo).replace(/^\//, ""))}" alt="" decoding="async">` : ""); // 出演団体の写真があれば、カードにも出す
+const phList = (x) => [x.photo, ...(x.more ?? [])].filter(Boolean);
+const phOf = (x) => phList(x).map((s, k) => `<img class="ph${k ? "" : " on"}" style="--tilt:${[3, -3, 2, -2][k % 4]}deg" src="/${esc(String(s).replace(/^\//, ""))}" alt="" decoding="async">`).join(""); // 出演団体の写真は、あるぶん全部（1枚ずつ、順にかわる）
 const chips = (x, extra = "") => { const l = [x.kind].filter(Boolean).map((t) => `<span class="chip">${esc(t)}</span>`).join("") + extra; return (l ? `<div class="kind">${l}</div>` : "") + (x.mood ? `<p class="mood">${esc(x.mood)}</p>` : ""); };
 const slideStage = {
   async build() {
@@ -303,7 +304,12 @@ const slideStage = {
     const nx = later.map((a, k) => row(k === 0 && cur ? "NEXT" : "THEN", a.name, tStart(a), [a.kind, a.mood].filter(Boolean).join("　"), k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k));
     if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, tStart(nextEv), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
-    return { dur: hot ? 15000 : 13000, cls: "stage", html: `
+    return { dur: hot ? 15000 : 13000, cls: "stage", after(el) {
+      const imgs = [...el.querySelectorAll(".now .ph")];
+      if (imgs.length < 2) return;
+      let k = 0;
+      const id = setInterval(() => { if (!el.isConnected) return clearInterval(id); imgs[k].classList.remove("on"); k = (k + 1) % imgs.length; imgs[k].classList.add("on"); }, 3200);
+    }, html: `
       <span class="tag slide-l"><i>${ic("mic")}</i>ステージ・企画</span>
       <h1 class="ttl">${chars(hot ? "まもなく、はじまる！" : "いま、ステージでは")}</h1>
       <div class="grid">${main}<div class="nxt">${nx.join("")}${mini}</div></div>` };

@@ -587,3 +587,5 @@ body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 8; } /* 行数は signag
 /* 出演団体の写真があるとき：カードの右上に、少し傾けて貼る（文字は、写真をよける） */
 .now .ph { position: absolute; z-index: 1; top: 34px; right: 40px; width: 300px; max-height: 400px; object-fit: cover; border-radius: 18px; border: 7px solid #fff; rotate: 3deg; filter: drop-shadow(-8px 6px 0 rgba(48, 44, 41, .35)); }
 .now.has-ph > :not(.ph):not(.eq):not(.lab):not(.barw) { max-width: calc(100% - 350px); }
+.now .ph { opacity: 0; rotate: var(--tilt, 3deg); transition: opacity .7s ease; }
+.now .ph.on { opacity: 1; }
