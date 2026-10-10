@@ -31,7 +31,7 @@ function card(p) {
 let last = "";
 function render(posts, err) {
   let html;
-  if (!posts) html = `<li class="eh-empty">${err ? "いまは投稿を読み込めません。" : "読み込み中…"}</li>`;
+  if (!posts) html = err ? '<li class="eh-empty">いまは投稿を読み込めません。電波のよい所で、開き直してみてください。</li>' : '<li class="eh-empty is-loading" aria-busy="true">読み込み中…</li>';
   else {
     const top = posts.filter((p) => p.visible && !p.reply_to).slice(0, SHOW);
     html = top.length ? top.map(card).join("") : '<li class="eh-empty">まだ投稿はありません。会場で最初のポストをどうぞ！</li>';
@@ -43,7 +43,8 @@ function render(posts, err) {
 
 if (list) {
   render(null);
-  const start = () => subscribePosts(render);
+  let got = false;
+  const start = () => { subscribePosts((p, e) => { if (p) got = true; render(p, e); }); setTimeout(() => { if (!got) render(null, true); }, 9000); };
   if ("IntersectionObserver" in window) {
     const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); start(); } }, { rootMargin: "600px 0px" });
     io.observe(list);

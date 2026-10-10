@@ -9,7 +9,7 @@ const TILTS = [-3, 2.5, -2, 3.5, -2.5];
 const DYU = [0, 4, -2, 0, 0];
 const DXS = ["0px", "0px", "calc(10 * var(--u))", "0px", "0px"];
 const bgOf = (d) => `color-mix(in srgb, ${d.color} 16%, #FFF8E8)`;
-let current = -1;
+let current = 0;
 let busy = 0;
 const MS = calm ? 0 : 1;
 

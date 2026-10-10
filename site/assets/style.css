@@ -1948,3 +1948,8 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .tk-badge.is-now { background: #d9334f; color: #fff; animation: tk-blink 1.6s ease-in-out infinite; }
 @keyframes tk-blink { 50% { box-shadow: 0 0 0 calc(5 * var(--u)) rgba(59, 245, 61, .3); } }
 @media (prefers-reduced-motion: reduce) { .tk-eq i, .tk-badge.is-now { animation: none; } }
+.mido-chips button { min-height: 36px; display: inline-flex; align-items: center; }
+.spot.is-secret::after { content: ""; position: absolute; inset: -10px; }
+.eh-empty.is-loading { min-height: 120px; border-radius: calc(14 * var(--u)); background: linear-gradient(100deg, rgba(99, 74, 46, .06) 30%, rgba(99, 74, 46, .14) 50%, rgba(99, 74, 46, .06) 70%) 0 0 / 220% 100%; color: transparent; animation: eh-shimmer 1.4s linear infinite; }
+@keyframes eh-shimmer { to { background-position: -220% 0; } }
+@media (prefers-reduced-motion: reduce) { .eh-empty.is-loading { animation: none; } }
