@@ -2231,3 +2231,8 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .en-live .vi-num { font-size: 1.3em; }
 .en-paper .en-note { -webkit-line-clamp: 9; line-height: 1.45; }
 .en-live { font-family: var(--hud-font); font-weight: 400; } /* 待ち時間は WDXL */
+/* 説明は「…」で切ってよい。ジャンルは丸をやめて、字だけを詰めて、札からはみ出さないように */
+.en-paper .en-note { -webkit-line-clamp: 5; line-height: 1.55; }
+.en-tags span::before { display: none; }
+.en-paper .en-tags { gap: calc(5 * var(--u)); margin-left: 0; }
+.en-tags span { gap: 0; font-size: calc(10.5 * var(--u)); color: color-mix(in srgb, var(--gc, var(--g)) 62%, #3A2A18); }

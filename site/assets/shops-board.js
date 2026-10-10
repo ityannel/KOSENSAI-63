@@ -39,11 +39,6 @@ const nameSize = (name) => {
   const w = Math.max(...String(name).split(/\r?\n/).map((ln) => [...ln].reduce((a, ch) => a + (ch.charCodeAt(0) < 256 ? 0.58 : 1), 0)));
   return Math.max(15, Math.min(25, Math.floor((126 / Math.max(w, 1)) * 10) / 10));
 };
-// 説明が長いときは、切らずに、字を小さくして全部入れる（1行は約10字）
-const noteSize = (note) => {
-  const lines = String(note).split(/\r?\n/).reduce((a, ln) => a + Math.max(1, Math.ceil([...ln].length / 10)), 0);
-  return lines <= 5 ? 12 : Math.max(8.5, Math.floor((12 * 5.4 / lines) * 10) / 10);
-};
 function card(s, i, copy = false) {
   const g = [...genresOf(s)].sort((a, b) => (b === pick) - (a === pick)); // いま選んでいるジャンルを先頭に
   const tint = s.food ? genreColor(g[0]) : "#4f7fa8";
@@ -54,7 +49,7 @@ function card(s, i, copy = false) {
       : `<span class="en-paper">
           <b class="en-name" style="font-size:calc(${nameSize(s.name)} * var(--u))">${esc(s.name)}</b>
           <span class="en-tags">${g.map((x) => `<span style="--gc:${genreColor(x)}">${esc(x.replace(/系$/, ""))}</span>`).join("")}</span>
-          ${s.note ? `<span class="en-note" style="font-size:calc(${noteSize(s.note)} * var(--u))">${esc(s.note)}</span>` : ""}
+          ${s.note ? `<span class="en-note">${esc(s.note)}</span>` : ""}
           <span class="en-group">${esc(s.group ?? "")}</span>
         </span>`}
     <span class="en-live" data-live-card></span>
