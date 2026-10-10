@@ -186,8 +186,8 @@ export const EVENTS = [
 // 「みどころ」のページの一覧にだけ出す企画（トップの「いま・次」・サイネージ・地図には出さない）。パンフレット・要項より。
 // 終日つづくもの（校内装飾）は listOnly：トップのチケットにも出さない
 export const LIST_EVENTS = [
-  { title: "ティッシュ＆うちわ販売", logo: "assets/img/logo-tissue.webp", venue: "専攻科棟1階", start: "2026-10-24T10:00:00+09:00", end: "2026-10-24T11:30:00+09:00", internal: true, kind: "販売", copy: "あなたの購入したティッシュが、\n豪華賞品に大変身しちゃうかも？\n（在校生限定）" },
-  { title: "ティッシュ＆うちわ販売", logo: "assets/img/logo-tissue.webp", venue: "専攻科棟1階", start: "2026-10-25T08:30:00+09:00", end: "2026-10-25T09:45:00+09:00", internal: true, kind: "販売", copy: "あなたの購入したティッシュが、\n豪華賞品に大変身しちゃうかも？\n（在校生限定）" },
+  { title: "ティッシュ＆うちわ販売", logo: "assets/img/logo-tissue.webp", venue: "専攻科棟1階", start: "2026-10-24T10:00:00+09:00", end: "2026-10-24T11:30:00+09:00", internal: true, kind: "販売", copy: "あなたの購入したティッシュが、\n豪華賞品に大変身しちゃうかも？" },
+  { title: "ティッシュ＆うちわ販売", logo: "assets/img/logo-tissue.webp", venue: "専攻科棟1階", start: "2026-10-25T08:30:00+09:00", end: "2026-10-25T09:45:00+09:00", internal: true, kind: "販売", copy: "あなたの購入したティッシュが、\n豪華賞品に大変身しちゃうかも？" },
   { title: "校内装飾", logo: "assets/img/logo-decor.webp", venue: "校内全域", start: "2026-10-24T12:00:00+09:00", end: "2026-10-24T16:00:00+09:00", kind: "展示", listOnly: true, copy: "1・2年生が彩る、\nにぎやかな花道へようこそ♪" },
   { title: "校内装飾", logo: "assets/img/logo-decor.webp", venue: "校内全域", start: "2026-10-25T10:00:00+09:00", end: "2026-10-25T16:00:00+09:00", kind: "展示", listOnly: true, copy: "1・2年生が彩る、\nにぎやかな花道へようこそ♪" },
 ];
