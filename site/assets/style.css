@@ -1977,11 +1977,18 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .sc-ios { margin: 14px 0 0; font-size: 0.8rem; line-height: 1.6; color: #7A6247; }
 @media (prefers-reduced-motion: reduce) { .sc-seals i.new, #secret:not([hidden]) .sc-seals i.on { animation: none; } }
 .secret-toast[hidden] { display: none; }
-.visit-en { margin: calc(14 * var(--u)) 0 calc(4 * var(--u)); text-align: center; }
-.en-btn { position: relative; display: inline-flex; align-items: center; gap: calc(12 * var(--u)); padding: calc(10 * var(--u)) calc(26 * var(--u)) calc(10 * var(--u)) calc(16 * var(--u)); border-radius: 999px; background: var(--grain), linear-gradient(110deg, #3F9F99 0%, #5BB8D4 45%, #8E7CC3 100%); color: #fff; text-decoration: none; rotate: -1.5deg; filter: drop-shadow(calc(-5 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, 0.5)); transition: translate 0.12s ease, filter 0.12s ease; }
-.en-btn::after { content: ""; position: absolute; inset: calc(3 * var(--u)); border: calc(1.5 * var(--u)) dashed rgba(255, 255, 255, 0.55); border-radius: 999px; pointer-events: none; }
-.en-btn svg { flex: none; width: calc(34 * var(--u)); height: calc(34 * var(--u)); fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.en-btn span { display: grid; text-align: left; line-height: 1.15; }
-.en-btn b { font-family: var(--hud-font); font-weight: 400; font-size: calc(24 * var(--u)); letter-spacing: 0.04em; }
-.en-btn small { font-family: var(--hud-font); font-size: calc(12 * var(--u)); letter-spacing: 0.1em; opacity: 0.9; }
+.visit-en { width: min(100%, calc(300 * var(--u))); margin: calc(14 * var(--u)) auto 0; }
+.en-btn { position: relative; display: flex; align-items: center; justify-content: center; gap: calc(8 * var(--u)); width: 100%; min-height: calc(46 * var(--u)); padding: calc(8 * var(--u)) calc(10 * var(--u)); line-height: 1.2; border-radius: calc(8 * var(--u)); background: var(--grain), linear-gradient(110deg, #3F9F99 0%, #5BB8D4 45%, #8E7CC3 100%); color: #fff; text-decoration: none; rotate: -1.2deg; font-size: calc(15 * var(--u)); filter: drop-shadow(calc(-5 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, 0.5)); transition: translate 0.12s ease, filter 0.12s ease; }
+.en-btn svg { flex: none; width: calc(20 * var(--u)); height: calc(20 * var(--u)); fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.en-btn span { display: flex; align-items: baseline; gap: calc(8 * var(--u)); white-space: nowrap; }
+.en-btn b { font-family: var(--hud-font); font-weight: 400; font-size: calc(15 * var(--u)); letter-spacing: 0.02em; }
+.en-btn small { font-family: var(--hud-font); font-size: calc(11 * var(--u)); letter-spacing: 0.06em; opacity: 0.92; }
 .en-btn:active { translate: calc(-5 * var(--u)) calc(4 * var(--u)); filter: none; }
+/* 来場案内のボタンは、すべて同じ大きさ・余白・角丸にそろえて、ひとまわり大きく */
+.visit-links { width: min(100%, calc(340 * var(--u))); gap: calc(14 * var(--u)); }
+.visit-links a { box-sizing: border-box; height: calc(56 * var(--u)); padding: 0 calc(12 * var(--u)); font-size: calc(17 * var(--u)); }
+.visit-en { width: min(100%, calc(340 * var(--u))); }
+.en-btn { box-sizing: border-box; height: calc(56 * var(--u)); min-height: 0; padding: 0 calc(12 * var(--u)); gap: calc(10 * var(--u)); }
+.en-btn svg { width: calc(24 * var(--u)); height: calc(24 * var(--u)); }
+.en-btn b { font-size: calc(22 * var(--u)); }
+.en-btn small { font-size: calc(14 * var(--u)); }
