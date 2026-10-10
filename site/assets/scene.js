@@ -92,26 +92,37 @@ function renderSpots() {
 function loadFound() {
   try { return JSON.parse(localStorage.getItem(SECRET_KEY) ?? "[]"); } catch { return []; }
 }
+const sealsHtml = (n, on, fresh = -1) => Array.from({ length: n }, (_, k) => `<i class="${k < on ? "on" : ""}${k === fresh ? " new" : ""}" style="--k:${k}">縁</i>`).join("");
+const secretNeed = (found) => HIDDEN.filter((h) => found.includes(h.id) || onScreen(document.getElementById(`secret-${h.id}`))).length;
+function openSecret(n) {
+  $("#secret-seals").innerHTML = sealsHtml(n, n);
+  setTimeout(() => (location.hash = "secret"), 1400);
+}
 function findSecret(id) {
   const el = document.getElementById(`secret-${id}`);
   el.classList.add("is-talking");
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove("is-talking"), 3200);
   const found = loadFound();
-  if (found.includes(id)) return;
+  if (found.includes(id)) {
+    const n = secretNeed(found);
+    if (found.length >= n) openSecret(n);
+    return;
+  }
   found.push(id);
   try { localStorage.setItem(SECRET_KEY, JSON.stringify(found)); } catch {}
   el.classList.add("found");
   const toast = $("#secret-toast");
-  const need = HIDDEN.filter((h) => found.includes(h.id) || onScreen(document.getElementById(`secret-${h.id}`))).length;
-  toast.textContent = found.length >= need ? "隠し縁、ぜんぶ見つけた！" : `隠し縁 ${found.length} / ${need}`;
+  const need = secretNeed(found);
+  const done = found.length >= need;
+  toast.innerHTML = `<span class="sc-seals">${sealsHtml(need, found.length, found.length - 1)}</span><b>${done ? "ぜんぶ見つけた！" : `隠し縁 ${found.length} / ${need}`}</b>`;
   toast.hidden = false;
   toast.classList.remove("pop");
   void toast.offsetWidth;
   toast.classList.add("pop");
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => (toast.hidden = true), 2600);
-  if (found.length >= need) setTimeout(() => (location.hash = "secret"), 1400);
+  toast._t = setTimeout(() => (toast.hidden = true), done ? 1500 : 2600);
+  if (done) openSecret(need);
 }
 
 export function setChatter(data) {

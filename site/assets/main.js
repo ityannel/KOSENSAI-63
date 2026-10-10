@@ -500,6 +500,8 @@ subscribeChatter(setChatter);
 
 $("#secret-reward").textContent = SECRETS.reward;
 $("#secret-download").href = SECRETS.wallpaper;
+$("#secret-img").src = SECRETS.wallpaper;
+if (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) $("#secret-ios").hidden = false;
 
 const shake = initShake($("#shake-btn"));
 initParallax();
