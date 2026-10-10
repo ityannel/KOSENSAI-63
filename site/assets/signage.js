@@ -280,6 +280,7 @@ function hurryItem(t) {
 }
 // 種類・ひとことの札（まだ届いていない団体は、札なし）
 // 種類と時刻は丸い札、一言は長いので、札にせず1行の文で（札にすると、細長くつぶれる）
+const phOf = (x) => (x.photo ? `<img class="ph" src="/${esc(String(x.photo).replace(/^\//, ""))}" alt="" decoding="async">` : ""); // 出演団体の写真があれば、カードにも出す
 const chips = (x, extra = "") => { const l = [x.kind].filter(Boolean).map((t) => `<span class="chip">${esc(t)}</span>`).join("") + extra; return (l ? `<div class="kind">${l}</div>` : "") + (x.mood ? `<p class="mood">${esc(x.mood)}</p>` : ""); };
 const slideStage = {
   async build() {
@@ -287,12 +288,12 @@ const slideStage = {
     if (!cur && !nxt && !onEv.length && !nextEv) return null;
     const hot = hurryItem(t);
     const main = cur
-      ? `<div class="now slide-l"><span class="lab">NOW ON STAGE</span><div class="eq">${Array.from({ length: 30 }, (_, k) => `<i style="--k:${k};--h:${30 + Math.round(Math.random() * 55)}%"></i>`).join("")}</div>
+      ? `<div class="now slide-l${cur.photo ? " has-ph" : ""}"><span class="lab">NOW ON STAGE</span>${phOf(cur)}<div class="eq">${Array.from({ length: 30 }, (_, k) => `<i style="--k:${k};--h:${30 + Math.round(Math.random() * 55)}%"></i>`).join("")}</div>
           <h2>${esc(cur.name)}</h2>${chips(cur)}
           ${cur.copy ? `<p>${esc(cur.copy).replace(/\n/g, "<br>")}</p>` : ""}
           <div class="barw"><time>${tStart(cur)}</time><div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div><time>${tEnd(cur)}</time></div></div>`
       : nxt
-        ? `<div class="now wait slide-l"><span class="lab">NEXT</span>
+        ? `<div class="now wait slide-l${nxt.photo ? " has-ph" : ""}"><span class="lab">NEXT</span>${phOf(nxt)}
           <h2 class="nm">${esc(nxt.name)}</h2>${chips(nxt, `<span class="chip">${tRange(nxt)}</span>`)}
           ${nxt.copy ? `<p>${esc(nxt.copy).replace(/\n/g, "<br>")}</p>` : ""}</div>`
         : `<div class="now wait slide-l"><span class="lab">STAGE</span><h2>おやすみ</h2></div>`; // 出演がないときだけ
@@ -579,6 +580,22 @@ async function cover() {
 // 画面ごとの背景（ポスターの空の色。上→下）。差し色はその上の色
 const BG = { intro: ["#3f9f99", "#9BD7D0"], posts: ["#2f8fe0", "#9BD7D0"], popular: ["#d9669b", "#F2A96A"], shop: ["#ee7b30", "#efc696"], crowd: ["#3f9f99", "#F1D08A"],
   stage: ["#ee7b30", "#B5655A"], way: ["#B5655A", "#F2A96A"], share: ["#a061c9", "#2f8fe0"], fireworks: ["#0b1030", "#3a1d5c"], closing: ["#3f9f99", "#9BD7D0"] };
+// ステージのカードの紹介（セットリストなど）が長くて、画面の下からはみ出す・下の帯に隠れるときは、行を減らして「…」で省略する
+function fitNow(el) {
+  const limit = () => slide.getBoundingClientRect().bottom - 8;
+  // 右の「このあと」の列が、画面の下からはみ出すときは、いちばん下から減らす（カードも、その高さにそろうので）
+  const nxs = [...el.querySelectorAll(".nx")];
+  while (nxs.length > 1 && nxs[nxs.length - 1].getBoundingClientRect().bottom > limit()) nxs.pop().remove();
+  const p = el.querySelector(".now > p:not(.mood)");
+  if (!p) return;
+  // 紹介の最後の行が、画面の下（と、カードの下の余白）に収まる行数まで減らす。1行でも入らなければ出さない
+  const pad = parseFloat(getComputedStyle(p.parentElement).paddingBottom) || 0;
+  const over = () => p.getBoundingClientRect().bottom + pad > limit();
+  let n = 8;
+  p.style.webkitLineClamp = String(n);
+  while (n > 1 && over()) { n--; p.style.webkitLineClamp = String(n); }
+  if (over()) p.style.display = "none";
+}
 async function show(i, first = false) {
   if (busy) return;
   busy = true; clearTimeout(timer);
@@ -600,6 +617,7 @@ async function show(i, first = false) {
     stage.style.setProperty("--bg1", c1); stage.style.setProperty("--bg2", c2); stage.style.setProperty("--a", c1);
     const el = slide.firstElementChild;
     numify(el);
+    fitNow(el);
     // 写真つきの投稿の画面では、その写真を、背景にうっすら重ねる
     const bp = $("#bgphoto");
     if (!bp) { /* 古い signage.html（背景の写真の場所がない）のとき */ } else if (built.bgPhoto) { bp.style.backgroundImage = `url("${built.bgPhoto}")`; bp.classList.add("on"); } else bp.classList.remove("on");
