@@ -36,3 +36,7 @@ tools/rally-qr.html
 # 平面図をなぞる道具の確認用の画像（tools/trace-floors.py が作る）
 tools/trace-debug-*.png
 .wrangler/
+# 作業用（パンフレットの書き出しなど。公開しない）
+work-*/
+.env
+.env.*
