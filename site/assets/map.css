@@ -1265,3 +1265,12 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
   body.is-wide:not(.is-feed):has(.m-sheet:not([hidden]):not(.is-min)) .m-side > :is(#m-tilt, #m-help) { display: grid; } /* もとの「かくす」決まりが id を使っているので、こちらも id で */
   body.is-wide:not(.is-feed):has(.m-sheet:not([hidden]):not(.is-min)) .m-side > #m-compass[data-rotated] { display: block; }
 }
+/* NOW は、みどころのチケット・サイネージと同じ動き：赤い札が、緑のふちを脈打たせて点滅。いまやっている会場の札は黄色 */
+#map-svg .ic-now .bg, .m-legend .ic-now .bg { fill: #d9334f; stroke: rgba(59, 245, 61, .35); stroke-width: 2; animation: m-now-pulse 1.6s ease-in-out infinite; }
+#map-svg .ic-now text, .m-legend .ic-now text { fill: #fff; }
+@keyframes m-now-pulse { 50% { stroke-width: 7; stroke: rgba(59, 245, 61, .3); } }
+.sh-badge.is-now { background: #d9334f; color: #fff; animation: m-now-glow 1.6s ease-in-out infinite; }
+@keyframes m-now-glow { 50% { box-shadow: 0 0 0 5px rgba(59, 245, 61, .3); } }
+.sh-venue.is-now { background: var(--grain), linear-gradient(135deg, #FFE98A 0%, #FFC93C 48%, #FF9A4D 100%); border-color: #d9334f; box-shadow: none; }
+.sh-venue.is-now small { color: #7a1f2e; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { #map-svg .ic-now .bg, .m-legend .ic-now .bg, .sh-badge.is-now { animation: none; } }
