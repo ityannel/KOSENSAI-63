@@ -177,10 +177,19 @@ export const GUIDES = [
 export const EVENTS = [
   { title: "ステージパフォーマンス", venue: "gym2", start: "2026-10-24T12:40:00+09:00", end: "2026-10-24T15:50:00+09:00", stage: true },
   { title: "ステージパフォーマンス", venue: "gym2", start: "2026-10-25T10:40:00+09:00", end: "2026-10-25T14:50:00+09:00", stage: true },
-  { title: "模擬店総選挙 結果発表", logo: "assets/img/logo-souse.webp", venue: "gym2", start: "2026-10-25T15:40:00+09:00", end: "2026-10-25T15:50:00+09:00", live: true, kind: "発表", copy: "いちばん人気の模擬店はどこ？\nYouTube でも生配信。" },
+  { title: "模擬店総選挙 結果発表", logo: "assets/img/logo-souse.webp", venue: "gym2", start: "2026-10-25T15:40:00+09:00", end: "2026-10-25T15:50:00+09:00", live: true, kind: "発表", copy: "校内随一の模擬店が、今ここに決まる…\n輝く栄光を手にするのは、いったいどこのお店だ！？\nYouTube でも生配信。" },
   { title: "大抽選会", logo: "assets/img/logo-chusen.webp", venue: "gym2", start: "2026-10-25T16:00:00+09:00", end: "2026-10-25T17:00:00+09:00", live: true, internal: true },
   // 花火は学内の方限定（一般公開は16:00まで）。要項 p.4・p.8。飛行機の関係で遅れることがある
   { title: "花火", logo: "assets/img/logo-hanabi.webp", venue: "ground", start: "2026-10-25T18:00:00+09:00", end: "2026-10-25T18:30:00+09:00", internal: true, kind: "フィナーレ", copy: "高専祭のしめくくり。\n飛行機の都合で遅れることもあります。" },
+];
+
+// 「みどころ」のページの一覧にだけ出す企画（トップの「いま・次」・サイネージ・地図には出さない）。パンフレット・要項より。
+// 終日つづくもの（校内装飾）は listOnly：トップのチケットにも出さない
+export const LIST_EVENTS = [
+  { title: "ティッシュ＆うちわ販売", logo: "assets/img/logo-tissue.webp", venue: "専攻科棟1階", start: "2026-10-24T10:00:00+09:00", end: "2026-10-24T11:30:00+09:00", internal: true, kind: "販売", copy: "あなたの購入したティッシュが、\n豪華賞品に大変身しちゃうかも？\n（在校生限定）" },
+  { title: "ティッシュ＆うちわ販売", logo: "assets/img/logo-tissue.webp", venue: "専攻科棟1階", start: "2026-10-25T08:30:00+09:00", end: "2026-10-25T09:45:00+09:00", internal: true, kind: "販売", copy: "あなたの購入したティッシュが、\n豪華賞品に大変身しちゃうかも？\n（在校生限定）" },
+  { title: "校内装飾", logo: "assets/img/logo-decor.webp", venue: "校内全域", start: "2026-10-24T12:00:00+09:00", end: "2026-10-24T16:00:00+09:00", kind: "展示", listOnly: true, copy: "1・2年生が彩る、\nにぎやかな花道へようこそ♪" },
+  { title: "校内装飾", logo: "assets/img/logo-decor.webp", venue: "校内全域", start: "2026-10-25T10:00:00+09:00", end: "2026-10-25T16:00:00+09:00", kind: "展示", listOnly: true, copy: "1・2年生が彩る、\nにぎやかな花道へようこそ♪" },
 ];
 
 // ステージの出演者（stage: true の時間の中）。act("日", "始まり", "終わり", "名前", "種類", "ひとこと", "説明", "写真")
@@ -279,7 +288,7 @@ export const SHOPS = [
   { cls: "3SJ", bldg: "B", floor: "2F", group: "陸上競技部", name: "陸部のおにぎり", note: "食べると足が速くなる！？\n陸上部が丹精込めて作った\n焼きおにぎりです！", food: true, genre: ["しょっぱい系"] },
   { cls: "3C", bldg: "L", floor: "2F", group: "LSQ", name: "Nôteau - tian", note: "本格ポップコーン！！\n業務用マシン（6 万円）の美味しさを\nご堪能あれ！！\n電子部品アクセサリー！！\nロボコン(廃炉)参加生が\n心を込めて作りました！", food: true, genre: ["おやつ系"] },
   { cls: "3Z", bldg: "B", floor: "3F", group: "硬式テニス部", name: "テニス部学園", note: "赤点学習班", food: true, genre: ["甘い系", "ドリンク"] },
-  { cls: "4SM", bldg: "B", floor: "3F", group: "創作部同好会", name: "函館高専から脱出せよ-", note: "謎解きに参加するだけで\nお菓子1 個ゲット！\n謎解きクリアでもう1 個ケット！", food: false },
+  { cls: "4SM", bldg: "B", floor: "3F", group: "創作部同好会", name: "函館高専から脱出せよ-", note: "謎解きに参加するだけで\nお菓子1 個ゲット！\n謎解きクリアでもう1 個ゲット！", food: false },
   { cls: "4SE", bldg: "C", floor: "2F", group: "プロコン研究会", name: "プロコン模擬店", note: "部員たちで作ったゲームで\n展示しています！", food: false },
   { cls: "4SJ", bldg: "H", floor: "2F", group: "ハンドボール部", name: "ハンドボール部\n特製ハニートースト", note: "ハニートースト売ってます！", food: true, genre: ["甘い系"] },
   { cls: "4C", bldg: "B", floor: "1F", group: "女子バレーボール部", name: "チェキ", note: "こんにちは！\n本日は、高専のゲーセン理想で気取って、頑張って営業します💽", food: false },

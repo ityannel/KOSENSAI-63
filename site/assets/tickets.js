@@ -1,7 +1,7 @@
 // みどころのチケット（Figma）。トップページの「みどころ」（main.js）と、みどころのページ（mido-page.js）の両方で使う。
 // 時間の決まった企画：ステージは出演する団体ごと、ほかは企画ごと。
 // トップの3枚（TICKETS）は学内のみのものを出さない。みどころのページ（タイムテーブルの代わり）は全部（ALL_TICKETS）で、学内のみは札で知らせる
-import { EVENTS, STAGE, VENUES } from "./config.js";
+import { EVENTS, LIST_EVENTS, STAGE, VENUES } from "./config.js";
 import { changed } from "./schedule.js";
 
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -15,9 +15,9 @@ const fmt = (iso, o) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo
 // 種類がまだ届いていない出演は、チケットの色が全部同じにならないように、順に色をかえる（種類が届いたら、そちらの色）
 const HUES = ["band", "acoustic", "comedy", "dance"];
 const ACTS = STAGE.acts.map((a, i) => ({ ...a, title: a.name, venue: STAGE.venue, stageAct: true, hue: HUES[i % HUES.length] }));
-export const ALL_TICKETS = [...EVENTS.filter((e) => !(ACTS.length && e.stage)), ...ACTS]
+export const ALL_TICKETS = [...EVENTS.filter((e) => !(ACTS.length && e.stage)), ...LIST_EVENTS, ...ACTS]
   .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
-export const TICKETS = ALL_TICKETS.filter((e) => !e.internal);
+export const TICKETS = ALL_TICKETS.filter((e) => !e.internal && !e.listOnly);
 
 export const isOn = (e, t) => Date.parse(e.start) <= t && t < Date.parse(e.end);
 export const isPast = (e, t) => Date.parse(e.end) <= t;
