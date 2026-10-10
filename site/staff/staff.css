@@ -772,3 +772,11 @@ h1, h2, h3 { font-weight: 400; }
 .sched-add textarea, .sched-add input, .sched-add select { width: 100%; box-sizing: border-box; }
 .sched-add-btns { grid-column: 1 / -1; display: flex; gap: 10px; }
 @media (max-width: 720px) { .sched-row { grid-template-columns: 1fr; } }
+.ai-check { margin: 6px 0 0; padding: 8px 10px; border-radius: 8px; font-size: .85rem; line-height: 1.5; background: var(--bg-2, #f1ede4); }
+.ai-check p, .ai-check ul { margin: 4px 0 0; }
+.ai-check ul { padding-left: 1.2em; }
+.ai-check small { display: block; margin-top: 4px; opacity: .7; }
+.ai-check.is-review { background: #fde7d9; box-shadow: inset 4px 0 0 #E2622E; }
+.ai-check.is-ok { background: #e3f1e6; box-shadow: inset 4px 0 0 #3F9F99; }
+.ai-check.is-err { background: #f6e0e0; }
+.ai-check.is-wait { opacity: .75; }

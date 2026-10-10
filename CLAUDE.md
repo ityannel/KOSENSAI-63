@@ -74,6 +74,13 @@ npx -y firebase-tools deploy --only hosting --project enishi-7f43f       # Fireb
 - **スケジュールの変更**は、Firestore の `site_schedule/current` の `changes`（キー＝各予定の `sid`）。時間の変更、`deleted: true`（削除）、`+` で始まるキー（追加した予定）を持つ。反映は `applySchedule`（`config.js`）が、配列を直接書き換える。ページを開くたびに適用されるので、`config.js` を読む側は、書き換え後の配列を見る。
 - お知らせは `site_live/current`（`assets/notice.js` が、トップ・マップ・サイネージ・プレビューで共有）。
 
+## AI 機能（`functions/`、`site/ai.html`）
+
+- `functions/api/ask.js`（来場者向けの AI番長）と `functions/api/moderate.js`（本部向けの投稿確認）は、Cloudflare Pages Functions。**Gemini のキーは `env.GEMINI_API_KEY` だけ**。コード・コミット・会話に書かない。
+- `site/assets/ai-context.json` は、`tools/make-ai-context.mjs` が `config.js` から作る。`config.js` を変えたら作り直す（デプロイスクリプトが自動で動かす）。
+- AI番長は、来場者に「AI」と分かるようにする。来場者のふりをした、いいね・コメントは作らない。
+- `moderate` は、本部ログインが必須（Firestore の `staff/{メール}` を、本人のトークンで読めるかで確かめる）。AI の判断で、投稿を自動で非公開にしない。
+
 ## 触るときに気をつける場所
 
 - `firestore.rules`：来場者は読むだけ・決まった形の書き込みだけ。変えたら、`tests/firestore-rules/` にテストを足し、人間が読む。エミュレーターが動かない環境では、ルールを「機械で確かめた」と書かない。

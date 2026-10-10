@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AI番長に聞け！｜第63回 函館高専祭「縁」</title>
+  <meta name="description" content="高専祭のことを、AIに聞けるページ。日程・場所・模擬店・ルールなどに答えます。">
+  <link rel="canonical" href="https://hakodate-kosensai.pages.dev/ai.html">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#3E3F42">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;family=Zen+Kaku+Gothic+New:wght@500;700;900&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&amp;display=swap&amp;text=Enistagram" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/theme.js"></script>
+  <style>
+    body.terms-page { background: linear-gradient(#4b5f80, #2f3953); }
+    .terms-full { background: var(--grain), linear-gradient(165deg, #4b5f80, #3b4968 50%, #2f3953); color: #634A2E; font-family: var(--text-font); font-weight: 700; line-height: 1.8; }
+    .terms-full .mido-in { padding: calc(28 * var(--u)) calc(20 * var(--u)) calc(24 * var(--u)); }
+    .terms-full .mido-title { margin: calc(6 * var(--u)) calc(60 * var(--u)) calc(8 * var(--u)) 0; color: #fff; }
+    .terms-full .lead { margin: 0 0 calc(18 * var(--u)); color: #e9eef7; font-size: calc(14 * var(--u)); }
+    .terms-full section { margin: 0 0 calc(16 * var(--u)); padding: calc(16 * var(--u)) calc(18 * var(--u)) calc(14 * var(--u)); border-radius: calc(10 * var(--u)); background: var(--grain), #FEEBC4; box-shadow: calc(-6 * var(--u)) calc(4 * var(--u)) 0 rgba(20, 24, 38, .5); }
+    .terms-full h2 { margin: 0 0 calc(8 * var(--u)); font-family: var(--hud-font); font-weight: 400; font-size: calc(20 * var(--u)); line-height: 1.3; color: #C8323A; }
+    .terms-full h2 .no { margin-right: calc(6 * var(--u)); font-size: calc(34 * var(--u)); line-height: 1; vertical-align: calc(-3 * var(--u)); }
+    .terms-full p, .terms-full li { font-size: calc(14 * var(--u)); }
+    .terms-full p { margin: 0 0 calc(8 * var(--u)); }
+    .terms-full ul { margin: 0 0 calc(8 * var(--u)); padding-left: 1.3em; }
+    .terms-full li { margin: 0 0 calc(4 * var(--u)); }
+    .terms-full .btn { display: inline-block; margin: calc(4 * var(--u)) 0 calc(2 * var(--u)); padding: calc(10 * var(--u)) calc(22 * var(--u)); border-radius: 999px; background: #C8323A; color: #fff; text-decoration: none; font-size: calc(15 * var(--u)); box-shadow: calc(-4 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, .5); }
+    .terms-full .btn:active { translate: calc(-4 * var(--u)) calc(3 * var(--u)); box-shadow: none; }
+    .terms-full .btn[hidden], .terms-full [hidden] { display: none; }
+    .terms-full .small { font-size: calc(12 * var(--u)); opacity: .8; }
+    .terms-full table { width: 100%; border-collapse: collapse; font-size: calc(13 * var(--u)); }
+    .terms-full th, .terms-full td { padding: calc(5 * var(--u)) calc(6 * var(--u)); border-top: 1px dashed rgba(99, 74, 46, .4); text-align: left; vertical-align: top; }
+    .terms-full th { width: 7.5em; font-weight: 900; }
+
+    body.terms-page { background: linear-gradient(180deg, #2f3953, #7d4f6e 55%, #d9824f); }
+    .ai-full { background: var(--grain), radial-gradient(70% 28% at 10% 4%, #6b5fa8 0%, transparent 70%), radial-gradient(60% 26% at 92% 30%, #d8457f 0%, transparent 70%), radial-gradient(70% 30% at 12% 70%, #e2622e 0%, transparent 70%), linear-gradient(180deg, #2f3953 0%, #6a4a78 40%, #b95a63 75%, #e59a58 100%); font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif; font-weight: 500; display: flex; flex-direction: column; }
+    .ai-full .mido-in { display: flex; flex-direction: column; flex: 1; min-height: 0; padding-bottom: calc(14 * var(--u)); }
+    .ai-full .mido-title { font-size: calc(34 * var(--u)); line-height: 1.1; margin-right: calc(56 * var(--u)); }
+    .ai-tag { display: inline-block; margin-right: calc(8 * var(--u)); padding: calc(1 * var(--u)) calc(9 * var(--u)); border-radius: 6px; background: #FEEBC4; color: #C8323A; font-family: var(--hud-font); font-size: calc(18 * var(--u)); vertical-align: calc(5 * var(--u)); rotate: -4deg; }
+    .ai-full .lead { color: #fff; font-size: calc(14 * var(--u)); line-height: 1.7; margin-bottom: calc(10 * var(--u)); text-shadow: 0 1px 6px rgba(30, 24, 48, .4); }
+    .ai-log { flex: 1; min-height: calc(220 * var(--u)); overflow-y: auto; display: flex; flex-direction: column; gap: calc(12 * var(--u)); padding: calc(4 * var(--u)) calc(2 * var(--u)) calc(10 * var(--u)); }
+    .ai-msg { max-width: 86%; padding: calc(10 * var(--u)) calc(14 * var(--u)); border-radius: calc(12 * var(--u)); font-size: calc(15 * var(--u)); line-height: 1.65; white-space: pre-wrap; word-break: auto-phrase; overflow-wrap: anywhere; }
+    .ai-msg.is-user { align-self: flex-end; background: #634A2E; color: #FEEBC4; filter: drop-shadow(calc(-3 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, .45)); }
+    .ai-msg.is-ai { align-self: flex-start; background: var(--grain), #FEEBC4; color: #634A2E; filter: drop-shadow(calc(-3 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, .45)); }
+    .ai-msg.is-ai small { display: block; margin-top: calc(6 * var(--u)); font-size: calc(11 * var(--u)); opacity: .7; }
+    .ai-msg.is-wait { opacity: .75; }
+    .ai-chips { display: flex; flex-wrap: wrap; gap: calc(8 * var(--u)); margin: calc(6 * var(--u)) 0 calc(10 * var(--u)); }
+    .ai-chips button { padding: calc(8 * var(--u)) calc(14 * var(--u)); border: 0; border-radius: 999px; background: rgba(254, 235, 196, .92); color: #634A2E; font: 700 calc(13 * var(--u)) var(--text-font); cursor: pointer; filter: drop-shadow(calc(-3 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, .4)); }
+    .ai-chips button:active { translate: calc(-3 * var(--u)) calc(2 * var(--u)); filter: none; }
+    .ai-form { display: flex; gap: calc(8 * var(--u)); align-items: flex-end; }
+    .ai-form textarea { flex: 1; min-width: 0; resize: none; padding: calc(10 * var(--u)) calc(14 * var(--u)); border: 0; border-radius: calc(12 * var(--u)); background: #FFFBF2; color: #634A2E; font: 500 calc(15 * var(--u))/1.5 var(--text-font); max-height: calc(110 * var(--u)); }
+    .ai-form button { flex: none; padding: calc(11 * var(--u)) calc(18 * var(--u)); border: 0; border-radius: 999px; background: #C8323A; color: #fff; font: 400 calc(17 * var(--u)) var(--hud-font); cursor: pointer; filter: drop-shadow(calc(-4 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, .5)); }
+    .ai-form button:disabled { opacity: .5; }
+    .ai-form button:active:not(:disabled) { translate: calc(-4 * var(--u)) calc(3 * var(--u)); filter: none; }
+    .ai-note { margin: calc(8 * var(--u)) 0 0; color: #fff; font-size: calc(11.5 * var(--u)); line-height: 1.6; opacity: .85; }
+    .ai-note a { color: #FEEBC4; }
+  </style>
+</head>
+<body class="mido-page terms-page" data-page="ai">
+  <main class="mido mido-full terms-full ai-full" id="ai" aria-labelledby="ai-title">
+    <div class="mido-in">
+      <a class="mido-close" href="./" aria-label="とじる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></a>
+      <h1 class="mido-title" id="ai-title"><span class="ai-tag">AI</span>番長に聞け！</h1>
+      <p class="lead">高専祭のことなら、なんでも聞きな。日程、場所、模擬店、ルール、トイレまでな。英語でもOKだぜ。</p>
+      <div class="ai-log" id="ai-log" role="log" aria-live="polite"></div>
+      <div class="ai-chips" id="ai-chips"></div>
+      <form class="ai-form" id="ai-form">
+        <textarea id="ai-q" rows="1" maxlength="200" placeholder="例：いまやってるステージは？" aria-label="質問"></textarea>
+        <button type="submit" id="ai-send">送る</button>
+      </form>
+      <p class="ai-note">これは <b>AI（人工知能）</b>が答えています。まちがうこともあるので、大事なことは本部（学生会）で確かめてください。質問は、答えを作るために Google の AI に送られます（個人情報は書かないでください）。<a href="terms.html">くわしくは、ご利用にあたって</a>。</p>
+    </div>
+  </main>
+
+  <script type="module" src="assets/sheet-page.js"></script>
+  <script type="module" src="assets/ai-page.js"></script>
+  <script type="module" src="assets/side.js"></script>
+</body>
+</html>

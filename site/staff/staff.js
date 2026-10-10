@@ -617,6 +617,8 @@ $("#chatter-clear").addEventListener("click", () => {
 
 let postFilter = "all";
 const photos = new Map();
+const aiResults = new Map();
+const AI_API = ["localhost", "127.0.0.1"].includes(location.hostname) || location.hostname.endsWith("pages.dev") ? "" : "https://hakodate-kosensai.pages.dev";
 const isOff = (p) => p.hidden || p.reports >= REPORT_HIDE;
 const IC = {
   heart: '<svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3z"/></svg>',
@@ -642,13 +644,46 @@ function postActions(p, { reply = false } = {}) {
       <button type="button" class="tl-act${liked ? " is-on" : ""}" data-act="like" data-id="${esc(p.id)}" aria-pressed="${liked}" aria-label="公式でいいね（もう一度押すと取り消し）">${IC.heart}${p.likes ? `<span>${Number(p.likes)}</span>` : ""}</button>
       ${reply ? "" : `<button type="button" class="tl-act" data-act="replyopen" data-id="${esc(p.id)}" aria-label="公式で返信">${IC.reply}</button>`}
       <details class="tl-menu"><summary aria-label="操作">${IC.more}</summary>
-        <div class="tl-menu-list">${photoBtns}
+        <div class="tl-menu-list">${p.text || p.has_photo ? `<button type="button" data-act="aicheck" data-id="${esc(p.id)}">AIで確認する（候補を知らせるだけ）</button>` : ""}${photoBtns}
           <button type="button" data-act="${off ? "show" : "hide"}" data-id="${esc(p.id)}">${off ? "表示にもどす" : "非表示にする"}</button>
           <button type="button" class="is-danger" data-act="delete" data-id="${esc(p.id)}">削除</button>
         </div></details>
     </div>`;
 }
 const statusTags = (p) => `${p.reports ? `<span class="tag tag-warn">報告 ${p.reports}</span>` : ""}${isOff(p) ? '<span class="tag tag-danger">非表示</span>' : ""}`;
+function aiResultHtml(id) {
+  const r = aiResults.get(id);
+  if (!r) return "";
+  if (r.loading) return '<p class="ai-check is-wait">AIが確認しています…</p>';
+  if (r.error) return `<p class="ai-check is-err">AIで確認できませんでした（${esc(r.error)}）</p>`;
+  const lv = ["問題なさそう", "軽い注意", "要確認", "要確認（強め）"][r.severity] ?? "要確認";
+  return `<div class="ai-check ${r.verdict === "review" ? "is-review" : "is-ok"}"><b>AIの確認：${r.verdict === "review" ? `要確認（${lv}）` : "問題なさそう"}</b>${r.summary ? `<p>${esc(r.summary)}</p>` : ""}${r.reasons?.length ? `<ul>${r.reasons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}<small>AIの候補です。公開するかどうかは、人が決めてください。</small></div>`;
+}
+async function aiCheck(id) {
+  const post = state.posts.find((p) => p.id === id);
+  if (!post) return;
+  aiResults.set(id, { loading: true });
+  renderPosts();
+  try {
+    let photo = "";
+    if (post.has_photo) {
+      photo = photos.get(id) ?? (await fs.getDoc(fs.doc(db, "post_photos", id))).data()?.data ?? "";
+      if (photo) photos.set(id, photo);
+    }
+    const token = await a.currentUser.getIdToken();
+    const res = await fetch(`${AI_API}/api/moderate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ text: post.text ?? "", photo, place: post.place ?? "" }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error({ 403: "スタッフとして確認できません", 429: "回数の上限です", 503: "AIの設定がまだです" }[res.status] ?? "つながりません");
+    aiResults.set(id, body);
+  } catch (e) {
+    aiResults.set(id, { error: e.message });
+  }
+  renderPosts();
+}
 function renderPosts() {
   if (document.activeElement?.closest?.(".post-reply")) return;
   const reportedIds = new Set(state.posts.filter((p) => p.reports > 0 && !p.hidden).map((p) => p.id));
@@ -671,6 +706,7 @@ function renderPosts() {
           ${postActions(p)}
           ${kind}
           ${p.text ? `<p class="tl-text">${esc(p.text)}</p>` : ""}
+          ${aiResultHtml(p.id)}
           <small class="tl-time">${time(p.created_at)}</small>
         </div>
         ${comments.length ? `<ul class="tl-comments">${comments.map((c) => `
@@ -705,6 +741,7 @@ $("#post-list").addEventListener("click", (e) => {
   b.closest("details")?.removeAttribute("open");
   const ref = fs.doc(db, "posts", b.dataset.id);
   const post = state.posts.find((p) => p.id === b.dataset.id);
+  if (b.dataset.act === "aicheck") return void aiCheck(b.dataset.id);
   const acts = {
     like: async () => {
       const uid = a.currentUser.uid;
