@@ -488,7 +488,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 .tk-place { align-self: flex-start; margin-top: auto; font-family: var(--hud-font); font-size: calc(18 * var(--u)); line-height: 1.2; white-space: nowrap; }
 .has-photo .tk-place { margin-right: calc(60 * var(--u)); }
 /* 写真がある札は、文字を写真の左に収める（かぶらない）。写真は表面の右で、大きく見せる */
-.has-photo .tk-main { padding-right: calc(58 * var(--u)); }
+.has-photo .tk-main { padding-right: calc(76 * var(--u)); }
 .has-photo .tk-name { white-space: normal; }
 .tk-badge { position: absolute; top: calc(-9 * var(--u)); right: calc(16 * var(--u)); padding: calc(3 * var(--u)) calc(11 * var(--u)); border-radius: 999px; font-family: var(--hud-font); font-size: calc(14 * var(--u)); line-height: 1.2; }
 .tk-badge.is-now { background: var(--led); color: #0c2a0c; }
@@ -575,7 +575,7 @@ body.mido-page { background: linear-gradient(rgba(20, 12, 18, 0.45), rgba(20, 12
 .mido-day { margin: calc(8 * var(--u)) 0 calc(-8 * var(--u)) calc(1 * var(--u)); font-family: var(--hud-font); font-weight: 400; font-size: calc(20 * var(--u)); color: #F7FFF4; }
 .mido-empty, .mido-note { margin: calc(24 * var(--u)) 0 0; font-family: var(--text-font); font-weight: 700; font-size: calc(12.5 * var(--u)); color: #F7FFF4; }
 /* 写真はポラロイドのように、右下にはみ出して貼る */
-.tk-photo { position: absolute; right: calc(-14 * var(--u)); top: 50%; translate: 0 -50%; width: calc(66 * var(--u)); rotate: var(--ptilt, 5deg); padding: calc(4 * var(--u)) calc(4 * var(--u)) calc(12 * var(--u)); background: #fff; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); }
+.tk-photo { position: absolute; right: calc(14 * var(--u)); top: 50%; translate: 0 -50%; width: calc(60 * var(--u)); rotate: var(--ptilt, 5deg); padding: calc(4 * var(--u)) calc(4 * var(--u)) calc(12 * var(--u)); background: #fff; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); }
 
 /* ---------- 縁日（模擬店の紹介）：クリーム色の紙の掲示板に、チラシ（A4 のたて長）をテープで貼る ---------- */
 .ennichi {
@@ -2189,8 +2189,8 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .tk-photo.is-back { aspect-ratio: 1; object-fit: cover; pointer-events: none; cursor: default; filter: brightness(0.94); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28); }
 .tk-photo.is-back.b1 { translate: calc(-14 * var(--u)) calc(-50% + 3 * var(--u)); }
 .tk-photo.is-back.b2 { translate: calc(-8 * var(--u)) calc(-50% - 9 * var(--u)); }
-.has-photo.is-stack .tk-main { padding-right: calc(68 * var(--u)); }
-.has-photo.is-stack .tk-place { margin-right: calc(16 * var(--u)); }
+.has-photo.is-stack .tk-main { padding-right: calc(92 * var(--u)); }
+.has-photo.is-stack .tk-place { margin-right: calc(8 * var(--u)); }
 /* 拡大：前へ・次へ。送ったときは、横から入ってくる */
 .pz-nav { position: absolute; top: 50%; translate: 0 -50%; display: none; place-items: center; width: calc(44 * var(--u)); aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%; background: var(--grain), #FEEBC4; color: #634A2E; cursor: pointer; box-shadow: calc(-3 * var(--u)) calc(3 * var(--u)) 0 rgba(48, 44, 41, 0.45); -webkit-tap-highlight-color: transparent; }
 .pz.is-multi .pz-nav { display: grid; }
