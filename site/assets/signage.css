@@ -548,3 +548,9 @@ body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 8; }
 .now.has-ph[data-tone="light"] .kind .chip { background: #fff; border-color: #634A2E; color: #634A2E; }
 .stage .grid { padding-bottom: 28px; }
 .nxt > .nx { flex: 1 1 0; max-height: 190px; }
+.now > p.cp { display: block; overflow: hidden; margin-top: 12px; font-size: 30px; font-weight: 400; line-height: 1.55; letter-spacing: .02em; -webkit-line-clamp: unset; }
+.now > p.cp .in { display: block; }
+.now > p.cp.scroll { -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%); }
+.now > p.cp.scroll .in { animation: cp-scroll var(--dur, 12s) ease-in-out infinite alternate; }
+@keyframes cp-scroll { 0%, 14% { translate: 0 0; } 86%, 100% { translate: 0 calc(-1 * var(--dist, 0px)); } }
+@media (prefers-reduced-motion: reduce) { .now > p.cp.scroll .in { animation: none; } }
