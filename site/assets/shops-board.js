@@ -30,16 +30,19 @@ let pick = "すべて";
 // ばらばらの順（開くたびに変わる）
 const order = SHOPS.map((s) => [Math.random(), s]).sort((a, b) => a[0] - b[0]).map(([, s]) => s);
 const TILTS = [-2.5, 1.8, -1.2, 2.4, -1.8, 1];
+// 紙の下地。お店ごとに、名前から決めて（並びが変わっても同じ色）、ジャンルの色を重ねる
+const PAPERS = ["#FFF8E8", "#FFEFE0", "#F6F3DA", "#EAF3EA", "#EEF1F8", "#FBEAF0"];
+const paperOf = (name) => PAPERS[[...String(name)].reduce((a, ch) => a + ch.charCodeAt(0), 0) % PAPERS.length];
 
 // 店名の大きさ：いちばん長い行が、カードのはばに収まる大きさに（長い名前の最後の1字だけ、次の行に落ちないように）
 const nameSize = (name) => {
   const w = Math.max(...String(name).split(/\r?\n/).map((ln) => [...ln].reduce((a, ch) => a + (ch.charCodeAt(0) < 256 ? 0.58 : 1), 0)));
-  return Math.max(13, Math.min(20, Math.floor((116 / Math.max(w, 1)) * 10) / 10));
+  return Math.max(15, Math.min(25, Math.floor((126 / Math.max(w, 1)) * 10) / 10));
 };
 function card(s, i, copy = false) {
   const g = [...genresOf(s)].sort((a, b) => (b === pick) - (a === pick)); // いま選んでいるジャンルを先頭に
   const tint = s.food ? genreColor(g[0]) : "#4f7fa8";
-  return `<li${copy ? ' aria-hidden="true"' : ""}><a${copy ? ' tabindex="-1"' : ""} data-shop="${SHOPS.indexOf(s)}" class="en-card${s.flyer ? " has-flyer" : ""}" href="map.html#${esc(mapId(s))}" style="--tilt:${TILTS[i % TILTS.length]}deg; --g:${tint}">
+  return `<li${copy ? ' aria-hidden="true"' : ""}><a${copy ? ' tabindex="-1"' : ""} data-shop="${SHOPS.indexOf(s)}" class="en-card${s.flyer ? " has-flyer" : ""}" href="map.html#${esc(mapId(s))}" style="--tilt:${TILTS[i % TILTS.length]}deg; --g:${tint}; --paper:${paperOf(s.name)}">
     <i class="en-tape" aria-hidden="true"></i>
     ${s.flyer
       ? `<img class="en-flyer" src="${esc(s.flyer)}" alt="${esc(s.name)}のチラシ" loading="lazy" decoding="async">`
@@ -75,7 +78,7 @@ function paintLive() {
     const el = a.querySelector("[data-live-card]");
     if (!el) return;
     el.hidden = !x;
-    el.textContent = x?.label ?? "";
+    el.innerHTML = String(x?.label ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`).replace(/[0-9]+/g, (m) => `<span class="vi-num">${m}</span>`);
     if (x) el.style.setProperty("--c", x.color);
   });
 }

@@ -2225,3 +2225,7 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .en-tags span { display: inline-flex; align-items: center; gap: calc(3 * var(--u)); padding: 0; border-radius: 0; background: none; color: #634A2E; font-size: calc(10 * var(--u)); font-weight: 700; line-height: 1.5; }
 .en-tags span::before { content: ""; width: calc(7 * var(--u)); height: calc(7 * var(--u)); border-radius: 50%; background: var(--gc, var(--g)); flex: none; }
 .en-live { right: calc(9 * var(--u)); top: auto; bottom: calc(9 * var(--u)); padding: calc(2 * var(--u)) calc(6 * var(--u)); border-radius: calc(4 * var(--u)); background: none; color: var(--c); border: calc(1.6 * var(--u)) solid var(--c); outline: calc(1 * var(--u)) solid var(--c); outline-offset: calc(1.5 * var(--u)); rotate: -7deg; font-size: calc(10.5 * var(--u)); letter-spacing: .04em; mix-blend-mode: multiply; } /* 判子のように、右下に斜めに押す */
+/* 店名をできるだけ大きく。紙の色は、お店ごとの下地にジャンルの色を重ねて変える。待ち時間の数字は、まわりの字より少し大きく */
+.en-paper { background: var(--grain), color-mix(in srgb, var(--g) 20%, var(--paper, #FFF8E8)); }
+.en-paper .en-name { line-height: 1.15; }
+.en-live .vi-num { font-size: 1.3em; }
