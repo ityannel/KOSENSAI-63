@@ -2229,3 +2229,5 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .en-paper { background: var(--grain), color-mix(in srgb, var(--g) 20%, var(--paper, #FFF8E8)); }
 .en-paper .en-name { line-height: 1.15; }
 .en-live .vi-num { font-size: 1.3em; }
+.en-paper .en-note { -webkit-line-clamp: 9; line-height: 1.45; }
+.en-live { font-family: var(--hud-font); font-weight: 400; } /* 待ち時間は WDXL */
