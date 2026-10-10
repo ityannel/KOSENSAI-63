@@ -107,30 +107,7 @@
     <a href="map.html?tab=feed"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 5.2A9 9 0 1 0 16.6 18.8L9.5 12z"/><circle cx="9" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="13.3" cy="12" r="1.35" fill="currentColor" stroke="none"/></svg>Enistagram</a>
   </nav>
 
-  <script type="module">
-    import { LEGAL } from "./assets/config.js";
-    if (LEGAL?.takedownForm) {
-      const a = document.getElementById("takedown");
-      a.href = LEGAL.takedownForm; a.hidden = false;
-      document.getElementById("takedown-wait").hidden = true;
-    }
-    // × で、下へしまって、もとのページへ戻る（みどころ・投票のページと同じ）
-    const sheet = document.querySelector(".mido-full");
-    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    function close(e) {
-      e?.preventDefault();
-      const fromSite = document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1;
-      let gone = false;
-      const go = () => { if (gone) return; gone = true; fromSite ? history.back() : location.assign("./"); };
-      if (calm) return go();
-      sheet.classList.add("is-closing");
-      sheet.addEventListener("animationend", go, { once: true });
-      setTimeout(go, 600);
-    }
-    document.querySelector(".mido-close").addEventListener("click", close);
-    addEventListener("keydown", (e) => { if (e.key === "Escape") close(e); });
-    addEventListener("pageshow", () => sheet.classList.remove("is-closing"));
-  </script>
+  <script type="module" src="assets/sheet-page.js"></script>
   <script type="module" src="assets/side.js"></script>
   <script type="module" src="assets/test-loader.js"></script></body>
 </html>

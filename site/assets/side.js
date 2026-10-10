@@ -64,6 +64,16 @@ const farSvg = `<svg viewBox="0 0 1440 220" preserveAspectRatio="none"><path d="
 
 const motesHtml = Array.from({ length: 14 }, () => `<i class="pc-mote" style="--x:${f1(rnd() * 100)}%; --s:${Math.round(5 + rnd() * 11)}px; --dur:${Math.round(24 + rnd() * 26)}s; --delay:${-Math.round(rnd() * 48)}s; --drift:${Math.round((rnd() - 0.5) * 140)}px; --o:${(0.3 + rnd() * 0.4).toFixed(2)}"></i>`).join("");
 
+const sv = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const PC_LINKS = [
+  ["https://www.google.com/maps/search/?api=1&query=%E5%87%BD%E9%A4%A8%E5%B7%A5%E6%A5%AD%E9%AB%98%E7%AD%89%E5%B0%82%E9%96%80%E5%AD%A6%E6%A0%A1", "Google マップ", sv('<path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/>'), true],
+  ["https://www.hakodate-ct.ac.jp/", "学校サイト", sv('<path d="M3 10l9-5 9 5-9 5zM7 12.5V17c0 1.2 2.2 2.5 5 2.5s5-1.3 5-2.5v-4.5M21 10v5"/>'), true],
+  ["https://www.instagram.com/kosen_gakuseikai/", "インスタ", sv('<rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><path d="M16.8 7.2h.01"/>'), true],
+  ["https://x.com/hnct_gakuseikai", "エックス", sv('<path d="M4 4h4.2l11.8 16h-4.2z"/><path d="M19.4 4l-6.2 7M4.6 20l6.2-7"/>'), true],
+  ["en.html", "English", sv('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'), false],
+];
+const pcLinksHtml = PC_LINKS.map(([href, label, icon, ext]) => `<a href="${href}"${ext ? ' target="_blank" rel="noopener noreferrer"' : ' lang="en" hreflang="en"'}>${icon}<span>${label}</span></a>`).join("");
+
 document.body.insertAdjacentHTML("beforeend", `
   <div class="pc-bg" aria-hidden="true">
     ${starsHtml}
@@ -78,6 +88,7 @@ document.body.insertAdjacentHTML("beforeend", `
     <a class="pc-logo" href="${onTop ? "#" : "./"}" aria-label="第63回 函館高専祭「縁」トップへ"><span class="pc-logo-in"><img src="assets/img/logo.webp" width="673" height="657" alt="" loading="lazy" decoding="async"></span></a>
     <p class="pc-ed">第${esc(FESTIVAL.edition)}回 函館高専祭</p>
     <p class="pc-date">${days.map((d) => `<span><b>${d.md}</b><small>${d.wd}</small></span>`).join('<i aria-hidden="true"></i>')}</p>
+    <p class="pc-links">${pcLinksHtml}</p>
   </aside>
   <nav class="pc-side is-right" aria-label="メニュー">
     <div class="pc-tabs">${TABS.map(([id, label, href, icon]) => `<a href="${href}" data-pc-tab="${id}">${icon}<span${id === "feed" ? ' class="e-word"' : ""}>${esc(label)}</span></a>`).join("")}</div>
