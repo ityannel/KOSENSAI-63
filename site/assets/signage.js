@@ -281,7 +281,7 @@ function hurryItem(t) {
 // 種類・ひとことの札（まだ届いていない団体は、札なし）
 // 種類と時刻は丸い札、一言は長いので、札にせず1行の文で（札にすると、細長くつぶれる）
 const phList = (x) => [x.photo, ...(x.more ?? [])].filter(Boolean);
-const phOf = (x) => phList(x).map((s, k) => `<img class="ph${k ? "" : " on"}" style="--tilt:${[3, -3, 2, -2][k % 4]}deg" src="/${esc(String(s).replace(/^\//, ""))}" alt="" decoding="async">`).join(""); // 出演団体の写真は、あるぶん全部（1枚ずつ、順にかわる）
+const phOf = (x) => phList(x).map((s, k) => `<img class="ph${k ? "" : " on"}" src="/${esc(String(s).replace(/^\//, ""))}" alt="" decoding="async">`).join(""); // 出演団体の写真は、あるぶん全部を、カードの背景に（1枚ずつ、順にかわる）
 const chips = (x, extra = "") => { const l = [x.kind].filter(Boolean).map((t) => `<span class="chip">${esc(t)}</span>`).join("") + extra; return (l ? `<div class="kind">${l}</div>` : "") + (x.mood ? `<p class="mood">${esc(x.mood)}</p>` : ""); };
 const slideStage = {
   async build() {
@@ -299,16 +299,21 @@ const slideStage = {
           ${nxt.copy ? `<p>${esc(nxt.copy).replace(/\n/g, "<br>")}</p>` : ""}</div>`
         : `<div class="now wait slide-l"><span class="lab">STAGE</span><h2>おやすみ</h2></div>`; // 出演がないときだけ
     // このあとの出演を、次の1つだけでなく、どんどん並べる（企画があれば、その分は1つ減らす）
-    const row = (small, title, time, sub, hotRow, n) => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} ${hotRow ? "hot" : ""} rise" style="--i:${n}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
+    const row = (small, title, time, sub, hotRow, n, photo = "") => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} ${hotRow ? "hot" : ""}${photo ? " has-ph" : ""} rise" style="--i:${n}${photo ? `;--ph:url('/${esc(String(photo).replace(/^\//, ""))}')` : ""}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
     const later = ACTS.filter((a) => a.s > t).slice(cur ? 0 : 1).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0)); // 出演中でなければ、次の出演は左のカードに出すので、右には2つ目から // 急げ！の帯が出ているときは、場所が狭いので1つ減らす
-    const nx = later.map((a, k) => row(k === 0 && cur ? "NEXT" : "THEN", a.name, tStart(a), [a.kind, a.mood].filter(Boolean).join("　"), k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k));
+    const nx = later.map((a, k) => row(k === 0 && cur ? "NEXT" : "THEN", a.name, tStart(a), [a.kind, a.mood].filter(Boolean).join("　"), k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k, a.photo));
     if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, tStart(nextEv), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
     return { dur: hot ? 15000 : 13000, cls: "stage", after(el) {
-      const imgs = [...el.querySelectorAll(".now .ph")];
+      const card = el.querySelector(".now.has-ph"), imgs = [...el.querySelectorAll(".now .ph")];
+      if (!card) return;
+      // 写真の右半分の明るさを測って、文字のある左側にかぶせる色を、白か黒か自動で決める（明るい写真は白＋黒い字、暗い写真は黒＋白い字）
+      const tone = (img) => { try { const c = document.createElement("canvas"); c.width = c.height = 24; const g = c.getContext("2d"); g.drawImage(img, img.naturalWidth * 0.4, 0, img.naturalWidth * 0.6, img.naturalHeight, 0, 0, 24, 24); const d = g.getImageData(0, 0, 24, 24).data; let s = 0; for (let i = 0; i < d.length; i += 4) s += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; return s / (d.length / 4) > 140 ? "light" : "dark"; } catch { return "dark"; } };
+      const paint = (img) => { card.dataset.tone = img.dataset.tone ?? "dark"; };
+      imgs.forEach((img) => { const set = () => { img.dataset.tone = tone(img); if (img.classList.contains("on")) paint(img); }; img.complete ? set() : img.addEventListener("load", set, { once: true }); });
       if (imgs.length < 2) return;
       let k = 0;
-      const id = setInterval(() => { if (!el.isConnected) return clearInterval(id); imgs[k].classList.remove("on"); k = (k + 1) % imgs.length; imgs[k].classList.add("on"); }, 3200);
+      const id = setInterval(() => { if (!el.isConnected) return clearInterval(id); imgs[k].classList.remove("on"); k = (k + 1) % imgs.length; imgs[k].classList.add("on"); paint(imgs[k]); }, 3200);
     }, html: `
       <span class="tag slide-l"><i>${ic("mic")}</i>ステージ・企画</span>
       <h1 class="ttl">${chars(hot ? "まもなく、はじまる！" : "いま、ステージでは")}</h1>

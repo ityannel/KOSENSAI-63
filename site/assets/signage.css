@@ -589,3 +589,18 @@ body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 8; } /* 行数は signag
 .now.has-ph > :not(.ph):not(.eq):not(.lab):not(.barw) { max-width: calc(100% - 350px); }
 .now .ph { opacity: 0; rotate: var(--tilt, 3deg); transition: opacity .7s ease; }
 .now .ph.on { opacity: 1; }
+/* 出演団体の写真は、カードの背景いっぱいに。文字のある左側から、かぶせる色を透明度 0 → 100 で消していく（色と文字の色は、写真の明るさで白か黒に） */
+.now.has-ph { --ov: 255, 248, 232; color: var(--ink); }
+.now.has-ph[data-tone="dark"] { --ov: 28, 24, 21; color: #fff; }
+.now .ph { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; max-height: none; object-fit: cover; object-position: 70% 30%; border: 0; border-radius: 0; rotate: 0deg; filter: none; opacity: 0; transition: opacity .7s ease; }
+.now .ph.on { opacity: 1; }
+.now.has-ph::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(var(--ov), 1) 0%, rgba(var(--ov), 1) 38%, rgba(var(--ov), 0) 100%); }
+.now.has-ph > :not(.ph):not(.eq) { position: relative; z-index: 2; }
+.now.has-ph > :not(.ph):not(.eq):not(.lab):not(.barw) { max-width: none; }
+.now.has-ph .eq { display: none; }
+.now.has-ph[data-tone="dark"] .kind .chip { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .5); color: #fff; }
+.now.has-ph[data-tone="dark"] .barw time { color: #fff; }
+/* 「このあと」の行にも、出演団体の写真を、うっすら背景に（右へいくほど見える） */
+.nx.has-ph { position: relative; overflow: hidden; }
+.nx.has-ph::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: var(--ph) 70% 30% / cover no-repeat; opacity: .22; -webkit-mask-image: linear-gradient(90deg, transparent 15%, #000 100%); mask-image: linear-gradient(90deg, transparent 15%, #000 100%); }
+.nx.has-ph > * { position: relative; z-index: 1; }
