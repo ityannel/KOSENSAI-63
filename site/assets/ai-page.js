@@ -65,6 +65,7 @@ function pull(text, final) {
     }
     return "";
   });
+  out = out.replace(/[(（]\s*[)）]/g, "");
   if (!final) out = out.replace(/\[\[[^\]]*$/, "");
   return { text: out.replace(/[ \t]+\n/g, "\n"), links };
 }
