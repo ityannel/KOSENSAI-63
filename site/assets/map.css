@@ -1090,3 +1090,8 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 .sh-venue.is-now { background: var(--grain), linear-gradient(135deg, #FFE98A 0%, #FFC93C 48%, #FF9A4D 100%); border-color: #d9334f; box-shadow: none; }
 .sh-venue.is-now small { color: #7a1f2e; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { #map-svg .ic-now .bg, .m-legend .ic-now .bg, .sh-badge.is-now { animation: none; } }
+.m-fab.m-ai { text-decoration: none; color: #634A2E; }
+.m-fab.m-ai .rb { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; }
+.m-fab.m-ai .rb-dot, .m-fab.m-ai .rb-eye { fill: currentColor; stroke: none; }
+.m-fab.m-ai .rb-head { fill: #FFFBF2; }
+.m-fab.m-ai .rb-cheek { fill: #E98FA6; stroke: none; opacity: 0.85; }

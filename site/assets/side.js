@@ -1,4 +1,5 @@
 import { FESTIVAL } from "./config.js";
+import { robotSvg } from "./ai-robot.js";
 
 const onTop = !!document.querySelector(".scene");
 const onMido = ["mido", "rally", "vote"].includes(document.body.dataset.page);
@@ -198,4 +199,8 @@ if (!onTop && !onMido) {
     links.forEach((a, id) => (id === cur ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
   }, { rootMargin: "-35% 0px -55% 0px" });
   links.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+}
+
+if (["", "mido", "rally", "vote"].includes(document.body.dataset.page ?? "") && !document.querySelector(".mapapp") && !document.querySelector(".ai-fab")) {
+  document.body.insertAdjacentHTML("beforeend", `<a class="ai-fab" href="ai.html" aria-label="AI番長に聞く" title="AI番長に聞く">${robotSvg()}</a>`);
 }

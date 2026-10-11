@@ -2008,9 +2008,14 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
   .pc-links svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .visit-links, .visit-en { display: none; }
 }
-.visit-ai { width: min(100%, calc(340 * var(--u))); margin: calc(14 * var(--u)) auto 0; }
-.ai-btn { position: relative; display: flex; align-items: center; justify-content: center; gap: calc(10 * var(--u)); box-sizing: border-box; width: 100%; height: calc(56 * var(--u)); padding: 0 calc(12 * var(--u)); border-radius: calc(8 * var(--u)); background: var(--grain), linear-gradient(110deg, #C8323A 0%, #E2622E 55%, #E9B13C 100%); color: #fff; text-decoration: none; rotate: 1deg; filter: drop-shadow(calc(-5 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, 0.5)); transition: translate 0.12s ease, filter 0.12s ease; }
-.ai-btn b { font-family: var(--hud-font); font-weight: 400; font-size: calc(22 * var(--u)); letter-spacing: 0.04em; }
-.ai-btn small { font-family: var(--hud-font); font-size: calc(14 * var(--u)); letter-spacing: 0.08em; opacity: 0.92; }
-.ai-btn:active { translate: calc(-5 * var(--u)) calc(4 * var(--u)); filter: none; }
-@media (min-width: 1000px) { .visit-ai { display: none; } }
+/* AI番長の丸ボタン：スマホは右下、地図は右の丸ボタンの並びに。ほかの丸ボタン（地図）と同じ紙の質感・影 */
+.rb { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rb-dot, .rb-eye { fill: currentColor; stroke: none; }
+.rb-head { fill: #FFFBF2; }
+.rb-cheek { fill: #E98FA6; stroke: none; opacity: 0.85; }
+.ai-fab { position: fixed; z-index: 24; right: calc(var(--app-x, 0px) + 14px); bottom: calc(var(--tabs-h, 58px) + 28px); display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--grain), linear-gradient(115deg, rgba(216, 69, 127, .2), rgba(226, 98, 46, .15) 35%, rgba(227, 164, 58, .15) 65%, rgba(223, 194, 122, .2)), #FFFBF2; color: #634A2E; text-decoration: none; box-shadow: -4px 3px 0 rgba(48, 44, 41, 0.5); -webkit-tap-highlight-color: transparent; animation: ai-fab-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) 1.4s both; transition: translate 0.1s ease, box-shadow 0.1s ease; }
+.ai-fab .rb { width: 28px; height: 28px; }
+.ai-fab:active { translate: -4px 3px; box-shadow: none; }
+@keyframes ai-fab-pop { 0% { scale: 0; rotate: -25deg; opacity: 0; } 70% { scale: 1.15; rotate: 6deg; opacity: 1; } 100% { scale: 1; rotate: 0deg; opacity: 1; } }
+@media (min-width: 1000px) { .ai-fab { display: none; } }
+@media (prefers-reduced-motion: reduce) { .ai-fab { animation: none; } }

@@ -1,0 +1,2 @@
+export const robotSvg = (cls = "") =>
+  `<svg class="rb ${cls}" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4.6V8"/><circle class="rb-dot" cx="16" cy="3.4" r="1.5"/><path d="M2.6 14.2v4M29.4 14.2v4"/><rect class="rb-head" x="5.5" y="8" width="21" height="17" rx="6.5"/><circle class="rb-eye" cx="11.8" cy="15.4" r="1.7"/><circle class="rb-eye" cx="20.2" cy="15.4" r="1.7"/><circle class="rb-cheek" cx="9" cy="19.6" r="1.5"/><circle class="rb-cheek" cx="23" cy="19.6" r="1.5"/><path d="M13.2 19.8c1.7 1.4 4.9 1.4 5.6 0"/></svg>`;

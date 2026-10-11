@@ -54,3 +54,58 @@ export async function gemini(env, body, model, thinking) {
   if (!text) throw new Error("gemini empty");
   return text;
 }
+
+export async function geminiStream(env, body, model, thinking) {
+  const name = model ?? env.GEMINI_MODEL ?? MODELS.ask;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${name}:streamGenerateContent?alt=sse`;
+  const go = (b) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY }, body: JSON.stringify(b) });
+  const withThinking = thinking ? { ...body, generationConfig: { ...body.generationConfig, thinkingConfig: { thinkingLevel: thinking } } } : body;
+  let res = await go(withThinking);
+  if (res.status === 400 && thinking) res = await go(body);
+  if (!res.ok || !res.body) throw new Error(`gemini ${res.status}`);
+  return res.body;
+}
+
+// Gemini の SSE を、{ t: "文字" } の行だけの SSE に作り直して、そのまま流す
+export function sseTextStream(upstream, ctx, headers) {
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  const { readable, writable } = new TransformStream();
+  const w = writable.getWriter();
+  const send = (obj) => w.write(enc.encode(`data: ${typeof obj === "string" ? obj : JSON.stringify(obj)}\n\n`));
+  const textOf = (line) => {
+    try {
+      const j = JSON.parse(line.slice(5).trim());
+      return (j?.candidates?.[0]?.content?.parts ?? []).filter((p) => !p.thought).map((p) => p.text ?? "").join("");
+    } catch { return ""; }
+  };
+  const pump = async () => {
+    const reader = upstream.getReader();
+    let buf = "", sent = false;
+    try {
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+        let i;
+        while ((i = buf.indexOf("\n\n")) >= 0) {
+          const chunk = buf.slice(0, i);
+          buf = buf.slice(i + 2);
+          for (const line of chunk.split("\n")) {
+            if (!line.startsWith("data:")) continue;
+            const t = textOf(line);
+            if (t) { await send({ t }); sent = true; }
+          }
+        }
+      }
+      if (!sent) await send({ error: "empty" });
+    } catch {
+      await send({ error: "upstream" });
+    } finally {
+      await send("[DONE]");
+      await w.close();
+    }
+  };
+  const p = pump();
+  if (ctx?.waitUntil) ctx.waitUntil(p);
+  return new Response(readable, { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store", "X-Accel-Buffering": "no", ...headers } });
+}
