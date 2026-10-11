@@ -63,24 +63,33 @@ export function saveTour(ids) {
   } catch {  }
 }
 
+const jstHour = () => Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tokyo", hour: "2-digit", hour12: false }).format(new Date())) % 24;
+export const suggestNow = () => {
+  const h = jstHour();
+  if (h < 11) return ["今日のみどころは？", "トイレはどこ？", "いまから1時間のプランを作って", "体育館への行き方"];
+  if (h < 14) return ["いま空いてる模擬店は？", "おすすめの食べ物は？", "いまやってるステージは？", "いまから1時間のプランを作って"];
+  if (h < 17) return ["次のステージは？", "いま空いてる模擬店は？", "いまから1時間のプランを作って", "トイレはどこ？"];
+  return ["今日の最後のステージは？", "帰る前に回るプランを作って", "体育館への行き方", "トイレはどこ？"];
+};
 export const SUGGEST = {
   common: ["いまやってるステージは？", "おすすめの食べ物は？"],
-  map: ["ここから近いトイレは？", "いま空いてる模擬店は？", "1時間で回るルートを作って", "体育館への行き方"],
-  full: ["いまやってるステージは？", "トイレはどこ？", "おすすめの食べ物は？", "体育館への行き方", "1時間で回るルートを作って"],
+  get map() { return suggestNow(); },
+  get full() { return suggestNow(); },
 };
-
 export function parseMarks(text, final) {
   const marks = [];
   let hq = false;
+  const next = [];
   let out = text.replace(/\[\[(map|route|tour):([^\]]*)\]\]/g, (_, kind, arg) => {
     const ids = arg.split(">").map((x) => x.trim()).filter(Boolean);
     if (ids.length) marks.push({ kind, ids });
     return "";
   });
+  out = out.replace(/\[\[next:([^\]]*)\]\]/g, (_, q) => { q = q.trim().slice(0, 40); if (q && next.length < 3) next.push(q); return ""; });
   out = out.replace(/\[\[hq(?::([a-z]+))?\]\]/g, (_, r) => { hq = r || true; return ""; });
   out = out.replace(/[(（]\s*[)）]/g, "");
   if (!final) out = out.replace(/\[\[[^\]]*$/, "");
-  return { text: out.replace(/[ \t]+\n/g, "\n"), marks, hq };
+  return { text: out.replace(/[ \t]+\n/g, "\n"), marks, hq, next };
 }
 
 export function md(text) {
@@ -174,3 +183,4 @@ export const hqHref = (reason) => `hq.html${HQ_REASONS.includes(reason) ? `?r=${
 const HQ_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg>';
 export const hqCtaHtml = (reason) => `<a class="ai-hq-cta" href="${hqHref(reason)}">${HQ_ICON}<span><b>本部に連絡する</b><small>スタッフに、チャットで伝えられます</small></span><i aria-hidden="true">›</i></a>`;
 export const noteHtml = () => 'AIの答えは、まちがうことがあります。質問は、本部が確認することがあります。個人情報は書かないでください。<a href="terms.html">くわしく</a> <span class="ai-left"></span><a class="ai-hq-link" href="hq.html">本部に連絡する</a>';
+export const nextHtml = (list) => (list?.length ? `<div class="ai-next">${list.map((q) => `<button type="button" data-ai-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>` : "");

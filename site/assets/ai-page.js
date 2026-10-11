@@ -1,7 +1,7 @@
 import { STAGE, EVENTS, VENUES, MAP, SHOPS, HOMEROOMS, DEPT_EXHIBITS } from "./config.js";
 import { robotSvg } from "./ai-robot.js";
 import { startLive, liveSnapshot } from "./ai-live.js";
-import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, askStream, errorText, limitText, readHere, readCtx, saveTour, SUGGEST } from "./ai-core.js";
+import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, nextHtml, askStream, errorText, limitText, readHere, readCtx, saveTour, SUGGEST } from "./ai-core.js";
 
 const $ = (s) => document.querySelector(s);
 const mock = isLocal && new URLSearchParams(location.search).has("mock");
@@ -36,7 +36,7 @@ for (const s of SHOPS) {
 const nameOf = (id) => (id && places.has(id) ? { id, name: places.get(id) } : null);
 
 function pull(text, final) {
-  const { text: clean, marks, hq } = parseMarks(text, final);
+  const { text: clean, marks, hq, next } = parseMarks(text, final);
   const links = [];
   const pinIds = [];
   for (const m of marks) {
@@ -55,17 +55,22 @@ function pull(text, final) {
     }
   }
   if (pinIds.length >= 2) links.push({ href: `map.html?pins=${pinIds.map(encodeURIComponent).join(",")}`, icon: ICON.pin, label: `ぜんぶ地図で見る（${pinIds.length}か所）`, hint: "地図" });
-  return { text: clean, links, hq, tour: links.find((l) => l.tour)?.tour ?? null };
+  return { text: clean, links, hq, next, tour: links.find((l) => l.tour)?.tour ?? null };
 }
 
 function render(body, text, final) {
-  const { text: clean, links, hq } = pull(text, final);
+  const { text: clean, links, hq, next } = pull(text, final);
   body.innerHTML = md(clean) + (links.length ? `<div class="ai-links">${links.map((l) => `<a class="ai-link${l.tour ? " is-tour" : ""}${l.hq ? " is-hq" : ""}" href="${l.href}">${l.icon}<span>${esc(l.label)}</span><small>${l.hint}</small></a>`).join("")}</div>` : "");
   const row = body.closest(".ai-row");
   if (row) {
     const has = row.querySelector(".ai-hq-cta");
     if (hq && !has) row.insertAdjacentHTML("beforeend", hqCtaHtml(hq === true ? "" : hq));
     else if (!hq && has) has.remove();
+    row.querySelector(".ai-next")?.remove();
+    if (final && next?.length) {
+      document.querySelectorAll(".ai-next").forEach((x) => x.remove());
+      row.insertAdjacentHTML("beforeend", nextHtml(next));
+    }
   }
   return clean;
 }
@@ -147,7 +152,7 @@ function actions(row, text, last) {
 
 async function mockStream(onText, signal) {
   const snap = liveSnapshot();
-  const text = `（ニセの返事：いまの状況 混雑${snap.crowd?.length ?? "-"}件・待ち時間${snap.shops?.length ?? "-"}件・お知らせ${snap.notice ? "あり" : "なし"}・天気${snap.weather?.text ?? "-"}）\n` + "おう、聞いてくれてありがとな。**体育館**はこっちだぜ。[[map:gym2]]\n\n## ステージ\n- 太平洋セメントアリーナで、ライブをやってるぜ。[[map:gym2]]\n## 食べ物\n- 模擬店は、校舎のほうに並んでるぜ。\n\n## 回るなら\n- 玄関 → 体育館 → 食堂の順だぜ。[[tour:entrance>gym2>cafeteria]]\n\nここからの行き方は、これだ。[[route:entrance>gym2]]\n\n困ったら、本部にも伝えてくれ。[[hq]]";
+  const text = `（ニセの返事：いまの状況 混雑${snap.crowd?.length ?? "-"}件・待ち時間${snap.shops?.length ?? "-"}件・お知らせ${snap.notice ? "あり" : "なし"}・天気${snap.weather?.text ?? "-"}）\n` + "おう、聞いてくれてありがとな。**体育館**はこっちだぜ。[[map:gym2]]\n\n## ステージ\n- 太平洋セメントアリーナで、ライブをやってるぜ。[[map:gym2]]\n## 食べ物\n- 模擬店は、校舎のほうに並んでるぜ。\n\n## 回るなら\n- 玄関 → 体育館 → 食堂の順だぜ。[[tour:entrance>gym2>cafeteria]]\n\nここからの行き方は、これだ。[[route:entrance>gym2]]\n\n困ったら、本部にも伝えてくれ。[[next:空いてるお店は？]][[next:次のステージは？]][[hq]]";
   await new Promise((r) => setTimeout(r, 900));
   for (const ch of text.match(/[\s\S]{1,4}/g)) { if (signal.aborted) return; onText(ch); await new Promise((r) => setTimeout(r, 40)); }
 }
@@ -196,6 +201,7 @@ async function generate() {
 function ask(q) {
   q = q.trim();
   if (busy || !q) return;
+  document.querySelectorAll(".ai-next").forEach((x) => x.remove());
   const left = leftNow();
   const limit = limitText(left);
   if (limit) {
@@ -253,9 +259,21 @@ for (const q of SUGGEST.full) {
   b.addEventListener("click", () => ask(q));
   $("#ai-chips").append(b);
 }
+log.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ai-ask]");
+  if (b) ask(b.dataset.aiAsk);
+});
 document.querySelector(".ai-note").innerHTML = noteHtml();
 setBusy(false);
 restore();
+{
+  const u = new URL(location.href), pre = u.searchParams.get("q");
+  if (pre) {
+    u.searchParams.delete("q");
+    history.replaceState(null, "", u);
+    setTimeout(() => ask(pre.slice(0, 120)), 300);
+  }
+}
 startLive();
 paintLeft();
 

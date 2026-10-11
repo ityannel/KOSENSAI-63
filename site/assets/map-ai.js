@@ -1,6 +1,6 @@
 import { robotSvg } from "./ai-robot.js";
 import { STAGE, EVENTS, VENUES } from "./config.js";
-import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, askStream, errorText, limitText, saveTour, SUGGEST } from "./ai-core.js";
+import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, nextHtml, askStream, errorText, limitText, saveTour, SUGGEST } from "./ai-core.js";
 
 const mock = isLocal && new URLSearchParams(location.search).has("mock");
 
@@ -79,10 +79,11 @@ function tourCard(kind, info, orig, isSorted) {
 
 function html() {
   const rows = [];
-  for (const m of messages) {
+  const lastAi = messages.findLastIndex((m) => m.role !== "user");
+  for (const [i, m] of messages.entries()) {
     if (m.role === "user") { rows.push(`<div class="ai-user">${esc(m.text)}</div>`); continue; }
-    const { text, marks, hq } = parseMarks(m.text, true);
-    rows.push(`<div class="ai-row"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><div class="ai-body">${md(text)}${marksHtml(marks)}</div>${hq ? hqCtaHtml(hq === true ? "" : hq) : ""}</div>`);
+    const { text, marks, hq, next } = parseMarks(m.text, true);
+    rows.push(`<div class="ai-row"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><div class="ai-body">${md(text)}${marksHtml(marks)}</div>${hq ? hqCtaHtml(hq === true ? "" : hq) : ""}${i === lastAi && !busy ? nextHtml(next) : ""}</div>`);
   }
   if (busy) {
     const { text } = parseMarks(pending, false);

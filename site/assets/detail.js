@@ -67,7 +67,8 @@ export function openEvent(e, t = Date.now()) {
     ${e.copy ? `<p class="dt-copy">${esc(e.copy).replace(/\n/g, "<br>")}</p>` : ""}
     ${/^[\w.]{1,30}$/.test(e.insta ?? "") ? `<div class="dt-links"><a class="mido-more dt-go dt-insta" href="https://www.instagram.com/${esc(e.insta)}/" target="_blank" rel="noopener noreferrer"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><path d="M16.8 7.2h.01"/></svg>Instagram　@${esc(e.insta)}</span></a></div>` : ""}
     ${e.live ? '<p class="dt-note">YouTube で生配信します（配信中はトップページに出ます）。</p>' : ""}
-    ${mapLinks(e.venue)}`);
+    ${mapLinks(e.venue)}
+    <a class="mido-more dt-go dt-ask" href="ai.html?q=${encodeURIComponent(`${e.title}について教えて。いまから行ける？`)}"><span>AIくんに聞く</span></a>`);
 }
 
 const where = (s) => {
@@ -123,7 +124,8 @@ export function openShop(s, now = Date.now()) {
       <div><dt>場所</dt><dd>${esc(where(s))}</dd></div>
     </dl>
     ${vote ? `<a class="mido-more dt-go dt-vote" href="${esc(vote)}" target="_blank" rel="noopener"><span>模擬店総選挙で、このお店に投票</span></a>` : ""}
-    ${mapLinks(shopMapId(s))}`);
+    ${mapLinks(shopMapId(s))}
+    <a class="mido-more dt-go dt-ask" href="ai.html?q=${encodeURIComponent(`${s.name}は、いま混んでる？待ち時間は？`)}"><span>AIくんに聞く</span></a>`);
   const live = document.querySelector("[data-live-shop]");
   if (live) { if (liveList) fillLive(live); liveShops(); }
 }

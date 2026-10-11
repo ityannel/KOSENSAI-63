@@ -1623,6 +1623,7 @@ function renderSheet() {
     <div class="sh-actions">
       ${isHere ? "" : `<button type="button" class="sh-btn primary" data-act="route">${I.route}経路</button>`}
       ${isHere ? "" : `<button type="button" class="sh-btn" data-act="from">${I.start}ここから</button>`}
+      <button type="button" class="sh-btn" data-act="ask">いま混んでる？</button>
       <button type="button" class="sh-btn is-icon" data-act="share" aria-label="共有" title="共有">${I.share}</button>
       ${p.kind === "deco" && DECOS.vote?.[p.grade] ? `<a class="sh-btn" href="${esc(DECOS.vote[p.grade])}" target="_blank" rel="noopener">投票する</a>` : ""}
       ${one && voteUrl(one, s.now) ? `<a class="sh-btn vote" href="${esc(voteUrl(one, s.now))}" target="_blank" rel="noopener">${I.vote}模擬店総選挙に投票</a>` : ""}
@@ -2814,6 +2815,7 @@ export async function initMap(opts) {
     if (act === "route") startRoute(selected);
     if (act === "post") { const p = place(selected); if (p) openCompose(p); }
     if (act === "from") { pushSheet(); rt.from = selected; rt.to = null; rt.result = null; mode = "route"; renderSheet(); beginPick("to"); }
+    if (act === "ask") { const p = place(selected); if (p) askAi(`${titleOf(p)}は、いま混んでる？待ち時間は？`); }
     if (act === "share") share();
     if (act === "swap") { [rt.from, rt.to] = [rt.to, rt.from]; computeRoute(); }
     if (act === "nostairs") { rt.noStairs = !rt.noStairs; computeRoute(); toast(rt.noStairs ? "階段を使わない道順にしました" : "いちばん近い道順にしました"); }
