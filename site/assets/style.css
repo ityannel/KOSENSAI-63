@@ -2009,9 +2009,9 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .rb-dot, .rb-eye { fill: currentColor; stroke: none; }
 .rb-head { fill: #FFFBF2; }
 .rb-cheek { fill: #E98FA6; stroke: none; opacity: 0.85; }
-.ai-fab { position: fixed; z-index: 24; right: calc(var(--app-x, 0px) + 14px); bottom: calc(var(--tabs-h, 58px) + 28px); display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--grain), linear-gradient(115deg, rgba(216, 69, 127, .2), rgba(226, 98, 46, .15) 35%, rgba(227, 164, 58, .15) 65%, rgba(223, 194, 122, .2)), #FFFBF2; color: #634A2E; text-decoration: none; box-shadow: -4px 3px 0 rgba(48, 44, 41, 0.5); -webkit-tap-highlight-color: transparent; animation: ai-fab-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) 1.4s both; transition: translate 0.1s ease, box-shadow 0.1s ease; }
-.ai-fab .rb { width: 28px; height: 28px; }
-.ai-fab:active { translate: -4px 3px; box-shadow: none; }
+.ai-fab { position: fixed; z-index: 24; right: calc(var(--app-x, 0px) + 12px); bottom: calc(10px + 56px + 12px + env(safe-area-inset-bottom)); display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #FFFBF2; color: #634A2E; text-decoration: none; box-shadow: inset 0 0 0 1px rgba(99, 74, 46, 0.18), 0 8px 22px -10px rgba(48, 36, 30, 0.45); -webkit-tap-highlight-color: transparent; animation: ai-fab-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) 1.4s both; transition: scale 0.12s ease; }
+.ai-fab .rb { width: 32px; height: 32px; }
+.ai-fab:active { scale: 0.94; }
 @keyframes ai-fab-pop { 0% { scale: 0; rotate: -25deg; opacity: 0; } 70% { scale: 1.15; rotate: 6deg; opacity: 1; } 100% { scale: 1; rotate: 0deg; opacity: 1; } }
 @media (min-width: 1000px) { .ai-fab { display: none; } }
 @media (prefers-reduced-motion: reduce) { .ai-fab { animation: none; } }
