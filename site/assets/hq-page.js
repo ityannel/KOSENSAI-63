@@ -1,0 +1,132 @@
+import { isLocal, esc, HQ_FLAG, loadChat } from "./ai-core.js";
+
+const $ = (s) => document.querySelector(s);
+const demo = isLocal;
+const scroller = $("#hq-scroll"), log = $("#hq-log"), intro = $("#hq-intro"), form = $("#hq-form"), box = $("#hq-q"), send = $("#hq-send"), chips = $("#hq-chips"), placeIn = $("#hq-place"), closedNote = $("#hq-closed");
+const REASONS = [["落とし物・忘れ物", false], ["迷子", true], ["体調不良・けが", true], ["そのほか", false]];
+const UP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+send.innerHTML = UP;
+
+const AI_TAG = "【AIくんとの会話】";
+const aiTalk = () => {
+  const m = loadChat().slice(-4);
+  if (!m.length) return "";
+  return (AI_TAG + m.map((x) => `${x.role === "user" ? "Q" : "A"}:${String(x.text).replace(/\[\[[^\]]*\]\]/g, "").replace(/\s+/g, " ").trim()}`).join(" / ")).slice(0, 400);
+};
+let reason = null, kit = null, uid = "", chat = null, msgs = [], sending = false, coolUntil = 0;
+const hhmm = (ms) => (ms ? new Date(ms).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false }) : "");
+
+for (const [label, urgent] of REASONS) {
+  const b = document.createElement("button");
+  b.type = "button"; b.textContent = label; b.setAttribute("aria-pressed", "false");
+  b.addEventListener("click", () => {
+    reason = reason?.label === label ? null : { label, urgent };
+    chips.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b && !!reason)));
+    if (reason && !box.value.trim()) box.value = `【${label}】`;
+    else if (!reason) box.value = box.value.replace(/^【[^】]*】/, "");
+    box.focus(); fit(); sync();
+  });
+  chips.append(b);
+}
+
+const nearBottom = () => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 80;
+let stick = true;
+scroller.addEventListener("scroll", () => { stick = nearBottom(); }, { passive: true });
+const toBottom = () => scroller.scrollTo({ top: scroller.scrollHeight, behavior: "smooth" });
+function fit() { box.style.height = "auto"; box.style.height = `${Math.min(box.scrollHeight, 132)}px`; }
+function sync() { send.disabled = sending || !box.value.trim() || Date.now() < coolUntil; }
+
+function paint() {
+  const has = msgs.length > 0;
+  intro.hidden = has;
+  closedNote.hidden = !(chat?.status === "closed");
+  log.innerHTML = msgs.filter((m) => !m.text.startsWith(AI_TAG)).map((m) => m.from === "visitor"
+    ? `<div class="ai-user">${esc(m.text)}</div><span class="hq-msg-time ai-user-time">${esc(hhmm(m.at))}</span>`
+    : `<div class="ai-row"><i class="ai-av" aria-hidden="true"><svg viewBox="0 0 24 24" class="hq-ic"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg></i><div class="ai-body"><p class="hq-from">本部</p><p>${esc(m.text).replace(/\n/g, "<br>")}</p></div></div><span class="hq-msg-time">${esc(hhmm(m.at))}</span>`).join("");
+  if (chat?.place && !placeIn.value) placeIn.value = chat.place;
+  $("#hq-share-row").hidden = !!chat || !aiTalk();
+  if (stick) toBottom();
+}
+
+async function startReal() {
+  const { signedInKit } = await import("./posts.js");
+  kit = await signedInKit();
+  const { fs, db, a } = kit;
+  uid = a.currentUser.uid;
+  const chatRef = fs.doc(db, "hq_chats", uid);
+  fs.onSnapshot(chatRef, (s) => {
+    chat = s.exists() ? s.data() : null;
+    if (chat) { try { localStorage.setItem(HQ_FLAG, "1"); } catch {  } }
+    if (chat?.unread_visitor && !document.hidden) fs.updateDoc(chatRef, { unread_visitor: false }).catch(() => {});
+    paint();
+  });
+  fs.onSnapshot(fs.query(fs.collection(db, "hq_chats", uid, "msgs"), fs.orderBy("at")), (s) => {
+    msgs = s.docs.map((d) => { const v = d.data(); return { id: d.id, from: v.from, text: v.text, at: v.at?.toMillis?.() ?? Date.now() }; });
+    paint();
+    if (chat?.unread_visitor && !document.hidden) fs.updateDoc(chatRef, { unread_visitor: false }).catch(() => {});
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && chat?.unread_visitor) fs.updateDoc(chatRef, { unread_visitor: false }).catch(() => {});
+  });
+}
+
+async function sendReal(text) {
+  const { fs, db } = kit;
+  const chatRef = fs.doc(db, "hq_chats", uid);
+  const msgRef = fs.doc(fs.collection(db, "hq_chats", uid, "msgs"));
+  const urgent = !!(reason?.urgent || chat?.urgent);
+  const place = placeIn.value.trim().slice(0, 40);
+  const batch = fs.writeBatch(db);
+  const last = text.slice(0, 120);
+  if (!chat) {
+    batch.set(chatRef, { uid, place, name: "", status: "open", urgent, unread_staff: true, unread_visitor: false, last_text: last, last_from: "visitor", last_at: fs.serverTimestamp(), created_at: fs.serverTimestamp() });
+  } else {
+    batch.update(chatRef, { place, name: chat.name ?? "", status: "open", urgent, unread_staff: true, unread_visitor: false, last_text: last, last_from: "visitor", last_at: fs.serverTimestamp() });
+  }
+  batch.set(msgRef, { from: "visitor", text, at: fs.serverTimestamp() });
+  const talk = !chat && $("#hq-share").checked ? aiTalk() : "";
+  if (talk) batch.set(fs.doc(fs.collection(db, "hq_chats", uid, "msgs")), { from: "visitor", text: talk, at: fs.serverTimestamp() });
+  await batch.commit();
+}
+
+function sendDemo(text) {
+  msgs.push({ id: String(Date.now()), from: "visitor", text, at: Date.now() });
+  chat = { status: "open", place: placeIn.value.trim() };
+  paint();
+  setTimeout(() => { msgs.push({ id: String(Date.now()), from: "staff", text: "（デモ）本部です。すぐに向かいます。いまいる場所を、もう少し教えてください。", at: Date.now() }); paint(); }, 1400);
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = box.value.trim();
+  if (!text || sending || Date.now() < coolUntil) return;
+  sending = true; sync();
+  try {
+    if (demo) sendDemo(text); else await sendReal(text);
+    box.value = ""; fit(); stick = true;
+    reason = null; chips.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+    coolUntil = Date.now() + 3500;
+    setTimeout(sync, 3600);
+  } catch (err) {
+    const t = document.createElement("p");
+    t.className = "ai-err";
+    t.textContent = err?.code === "permission-denied" ? "少し待ってから、もう一度送ってください。" : "送れませんでした。電波のいい所で、もう一度。急ぎなら、近くのスタッフに声をかけてください。";
+    log.append(t); setTimeout(() => t.remove(), 6000);
+  } finally {
+    sending = false; sync();
+  }
+});
+box.addEventListener("input", () => { fit(); sync(); });
+box.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || e.shiftKey || e.isComposing || matchMedia("(pointer: coarse)").matches) return;
+  e.preventDefault();
+  form.requestSubmit();
+});
+
+if (!demo) startReal().catch(() => {
+  const t = document.createElement("p");
+  t.className = "ai-err";
+  t.textContent = "つながりませんでした。電波のいい所で、開き直してください。";
+  intro.append(t);
+});
+sync();

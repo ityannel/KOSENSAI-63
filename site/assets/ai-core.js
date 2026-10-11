@@ -71,14 +71,16 @@ export const SUGGEST = {
 
 export function parseMarks(text, final) {
   const marks = [];
+  let hq = false;
   let out = text.replace(/\[\[(map|route|tour):([^\]]*)\]\]/g, (_, kind, arg) => {
     const ids = arg.split(">").map((x) => x.trim()).filter(Boolean);
     if (ids.length) marks.push({ kind, ids });
     return "";
   });
+  out = out.replace(/\[\[hq\]\]/g, () => { hq = true; return ""; });
   out = out.replace(/[(（]\s*[)）]/g, "");
   if (!final) out = out.replace(/\[\[[^\]]*$/, "");
-  return { text: out.replace(/[ \t]+\n/g, "\n"), marks };
+  return { text: out.replace(/[ \t]+\n/g, "\n"), marks, hq };
 }
 
 export function md(text) {
@@ -130,12 +132,17 @@ export async function askStream({ messages, live, map, signal, onText }) {
     const j = await res.json().catch(() => ({}));
     const e = new Error("rate"); e.scope = j.scope; e.retry = j.retry; throw e;
   }
+  if (res.status === 503) {
+    const j = await res.json().catch(() => ({}));
+    if (j.error === "disabled") throw new Error("disabled");
+  }
   if (!res.ok) throw new Error("fail");
   if ((res.headers.get("content-type") ?? "").includes("event-stream")) await readStream(res, onText, signal);
   else onText((await res.json()).text ?? "");
 }
 
 export function errorText(e) {
+  if (e?.message === "disabled") return "AIくんは、いまお休み中だぜ。聞きたいことは、本部（学生会）に聞いてくれ。";
   if (e?.message !== "rate") return "うまくつながらなかった。電波のいい所で、もう一度。急ぎなら、近くのスタッフか本部へ。";
   if (e.scope === "global") return "今日は、たくさん聞かれて、もう答えられねえ。続きは、本部（学生会）で聞いてくれ。";
   if (e.scope === "device-day") return "今日は、もうたくさん聞いてくれたな。続きは、本部（学生会）で聞いてくれ。";
@@ -146,4 +153,18 @@ export function limitText(left) {
   if (left.day <= 0) return "今日は、もうたくさん聞いてくれたな。これ以上は、答えられねえ。続きは、本部（学生会）で聞いてくれ。";
   if (left.tenMin <= 0) return `ちょっと聞きすぎだぜ。あと${left.wait}分ほど待ってから、また聞いてくれ。`;
   return "";
+}
+
+export const HQ_FLAG = "kosen63-hq-chat";
+
+export function logQa(q, a) {
+  if (isLocal || !q || !a) return;
+  (async () => {
+    try {
+      const { signedInKit } = await import("./posts.js");
+      const { fs, db } = await signedInKit();
+      const sid = (clientId() || "anon").replace(/[^A-Za-z0-9]/g, "").slice(0, 8) || "anon000";
+      await fs.addDoc(fs.collection(db, "ai_logs"), { q: String(q).slice(0, 200), a: String(a).slice(0, 1600), sid, at: fs.serverTimestamp() });
+    } catch {  }
+  })();
 }

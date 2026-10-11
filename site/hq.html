@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>本部に連絡｜第63回 函館高専祭「縁」</title>
+  <meta name="description" content="高専祭の本部（学生会のスタッフ）に、チャットで連絡できます。">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#2f3953">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;family=Zen+Kaku+Gothic+New:wght@500;700;900&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&amp;display=swap&amp;text=Enistagram" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/ai.css">
+  <link rel="stylesheet" href="assets/hq.css">
+  <script src="assets/theme.js"></script>
+</head>
+<body class="mido-page ai-page hq-page" data-page="hq">
+  <main class="mido mido-full ai-full" id="hq" aria-label="本部に連絡">
+    <a class="mido-close" href="./" aria-label="とじる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></a>
+
+    <div class="ai-scroll" id="hq-scroll">
+      <div class="hq-intro" id="hq-intro">
+        <i class="ai-av is-big" aria-hidden="true"><svg viewBox="0 0 24 24" class="hq-ic"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg></i>
+        <h1>本部に連絡</h1>
+        <p>高専祭の本部（学生会のスタッフ）に、メッセージを送れます。すぐに返事が来るとは限りません。</p>
+        <p class="hq-urgent">急ぎのとき（体調不良・けが・火事・迷子）は、<b>近くのスタッフに声をかけてください。</b></p>
+        <div class="ai-chips" id="hq-chips"></div>
+        <label class="hq-place"><span>いまいる場所（わかれば）</span><input id="hq-place" maxlength="40" placeholder="例：第二体育館の入口" autocomplete="off"></label>
+      </div>
+      <div class="ai-log" id="hq-log" role="log" aria-live="polite"></div>
+    </div>
+
+    <footer class="ai-foot">
+      <p class="hq-closed" id="hq-closed" hidden>本部が「対応済み」にしました。続けて送ると、また開きます。</p>
+      <label class="hq-share" id="hq-share-row" hidden><input type="checkbox" id="hq-share" checked><span>AIくんと話した内容も、本部に見せる（話が早く伝わります）</span></label>
+      <form class="ai-form" id="hq-form">
+        <textarea id="hq-q" rows="1" maxlength="400" placeholder="本部へのメッセージ" aria-label="本部へのメッセージ" enterkeyhint="send"></textarea>
+        <button type="submit" class="ai-send" id="hq-send" aria-label="送る" disabled></button>
+      </form>
+      <p class="ai-note">お名前や電話番号は、書かなくて大丈夫です。やり取りは、本部のスタッフだけが見られます。<a href="terms.html">くわしく</a></p>
+    </footer>
+  </main>
+
+  <script type="module" src="assets/sheet-page.js"></script>
+  <script type="module" src="assets/hq-page.js"></script>
+</body>
+</html>

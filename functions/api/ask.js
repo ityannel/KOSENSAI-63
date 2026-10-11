@@ -1,4 +1,5 @@
 import { json, preflight, originOk, rateLimit, retryAfter, clientId, geminiStream, sseTextStream, cors, MODELS } from "../_lib/common.js";
+import { aiConfig, clampInt, extraPrompt } from "../_lib/config.js";
 
 export const LIMITS = { device10m: 8, deviceDay: 30, ip10m: 200, ipDay: 1000, globalDay: 1300 };
 
@@ -26,7 +27,11 @@ const PERSONA = `あなたは「AIくん」。第63回 函館高専祭「縁」�
 - 印は、文の最後（句点の前）に付ける。かっこで囲まない。1つの答えに付ける印は、多くて5つ。
 答えの形：
 - 「何がある？」「おすすめは？」など、広い質問は、見出しを付けて、2〜4つに分けて答える。見出しは「## 見出し」（短く、例：## ステージ、## 食べ物、## 展示）。各見出しの下は、1〜3行。
-- 狭い質問（時刻、場所、ルールなど）は、見出しなしで、短く答える。`;
+- 狭い質問（時刻、場所、ルールなど）は、見出しなしで、短く答える。
+本部への連絡：
+- 本部（学生会のスタッフ）への連絡が必要なとき（体調不良、けが、迷子、落とし物、困りごと、苦情、AI では解決できないとき、分からないとき）は、答えの最後に [[hq]] を付ける。画面に、「本部に連絡する」のボタンが出る。
+- 体調不良、けが、火事、迷子など、急ぎのときは、まず「近くのスタッフに声をかけてくれ」と伝えて、そのあとに [[hq]] を付ける。
+- HQ に書いてあることは、本部が決めた最新の情報なので、それを優先して答える。`;
 
 const MAP_RULES = `
 いま、来場者は「校内マップ」の画面から聞いている。下の「MAP」は、地図に出ている状態（いまの場所 here、選んでいる場所 selected、階 floor、引いてある道順 route、いまの場所から近い順の near、回る予定 tour）。
@@ -52,14 +57,17 @@ export async function onRequestPost(ctx) {
   const { request, env } = ctx;
   if (!originOk(request)) return json(request, 403, { error: "origin" });
   if (!env.GEMINI_API_KEY) return json(request, 503, { error: "not_configured" });
+  const cfg = await aiConfig();
+  if (cfg.enabled === false) return json(request, 503, { error: "disabled" });
+  const lim = { device10m: clampInt(cfg.limit_device_10m, 1, 30, LIMITS.device10m), deviceDay: clampInt(cfg.limit_device_day, 1, 200, LIMITS.deviceDay), globalDay: clampInt(cfg.global_day, 50, 5000, LIMITS.globalDay) };
   const cid = clientId(request);
   const who = cid || `noid-${request.headers.get("CF-Connecting-IP") ?? "anon"}`;
   const limited = (scope, window) => json(request, 429, { error: "rate_limited", scope, retry: retryAfter(window) });
-  if (!(await rateLimit(request, "ask-d10m", LIMITS.device10m, 600, who))) return limited("device", 600);
-  if (!(await rateLimit(request, "ask-d1d", LIMITS.deviceDay, 86400, who))) return limited("device-day", 86400);
+  if (!(await rateLimit(request, "ask-d10m", lim.device10m, 600, who))) return limited("device", 600);
+  if (!(await rateLimit(request, "ask-d1d", lim.deviceDay, 86400, who))) return limited("device-day", 86400);
   if (!(await rateLimit(request, "ask-ip10m", LIMITS.ip10m, 600))) return limited("ip", 600);
   if (!(await rateLimit(request, "ask-ip1d", LIMITS.ipDay, 86400))) return limited("ip", 86400);
-  if (!(await rateLimit(request, "ask-global1d", LIMITS.globalDay, 86400, "all"))) return limited("global", 86400);
+  if (!(await rateLimit(request, "ask-global1d", lim.globalDay, 86400, "all"))) return limited("global", 86400);
 
   let body;
   try { body = await request.json(); } catch { return json(request, 400, { error: "bad_json" }); }
@@ -78,9 +86,10 @@ export async function onRequestPost(ctx) {
     if (r.ok) facts = await r.text();
   } catch {  }
 
+  const hq = extraPrompt(cfg);
   const system = map
-    ? `${PERSONA}\n${MAP_RULES}\nCONTEXT（学校祭の情報）:\n${facts}\n\nLIVE（いまの時刻と最新の予定）:\n${live}\n\nMAP（いま地図に出ている状態）:\n${map}`
-    : `${PERSONA}\n\nCONTEXT（学校祭の情報）:\n${facts}\n\nLIVE（いまの時刻と最新の予定）:\n${live}`;
+    ? `${PERSONA}\n${MAP_RULES}\nCONTEXT（学校祭の情報）:\n${facts}\n\nLIVE（いまの時刻と最新の予定）:\n${live}\n\nMAP（いま地図に出ている状態）:\n${map}${hq}`
+    : `${PERSONA}\n\nCONTEXT（学校祭の情報）:\n${facts}\n\nLIVE（いまの時刻と最新の予定）:\n${live}${hq}`;
 
   try {
     const upstream = await geminiStream(env, {

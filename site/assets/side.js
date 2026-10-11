@@ -208,3 +208,5 @@ if (["", "mido", "rally", "vote", "terms"].includes(document.body.dataset.page ?
   new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   if (document.querySelector(".scene")) sync(); else fab.classList.remove("is-hidden");
 }
+
+try { if (localStorage.getItem("kosen63-hq-chat")) import("./hq-badge.js"); } catch {  }

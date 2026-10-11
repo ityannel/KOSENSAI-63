@@ -82,6 +82,9 @@ npx -y firebase-tools deploy --only hosting --project enishi-7f43f       # Fireb
 - AIくんは、来場者に「AI」と分かるようにする。来場者のふりをした、いいね・コメントは作らない。
 - `moderate` は、本部ログインが必須（Firestore の `staff/{メール}` を、本人のトークンで読めるかで確かめる）。AI の判断で、投稿を自動で非公開にしない。
 
+- 本部チャット（`site/hq.html`、`site/assets/hq-page.js`、`site/staff/hq-admin.js`）と、AIの設定・記録（`site/staff/ai-admin.js`、`functions/_lib/config.js`）は、Firestore の `hq_chats`、`ai_config`、`ai_logs` を使う。来場者は匿名ログイン。**ルールを変えるときは、人が読む**。メッセージは、親の `hq_chats/{uid}` の更新と、同じバッチで書く（ルールが、そう要求している）。
+- 通知音は `site/staff/hq-admin.js` の WebAudio。音を足す・変えるときは、緊急が鳴り続ける仕組み（9秒ごと）を、壊さない。
+
 ## 触るときに気をつける場所
 
 - `firestore.rules`：来場者は読むだけ・決まった形の書き込みだけ。変えたら、`tests/firestore-rules/` にテストを足し、人間が読む。エミュレーターが動かない環境では、ルールを「機械で確かめた」と書かない。

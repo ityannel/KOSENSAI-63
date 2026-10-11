@@ -78,6 +78,62 @@ service cloud.firestore {
       allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]$') && data().keys().hasOnly(['n']) && data().n == 1;
       allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
     }
+    match /ai_config/{id} {
+      allow read: if true;
+      allow write: if isStaff() && id == 'current' && stamped()
+        && data().keys().hasOnly(['enabled', 'extra', 'faq', 'limit_device_10m', 'limit_device_day', 'global_day', 'updated_at', 'updated_by'])
+        && data().enabled is bool
+        && data().extra is string && data().extra.size() <= 1500
+        && data().faq is list && data().faq.size() <= 20
+        && data().limit_device_10m is int && data().limit_device_10m >= 1 && data().limit_device_10m <= 30
+        && data().limit_device_day is int && data().limit_device_day >= 1 && data().limit_device_day <= 200
+        && data().global_day is int && data().global_day >= 50 && data().global_day <= 5000;
+    }
+    match /ai_logs/{id} {
+      allow read: if isStaff();
+      allow create: if isVisitor() && data().keys().hasOnly(['q', 'a', 'sid', 'at'])
+        && data().q is string && data().q.size() >= 1 && data().q.size() <= 200
+        && data().a is string && data().a.size() <= 1600
+        && data().sid is string && data().sid.size() >= 4 && data().sid.size() <= 12
+        && data().at == request.time;
+      allow update: if false;
+      allow delete: if isStaff();
+    }
+    match /hq_chats/{cid} {
+      allow read: if isStaff() || (isVisitor() && request.auth.uid == cid);
+      allow create: if isVisitor() && request.auth.uid == cid
+        && data().keys().hasOnly(['uid', 'place', 'name', 'status', 'urgent', 'unread_staff', 'unread_visitor', 'last_text', 'last_from', 'last_at', 'created_at'])
+        && data().uid == cid && data().status == 'open' && data().urgent is bool
+        && data().unread_staff == true && data().unread_visitor == false && data().last_from == 'visitor'
+        && data().last_at == request.time && data().created_at == request.time
+        && data().last_text is string && data().last_text.size() <= 120
+        && data().place is string && data().place.size() <= 40
+        && data().name is string && data().name.size() <= 20;
+      allow update: if (isVisitor() && request.auth.uid == cid
+          && onlyChanges(['last_text', 'last_from', 'last_at', 'unread_staff', 'unread_visitor', 'urgent', 'status', 'place', 'name'])
+          && data().status == 'open' && data().last_from == 'visitor' && data().last_at == request.time
+          && request.time > resource.data.last_at + duration.value(3, 's')
+          && data().unread_staff == true && data().unread_visitor == false && data().urgent is bool
+          && data().last_text is string && data().last_text.size() <= 120
+          && data().place is string && data().place.size() <= 40
+          && data().name is string && data().name.size() <= 20)
+        || (isVisitor() && request.auth.uid == cid && onlyChanges(['unread_visitor']) && data().unread_visitor == false)
+        || (isStaff() && onlyChanges(['last_text', 'last_from', 'last_at', 'unread_staff', 'unread_visitor', 'status', 'urgent']));
+      allow delete: if isStaff();
+      match /msgs/{mid} {
+        allow read: if isStaff() || (isVisitor() && request.auth.uid == cid);
+        allow create: if (isVisitor() && request.auth.uid == cid
+            && data().keys().hasOnly(['from', 'text', 'at'])
+            && data().from == 'visitor' && data().text is string && data().text.size() >= 1 && data().text.size() <= 400
+            && data().at == request.time
+            && getAfter(/databases/$(database)/documents/hq_chats/$(cid)).data.last_at == request.time)
+          || (isStaff() && data().keys().hasOnly(['from', 'text', 'at', 'by'])
+            && data().from == 'staff' && data().text is string && data().text.size() >= 1 && data().text.size() <= 400
+            && data().at == request.time && data().by == request.auth.token.email);
+        allow update: if false;
+        allow delete: if isStaff();
+      }
+    }
     match /secret_counts/{id} {
       allow read: if isStaff();
       allow create: if id.matches('^(all|window|cover|dhouse|antenna|sun)-[0-4]$') && data().keys().hasOnly(['n']) && data().n == 1;

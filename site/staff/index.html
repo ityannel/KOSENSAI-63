@@ -40,6 +40,8 @@
         <a href="#broadcast" data-nav="broadcast"><svg viewBox="0 0 24 24"><path d="M4 9v6h3l5 4V5L7 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg><span data-short="配信">お知らせ・配信</span></a>
         <a href="#crowd" data-nav="crowd"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.5M17.5 19a5.5 5.5 0 0 0-2.5-4.6"/></svg><span data-short="混雑">混雑・実況</span></a>
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
+        <a href="#hq" data-nav="hq"><svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg><span data-short="本部">本部チャット</span><b class="badge" id="nav-hq-badge" hidden></b></a>
+        <a href="#ai" data-nav="ai"><svg viewBox="0 0 32 32"><path d="M16 4.6V8"/><circle cx="16" cy="3.4" r="1.5" fill="currentColor" stroke="none"/><path d="M2.6 14.2v4M29.4 14.2v4"/><rect x="5.5" y="8" width="21" height="17" rx="6.5"/><circle cx="11.8" cy="15.4" r="1.7" fill="currentColor" stroke="none"/><circle cx="20.2" cy="15.4" r="1.7" fill="currentColor" stroke="none"/><path d="M13.2 19.8c1.7 1.4 4.9 1.4 5.6 0"/></svg><span data-short="AI">AIくん</span></a>
         <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店</span></a>
         <a href="#schedule" data-nav="schedule"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span data-short="時間">スケジュール</span></a>
         <a href="#print" data-nav="print"><svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 9h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 19 17h-2M7 14h10v6H7z"/></svg><span data-short="印刷">印刷・スタンプ</span></a>
@@ -52,6 +54,12 @@
       </div>
     </aside>
 
+    <div class="hq-banner" id="hq-banner" role="alert" hidden>
+      <b id="hq-banner-text"></b>
+      <button type="button" class="btn btn-primary btn-sm" id="hq-banner-go">見る</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="hq-banner-stop">緊急の音を止める</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="hq-audio-warn" hidden>🔔 ここを押して、通知音をオンにする</button>
+    </div>
     <main class="main">
       <header class="topbar">
         <div>
@@ -259,6 +267,72 @@
           </form>
         </article>
         <div id="sched-list"></div>
+      </section>
+
+      <section class="view" id="view-hq" data-title="本部チャット" data-eyebrow="HQ CHAT" hidden>
+        <article class="card hq-sound">
+          <header class="card-head"><h2>通知音</h2></header>
+          <p class="muted small">来場者から連絡が来ると、大きな音が、約7秒鳴ります。<b>緊急</b>（迷子・体調不良・けが）は、サイレンが、開くまで鳴り続けます。パソコンの音量も、上げておいてください。</p>
+          <div class="hq-sound-row">
+            <label class="field"><span>音量</span><input type="range" id="hq-vol" min="10" max="100" step="5"></label>
+            <label class="switch"><input type="checkbox" id="hq-mute"><span class="switch-ui" aria-hidden="true"></span><span>音を鳴らさない</span></label>
+            <button type="button" class="btn btn-ghost btn-sm" id="hq-test">音を試す</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="hq-test-urgent">緊急の音を試す</button>
+          </div>
+        </article>
+        <div class="hq-wrap">
+          <article class="card hq-list">
+            <div class="hq-tabs" id="hq-tabs"><button type="button" data-tab="open" aria-pressed="true">対応中</button><button type="button" data-tab="closed" aria-pressed="false">対応済み</button><button type="button" data-tab="all" aria-pressed="false">すべて</button></div>
+            <div class="hq-inbox" id="hq-inbox"></div>
+          </article>
+          <article class="card hq-thread">
+            <p class="muted hq-thread-empty" id="hq-thread-empty">左の一覧から、やり取りを選んでください。</p>
+            <div id="hq-thread-main" hidden>
+              <header class="hq-thread-head">
+                <button type="button" class="btn btn-ghost btn-sm hq-back" id="hq-back">← 一覧</button>
+                <div><b id="hq-thread-title"></b><span class="hq-state" id="hq-thread-state"></span></div>
+                <label class="switch"><input type="checkbox" id="hq-urgent"><span class="switch-ui" aria-hidden="true"></span><span>緊急</span></label>
+                <button type="button" class="btn btn-ghost btn-sm" id="hq-to-faq" title="来場者の質問と、本部の返事を、AIくんの「よくある質問」に足します">AIに覚えさせる</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="hq-close">対応済みにする</button>
+                <button type="button" class="btn btn-ghost btn-sm btn-danger" id="hq-del">消す</button>
+              </header>
+              <div class="hq-msgs" id="hq-msgs"></div>
+              <div class="hq-quick" id="hq-quick"></div>
+              <form class="hq-reply" id="hq-reply">
+                <textarea id="hq-reply-q" rows="2" maxlength="400" placeholder="返事を書く（来場者のスマホに、すぐ出ます）" aria-label="返事"></textarea>
+                <button class="btn btn-primary" type="submit">送る</button>
+              </form>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-ai" data-title="AIくん" data-eyebrow="AI ASSISTANT" hidden>
+        <form id="ai-cfg" class="card">
+          <header class="card-head"><h2>AIくんの調整</h2><span class="ai-state" id="ai-state" data-on="true"></span></header>
+          <label class="switch"><input type="checkbox" id="ai-enabled"><span class="switch-ui" aria-hidden="true"></span><span><b>AIくんを動かす</b>（切ると、来場者の画面に「お休み中」と出ます）</span></label>
+          <label class="field"><span>本部からの追加の指示・お知らせ（AIくんが、この内容を優先して答えます）</span><textarea id="ai-extra" rows="4" maxlength="1500" placeholder="例：落とし物は、H棟1階の本部で預かっています。17時以降は、お預かりできません。"></textarea></label>
+          <div class="ai-faq-head"><h3>よくある質問と答え</h3><button type="button" class="btn btn-ghost btn-sm" id="ai-faq-add">＋ 足す</button></div>
+          <div id="ai-faq"></div>
+          <h3 class="ai-sub">1人（1台）あたりの制限</h3>
+          <div class="ai-lims">
+            <label class="field"><span>10分に、何回まで</span><input id="ai-lim-10m" type="number" min="1" max="30" inputmode="numeric"></label>
+            <label class="field"><span>1日に、何回まで</span><input id="ai-lim-day" type="number" min="1" max="200" inputmode="numeric"></label>
+            <label class="field"><span>全体で、1日に何回まで</span><input id="ai-lim-all" type="number" min="50" max="5000" inputmode="numeric"></label>
+          </div>
+          <p class="muted small">全体の回数は、Google の予算（1回あたり、約0.5円）を見て決めてください。上げすぎると、予算を使い切ります。</p>
+          <div class="ai-save"><button class="btn btn-primary" type="submit">保存する</button><span class="muted small" id="ai-cfg-meta"></span></div>
+        </form>
+        <article class="card">
+          <header class="card-head"><h2>質問のようす</h2><a class="btn btn-ghost btn-sm" href="../ai.html" target="_blank" rel="noopener">AIくんを開く</a></header>
+          <div class="ai-stats" id="ai-stats"></div>
+        </article>
+        <article class="card">
+          <header class="card-head"><h2>質問と答えの記録</h2><button type="button" class="btn btn-ghost btn-sm btn-danger" id="ai-log-clear">すべて消す</button></header>
+          <p class="muted small">来場者が聞いたことと、AIくんの答えです（新しい順）。「分からない」と答えたものを、よくある質問に足すと、次から答えられます。個人情報が入っていたら、その記録を消してください。高専祭のあとは、すべて消してください。</p>
+          <label class="desk-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="ai-logq" type="search" placeholder="質問や答えで、さがす"></label>
+          <div class="ai-loglist" id="ai-loglist"></div>
+        </article>
       </section>
 
       <section class="view" id="view-shops" data-title="模擬店" data-eyebrow="SHOPS" hidden>

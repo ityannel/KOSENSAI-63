@@ -83,3 +83,6 @@ body.ai-page { background: linear-gradient(180deg, #2f3953, #7d4f6e 55%, #d9824f
 .ai-foot { display: flex; flex-direction: column; align-items: center; }
 .ai-foot .ai-form { width: 100%; }
 .ai-link.is-tour { border-color: #d9602b; background: #FFE3D2; }
+.ai-link.is-hq { background: #634A2E; border-color: #634A2E; color: #FEEBC4; }
+.ai-link.is-hq svg { stroke: #FEEBC4; }
+.ai-hq-link { display: inline-block; margin-left: 6px; color: #fff; font-weight: 900; }

@@ -2,6 +2,8 @@ import { FIREBASE_VERSION, firebaseConfig, connectEmulators } from "../assets/li
 import { CROWD, VENUES, FESTIVAL, RALLY, VISIT, SHOPS, HOMEROOMS, MAP, TOP_BLOCKS, TOP_PRESETS, STAMP_PLACES, ELECTION, scheduleItems } from "../assets/config.js";
 import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
 import { noticeOf, paintNotice, FONTS as NT_FONTS, SIZES as NT_SIZES, COLORS as NT_COLORS, ICONS as NT_ICONS, WHERES as NT_WHERES, DEFAULT_WHERE as NT_DEFAULT_WHERE } from "../assets/notice.js";
+import { initAiAdmin } from "./ai-admin.js";
+import { initHq } from "./hq-admin.js";
 import { renderStats, wireStats, dayKey as statDay, WIN as STAT_WIN } from "./stats.js";
 
 const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
@@ -86,7 +88,7 @@ async function write(label, fn) {
 }
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
-const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "shops", "schedule", "print", "settings"];
+const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "hq", "ai", "shops", "schedule", "print", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
@@ -148,8 +150,15 @@ const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
 }
+let adminStarted = false;
 function startListening() {
   statsListening = false; hourSubs.clear();
+  if (!adminStarted) {
+    adminStarted = true;
+    const kit = { fs, db, a, $, $$, esc, toast, write, listen, time };
+    initAiAdmin(kit);
+    initHq(kit);
+  }
   listen(fs.collection(db, "visit_counts"), (snap) => {
     state.visits = {};
     snap.forEach((d) => { const day = d.id.slice(0, 10); state.visits[day] = (state.visits[day] ?? 0) + (d.data().n ?? 0); });
@@ -1612,7 +1621,7 @@ $("#login-form").addEventListener("submit", async (e) => {
     $("#login-msg").textContent = "ログインできませんでした。メールアドレスとパスワードを確認してください。";
   }
 });
-const logout = () => auth.signOut(a);
+const logout = async () => { await auth.signOut(a); location.reload(); };
 $("#logout").addEventListener("click", logout);
 $("#logout-top").addEventListener("click", logout);
 

@@ -2015,3 +2015,5 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .ai-fab:active { scale: 0.94; transition-duration: 0.12s; }
 @media (min-width: 1000px) { .ai-fab { display: none; } }
 @media (prefers-reduced-motion: reduce) { .ai-fab, .ai-fab.is-hidden { transition: none; } }
+.hq-badge-toast { position: fixed; z-index: 70; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom)); translate: -50% 0; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1.5px solid #634A2E; border-radius: 999px; background: var(--grain), #FEEBC4; color: #634A2E; font: 700 14px var(--text-font); text-decoration: none; box-shadow: -4px 3px 0 rgba(48, 44, 41, 0.45); }
+.ai-fab.has-hq::after { content: ""; position: absolute; top: 4px; right: 4px; width: 14px; height: 14px; border: 2px solid #FFFBF2; border-radius: 50%; background: #C8323A; }

@@ -1,7 +1,7 @@
 import { STAGE, EVENTS, VENUES, MAP, SHOPS, HOMEROOMS, DEPT_EXHIBITS } from "./config.js";
 import { robotSvg } from "./ai-robot.js";
 import { startLive, liveSnapshot } from "./ai-live.js";
-import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, leftNow, askStream, errorText, limitText, readHere, readCtx, saveTour, SUGGEST } from "./ai-core.js";
+import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, askStream, errorText, limitText, readHere, readCtx, saveTour, SUGGEST } from "./ai-core.js";
 
 const $ = (s) => document.querySelector(s);
 const mock = isLocal && new URLSearchParams(location.search).has("mock");
@@ -14,6 +14,7 @@ const ICON = {
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   retry: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>',
   pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+  hq: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg>',
   route: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/></svg>',
   tour: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="6" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><circle cx="8" cy="18.5" r="2.2"/><path d="M7.5 7l9 1.3M17.3 11l-7.8 5.7"/></svg>',
 };
@@ -35,7 +36,7 @@ for (const s of SHOPS) {
 const nameOf = (id) => (id && places.has(id) ? { id, name: places.get(id) } : null);
 
 function pull(text, final) {
-  const { text: clean, marks } = parseMarks(text, final);
+  const { text: clean, marks, hq } = parseMarks(text, final);
   const links = [];
   const pinIds = [];
   for (const m of marks) {
@@ -54,12 +55,13 @@ function pull(text, final) {
     }
   }
   if (pinIds.length >= 2) links.push({ href: `map.html?pins=${pinIds.map(encodeURIComponent).join(",")}`, icon: ICON.pin, label: `ぜんぶ地図で見る（${pinIds.length}か所）`, hint: "地図" });
+  if (hq) links.push({ href: "hq.html", icon: ICON.hq, label: "本部に連絡する", hint: "チャット", hq: true });
   return { text: clean, links, tour: links.find((l) => l.tour)?.tour ?? null };
 }
 
 function render(body, text, final) {
   const { text: clean, links } = pull(text, final);
-  body.innerHTML = md(clean) + (links.length ? `<div class="ai-links">${links.map((l) => `<a class="ai-link${l.tour ? " is-tour" : ""}" href="${l.href}">${l.icon}<span>${esc(l.label)}</span><small>${l.hint}</small></a>`).join("")}</div>` : "");
+  body.innerHTML = md(clean) + (links.length ? `<div class="ai-links">${links.map((l) => `<a class="ai-link${l.tour ? " is-tour" : ""}${l.hq ? " is-hq" : ""}" href="${l.href}">${l.icon}<span>${esc(l.label)}</span><small>${l.hint}</small></a>`).join("")}</div>` : "");
   return clean;
 }
 
@@ -165,6 +167,7 @@ async function generate() {
     paint(true);
     if (!text.trim()) throw new Error("fail");
     recordUse();
+    logQa(messages.findLast((m) => m.role === "user")?.text, text);
     paintLeft();
     const tour = pull(text, true).tour;
     if (tour) saveTour(tour);

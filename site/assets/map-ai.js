@@ -1,6 +1,6 @@
 import { robotSvg } from "./ai-robot.js";
 import { STAGE, EVENTS, VENUES } from "./config.js";
-import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, leftNow, askStream, errorText, limitText, saveTour, SUGGEST } from "./ai-core.js";
+import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, askStream, errorText, limitText, saveTour, SUGGEST } from "./ai-core.js";
 
 const mock = isLocal && new URLSearchParams(location.search).has("mock");
 
@@ -81,8 +81,8 @@ function html() {
   const rows = [];
   for (const m of messages) {
     if (m.role === "user") { rows.push(`<div class="ai-user">${esc(m.text)}</div>`); continue; }
-    const { text, marks } = parseMarks(m.text, true);
-    rows.push(`<div class="ai-row"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><div class="ai-body">${md(text)}${marksHtml(marks)}</div></div>`);
+    const { text, marks, hq } = parseMarks(m.text, true);
+    rows.push(`<div class="ai-row"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><div class="ai-body">${md(text)}${marksHtml(marks)}${hq ? '<div class="ai-links"><a class="ai-link is-hq" href="hq.html"><span>本部に連絡する</span><small>チャット</small></a></div>' : ""}</div></div>`);
   }
   if (busy) {
     const { text } = parseMarks(pending, false);
@@ -251,6 +251,7 @@ async function generate() {
     }
     if (!text.trim()) throw new Error("fail");
     recordUse();
+    logQa(messages.findLast((m) => m.role === "user")?.text, text);
     messages.push({ role: "ai", text });
     saveChat(messages);
     busy = false;

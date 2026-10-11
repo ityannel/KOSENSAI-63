@@ -237,6 +237,35 @@ await t("unknown style key rejected", assertFails(noticeSt(staff, { font: "round
 await t("unknown where rejected", assertFails(noticeSt(staff, { where: ["top", "elsewhere"] })));
 await t("visitors cannot set a notice style", assertFails(setDoc(doc(anon, "site_live/current"), { notice_style: { font: "round" }, updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
 
+const cfg = (db, extra = {}) => setDoc(doc(db, "ai_config/current"), { enabled: true, extra: "落とし物は本部へ", faq: [{ q: "q", a: "a" }], limit_device_10m: 8, limit_device_day: 30, global_day: 1300, updated_at: serverTimestamp(), updated_by: "honbu@example.com", ...extra });
+await t("anyone can read ai_config", assertSucceeds(getDoc(doc(nobody, "ai_config/current"))));
+await t("staff can write ai_config", assertSucceeds(cfg(staff)));
+await t("visitors cannot write ai_config", assertFails(cfg(anon)));
+await t("ai_config limit out of range rejected", assertFails(cfg(staff, { limit_device_10m: 999 })));
+await t("ai_config extra too long rejected", assertFails(cfg(staff, { extra: "あ".repeat(1501) })));
+await t("ai_config unknown key rejected", assertFails(cfg(staff, { admin: true })));
+const logOf = (db, extra = {}) => setDoc(doc(db, "ai_logs/l1"), { q: "トイレは？", a: "H棟だぜ", sid: "abcd1234", at: serverTimestamp(), ...extra });
+await t("visitor can create an ai_log", assertSucceeds(logOf(anon)));
+await t("ai_log with a fake time rejected", assertFails(setDoc(doc(anon, "ai_logs/l2"), { q: "x", a: "y", sid: "abcd1234", at: new Date(2020, 0, 1) })));
+await t("ai_log with extra field rejected", assertFails(logOf(anon, { uid: "x" })));
+await t("visitor cannot read ai_logs", assertFails(getDoc(doc(anon, "ai_logs/l1"))));
+await t("staff can read and delete ai_logs", assertSucceeds(getDoc(doc(staff, "ai_logs/l1")).then(() => deleteDoc(doc(staff, "ai_logs/l1")))));
+const newChat = (db, uid, extra = {}) => { const b = writeBatch(db); b.set(doc(db, `hq_chats/${uid}`), { uid, place: "体育館", name: "", status: "open", urgent: true, unread_staff: true, unread_visitor: false, last_text: "迷子です", last_from: "visitor", last_at: serverTimestamp(), created_at: serverTimestamp(), ...extra }); b.set(doc(db, `hq_chats/${uid}/msgs/m1`), { from: "visitor", text: "迷子です", at: serverTimestamp() }); return b.commit(); };
+await t("visitor can start a chat with HQ", assertSucceeds(newChat(anon, "anon1")));
+await t("visitor cannot start a chat under another uid", assertFails(newChat(anon, "someoneelse")));
+await t("visitor can read own chat", assertSucceeds(getDoc(doc(anon, "hq_chats/anon1"))));
+await t("visitor cannot read another chat", assertFails(getDoc(doc(anon, "hq_chats/other-chat"))));
+await t("staff can read any chat", assertSucceeds(getDoc(doc(staff, "hq_chats/anon1"))));
+await t("visitor message without chat update is rejected", assertFails(setDoc(doc(anon, "hq_chats/anon1/msgs/m2"), { from: "visitor", text: "もう1通", at: serverTimestamp() })));
+await t("visitor cannot post as staff", assertFails(setDoc(doc(anon, "hq_chats/anon1/msgs/m3"), { from: "staff", text: "なりすまし", at: serverTimestamp(), by: "x" })));
+await t("visitor can mark the reply as read", assertSucceeds(updateDoc(doc(anon, "hq_chats/anon1"), { unread_visitor: false })));
+await t("visitor cannot edit status of another chat", assertFails(updateDoc(doc(anon, "hq_chats/other-chat"), { unread_visitor: false })));
+await t("staff can reply (message + chat update)", assertSucceeds((() => { const b = writeBatch(staff); b.set(doc(staff, "hq_chats/anon1/msgs/r1"), { from: "staff", text: "向かいます", at: serverTimestamp(), by: "honbu@example.com" }); b.update(doc(staff, "hq_chats/anon1"), { last_text: "向かいます", last_from: "staff", last_at: serverTimestamp(), unread_staff: false, unread_visitor: true }); return b.commit(); })()));
+await t("staff cannot forge the sender email", assertFails(setDoc(doc(staff, "hq_chats/anon1/msgs/r2"), { from: "staff", text: "x", at: serverTimestamp(), by: "someone@else" })));
+await t("staff can close a chat", assertSucceeds(updateDoc(doc(staff, "hq_chats/anon1"), { status: "closed", urgent: false })));
+await t("visitor cannot delete a chat", assertFails(deleteDoc(doc(anon, "hq_chats/anon1"))));
+await t("staff can delete a chat", assertSucceeds(deleteDoc(doc(staff, "hq_chats/anon1"))));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
