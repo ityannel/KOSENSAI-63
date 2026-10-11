@@ -82,7 +82,7 @@ function html() {
   for (const m of messages) {
     if (m.role === "user") { rows.push(`<div class="ai-user">${esc(m.text)}</div>`); continue; }
     const { text, marks, hq } = parseMarks(m.text, true);
-    rows.push(`<div class="ai-row"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><div class="ai-body">${md(text)}${marksHtml(marks)}${hq ? '<div class="ai-links"><a class="ai-link is-hq" href="hq.html"><span>本部に連絡する</span><small>チャット</small></a></div>' : ""}</div></div>`);
+    rows.push(`<div class="ai-row"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><div class="ai-body">${md(text)}${marksHtml(marks)}</div>${hq ? '<a class="ai-hq-cta" href="hq.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg><span><b>本部に連絡する</b><small>スタッフに、チャットで伝えられます</small></span><i aria-hidden="true">›</i></a>' : ""}</div>`);
   }
   if (busy) {
     const { text } = parseMarks(pending, false);
