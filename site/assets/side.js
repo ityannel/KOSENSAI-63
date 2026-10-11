@@ -202,5 +202,11 @@ if (!onTop && !onMido) {
 }
 
 if (["", "mido", "rally", "vote"].includes(document.body.dataset.page ?? "") && !document.querySelector(".mapapp") && !document.querySelector(".ai-fab")) {
-  document.body.insertAdjacentHTML("beforeend", `<a class="ai-fab" href="ai.html" aria-label="AIくんに聞く" title="AIくんに聞く">${robotSvg()}</a>`);
+  document.body.insertAdjacentHTML("beforeend", `<a class="ai-fab is-hidden" href="ai.html" aria-label="AIくんに聞く" title="AIくんに聞く">${robotSvg()}</a>`);
+  const fab = document.querySelector(".ai-fab");
+  if (document.querySelector(".scene")) {
+    const sync = () => fab.classList.toggle("is-hidden", scrollY < 80);
+    addEventListener("scroll", sync, { passive: true });
+    sync();
+  } else setTimeout(() => fab.classList.remove("is-hidden"), 1200);
 }
