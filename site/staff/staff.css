@@ -855,3 +855,10 @@ h1, h2, h3 { font-weight: 400; }
   .ai-faq-row { grid-template-columns: 1fr; }
 }
 .hq-m.is-ai { align-self: stretch; max-width: 100%; background: rgba(63, 159, 153, .16); border: 1px dashed #3F9F99; font-size: .85rem; }
+.rail { height: 100dvh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(99, 74, 46, .45) transparent; }
+.rail .me { margin-top: auto; }
+@media (max-width: 860px) {
+  .rail { height: auto; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  .rail::-webkit-scrollbar { display: none; }
+  .nav { grid-auto-columns: minmax(66px, 1fr); width: max-content; min-width: 100%; }
+}

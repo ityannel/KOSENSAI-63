@@ -102,15 +102,16 @@ service cloud.firestore {
     match /hq_chats/{cid} {
       allow read: if isStaff() || (isVisitor() && request.auth.uid == cid);
       allow create: if isVisitor() && request.auth.uid == cid
-        && data().keys().hasOnly(['uid', 'place', 'name', 'status', 'urgent', 'unread_staff', 'unread_visitor', 'last_text', 'last_from', 'last_at', 'created_at'])
+        && data().keys().hasOnly(['uid', 'place', 'name', 'status', 'urgent', 'unread_staff', 'unread_visitor', 'last_text', 'last_from', 'last_at', 'created_at', 'push'])
         && data().uid == cid && data().status == 'open' && data().urgent is bool
         && data().unread_staff == true && data().unread_visitor == false && data().last_from == 'visitor'
         && data().last_at == request.time && data().created_at == request.time
         && data().last_text is string && data().last_text.size() <= 120
         && data().place is string && data().place.size() <= 40
-        && data().name is string && data().name.size() <= 20;
+        && data().name is string && data().name.size() <= 20
+        && (!('push' in data()) || (data().push is string && data().push.size() <= 700));
       allow update: if (isVisitor() && request.auth.uid == cid
-          && onlyChanges(['last_text', 'last_from', 'last_at', 'unread_staff', 'unread_visitor', 'urgent', 'status', 'place', 'name'])
+          && onlyChanges(['last_text', 'last_from', 'last_at', 'unread_staff', 'unread_visitor', 'urgent', 'status', 'place', 'name', 'push'])
           && data().status == 'open' && data().last_from == 'visitor' && data().last_at == request.time
           && request.time > resource.data.last_at + duration.value(3, 's')
           && data().unread_staff == true && data().unread_visitor == false && data().urgent is bool
@@ -118,6 +119,7 @@ service cloud.firestore {
           && data().place is string && data().place.size() <= 40
           && data().name is string && data().name.size() <= 20)
         || (isVisitor() && request.auth.uid == cid && onlyChanges(['unread_visitor']) && data().unread_visitor == false)
+        || (isVisitor() && request.auth.uid == cid && onlyChanges(['push']) && data().push is string && data().push.size() <= 700)
         || (isStaff() && onlyChanges(['last_text', 'last_from', 'last_at', 'unread_staff', 'unread_visitor', 'status', 'urgent']));
       allow delete: if isStaff();
       match /msgs/{mid} {

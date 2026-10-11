@@ -18,3 +18,8 @@
 .hq-share { display: flex; align-items: center; gap: 8px; margin: 0 4px 8px; color: rgba(255, 255, 255, 0.92); font-size: 12.5px; font-weight: 700; }
 .hq-share[hidden] { display: none; }
 .hq-share input { width: 18px; height: 18px; accent-color: #634A2E; }
+.hq-push { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 4px 8px; color: rgba(255, 255, 255, 0.92); font-size: 12.5px; font-weight: 700; }
+.hq-push[hidden] { display: none; }
+.hq-push button { padding: 7px 14px; border: 1.5px solid #634A2E; border-radius: 999px; background: var(--grain), #FEEBC4; color: #634A2E; font: 700 13px var(--text-font); cursor: pointer; box-shadow: -3px 2px 0 rgba(48, 44, 41, 0.45); }
+.hq-push button[hidden] { display: none; }
+.hq-push button:active { translate: -3px 2px; box-shadow: none; }

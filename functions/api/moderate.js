@@ -1,8 +1,7 @@
 import { json, preflight, originOk, rateLimit, gemini, MODELS } from "../_lib/common.js";
+import { isStaff, bearer } from "../_lib/staff.js";
 
 export const onRequestOptions = preflight;
-
-const PROJECT = "enishi-7f43f";
 
 const RUBRIC = `あなたは、学校祭の投稿（写真と文章）を、スタッフが確認するときの補助をします。公開するかどうかを決めるのは人間です。あなたは「確認が必要かどうか」の候補と理由だけを出します。
 見るところ：
@@ -25,29 +24,12 @@ const SCHEMA = {
   required: ["verdict", "severity", "reasons", "summary"],
 };
 
-const payloadOf = (token) => {
-  try {
-    const b = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(atob(b.padEnd(Math.ceil(b.length / 4) * 4, "=")));
-  } catch { return null; }
-};
-
-async function isStaff(token) {
-  const p = payloadOf(token);
-  const email = p?.email;
-  if (!email || p.aud !== PROJECT) return false;
-  const res = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/staff/${encodeURIComponent(email)}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.status === 200;
-}
-
 const clip = (s, n) => String(s ?? "").slice(0, n);
 
 export async function onRequestPost({ request, env }) {
   if (!originOk(request)) return json(request, 403, { error: "origin" });
   if (!env.GEMINI_API_KEY) return json(request, 503, { error: "not_configured" });
-  const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const token = bearer(request);
   if (!token || !(await isStaff(token))) return json(request, 403, { error: "staff_only" });
   if (!(await rateLimit(request, "mod-10m", 120, 600))) return json(request, 429, { error: "rate_limited" });
 

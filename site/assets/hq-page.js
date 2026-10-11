@@ -1,4 +1,5 @@
 import { isLocal, esc, HQ_FLAG, loadChat } from "./ai-core.js";
+import { VAPID_PUBLIC } from "./push-config.js";
 
 const $ = (s) => document.querySelector(s);
 const demo = isLocal;
@@ -48,6 +49,46 @@ function paint() {
   if (stick) toBottom();
 }
 
+const pushOk = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const iosBrowser = /iP(hone|ad|od)/.test(navigator.userAgent) && !matchMedia("(display-mode: standalone)").matches && !navigator.standalone;
+const keyBytes = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(s.length / 4) * 4, "=")), (c) => c.charCodeAt(0));
+
+async function currentSub() {
+  if (!pushOk) return null;
+  try { return await (await navigator.serviceWorker.getRegistration())?.pushManager.getSubscription(); } catch { return null; }
+}
+
+async function paintPush() {
+  const row = $("#hq-push-row"), btn = $("#hq-push"), hint = $("#hq-push-hint");
+  if (demo || !chat) { row.hidden = true; return; }
+  row.hidden = false;
+  if (iosBrowser) { btn.hidden = true; hint.textContent = "iPhone で通知を受け取るには、共有ボタンから「ホーム画面に追加」して、そこから開き直してください。"; return; }
+  if (!pushOk) { btn.hidden = true; hint.textContent = "このブラウザでは、通知を使えません。このページを開いたままにしてください。"; return; }
+  if (Notification.permission === "denied") { btn.hidden = true; hint.textContent = "通知が、ブラウザで止められています。設定で許可すると、返事を通知で知らせます。"; return; }
+  const sub = await currentSub();
+  const on = !!sub && chat.push === sub.endpoint && Notification.permission === "granted";
+  btn.hidden = on;
+  hint.textContent = on ? "通知はオンです。本部から返事が来ると、知らせます。" : "";
+}
+
+$("#hq-push").addEventListener("click", async () => {
+  const btn = $("#hq-push"), hint = $("#hq-push-hint");
+  btn.disabled = true;
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") { hint.textContent = "通知は、許可されませんでした。このページを開いたままにしてください。"; return; }
+    const reg = (await navigator.serviceWorker.getRegistration()) ?? (await navigator.serviceWorker.register(new URL("../sw.js", import.meta.url)));
+    await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID_PUBLIC) }));
+    await kit.fs.updateDoc(kit.fs.doc(kit.db, "hq_chats", uid), { push: sub.endpoint });
+    await paintPush();
+  } catch {
+    hint.textContent = "通知を、オンにできませんでした。このページを開いたままにしてください。";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 async function startReal() {
   const { signedInKit } = await import("./posts.js");
   kit = await signedInKit();
@@ -59,6 +100,7 @@ async function startReal() {
     if (chat) { try { localStorage.setItem(HQ_FLAG, "1"); } catch {  } }
     if (chat?.unread_visitor && !document.hidden) fs.updateDoc(chatRef, { unread_visitor: false }).catch(() => {});
     paint();
+    paintPush();
   });
   fs.onSnapshot(fs.query(fs.collection(db, "hq_chats", uid, "msgs"), fs.orderBy("at")), (s) => {
     msgs = s.docs.map((d) => { const v = d.data(); return { id: d.id, from: v.from, text: v.text, at: v.at?.toMillis?.() ?? Date.now() }; });

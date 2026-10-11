@@ -1,6 +1,8 @@
 const VOL_KEY = "kosen63-hq-vol", MUTE_KEY = "kosen63-hq-mute";
 const QUICK = ["すぐに向かいます。そのままお待ちください。", "少しお待ちください。確認します。", "いまいる場所を、もう少し教えてください。", "落とし物は、本部で預かっています。本部にお越しください。", "対応しました。ほかにも困ったことがあれば、送ってください。"];
 
+const API = ["localhost", "127.0.0.1"].includes(location.hostname) || location.hostname.endsWith("pages.dev") ? "" : "https://hakodate-kosensai.pages.dev";
+
 export function initHq({ fs, db, a, $, $$, esc, toast, write, listen, time }) {
   const listBox = $("#hq-inbox"), threadBox = $("#hq-thread"), banner = $("#hq-banner");
   let chats = new Map(), selected = null, tab = "open", unsubMsgs = null, msgs = [];
@@ -174,6 +176,15 @@ export function initHq({ fs, db, a, $, $$, esc, toast, write, listen, time }) {
       b.update(fs.doc(db, "hq_chats", id), { last_text: text.slice(0, 120), last_from: "staff", last_at: fs.serverTimestamp(), unread_staff: false, unread_visitor: true });
       await b.commit();
       $("#hq-reply-q").value = "";
+      const endpoint = chats.get(id)?.push;
+      if (endpoint) {
+        try {
+          const token = await a.currentUser.getIdToken();
+          const res = await fetch(`${API}/api/notify`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ endpoint }) });
+          const j = await res.json().catch(() => ({}));
+          toast(j.sent ? "返事を送りました（相手のスマホに、通知も送りました）" : "返事を送りました（通知は、届きませんでした。画面を開いたときに見えます）");
+        } catch {  }
+      }
     });
   });
   $("#hq-to-faq").addEventListener("click", async () => {

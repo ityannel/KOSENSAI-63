@@ -40,3 +40,6 @@ tools/trace-debug-*.png
 work-*/
 .env
 .env.*
+
+# プッシュ通知の秘密の鍵（公開しない）
+tools/vapid-private.json

@@ -1,4 +1,4 @@
-const VERSION = "kosen63-v393";
+const VERSION = "kosen63-v396";
 const CORE = [
   "./", "index.html", "map.html", "mido.html", "rally.html", "vote.html", "terms.html", "favicon.svg", "manifest.webmanifest",
   "assets/style.css", "assets/map.css", "assets/ai.css", "assets/intro.js", "assets/map-wide.js", "assets/test-loader.js",
@@ -66,3 +66,25 @@ async function cacheFirst(req, e) {
   if (hit) { e.waitUntil(net.catch(() => {})); return hit; }
   return net;
 }
+
+self.addEventListener("push", (e) => {
+  e.waitUntil(self.registration.showNotification("本部から返事が来ています", {
+    body: "タップして、見てください。",
+    icon: "assets/img/icon-192.png",
+    badge: "assets/img/icon-192.png",
+    tag: "hq-reply",
+    renotify: true,
+    requireInteraction: true,
+    vibrate: [200, 100, 200, 100, 400],
+    data: { url: "hq.html" },
+  }));
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = new URL(e.notification.data?.url ?? "hq.html", self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) if (c.url.includes("hq.html") && "focus" in c) return c.focus();
+    return self.clients.openWindow(url);
+  }));
+});

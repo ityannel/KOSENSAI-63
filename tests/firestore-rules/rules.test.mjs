@@ -263,6 +263,10 @@ await t("visitor cannot edit status of another chat", assertFails(updateDoc(doc(
 await t("staff can reply (message + chat update)", assertSucceeds((() => { const b = writeBatch(staff); b.set(doc(staff, "hq_chats/anon1/msgs/r1"), { from: "staff", text: "向かいます", at: serverTimestamp(), by: "honbu@example.com" }); b.update(doc(staff, "hq_chats/anon1"), { last_text: "向かいます", last_from: "staff", last_at: serverTimestamp(), unread_staff: false, unread_visitor: true }); return b.commit(); })()));
 await t("staff cannot forge the sender email", assertFails(setDoc(doc(staff, "hq_chats/anon1/msgs/r2"), { from: "staff", text: "x", at: serverTimestamp(), by: "someone@else" })));
 await t("staff can close a chat", assertSucceeds(updateDoc(doc(staff, "hq_chats/anon1"), { status: "closed", urgent: false })));
+await t("visitor can save a push endpoint", assertSucceeds(updateDoc(doc(anon, "hq_chats/anon1"), { push: "https://fcm.googleapis.com/fcm/send/abc" })));
+await t("push endpoint too long rejected", assertFails(updateDoc(doc(anon, "hq_chats/anon1"), { push: "https://fcm.googleapis.com/" + "a".repeat(701) })));
+await t("another visitor cannot set a push endpoint", assertFails(updateDoc(doc(anon, "hq_chats/other-chat"), { push: "https://fcm.googleapis.com/x" })));
+await t("staff cannot change the push endpoint", assertFails(updateDoc(doc(staff, "hq_chats/anon1"), { push: "https://fcm.googleapis.com/y" })));
 await t("visitor cannot delete a chat", assertFails(deleteDoc(doc(anon, "hq_chats/anon1"))));
 await t("staff can delete a chat", assertSucceeds(deleteDoc(doc(staff, "hq_chats/anon1"))));
 
