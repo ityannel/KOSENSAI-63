@@ -77,7 +77,7 @@ export function parseMarks(text, final) {
     if (ids.length) marks.push({ kind, ids });
     return "";
   });
-  out = out.replace(/\[\[hq\]\]/g, () => { hq = true; return ""; });
+  out = out.replace(/\[\[hq(?::([a-z]+))?\]\]/g, (_, r) => { hq = r || true; return ""; });
   out = out.replace(/[(（]\s*[)）]/g, "");
   if (!final) out = out.replace(/\[\[[^\]]*$/, "");
   return { text: out.replace(/[ \t]+\n/g, "\n"), marks, hq };
@@ -168,3 +168,9 @@ export function logQa(q, a) {
     } catch {  }
   })();
 }
+
+export const HQ_REASONS = ["missing", "sick", "lost", "other"];
+export const hqHref = (reason) => `hq.html${HQ_REASONS.includes(reason) ? `?r=${reason}` : ""}`;
+const HQ_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg>';
+export const hqCtaHtml = (reason) => `<a class="ai-hq-cta" href="${hqHref(reason)}">${HQ_ICON}<span><b>本部に連絡する</b><small>スタッフに、チャットで伝えられます</small></span><i aria-hidden="true">›</i></a>`;
+export const noteHtml = () => 'AIの答えは、まちがうことがあります。質問は、本部が確認することがあります。個人情報は書かないでください。<a href="terms.html">くわしく</a> <span class="ai-left"></span><a class="ai-hq-link" href="hq.html">本部に連絡する</a>';

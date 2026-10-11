@@ -3,6 +3,8 @@ const QUICK = ["すぐに向かいます。そのままお待ちください。"
 
 const API = ["localhost", "127.0.0.1"].includes(location.hostname) || location.hostname.endsWith("pages.dev") ? "" : "https://hakodate-kosensai.pages.dev";
 
+const title = (c) => (c.place || /^【([^】]*)】/.exec(c.last_text ?? "")?.[1] || "連絡");
+
 export function initHq({ fs, db, a, $, $$, esc, toast, write, listen, time }) {
   const listBox = $("#hq-inbox"), threadBox = $("#hq-thread"), banner = $("#hq-banner");
   let chats = new Map(), selected = null, tab = "open", unsubMsgs = null, msgs = [];
@@ -86,7 +88,7 @@ export function initHq({ fs, db, a, $, $$, esc, toast, write, listen, time }) {
   function paintList() {
     const rows = [...chats.values()].filter((c) => (tab === "all" ? true : tab === "closed" ? c.status === "closed" : c.status !== "closed")).sort((x, y) => (y.last_at ?? 0) - (x.last_at ?? 0));
     listBox.innerHTML = rows.length ? rows.map((c) => `<button type="button" class="hq-row${c.id === selected ? " is-sel" : ""}${c.unread_staff && c.status !== "closed" ? " is-unread" : ""}${c.status === "closed" ? " is-closed" : ""}" data-chat="${esc(c.id)}">
-        <span class="hq-row-top">${c.urgent && c.status !== "closed" ? '<i class="tag tag-danger">緊急</i>' : ""}<b>${esc(c.place || "場所の記入なし")}</b><time>${esc(when(c.last_at))}</time></span>
+        <span class="hq-row-top">${c.urgent && c.status !== "closed" ? '<i class="tag tag-danger">緊急</i>' : ""}<b>${esc(title(c))}</b><time>${esc(when(c.last_at))}</time></span>
         <span class="hq-row-txt">${c.last_from === "staff" ? "本部：" : ""}${esc(c.last_text)}</span>
       </button>`).join("") : '<p class="muted small hq-empty">いまは、ありません。</p>';
   }
@@ -96,7 +98,7 @@ export function initHq({ fs, db, a, $, $$, esc, toast, write, listen, time }) {
     $("#hq-thread-empty").hidden = !!c;
     $("#hq-thread-main").hidden = !c;
     if (!c) return;
-    $("#hq-thread-title").textContent = c.place || "場所の記入なし";
+    $("#hq-thread-title").textContent = title(c);
     $("#hq-thread-state").textContent = c.status === "closed" ? "対応済み" : c.urgent ? "緊急" : "対応中";
     $("#hq-thread-state").dataset.k = c.status === "closed" ? "closed" : c.urgent ? "urgent" : "open";
     $("#hq-urgent").checked = !!c.urgent;

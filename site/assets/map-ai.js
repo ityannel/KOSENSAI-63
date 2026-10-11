@@ -1,6 +1,6 @@
 import { robotSvg } from "./ai-robot.js";
 import { STAGE, EVENTS, VENUES } from "./config.js";
-import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, askStream, errorText, limitText, saveTour, SUGGEST } from "./ai-core.js";
+import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, askStream, errorText, limitText, saveTour, SUGGEST } from "./ai-core.js";
 
 const mock = isLocal && new URLSearchParams(location.search).has("mock");
 
@@ -82,7 +82,7 @@ function html() {
   for (const m of messages) {
     if (m.role === "user") { rows.push(`<div class="ai-user">${esc(m.text)}</div>`); continue; }
     const { text, marks, hq } = parseMarks(m.text, true);
-    rows.push(`<div class="ai-row"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><div class="ai-body">${md(text)}${marksHtml(marks)}</div>${hq ? '<a class="ai-hq-cta" href="hq.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg><span><b>本部に連絡する</b><small>スタッフに、チャットで伝えられます</small></span><i aria-hidden="true">›</i></a>' : ""}</div>`);
+    rows.push(`<div class="ai-row"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><div class="ai-body">${md(text)}${marksHtml(marks)}</div>${hq ? hqCtaHtml(hq === true ? "" : hq) : ""}</div>`);
   }
   if (busy) {
     const { text } = parseMarks(pending, false);
@@ -145,7 +145,7 @@ const skeleton = () => `<div class="aim"><div class="aim-main"></div>
       <textarea class="aim-text" rows="1" maxlength="200" placeholder="聞いてみる" aria-label="質問" enterkeyhint="send"></textarea>
       <button type="submit" class="ai-send" aria-label="送る"></button>
     </form>
-    <p class="ai-note">AIの答えは、まちがうことがあります。個人情報は書かないでください。<a href="terms.html">くわしく</a> <span class="ai-left"></span></p>
+    <p class="ai-note">${noteHtml()}</p>
   </footer></div>`;
 
 function syncKeyboard() {

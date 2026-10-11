@@ -1,7 +1,7 @@
 import { STAGE, EVENTS, VENUES, MAP, SHOPS, HOMEROOMS, DEPT_EXHIBITS } from "./config.js";
 import { robotSvg } from "./ai-robot.js";
 import { startLive, liveSnapshot } from "./ai-live.js";
-import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, askStream, errorText, limitText, readHere, readCtx, saveTour, SUGGEST } from "./ai-core.js";
+import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, askStream, errorText, limitText, readHere, readCtx, saveTour, SUGGEST } from "./ai-core.js";
 
 const $ = (s) => document.querySelector(s);
 const mock = isLocal && new URLSearchParams(location.search).has("mock");
@@ -64,7 +64,7 @@ function render(body, text, final) {
   const row = body.closest(".ai-row");
   if (row) {
     const has = row.querySelector(".ai-hq-cta");
-    if (hq && !has) row.insertAdjacentHTML("beforeend", '<a class="ai-hq-cta" href="hq.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg><span><b>本部に連絡する</b><small>スタッフに、チャットで伝えられます</small></span><i aria-hidden="true">›</i></a>');
+    if (hq && !has) row.insertAdjacentHTML("beforeend", hqCtaHtml(hq === true ? "" : hq));
     else if (!hq && has) has.remove();
   }
   return clean;
@@ -253,6 +253,7 @@ for (const q of SUGGEST.full) {
   b.addEventListener("click", () => ask(q));
   $("#ai-chips").append(b);
 }
+document.querySelector(".ai-note").innerHTML = noteHtml();
 setBusy(false);
 restore();
 startLive();

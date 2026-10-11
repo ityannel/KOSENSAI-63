@@ -3,8 +3,13 @@ import { VAPID_PUBLIC } from "./push-config.js";
 
 const $ = (s) => document.querySelector(s);
 const demo = isLocal;
-const scroller = $("#hq-scroll"), log = $("#hq-log"), intro = $("#hq-intro"), form = $("#hq-form"), box = $("#hq-q"), send = $("#hq-send"), chips = $("#hq-chips"), placeIn = $("#hq-place"), closedNote = $("#hq-closed");
-const REASONS = [["落とし物・忘れ物", false], ["迷子", true], ["体調不良・けが", true], ["そのほか", false]];
+const scroller = $("#hq-scroll"), log = $("#hq-log"), intro = $("#hq-intro"), form = $("#hq-form"), box = $("#hq-q"), send = $("#hq-send"), cards = $("#hq-reasons"), closedNote = $("#hq-closed"), statusEl = $("#hq-status"), urgentNote = $("#hq-urgent");
+const REASONS = [
+  { key: "missing", label: "迷子", urgent: true, hint: "だれが、はぐれましたか？", sub: "はぐれた・見つからない" },
+  { key: "sick", label: "体調不良・けが", urgent: true, hint: "どんな様子ですか？", sub: "気分が悪い・けがをした" },
+  { key: "lost", label: "落とし物・忘れ物", urgent: false, hint: "何を、どこで落としましたか？", sub: "なくした・見つけた" },
+  { key: "other", label: "そのほか", urgent: false, hint: "本部へのメッセージ", sub: "困りごと・ご意見" },
+];
 const UP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
 send.innerHTML = UP;
 
@@ -17,17 +22,39 @@ const aiTalk = () => {
 let reason = null, kit = null, uid = "", chat = null, msgs = [], sending = false, coolUntil = 0;
 const hhmm = (ms) => (ms ? new Date(ms).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false }) : "");
 
-for (const [label, urgent] of REASONS) {
+function pick(r) {
+  reason = r;
+  cards.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(!!r && x.dataset.key === r.key)));
+  urgentNote.hidden = !r?.urgent;
+  box.placeholder = r?.hint ?? "本部へのメッセージ";
+}
+
+for (const r of REASONS) {
   const b = document.createElement("button");
-  b.type = "button"; b.textContent = label; b.setAttribute("aria-pressed", "false");
+  b.type = "button";
+  b.className = `hq-reason${r.urgent ? " is-urgent" : ""}`;
+  b.dataset.key = r.key;
+  b.innerHTML = `<b>${r.label}</b><small>${r.sub}</small>`;
+  b.setAttribute("aria-pressed", "false");
   b.addEventListener("click", () => {
-    reason = reason?.label === label ? null : { label, urgent };
-    chips.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b && !!reason)));
-    if (reason && !box.value.trim()) box.value = `【${label}】`;
-    else if (!reason) box.value = box.value.replace(/^【[^】]*】/, "");
-    box.focus(); fit(); sync();
+    pick(reason?.key === r.key ? null : r);
+    box.focus(); sync();
   });
-  chips.append(b);
+  cards.append(b);
+}
+const pre = REASONS.find((r) => r.key === new URLSearchParams(location.search).get("r"));
+if (pre) pick(pre);
+
+const STEPS = ["送りました", "本部が確認しました", "返事が来ました"];
+function paintStatus() {
+  if (!msgs.length) { statusEl.hidden = true; return; }
+  const replied = msgs.some((m) => m.from === "staff");
+  const seen = replied || (!!chat && chat.unread_staff === false);
+  const done = [true, seen, replied];
+  const now = done.findIndex((d) => !d);
+  statusEl.hidden = false;
+  statusEl.innerHTML = STEPS.map((s, i) => `<span class="hq-step${done[i] ? " is-done" : i === now ? " is-now" : ""}"><i aria-hidden="true">${done[i] ? "✓" : i + 1}</i>${s}</span>`).join('<span class="hq-sep"></span>');
+  statusEl.querySelectorAll(".hq-sep").forEach((x, i) => x.classList.toggle("is-done", done[i + 1]));
 }
 
 const nearBottom = () => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 80;
@@ -44,7 +71,7 @@ function paint() {
   log.innerHTML = msgs.filter((m) => !m.text.startsWith(AI_TAG)).map((m) => m.from === "visitor"
     ? `<div class="ai-user">${esc(m.text)}</div><span class="hq-msg-time ai-user-time">${esc(hhmm(m.at))}</span>`
     : `<div class="ai-row"><i class="ai-av" aria-hidden="true"><svg viewBox="0 0 24 24" class="hq-ic"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg></i><div class="ai-body"><p class="hq-from">本部</p><p>${esc(m.text).replace(/\n/g, "<br>")}</p></div></div><span class="hq-msg-time">${esc(hhmm(m.at))}</span>`).join("");
-  if (chat?.place && !placeIn.value) placeIn.value = chat.place;
+  paintStatus();
   $("#hq-share-row").hidden = !!chat || !aiTalk();
   if (stick) toBottom();
 }
@@ -117,7 +144,7 @@ async function sendReal(text) {
   const chatRef = fs.doc(db, "hq_chats", uid);
   const msgRef = fs.doc(fs.collection(db, "hq_chats", uid, "msgs"));
   const urgent = !!(reason?.urgent || chat?.urgent);
-  const place = placeIn.value.trim().slice(0, 40);
+  const place = "";
   const batch = fs.writeBatch(db);
   const last = text.slice(0, 120);
   if (!chat) {
@@ -133,20 +160,22 @@ async function sendReal(text) {
 
 function sendDemo(text) {
   msgs.push({ id: String(Date.now()), from: "visitor", text, at: Date.now() });
-  chat = { status: "open", place: placeIn.value.trim() };
+  chat = { status: "open", place: "", unread_staff: true };
   paint();
-  setTimeout(() => { msgs.push({ id: String(Date.now()), from: "staff", text: "（デモ）本部です。すぐに向かいます。いまいる場所を、もう少し教えてください。", at: Date.now() }); paint(); }, 1400);
+  setTimeout(() => { chat.unread_staff = false; paint(); }, 900);
+  setTimeout(() => { msgs.push({ id: String(Date.now()), from: "staff", text: "（デモ）本部です。確認しました。すぐに向かいます。", at: Date.now() }); paint(); }, 2400);
 }
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const text = box.value.trim();
-  if (!text || sending || Date.now() < coolUntil) return;
+  const typed = box.value.trim();
+  if (!typed || sending || Date.now() < coolUntil) return;
+  const text = reason && !typed.startsWith("【") ? `【${reason.label}】${typed}` : typed;
   sending = true; sync();
   try {
     if (demo) sendDemo(text); else await sendReal(text);
     box.value = ""; fit(); stick = true;
-    reason = null; chips.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+    pick(null);
     coolUntil = Date.now() + 3500;
     setTimeout(sync, 3600);
   } catch (err) {
