@@ -1151,3 +1151,14 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 .aim-tour-acts .sh-btn { flex: 1 1 auto; justify-content: center; }
 .aim-tour-acts .sh-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 :root[data-theme="dark"] .aim-tour { background: color-mix(in srgb, var(--m-tour) 14%, #2a2420); }
+
+.m-results .m-ai-row { min-height: 52px; margin: 14px auto 0; padding: 6px 14px 6px 8px; gap: 12px; border: 1px solid rgba(99, 74, 46, 0.3); border-radius: 16px; box-shadow: none; background: rgba(255, 251, 242, 0.72); }
+.m-results .m-ai-row:active { translate: 0; background: rgba(246, 220, 162, 0.6); }
+.m-results .m-ai-row .ai-av { width: 34px; height: 34px; }
+.m-results .m-ai-row b { font-size: 0.92rem; font-weight: 800; }
+.m-results .m-ai-row small { font-size: 0.72rem; }
+.m-results .aim-chips { flex-wrap: nowrap; gap: 8px; max-width: 560px; margin: 14px auto 6px; padding: 2px 2px 8px; overflow-x: auto; scrollbar-width: none; }
+.m-results .aim-chips::-webkit-scrollbar { display: none; }
+.m-results .aim-chips button { flex: none; padding: 7px 13px; border: 1px solid rgba(99, 74, 46, 0.28); background: rgba(255, 251, 242, 0.6); font-size: 12.5px; }
+.m-results .aim-chips + h3 { margin-top: 22px; }
+.m-results .m-ai-row + .m-list, .m-results .m-ai-row + .m-empty { margin-top: 14px; }
