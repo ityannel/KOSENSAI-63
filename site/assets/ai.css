@@ -86,7 +86,7 @@ body.ai-page { background: linear-gradient(180deg, #2f3953, #7d4f6e 55%, #d9824f
 .ai-link.is-hq { background: #634A2E; border-color: #634A2E; color: #FEEBC4; }
 .ai-link.is-hq svg { stroke: #FEEBC4; }
 .ai-hq-link { display: inline-block; margin-left: 6px; color: #fff; font-weight: 900; }
-.ai-hq-cta { flex: 1 0 100%; display: flex; align-items: center; gap: 12px; box-sizing: border-box; min-height: 64px; margin: 6px -10px 0 -10px; padding: 10px 16px; border: 1.5px solid #4a1015; border-radius: 18px; background: var(--grain), linear-gradient(110deg, #C8323A 0%, #E2622E 100%); color: #fff; text-decoration: none; box-shadow: -5px 4px 0 rgba(48, 44, 41, 0.55); animation: ai-cta-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.ai-hq-cta { flex: 1 0 calc(100% - 38px); display: flex; align-items: center; gap: 12px; box-sizing: border-box; min-height: 64px; margin: 6px 0 0 38px; padding: 10px 16px; border: 1.5px solid #4a1015; border-radius: 18px; background: var(--grain), linear-gradient(110deg, #C8323A 0%, #E2622E 100%); color: #fff; text-decoration: none; box-shadow: -5px 4px 0 rgba(48, 44, 41, 0.55); animation: ai-cta-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
 .ai-hq-cta svg { flex: none; width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .ai-hq-cta span { flex: 1; display: grid; gap: 2px; text-align: left; }
 .ai-hq-cta b { font-family: var(--hud-font); font-weight: 400; font-size: 22px; letter-spacing: 0.03em; line-height: 1.15; }
