@@ -76,9 +76,9 @@ npx -y firebase-tools deploy --only hosting --project enishi-7f43f       # Fireb
 
 ## AI 機能（`functions/`、`site/ai.html`）
 
-- `functions/api/ask.js`（来場者向けの AI番長）と `functions/api/moderate.js`（本部向けの投稿確認）は、Cloudflare Pages Functions。**Gemini のキーは `env.GEMINI_API_KEY` だけ**。コード・コミット・会話に書かない。
+- `functions/api/ask.js`（来場者向けの AIくん）と `functions/api/moderate.js`（本部向けの投稿確認）は、Cloudflare Pages Functions。**Gemini のキーは `env.GEMINI_API_KEY` だけ**。コード・コミット・会話に書かない。
 - `site/assets/ai-context.json` は、`tools/make-ai-context.mjs` が `config.js` から作る。`config.js` を変えたら作り直す（デプロイスクリプトが自動で動かす）。
-- AI番長は、来場者に「AI」と分かるようにする。来場者のふりをした、いいね・コメントは作らない。
+- AIくんは、来場者に「AI」と分かるようにする。来場者のふりをした、いいね・コメントは作らない。
 - `moderate` は、本部ログインが必須（Firestore の `staff/{メール}` を、本人のトークンで読めるかで確かめる）。AI の判断で、投稿を自動で非公開にしない。
 
 ## 触るときに気をつける場所

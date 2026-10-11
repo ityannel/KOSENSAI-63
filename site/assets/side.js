@@ -28,7 +28,7 @@ const MORE = [
   ["map.html?list=now", "いまやっている", "NOW ON", svg('<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>')],
   ["map.html?list=food", "模擬店をさがす", "FIND FOOD", svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/>')],
   ["rally.html", "スタンプカード", "STAMP CARD", svg('<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8.5" cy="12" r="2.3"/><circle cx="15.5" cy="12" r="2.3"/>')],
-  ["ai.html", "AI番長に聞く", "ASK AI", svg('<rect x="4" y="6" width="16" height="12" rx="3"/><path d="M12 6V3.5M9 11v1.5M15 11v1.5M9.5 15.5h5"/>')],
+  ["ai.html", "AIくんに聞く", "ASK AI", svg('<rect x="4" y="6" width="16" height="12" rx="3"/><path d="M12 6V3.5M9 11v1.5M15 11v1.5M9.5 15.5h5"/>')],
   ["map.html?list=toilet", "トイレ", "RESTROOMS", svg('<circle cx="7.5" cy="5" r="1.7"/><circle cx="16.5" cy="5" r="1.7"/><path d="M7.5 8.5v11M5 9h5l-.3 5.5M16.5 8.5l-2.8 7h5.6zM16.5 15.5v4"/>')],
 ];
 const MORE_NEEDS = { "ai.html": "*", "mido.html": "pickup", "map.html?list=now": "now", "map.html?list=food": "ennichi", "rally.html": "stamp", "map.html?list=toilet": "*" };
@@ -202,5 +202,5 @@ if (!onTop && !onMido) {
 }
 
 if (["", "mido", "rally", "vote"].includes(document.body.dataset.page ?? "") && !document.querySelector(".mapapp") && !document.querySelector(".ai-fab")) {
-  document.body.insertAdjacentHTML("beforeend", `<a class="ai-fab" href="ai.html" aria-label="AI番長に聞く" title="AI番長に聞く">${robotSvg()}</a>`);
+  document.body.insertAdjacentHTML("beforeend", `<a class="ai-fab" href="ai.html" aria-label="AIくんに聞く" title="AIくんに聞く">${robotSvg()}</a>`);
 }

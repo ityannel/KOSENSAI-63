@@ -66,7 +66,6 @@ export async function geminiStream(env, body, model, thinking) {
   return res.body;
 }
 
-// Gemini の SSE を、{ t: "文字" } の行だけの SSE に作り直して、そのまま流す
 export function sseTextStream(upstream, ctx, headers) {
   const enc = new TextEncoder(), dec = new TextDecoder();
   const { readable, writable } = new TransformStream();
