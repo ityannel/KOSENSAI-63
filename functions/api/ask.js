@@ -28,6 +28,24 @@ const PERSONA = `あなたは「AIくん」。第63回 函館高専祭「縁」�
 - 「何がある？」「おすすめは？」など、広い質問は、見出しを付けて、2〜4つに分けて答える。見出しは「## 見出し」（短く、例：## ステージ、## 食べ物、## 展示）。各見出しの下は、1〜3行。
 - 狭い質問（時刻、場所、ルールなど）は、見出しなしで、短く答える。`;
 
+const MAP_RULES = `
+いま、来場者は「校内マップ」の画面から聞いている。下の「MAP」は、地図に出ている状態（いまの場所 here、選んでいる場所 selected、階 floor、引いてある道順 route、いまの場所から近い順の near、回る予定 tour）。
+地図で役に立つための決まり：
+- 「ここから」「近く」「そこ」は、MAP の here と selected を使って考える。here が null なら、近さは分からないので、「いまどこにいる？」と一度だけ聞くか、「いまここ」QR を読んでもらう。
+- 近さは、near の min（歩いて何分）と m（歩く距離 m）だけを根拠にする。min が同じなら、m が小さい方を近いとする。near にない場所の分数・距離は、作らない。
+- 「空いてる所」「待たない所」は、LIVE の crowd と shops（待ち時間・完売・休業）で選ぶ。待ちなし・空いているものを先に出す。売り切れ・休業は勧めない。情報がなければ、「いまの状況は分からねえ」と答える。
+- 場所を出すときは、必ず [[map:ID]] を付ける。地図に印が出る。多くて6つ。
+- 「A から B へ」は [[route:AのID>BのID]]。A が here なら、here の id を使う。
+- 「回りたい」「ルートを作って」「どう回る？」など、複数の場所を順に回る頼みには、回る順番を決めて、[[tour:ID>ID>ID]] を1つだけ付ける。地図に周遊ルートが引かれる。
+  - 2〜6か所。ID は、CONTEXT にあるものと near の id だけ。
+  - here が分かれば、here の id は入れない（いまの場所から、自動で始まる）。here が分からなければ、最初に行く場所から始める。
+  - 順番は、①開始時刻が決まっているもの（ステージ・企画）を、その時刻に合わせる、②それ以外は、近いものを続ける（near の min や、同じ階・同じ建物）、③待ち時間の長いお店は、後ろに回すか、空いていそうなものに替える。
+  - 各場所を、「- 」で1行ずつ、一言の理由を付けて書く。分数・距離は、書かない（地図が計算する）。
+  - 「何時までに戻りたい」などの条件があれば、場所の数を減らして合わせる。
+- 道順の説明（どこを曲がる、など）は、書かない。地図の案内に任せる。
+- ステージや企画の時刻は、24時間表記。「いま」は LIVE の now。もう終わった企画は、勧めない。
+`;
+
 const clip = (s, n) => String(s ?? "").slice(0, n);
 
 export async function onRequestPost(ctx) {
@@ -53,18 +71,23 @@ export async function onRequestPost(ctx) {
   if (!turns.length || turns.at(-1).role !== "user") return json(request, 400, { error: "no_question" });
 
   const live = body?.live && typeof body.live === "object" ? clip(JSON.stringify(body.live), 9000) : "{}";
+  const map = body?.map && typeof body.map === "object" && !Array.isArray(body.map) ? clip(JSON.stringify(body.map), 4500) : "";
   let facts = "{}";
   try {
     const r = await env.ASSETS.fetch(new URL("/assets/ai-context.json", request.url));
     if (r.ok) facts = await r.text();
   } catch {  }
 
+  const system = map
+    ? `${PERSONA}\n${MAP_RULES}\nCONTEXT（学校祭の情報）:\n${facts}\n\nLIVE（いまの時刻と最新の予定）:\n${live}\n\nMAP（いま地図に出ている状態）:\n${map}`
+    : `${PERSONA}\n\nCONTEXT（学校祭の情報）:\n${facts}\n\nLIVE（いまの時刻と最新の予定）:\n${live}`;
+
   try {
     const upstream = await geminiStream(env, {
-      systemInstruction: { parts: [{ text: `${PERSONA}\n\nCONTEXT（学校祭の情報）:\n${facts}\n\nLIVE（いまの時刻と最新の予定）:\n${live}` }] },
+      systemInstruction: { parts: [{ text: system }] },
       contents: turns.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
-      generationConfig: { temperature: 0.6, maxOutputTokens: 1500 },
-    }, env.GEMINI_MODEL ?? MODELS.ask, "minimal");
+      generationConfig: { temperature: map ? 0.5 : 0.6, maxOutputTokens: map ? 2500 : 1500 },
+    }, env.GEMINI_MODEL ?? MODELS.ask, map ? "low" : "minimal");
     return sseTextStream(upstream, ctx, cors(request));
   } catch {
     return json(request, 502, { error: "upstream" });

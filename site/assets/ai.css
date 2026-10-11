@@ -78,3 +78,8 @@ body.ai-page { background: linear-gradient(180deg, #2f3953, #7d4f6e 55%, #d9824f
 .ai-msg-in { animation: ai-in 0.25s ease both; }
 @keyframes ai-in { from { opacity: 0; translate: 0 6px; } }
 @media (prefers-reduced-motion: reduce) { .ai-msg-in, .ai-caret::after, .ai-typing i { animation: none; } .ai-scroll { scroll-behavior: auto; } }
+.ai-tomap { display: inline-flex; align-items: center; gap: 6px; margin: 0 auto 8px; padding: 7px 14px; border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: #fff; font: 700 13px var(--text-font); text-decoration: none; }
+.ai-tomap svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ai-foot { display: flex; flex-direction: column; align-items: center; }
+.ai-foot .ai-form { width: 100%; }
+.ai-link.is-tour { border-color: #d9602b; background: #FFE3D2; }

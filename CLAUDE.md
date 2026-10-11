@@ -78,6 +78,7 @@ npx -y firebase-tools deploy --only hosting --project enishi-7f43f       # Fireb
 
 - `functions/api/ask.js`（来場者向けの AIくん）と `functions/api/moderate.js`（本部向けの投稿確認）は、Cloudflare Pages Functions。**Gemini のキーは `env.GEMINI_API_KEY` だけ**。コード・コミット・会話に書かない。
 - `site/assets/ai-context.json` は、`tools/make-ai-context.mjs` が `config.js` から作る。`config.js` を変えたら作り直す（デプロイスクリプトが自動で動かす）。
+- 地図（`map.html`）からも聞ける。画面側は `ai-core.js`（共通）、`map-ai.js`（地図のシート）、`ai-page.js`（全画面）。`ask.js` は、`body.map` があるときだけ地図モード（`MAP_RULES`、`thinkingLevel: low`）。答えの印は `[[map:ID]]` `[[route:A>B]]` `[[tour:ID>ID>…]]`。ID は、画面側で `place()` が見つけたものだけを使う。道順の文章・分数は、AI に作らせない（経路は `route.js` が計算する）。
 - AIくんは、来場者に「AI」と分かるようにする。来場者のふりをした、いいね・コメントは作らない。
 - `moderate` は、本部ログインが必須（Firestore の `staff/{メール}` を、本人のトークンで読めるかで確かめる）。AI の判断で、投稿を自動で非公開にしない。
 

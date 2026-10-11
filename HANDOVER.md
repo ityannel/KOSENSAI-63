@@ -176,6 +176,7 @@ act("24", "12:40", "13:10", "Endless bond", "バンド", "一言", "紹介文", 
 
 - **AIくん**（`site/ai.html`）：来場者が質問すると、Gemini が、サイトの情報だけを根拠に答えます。口調はヤンキー風、「AI」と必ず表示。
 - **投稿の確認の補助**：本部コンソールの投稿の「…」メニューの「AIで確認する」。写真と文章を AI が見て、「要確認」の候補と理由を出します。公開するかは、人が決めます。
+- **地図からAIくん**（`site/map.html`）：検索バーに文章を入れて Enter（または「AIくんに聞く」の行）。答えは地図の下のシートに出て、場所の印・道順・**回るルート（周遊ルート）**が地図に引かれる。全画面（`ai.html`）と会話・回数・「いまここ」・ルートは共通（`sessionStorage` の `kosen63-ai-chat` / `kosen63-map-ctx` / `kosen63-tour`）。どちらから入っても、続きから話せる。
 - 仕組み：`functions/api/ask.js` と `functions/api/moderate.js`（Cloudflare Pages Functions）が、Gemini を呼びます。**キーはここだけ**に置き、サイトの画面側のコードには、入りません。
 
 ### 7-1. 最初の設定（1回だけ。キーは、人に見せない）
@@ -193,6 +194,7 @@ act("24", "12:40", "13:10", "Endless bond", "バンド", "一言", "紹介文", 
 - 答えには、場所の案内ボタン（`[[map:ID]]`、`[[route:A>B]]`）と、見出し（`## `）が付く。ID は `ai-context.json` にあるものだけ（画面側で、地図にある ID かを確かめてから、ボタンにする）。
 - AIくんが答える元の情報は、`site/assets/ai-context.json`。**`config.js` を変えたら作り直す**（`node tools/make-ai-context.mjs`。`deploy-cloudflare.sh` が、出す前に自動で動かす）。
 - 最新の予定（時間変更・追加・削除）と、いまの状況は、開いている画面から一緒に送られる：会場の混雑、模擬店の待ち時間・完売・休業とお店の一言、本部のお知らせ（緊急かどうかも）、函館の天気。それぞれ「何分前の情報か」も付き、古いもの（混雑は30分以上）は、AI が断って答える。送る内容は `site/assets/ai-live.js`。載せていない情報は、「分からない」と答える決まり。
+- 地図モード：画面から `map`（いまの場所 here・選択中 selected・階 floor・経路 route・近い順 near・回る予定 tour）を一緒に送る。`map` があるときだけ、`ask.js` が `MAP_RULES` を足し、考える深さ（`thinkingLevel`）を `low` に上げる。答えの `[[tour:ID>ID>…]]` が、地図の周遊ルートになる。`near` の分数・距離は、画面側の経路計算（`route.js`）の結果で、AI は作らない。コードは `site/assets/map-ai.js`（シート）、`map.js`（描画・経路・近い順）、`ai-core.js`（会話・回数・通信の共通部分）。
 - 悪用と費用を抑える仕組み：**1台の端末あたり、10分に8回・1日30回まで**（端末ごとの ID を、`localStorage` に持って数える）。学校の Wi-Fi は、多くの人が同じ IP を共有するので、IP は、10分に200回・1日1000回と、ゆるく数える。全体は、1日1300回まで（約 1,500 円で、約3,000回の見込みから）。質問は200字、答えは1500トークンまで。上限の数字は `functions/api/ask.js` の `LIMITS` と、`site/assets/ai-page.js` の `LIMIT_10M` / `LIMIT_DAY`（画面側の案内用。同じ数字にする）。回数は、各データセンターごとの目安で、端末の ID は、作り直せば、リセットできるので、**Google 側の予算の上限が、最後の守り**です。
 - キーが漏れたかもしれないときは、Google AI Studio でキーを無効にして、作り直し、`wrangler pages secret put` で入れ直す。
 - Firebase 側のミラー（`enishi-7f43f.web.app`）の画面からも、AI は、Cloudflare の `/api` を呼びます（CSP の `connect-src` に許可済み）。

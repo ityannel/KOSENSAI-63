@@ -5,14 +5,15 @@ import { avatar, VERIFIED } from "./avatar.js";
 import { tStart, tPlain } from "./schedule.js";
 import { findRoute, describe, centerOf, buildingAt } from "./route.js";
 import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
+import { robotSvg } from "./ai-robot.js";
+import { SUGGEST, HERE_KEY, HERE_SEC, saveCtx, readTour, saveTour } from "./ai-core.js";
+import * as mapAi from "./map-ai.js";
 
-const HERE_KEY = "kosen63-here";
-const HERE_SEC = 40;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
 const md = (iso) => new Date(iso).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric" });
 const $ = (s) => document.querySelector(s);
-const SEARCH_PH = "場所・お店をさがす";
+const SEARCH_PH = "場所をさがす・AIくんに聞く";
 
 let getState = () => ({});
 const places = new Map();
@@ -1041,6 +1042,7 @@ function drawFloor() {
     <g>${overs.join("")}</g>
     <g id="m-sel"></g>
     <g id="m-hl"></g>
+    <g id="m-tour"></g>
     <g id="m-route"></g>
     <g id="m-labels"><g class="site-labels${floor === "1F" ? "" : " is-dim"}">${site.labels}</g>${labels.join("")}${roomLabels.join("")}</g>
     <g id="m-icons">${icons.join("")}</g>
@@ -1048,7 +1050,8 @@ function drawFloor() {
     <g id="m-deco">${[...places.values()].filter((p) => p.kind === "deco" && p.floor === floor).map((p) => `<g data-id="${p.id}" style="cursor:pointer">${icon(...p.at, `ic-deco g${p.grade}`, `<title>${esc(p.name)}</title>${ICON.deco}`)}</g>`).join("")}</g>
     <g id="m-vend">${(SITE.vending ?? []).filter((v) => v.floor === floor).map((v) => `<g data-id="${v.id}" style="cursor:pointer">${icon(...v.at, "ic-vend", `<title>${esc(v.name)}</title>${ICON.vend}`)}</g>`).join("")}</g>
     <g id="m-aed">${SITE.aed.filter((a) => a.floor === floor).map((a) => `<g data-id="${a.id}" style="cursor:pointer">${icon(...a.at, "ic-aed", '<rect class="bg" x="-12" y="-8" width="24" height="16" rx="4"/><text>AED</text>')}</g>`).join("")}</g>
-    <g id="m-marks"></g>`;
+    <g id="m-marks"></g>
+    <g id="m-aimk"></g>`;
   floorLayer = floor;
   labelKey = "";
   document.querySelectorAll(".m-floor").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.floor === floor)));
@@ -1140,9 +1143,11 @@ export function renderMap() {
   $("#m-live").innerHTML = live.join("");
   updateBadges();
   drawRoute();
+  drawAiOverlay();
   drawMarks();
   document.querySelectorAll(".m-floor").forEach((b) => {
-    const other = rt.result?.legs.some((l) => l.floor === b.dataset.floor) && b.dataset.floor !== floor;
+    const f = b.dataset.floor;
+    const other = (rt.result?.legs.some((l) => l.floor === f) || overlay.tour?.legs.some((l) => l.result?.legs.some((g) => g.floor === f)) || overlay.pins.some((id) => place(id)?.floor === f)) && f !== floor;
     b.querySelector(".dot").hidden = !other;
   });
   if ((mode === "place" || mode === "home") && !writing($("#m-sheet-body"))) renderSheet();
@@ -1165,6 +1170,253 @@ function drawRoute() {
   const html = parts.join("");
   if (g._html !== html) g.innerHTML = g._html = html;
 }
+
+const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+let overlay = { pins: [], tour: null };
+const pairCache = new Map();
+const hereId = () => (here && place(here) ? place(here).id : null);
+function legBetween(a, b) {
+  const k = `${a}>${b}`;
+  if (!pairCache.has(k)) pairCache.set(k, bestRoute(place(a), place(b), {}));
+  return pairCache.get(k);
+}
+function normalizeStops(ids, isRoute) {
+  const out = [];
+  for (const raw of ids) {
+    const p = place(raw);
+    if (p && !out.includes(p.id)) out.push(p.id);
+  }
+  const h = hereId();
+  if (!isRoute && h && out[0] !== h) {
+    const i = out.indexOf(h);
+    if (i > 0) out.splice(i, 1);
+    out.unshift(h);
+  }
+  return out;
+}
+function buildTour(ids, isRoute) {
+  const stops = normalizeStops(ids, isRoute);
+  if (stops.length < 2) return null;
+  const legs = stops.slice(1).map((to, i) => ({ from: stops[i], to, result: legBetween(stops[i], to) }));
+  return {
+    ids: stops, legs, route: !!isRoute, fromHere: !isRoute && stops[0] === hereId(),
+    minutes: legs.reduce((s, l) => s + (l.result?.minutes ?? 0), 0),
+    meters: legs.reduce((s, l) => s + (l.result?.meters ?? 0), 0),
+  };
+}
+const stopLabel = (t, i) => (t.fromHere ? (i === 0 ? "★" : String(i)) : String(i + 1));
+
+function drawAiOverlay() {
+  const lines = [], marks = [];
+  const t = overlay.tour;
+  if (t) {
+    for (const l of t.legs) {
+      for (const leg of l.result?.legs ?? []) {
+        if (leg.floor !== floor) continue;
+        const pts = leg.pts.map((p) => p.join(",")).join(" ");
+        lines.push(`<polyline class="tr-case" points="${pts}"/><polyline class="tr-line" points="${pts}"/><polyline class="tr-flow" points="${pts}"/>`);
+      }
+    }
+    t.ids.forEach((id, i) => {
+      const p = place(id);
+      if (!p || p.floor !== floor || (i === 0 && t.fromHere)) return;
+      marks.push(icon(...markPoint(p), "mk-tour", `<circle r="10"/><text>${stopLabel(t, i)}</text>`));
+    });
+  }
+  for (const id of overlay.pins) {
+    const p = place(id);
+    if (p && p.floor === floor) marks.push(icon(...markPoint(p), "mk-pin mk-ai", PIN));
+  }
+  const l = lines.join(""), m = marks.join(""), le = $("#m-tour"), me = $("#m-aimk");
+  if (le && le._html !== l) le.innerHTML = le._html = l;
+  if (me && me._html !== m) me.innerHTML = me._html = m;
+}
+
+function fitIds(ids, maxK) {
+  const rects = [];
+  for (const id of ids) {
+    const p = place(id);
+    if (p && p.floor === floor) rects.push(p.rect ?? [p.at[0] - 20, p.at[1] - 20, 40, 40]);
+  }
+  if (overlay.tour) {
+    for (const l of overlay.tour.legs) for (const leg of l.result?.legs ?? []) if (leg.floor === floor) leg.pts.forEach(([x, y]) => rects.push([x, y, 0, 0]));
+  }
+  if (!rects.length) return;
+  const [x0, y0, w, h] = bbox(rects);
+  const pad = 40 / viewFor([x0, y0, w, h], maxK).k;
+  animateTo(viewFor([x0 - pad, y0 - pad, w + 2 * pad, h + 2 * pad], maxK));
+}
+function settleFloor(ids) {
+  const ps = ids.map((id) => place(id)).filter(Boolean);
+  if (!ps.length || ps.some((p) => p.floor === floor)) return;
+  floor = ps[0].floor;
+  drawFloor();
+}
+
+function showTour(ids, { route = false } = {}) {
+  const t = buildTour(ids, route);
+  if (!t) return false;
+  overlay = { pins: [], tour: t };
+  if (!route) saveTour(t.ids);
+  const first = t.legs.find((l) => l.result)?.result.legs[0].floor;
+  if (first && first !== floor) { floor = first; drawFloor(); }
+  renderMap();
+  renderSheet();
+  setSheet(false);
+  afterSheet(() => fitIds(t.ids, 3.5));
+  return true;
+}
+function setPins(ids) {
+  const list = ids.filter((id) => place(id));
+  if (!list.length) return false;
+  overlay = { pins: list.map((id) => place(id).id), tour: null };
+  settleFloor(list);
+  renderMap();
+  setSheet(false);
+  afterSheet(() => fitIds(overlay.pins, 3));
+  return true;
+}
+function clearOverlay() {
+  if (!overlay.tour && !overlay.pins.length) return;
+  overlay = { pins: [], tour: null };
+  saveTour(null);
+  renderMap();
+}
+function sortTour(ids) {
+  const t = buildTour(ids, false);
+  if (!t || t.ids.length < 3) return null;
+  const [start, ...rest] = t.ids;
+  const d = (a, b) => legBetween(a, b)?.cost ?? 1e9;
+  let best = null;
+  const walk = (cur, left, acc, path) => {
+    if (best && acc >= best.cost) return;
+    if (!left.length) { best = { cost: acc, path }; return; }
+    left.forEach((id, i) => walk(id, [...left.slice(0, i), ...left.slice(i + 1)], acc + d(cur, id), [...path, id]));
+  };
+  if (rest.length <= 6) walk(start, rest, 0, []);
+  else {
+    const path = [];
+    let cur = start, left = [...rest];
+    while (left.length) {
+      left.sort((a, b) => d(cur, a) - d(cur, b));
+      cur = left.shift();
+      path.push(cur);
+    }
+    best = { path };
+  }
+  const next = [start, ...best.path];
+  const before = t.minutes;
+  showTour(next);
+  const after = overlay.tour?.minutes ?? before;
+  toast(after < before ? `近い順にしました（${before}分 → ${after}分）` : "いまの順番が、いちばん近い順です");
+  return next;
+}
+function startLeg(i) {
+  const l = overlay.tour?.legs[i];
+  if (l) startRoute(l.to, l.from);
+}
+
+function aiRef(id) {
+  const p = id && place(id);
+  return p ? { id: p.id, name: oneLine(titleOf(p)) } : null;
+}
+const FACILITY = { "toilet-m": "男子トイレ", "toilet-f": "女子トイレ", "toilet-hc": "多目的トイレ", toilet: "トイレ", aed: "AED", vending: "自販機" };
+let nearCache = { key: "", list: [] };
+function nearList(h) {
+  if (nearCache.key === h) return nearCache.list;
+  const hp = place(h);
+  if (!hp) return [];
+  const c0 = centerOf(hp);
+  const euclid = (p) => { const c = centerOf(p); return Math.hypot(c[0] - c0[0], c[1] - c0[1]) + (p.floor === hp.floor ? 0 : 120); };
+  const make = (p, k) => {
+    const r = legBetween(h, p.id);
+    return r ? { id: p.id, name: oneLine(p.fest ? titleOf(p) : `${titleOf(p)}（${subOf(p)}）`), k, min: r.minutes, m: r.meters } : null;
+  };
+  const fest = [...places.values()].filter((p) => p.fest && p.id !== h && !byRoom.has(p.id)).sort((a, b) => euclid(a) - euclid(b)).slice(0, 30)
+    .map((p) => make(p, p.kind === "venue" ? "会場" : p.kind === "exhibit" ? "学科展示" : p.kind === "hq" ? "本部" : p.shopList?.length ? "模擬店" : "")).filter(Boolean)
+    .sort((a, b) => a.min - b.min).slice(0, 14);
+  const fac = [];
+  for (const [kind, label] of Object.entries(FACILITY)) {
+    const list = [...places.values()].filter((p) => p.kind === kind && !p.fest && p.id !== h && !byRoom.has(p.id)).sort((a, b) => euclid(a) - euclid(b)).slice(0, 4);
+    fac.push(...list.map((p) => make(p, label)).filter(Boolean).sort((a, b) => a.min - b.min).slice(0, 2));
+  }
+  const list = [...fest, ...fac];
+  nearCache = { key: h, list };
+  return list;
+}
+let lastNotice = null;
+function aiLive() {
+  const s = getState();
+  const mins = (ms) => (ms ? Math.max(0, Math.round((s.now - ms) / 60000)) : null);
+  const out = {};
+  if (s.crowd) {
+    out.crowd = CROWD.venues.filter((v) => s.crowd[v]?.level != null).map((v) => {
+      const ago = mins(s.crowd[v].updated_at);
+      return { id: v, place: CROWD.short[v] ?? v, status: CROWD.levels[s.crowd[v].level]?.label ?? "", ago, ...(ago != null && ago > CROWD.staleMinutes ? { stale: true } : {}) };
+    });
+  }
+  if (s.shops) {
+    out.shops = [];
+    for (const p of places.values()) {
+      for (const sh of p.shopList ?? []) {
+        const d = shopDocFor(sh, s.shops);
+        const w = WAIT[d?.status];
+        if (d && w) out.shops.push({ id: p.id, n: sh.name, s: w.label, ago: mins(d.updated_at), ...(d.message ? { m: d.message } : {}) });
+      }
+      if (out.shops.length >= 60) break;
+    }
+  }
+  if (lastNotice?.text) out.notice = { text: lastNotice.text, urgent: !!lastNotice.urgent };
+  return out;
+}
+function aiContext() {
+  const h = hereId();
+  const r = rt.result && rt.from && rt.to ? { from: aiRef(rt.from), to: aiRef(rt.to), minutes: rt.result.minutes, meters: rt.result.meters } : null;
+  return { here: aiRef(h), selected: aiRef(selected), floor, route: r, near: h ? nearList(h) : [], tour: overlay.tour?.ids ?? null };
+}
+function saveAiCtx(withNear) {
+  const h = hereId();
+  const r = rt.result && rt.from && rt.to;
+  saveCtx({
+    here: h, selected, floor, from: r ? rt.from : null, to: r ? rt.to : null, minutes: r ? rt.result.minutes : null, meters: r ? rt.result.meters : null,
+    near: h && (withNear || nearCache.key === h) ? nearList(h) : [],
+  });
+}
+function enterAi() {
+  if (mode !== "ai") {
+    pushSheet();
+    mode = "ai";
+    listKind = null;
+    updateChips();
+    syncUrl();
+  }
+  renderSheet();
+  renderMap();
+  setSheet(true);
+}
+const aiHost = {
+  now: () => getState().now ?? Date.now(),
+  live: aiLive,
+  context: aiContext,
+  has: (id) => !!place(id),
+  title: (id) => oneLine(titleOf(place(id))),
+  tourInfo(ids, isRoute) {
+    const t = buildTour(ids, isRoute);
+    if (!t) return null;
+    return {
+      ids: t.ids, fromHere: t.fromHere, minutes: t.minutes, meters: t.meters,
+      stops: t.ids.map((id) => { const p = place(id); return { id, title: oneLine(titleOf(p)), sub: oneLine(subOf(p)) }; }),
+      legs: t.legs.map((l) => ({ ok: !!l.result, minutes: l.result?.minutes ?? 0, meters: l.result?.meters ?? 0 })),
+    };
+  },
+  overlayKey: () => overlay.tour?.ids.join(">") ?? "",
+  showTour, setPins, clearOverlay, sortTour, startLeg,
+  go: (id) => select(id),
+  enter: enterAi,
+  repaint: () => { if (mode === "ai") renderSheet(); },
+  sampleIds: (n) => [...places.values()].filter((p) => p.fest && p.name && !byRoom.has(p.id)).slice(0, n).map((p) => p.id),
+};
+mapAi.init(aiHost);
 
 const markPoint = (p) => (p.at ? p.at : centerOf(p));
 let markedIds = new Set();
@@ -1339,6 +1591,7 @@ function renderSheet() {
   sheet().classList.toggle("is-home", mode === "home");
   sheet().hidden = mode === "home";
   const s = getState();
+  if (mode === "ai") return mapAi.render(body);
   if (mode === "route") return renderRouteSheet(body, s);
   if (mode === "compose") return renderCompose(body);
   if (mode === "list") return renderListSheet(body);
@@ -2291,6 +2544,9 @@ function closeResults() {
   endMapPick();
   $("#m-q").placeholder = SEARCH_PH;
 }
+const aiRow = (q) => `<button type="button" class="m-ai-row" data-ask-ai="${esc(q)}"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><span><b>AIくんに聞く</b><small>${q ? `「${esc(q)}」を聞く` : "近い場所・空いてる所・回るルートを相談"}</small></span></button>`;
+const aiChips = () => `<div class="aim-chips">${SUGGEST.map.map((t) => `<button type="button" data-ask-ai="${esc(t)}">${esc(t)}</button>`).join("")}</div>`;
+const QUESTION = /[？?]|ください|教えて|おしえて|したい|たい$|ルート|回る|まわる|おすすめ|オススメ|空い|すいて|近く|近い|どこ|どれ|どの|どう|いつ|何|行き方|ありますか|ですか/;
 function renderResults() {
   const q = $("#m-q").value;
   const box = $("#m-results");
@@ -2298,6 +2554,7 @@ function renderResults() {
     const fest = MAP.places.map((v) => place(v.id)).filter(Boolean);
     const hp = here && place(here);
     box.innerHTML = `
+      ${picking ? "" : `${aiRow("")}${aiChips()}`}
       ${picking ? `<button type="button" class="m-mappick" data-mappick>${I.map}地図で選ぶ</button>` : ""}
       ${picking === "from" && hp ? `<h3>いまここ</h3><ul class="m-list">${itemHtml({ p: hp, kind: "spot" })}</ul>` : ""}
       ${picking === "from" ? `<h3>入口・目印</h3><ul class="m-list">${MAP.spots.map((sp) => itemHtml({ p: place(sp.id), kind: "spot" })).join("")}</ul>` : ""}
@@ -2305,9 +2562,21 @@ function renderResults() {
     return;
   }
   const hits = search(q);
-  box.innerHTML = hits.length
+  box.innerHTML = `${picking ? "" : aiRow(q.trim())}${hits.length
     ? `<ul class="m-list">${hits.map((it) => itemHtml({ p: it.p, label: it.label, sub: it.sub, kind: it.kind })).join("")}</ul>`
-    : `<p class="m-empty">「${esc(q)}」は見つかりませんでした</p>`;
+    : `<p class="m-empty">${picking ? `「${esc(q)}」は見つかりませんでした` : `場所の検索では見つかりませんでした。AIくんに聞いてみてね`}</p>`}`;
+}
+function askAi(q) {
+  if (mapAi.isBusy()) { toast("いま答えています。ちょっと待ってね"); return; }
+  closeResults();
+  if (mode !== "ai") mapAi.reload();
+  mapAi.send(q);
+}
+function openAi() {
+  if (picking) return;
+  closeResults();
+  if (mode !== "ai") mapAi.reload();
+  enterAi();
 }
 
 function syncUrl() {
@@ -2321,6 +2590,7 @@ function syncUrl() {
   } else if (mode === "place" && selected) url.hash = selected;
   history.replaceState(null, "", url);
   saveRoute();
+  saveAiCtx(false);
 }
 function fromUrl() {
   const q = new URLSearchParams(location.search);
@@ -2498,11 +2768,18 @@ export async function initMap(opts) {
     const prev = sheetBack.pop();
     if (!prev) {
       rt = { ...rt, from: null, to: null, result: null, steps: [], active: -1 };
+      clearOverlay();
       closeSheet();
       return;
     }
     restoring = true;
-    if (prev.mode === "list") {
+    if (prev.mode === "ai") {
+      rt = prev.rt?.result ? { ...prev.rt } : { ...rt, from: null, to: null, result: null, steps: [], active: -1 };
+      mode = "ai";
+      selected = prev.selected;
+      listKind = null;
+      updateChips(); syncUrl(); renderSheet(); renderMap(); setSheet(true);
+    } else if (prev.mode === "list") {
       mode = "list";
       listKind = prev.listKind;
       selected = null;
@@ -2546,10 +2823,16 @@ export async function initMap(opts) {
   q.addEventListener("input", renderResults);
   q.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeResults();
-    if (e.key === "Enter") $("#m-results [data-go]")?.click();
+    if (e.key !== "Enter" || e.isComposing) return;
+    const text = q.value.trim();
+    if (text && !picking && (mode === "ai" || QUESTION.test(text) || text.length >= 12 || !$("#m-results [data-go]"))) { askAi(text); return; }
+    $("#m-results [data-go]")?.click();
   });
   $("#m-clear").addEventListener("click", closeResults);
+  document.querySelector(".m-ai")?.addEventListener("click", (e) => { e.preventDefault(); openAi(); });
   $("#m-results").addEventListener("click", (e) => {
+    const ai = e.target.closest("[data-ask-ai]");
+    if (ai) { if (ai.dataset.askAi) askAi(ai.dataset.askAi); else openAi(); return; }
     if (e.target.closest("[data-mappick]")) { beginMapPick(); return; }
     const go = e.target.closest("[data-go]");
     if (!go) return;
@@ -2572,6 +2855,20 @@ export async function initMap(opts) {
   renderMap();
   renderSheet();
   if (params.get("tab") === "feed") setTab("feed");
+  addEventListener("pagehide", () => saveAiCtx(true));
+  const tourIds = (params.get("tour") ?? "").split(">").map((x) => x.trim()).filter(Boolean).slice(0, 8);
+  const pinIds = (params.get("pins") ?? "").split(",").map((x) => x.trim()).filter(Boolean).slice(0, 12);
+  if (params.has("ai") || tourIds.length || pinIds.length) {
+    ["ai", "tour", "pins"].forEach((k) => params.delete(k));
+    history.replaceState(null, "", `${location.pathname}${params.size ? `?${params}` : ""}${location.hash}`);
+    mapAi.reload();
+    enterAi();
+    const saved = readTour();
+    if (tourIds.length) showTour(tourIds);
+    else if (pinIds.length) setPins(pinIds);
+    else if (saved) showTour(saved);
+    return;
+  }
   const list = params.get("list");
   if (list && CHIPS.some((c) => c.id === list)) { $(`.m-chip[data-chip="${list}"]`)?.click(); return; }
   if (fromUrl()) return;
@@ -2592,6 +2889,7 @@ export async function initMap(opts) {
 const NOTICE_KEY = "kosen63-notice-closed";
 let noticeKey = null;
 export function setNotice(n) {
+  lastNotice = n ?? null;
   noticeKey = n?.key ?? null;
   let closed = null;
   try { closed = sessionStorage.getItem(NOTICE_KEY); } catch {  }

@@ -1,28 +1,10 @@
 import { STAGE, EVENTS, VENUES, MAP, SHOPS, HOMEROOMS, DEPT_EXHIBITS } from "./config.js";
 import { robotSvg } from "./ai-robot.js";
 import { startLive, liveSnapshot } from "./ai-live.js";
+import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, leftNow, askStream, errorText, limitText, readHere, readCtx, saveTour, SUGGEST } from "./ai-core.js";
 
 const $ = (s) => document.querySelector(s);
-const local = ["localhost", "127.0.0.1"].includes(location.hostname);
-const API = local || location.hostname.endsWith("pages.dev") ? "" : "https://hakodate-kosensai.pages.dev";
-const mock = local && new URLSearchParams(location.search).has("mock");
-const KEY = "kosen63-ai-chat";
-const ID_KEY = "kosen63-ai-id", USE_KEY = "kosen63-ai-use";
-const LIMIT_10M = 8, LIMIT_DAY = 30;
-const clientId = () => {
-  try {
-    let v = localStorage.getItem(ID_KEY);
-    if (!v) { v = crypto.randomUUID(); localStorage.setItem(ID_KEY, v); }
-    return v;
-  } catch { return ""; }
-};
-const readUse = () => { try { return JSON.parse(localStorage.getItem(USE_KEY) ?? "[]").filter((t) => Date.now() - t < 86400000); } catch { return []; } };
-const writeUse = (a) => { try { localStorage.setItem(USE_KEY, JSON.stringify(a)); } catch {  } };
-function leftNow() {
-  const use = readUse(), recent = use.filter((t) => Date.now() - t < 600000);
-  return { day: Math.max(0, LIMIT_DAY - use.length), tenMin: Math.max(0, LIMIT_10M - recent.length), wait: recent.length >= LIMIT_10M ? Math.ceil((recent[0] + 600000 - Date.now()) / 60000) : 0 };
-}
-const SUGGEST = ["いまやってるステージは？", "トイレはどこ？", "おすすめの食べ物は？", "体育館への行き方"];
+const mock = isLocal && new URLSearchParams(location.search).has("mock");
 
 const scroller = $("#ai-scroll"), log = $("#ai-log"), empty = $("#ai-empty"), form = $("#ai-form"), box = $("#ai-q"), send = $("#ai-send"), down = $("#ai-down"), newBtn = $("#ai-new");
 const ICON = {
@@ -33,11 +15,11 @@ const ICON = {
   retry: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>',
   pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
   route: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/></svg>',
+  tour: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="6" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><circle cx="8" cy="18.5" r="2.2"/><path d="M7.5 7l9 1.3M17.3 11l-7.8 5.7"/></svg>',
 };
 
-let messages = [];
-try { messages = JSON.parse(sessionStorage.getItem(KEY) ?? "[]").filter((m) => m && (m.role === "user" || m.role === "ai") && typeof m.text === "string"); } catch {  }
-const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(messages.slice(-30))); } catch {  } };
+let messages = loadChat();
+const save = () => saveChat(messages);
 
 let busy = false, ctrl = null, stick = true;
 const coarse = matchMedia("(pointer: coarse)").matches;
@@ -50,46 +32,34 @@ for (const s of SHOPS) {
   const id = s.room ?? (s.place || HOMEROOMS[s.cls]) ?? `shops-${s.bldg}${s.floor}`;
   if (id && !places.has(id)) places.set(id, s.name.replace(/\s+/g, " "));
 }
-
-const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const nameOf = (id) => (id && places.has(id) ? { id, name: places.get(id) } : null);
 
 function pull(text, final) {
+  const { text: clean, marks } = parseMarks(text, final);
   const links = [];
-  let out = text.replace(/\[\[(map|route):([^\]]*)\]\]/g, (_, kind, arg) => {
-    if (kind === "map") {
-      const id = arg.trim();
-      if (places.has(id) && !links.some((l) => l.href === `map.html#${encodeURIComponent(id)}`)) links.push({ href: `map.html#${encodeURIComponent(id)}`, icon: ICON.pin, label: places.get(id), hint: "地図で見る" });
-    } else {
-      const [a, b] = arg.split(">").map((x) => x.trim());
+  const pinIds = [];
+  for (const m of marks) {
+    if (m.kind === "map") {
+      const id = m.ids[0];
+      if (places.has(id) && !pinIds.includes(id)) {
+        pinIds.push(id);
+        links.push({ href: `map.html#${encodeURIComponent(id)}`, icon: ICON.pin, label: places.get(id), hint: "地図で見る" });
+      }
+    } else if (m.kind === "route") {
+      const [a, b] = m.ids;
       if (places.has(a) && places.has(b)) links.push({ href: `map.html?from=${encodeURIComponent(a)}&to=${encodeURIComponent(b)}`, icon: ICON.route, label: `${places.get(a)} → ${places.get(b)}`, hint: "道案内" });
+    } else if (m.kind === "tour") {
+      const ids = m.ids.filter((id, i, a) => places.has(id) && a.indexOf(id) === i);
+      if (ids.length >= 2 || (ids.length === 1 && readHere())) links.unshift({ href: `map.html?tour=${ids.map(encodeURIComponent).join(">")}`, icon: ICON.tour, label: `回るルート（${ids.length}か所）`, hint: "地図に出す", tour: ids });
     }
-    return "";
-  });
-  out = out.replace(/[(（]\s*[)）]/g, "");
-  if (!final) out = out.replace(/\[\[[^\]]*$/, "");
-  return { text: out.replace(/[ \t]+\n/g, "\n"), links };
-}
-
-function md(text) {
-  const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
-  const out = [];
-  let list = null;
-  const flush = () => { if (list) { out.push(`<ul>${list.map((x) => `<li>${inline(x)}</li>`).join("")}</ul>`); list = null; } };
-  for (const raw of text.split(/\n/)) {
-    const li = raw.match(/^\s*(?:[-*・•]|\d+[.)])\s+(.*)$/);
-    if (li) { (list ??= []).push(li[1]); continue; }
-    flush();
-    const h = raw.match(/^\s*#{1,4}\s+(.*)$/);
-    if (h) out.push(`<h3>${inline(h[1])}</h3>`);
-    else if (raw.trim()) out.push(`<p>${inline(raw)}</p>`);
   }
-  flush();
-  return out.join("");
+  if (pinIds.length >= 2) links.push({ href: `map.html?pins=${pinIds.map(encodeURIComponent).join(",")}`, icon: ICON.pin, label: `ぜんぶ地図で見る（${pinIds.length}か所）`, hint: "地図" });
+  return { text: clean, links, tour: links.find((l) => l.tour)?.tour ?? null };
 }
 
 function render(body, text, final) {
   const { text: clean, links } = pull(text, final);
-  body.innerHTML = md(clean) + (links.length ? `<div class="ai-links">${links.map((l) => `<a class="ai-link" href="${l.href}">${l.icon}<span>${esc(l.label)}</span><small>${l.hint}</small></a>`).join("")}</div>` : "");
+  body.innerHTML = md(clean) + (links.length ? `<div class="ai-links">${links.map((l) => `<a class="ai-link${l.tour ? " is-tour" : ""}" href="${l.href}">${l.icon}<span>${esc(l.label)}</span><small>${l.hint}</small></a>`).join("")}</div>` : "");
   return clean;
 }
 
@@ -102,6 +72,19 @@ function liveInfo() {
     ...EVENTS.filter((e) => !e.stage).map((e) => ({ n: e.title, d: day(e.start), t: `${hm(e.start)}〜${hm(e.end)}`, w: venue(e.venue), k: e.kind ?? "企画" })),
   ];
   return { now: new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }), schedule: items.slice(0, 60), ...liveSnapshot() };
+}
+function mapInfo() {
+  const here = readHere();
+  const c = readCtx();
+  const sameHere = c && (c.here ?? null) === (here ?? null);
+  return {
+    here: nameOf(here),
+    selected: nameOf(c?.selected),
+    floor: c?.floor ?? null,
+    route: c?.to ? { from: nameOf(c.from), to: nameOf(c.to), minutes: c.minutes ?? null, meters: c.meters ?? null } : null,
+    near: sameHere && Array.isArray(c.near) ? c.near.slice(0, 12) : [],
+    tour: null,
+  };
 }
 
 const nearBottom = () => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 80;
@@ -155,31 +138,10 @@ function actions(row, text, last) {
   row.querySelector(".ai-body").append(bar);
 }
 
-async function readStream(res, onText, signal) {
-  const reader = res.body.getReader(), dec = new TextDecoder();
-  let buf = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    let i;
-    while ((i = buf.indexOf("\n\n")) >= 0) {
-      const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
-      for (const line of chunk.split("\n")) {
-        if (!line.startsWith("data:")) continue;
-        const data = line.slice(5).trim();
-        if (data === "[DONE]") return;
-        try { const j = JSON.parse(data); if (j.t) onText(j.t); if (j.error) throw new Error(j.error); } catch (e) { if (e.message && !(e instanceof SyntaxError)) throw e; }
-      }
-    }
-    if (signal.aborted) return;
-  }
-}
-
 async function mockStream(onText, signal) {
   const snap = liveSnapshot();
   const text = `（ニセの返事：いまの状況 混雑${snap.crowd?.length ?? "-"}件・待ち時間${snap.shops?.length ?? "-"}件・お知らせ${snap.notice ? "あり" : "なし"}・天気${snap.weather?.text ?? "-"}）
-` + "おう、聞いてくれてありがとな。**体育館**はこっちだぜ。[[map:gym2]]\n\n## ステージ\n- 太平洋セメントアリーナで、ライブをやってるぜ。[[map:gym2]]\n## 食べ物\n- 模擬店は、校舎のほうに並んでるぜ。\n\nここからの行き方は、これだ。[[route:entrance>gym2]]";
+` + "おう、聞いてくれてありがとな。**体育館**はこっちだぜ。[[map:gym2]]\n\n## ステージ\n- 太平洋セメントアリーナで、ライブをやってるぜ。[[map:gym2]]\n## 食べ物\n- 模擬店は、校舎のほうに並んでるぜ。\n\n## 回るなら\n- 玄関 → 体育館 → 食堂の順だぜ。[[tour:entrance>gym2>cafeteria]]\n\nここからの行き方は、これだ。[[route:entrance>gym2]]";
   await new Promise((r) => setTimeout(r, 900));
   for (const ch of text.match(/[\s\S]{1,4}/g)) { if (signal.aborted) return; onText(ch); await new Promise((r) => setTimeout(r, 40)); }
 }
@@ -199,20 +161,13 @@ async function generate() {
   const onText = (t) => { text += t; paint(false); };
   try {
     if (mock) await mockStream(onText, ctrl.signal);
-    else {
-      const res = await fetch(`${API}/api/ask`, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json", "X-Client-Id": clientId() }, body: JSON.stringify({ messages: messages.slice(-8).map((m) => ({ role: m.role, text: m.text })), live: liveInfo() }) });
-      if (res.status === 429) {
-        const j = await res.json().catch(() => ({}));
-        const e = new Error("rate"); e.scope = j.scope; e.retry = j.retry; throw e;
-      }
-      if (!res.ok) throw new Error("fail");
-      if ((res.headers.get("content-type") ?? "").includes("event-stream")) await readStream(res, onText, ctrl.signal);
-      else onText((await res.json()).text ?? "");
-    }
+    else await askStream({ messages, live: liveInfo(), map: mapInfo(), signal: ctrl.signal, onText });
     paint(true);
     if (!text.trim()) throw new Error("fail");
-    writeUse([...readUse(), Date.now()]);
+    recordUse();
     paintLeft();
+    const tour = pull(text, true).tour;
+    if (tour) saveTour(tour);
     if (ctrl.signal.aborted) body.insertAdjacentHTML("beforeend", '<p class="ai-stopped">とめました</p>');
     messages.push({ role: "ai", text }); save();
     actions(row, text, true);
@@ -222,11 +177,7 @@ async function generate() {
       else row.remove();
     } else {
       if (text.trim()) paint(true); else body.innerHTML = "";
-      const wait = Math.max(1, Math.ceil((e.retry ?? 600) / 60));
-      const msg = e.message === "rate"
-        ? (e.scope === "global" ? "今日は、たくさん聞かれて、もう答えられねえ。続きは、本部（学生会）で聞いてくれ。" : e.scope === "device-day" ? "今日は、もうたくさん聞いてくれたな。続きは、本部（学生会）で聞いてくれ。" : `いま混み合ってるぜ。あと${wait}分ほど待ってから、もう一度頼む。`)
-        : "うまくつながらなかった。電波のいい所で、もう一度。急ぎなら、近くのスタッフか本部へ。";
-      body.insertAdjacentHTML("beforeend", `<p class="ai-err">${msg}<button type="button" data-retry>もう一度</button></p>`);
+      body.insertAdjacentHTML("beforeend", `<p class="ai-err">${errorText(e)}<button type="button" data-retry>もう一度</button></p>`);
       body.querySelector("[data-retry]").addEventListener("click", () => { row.remove(); generate(); });
     }
   } finally {
@@ -239,11 +190,12 @@ function ask(q) {
   q = q.trim();
   if (busy || !q) return;
   const left = leftNow();
-  if (left.day <= 0 || left.tenMin <= 0) {
+  const limit = limitText(left);
+  if (limit) {
     showEmpty(false);
     userRow(q);
     const { body } = aiRow();
-    body.innerHTML = `<p>${left.day <= 0 ? "今日は、もうたくさん聞いてくれたな。これ以上は、答えられねえ。続きは、本部（学生会）で聞いてくれ。" : `ちょっと聞きすぎだぜ。あと${left.wait}分ほど待ってから、また聞いてくれ。`}</p>`;
+    body.innerHTML = `<p>${limit}</p>`;
     stick = true; toBottom(false);
     return;
   }
@@ -288,7 +240,7 @@ function reset() {
 function fit() { box.style.height = "auto"; box.style.height = `${Math.min(box.scrollHeight, 132)}px`; }
 
 document.querySelector("#ai-empty-av").innerHTML = robotSvg();
-for (const q of SUGGEST) {
+for (const q of SUGGEST.full) {
   const b = document.createElement("button");
   b.type = "button"; b.textContent = q;
   b.addEventListener("click", () => ask(q));

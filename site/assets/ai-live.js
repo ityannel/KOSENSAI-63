@@ -47,7 +47,8 @@ function shopDocs() {
       const room = x.room ?? HOMEROOMS[x.cls];
       return d.map ? [x.name, x.cls, room].filter(Boolean).some((v) => norm(v) === norm(d.map)) : norm(d.name) === norm(x.name);
     });
-    out.push({ n: (s?.name ?? d.name).replace(/\s+/g, " "), s: STATUS[d.status], ago: mins(d.updated_at), ...(d.message ? { m: d.message } : {}) });
+    const id = s && (s.room ?? (s.place || HOMEROOMS[s.cls]) ?? `shops-${s.bldg}${s.floor}`);
+    out.push({ ...(id ? { id } : {}), n: (s?.name ?? d.name).replace(/\s+/g, " "), s: STATUS[d.status], ago: mins(d.updated_at), ...(d.message ? { m: d.message } : {}) });
     if (out.length >= 60) break;
   }
   return out;
@@ -58,7 +59,7 @@ export function liveSnapshot() {
   if (state.crowd) {
     snap.crowd = CROWD.venues.filter((v) => state.crowd[v]?.level != null).map((v) => {
       const ago = mins(state.crowd[v].updated_at);
-      return { place: CROWD.short[v] ?? v, status: CROWD.levels[state.crowd[v].level]?.label ?? "", ago, ...(ago != null && ago > CROWD.staleMinutes ? { stale: true } : {}) };
+      return { id: v, place: CROWD.short[v] ?? v, status: CROWD.levels[state.crowd[v].level]?.label ?? "", ago, ...(ago != null && ago > CROWD.staleMinutes ? { stale: true } : {}) };
     });
   }
   const shops = shopDocs();
