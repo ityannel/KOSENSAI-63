@@ -1,3 +1,4 @@
+import { ROOM_NAMES } from "./campus.js";
 import { STAGE, EVENTS, VENUES, MAP, SHOPS, HOMEROOMS, DEPT_EXHIBITS } from "./config.js";
 import { robotSvg } from "./ai-robot.js";
 import { startLive, liveSnapshot } from "./ai-live.js";
@@ -28,6 +29,7 @@ const coarse = matchMedia("(pointer: coarse)").matches;
 const places = new Map();
 for (const p of MAP.places) if (p.id && p.name) places.set(p.id, p.sub ? `${p.name}（${p.sub}）` : p.name);
 for (const d of DEPT_EXHIBITS) if (d.place && !places.has(d.place)) places.set(d.place, `${d.dept}の展示`);
+for (const [id, n] of Object.entries(ROOM_NAMES)) if (/WC/.test(n) && !places.has(id)) places.set(id, `${id[0]}棟${id[1]}階の${/多目的/.test(n) ? "多目的トイレ" : /男/.test(n) ? "男子トイレ" : /女/.test(n) ? "女子トイレ" : "トイレ"}`);
 for (const v of VENUES) if (!places.has(v.id)) places.set(v.id, v.alias ?? v.name);
 for (const s of SHOPS) {
   const id = s.room ?? (s.place || HOMEROOMS[s.cls]) ?? `shops-${s.bldg}${s.floor}`;
