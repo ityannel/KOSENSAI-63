@@ -1589,6 +1589,7 @@ function renderSheet() {
   const key = `${mode}|${selected}|${listKind}|${compose?.id}`;
   if (key !== sheetKey) { body.scrollTop = 0; body._html = ""; sheetKey = key; }
   sheet().classList.toggle("is-home", mode === "home");
+  sheet().classList.toggle("is-ai", mode === "ai");
   sheet().hidden = mode === "home";
   const s = getState();
   if (mode === "ai") return mapAi.render(body);

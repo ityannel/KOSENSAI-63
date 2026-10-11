@@ -11,6 +11,7 @@ const ICON = {
   stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/></svg>',
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
   full: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>',
+  send: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
   sort: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M3.5 16.5L7 20l3.5-3.5M17 20V4M13.5 7.5L17 4l3.5 3.5"/></svg>',
 };
 
@@ -90,8 +91,7 @@ function html() {
   if (failure) rows.push(`<div class="ai-row"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><div class="ai-body"><p class="ai-err">${esc(failure)}<button type="button" data-ai-retry>もう一度</button></p></div></div>`);
   const left = leftNow();
   const empty = !messages.length && !busy;
-  return `<div class="aim">
-    <div class="aim-head">
+  return `<div class="aim-head">
       <i class="ai-av" aria-hidden="true">${robotSvg()}</i><h2>AIくん</h2>
       <span class="aim-tools">
         ${busy ? `<button type="button" class="aim-tool" data-ai-stop aria-label="とめる" title="とめる">${ICON.stop}</button>` : ""}
@@ -102,9 +102,7 @@ function html() {
     ${empty ? `<p class="sh-hint">おう、地図を見ながら聞いてくれ。場所は地図に印が出て、「回りたい」と言えばルートも引くぜ。</p>
       <div class="aim-chips">${SUGGEST.map.map((q) => `<button type="button" data-ai-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>` : ""}
     <div class="aim-log" role="log" aria-live="polite">${rows.join("")}</div>
-    ${messages.length && !busy ? `<p class="aim-more">つづけて聞くときは、上の検索バーに文章を入れてね。</p>` : ""}
-    <p class="aim-note">AIの答えは、まちがうことがあります。${left.day <= 5 ? `今日は、あと${left.day}回まで聞けます。` : ""}<a href="terms.html">くわしく</a></p>
-  </div>`;
+    <p class="aim-note">AIの答えは、まちがうことがあります。${left.day <= 5 ? `今日は、あと${left.day}回まで聞けます。` : ""}<a href="terms.html">くわしく</a></p>`;
 }
 
 function onClick(e) {
@@ -139,16 +137,60 @@ function onClick(e) {
   if (t.closest("[data-ai-retry]")) { failure = ""; generate(); }
 }
 
+const SEND = ICON.send;
+const skeleton = () => `<div class="aim"><div class="aim-main"></div>
+  <form class="aim-form" autocomplete="off">
+    <input class="aim-q" type="text" maxlength="200" placeholder="つづけて聞く" aria-label="AIくんに聞く" enterkeyhint="send">
+    <button type="submit" class="aim-send" aria-label="送る"></button>
+  </form></div>`;
+
+function syncKeyboard() {
+  const vv = window.visualViewport;
+  const sheet = document.querySelector("#m-sheet");
+  if (!vv || !sheet) return;
+  const kb = Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop));
+  const on = kb > 80 && document.activeElement?.classList.contains("aim-q");
+  sheet.classList.toggle("has-kb", on);
+  sheet.style.setProperty("--ai-kb", `${on ? kb : 0}px`);
+  sheet.style.setProperty("--ai-vvh", `${Math.round(vv.height)}px`);
+}
+
+function bindForm(body) {
+  const form = body.querySelector(".aim-form");
+  const input = form.querySelector(".aim-q");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (busy) { ctrl?.abort(); return; }
+    const q = input.value.trim();
+    if (!q) return;
+    input.value = "";
+    send(q);
+  });
+  input.addEventListener("focus", () => { setTimeout(syncKeyboard, 150); });
+  input.addEventListener("blur", () => { setTimeout(syncKeyboard, 50); });
+  window.visualViewport?.addEventListener("resize", syncKeyboard);
+  window.visualViewport?.addEventListener("scroll", syncKeyboard);
+}
+
 export function render(body) {
   if (bodyEl !== body) {
     bodyEl = body;
     body.addEventListener("click", (e) => { if (body.querySelector(".aim")) onClick(e); });
     body.addEventListener("scroll", () => { stick = body.scrollHeight - body.scrollTop - body.clientHeight < 60; }, { passive: true });
   }
+  if (!body.querySelector(".aim-main")) {
+    body.innerHTML = skeleton();
+    body._aiHtml = "";
+    bindForm(body);
+  }
+  const btn = body.querySelector(".aim-send");
+  btn.classList.toggle("is-stop", busy);
+  btn.innerHTML = busy ? ICON.stop : SEND;
+  btn.setAttribute("aria-label", busy ? "とめる" : "送る");
   const h = html();
-  if (body._aiHtml === h && body.querySelector(".aim")) return;
+  if (body._aiHtml === h) return;
   const top = body.scrollTop;
-  body.innerHTML = body._aiHtml = h;
+  body.querySelector(".aim-main").innerHTML = body._aiHtml = h;
   body.scrollTop = stick ? body.scrollHeight : top;
 }
 
