@@ -3,7 +3,7 @@ import { VAPID_PUBLIC } from "./push-config.js";
 
 const $ = (s) => document.querySelector(s);
 const demo = isLocal;
-const scroller = $("#hq-scroll"), log = $("#hq-log"), intro = $("#hq-intro"), form = $("#hq-form"), box = $("#hq-q"), send = $("#hq-send"), cards = $("#hq-reasons"), closedNote = $("#hq-closed"), statusEl = $("#hq-status"), urgentNote = $("#hq-urgent");
+const scroller = $("#hq-scroll"), log = $("#hq-log"), intro = $("#hq-intro"), form = $("#hq-form"), box = $("#hq-q"), send = $("#hq-send"), cards = $("#hq-reasons"), closedNote = $("#hq-closed"), urgentNote = $("#hq-urgent");
 const REASONS = [
   { key: "missing", label: "迷子", urgent: true, hint: "だれが、はぐれましたか？", sub: "はぐれた・見つからない" },
   { key: "sick", label: "体調不良・けが", urgent: true, hint: "どんな様子ですか？", sub: "気分が悪い・けがをした" },
@@ -45,18 +45,11 @@ for (const r of REASONS) {
 const pre = REASONS.find((r) => r.key === new URLSearchParams(location.search).get("r"));
 if (pre) pick(pre);
 
-const STEPS = ["送りました", "本部が確認しました", "返事が来ました"];
-function paintStatus() {
-  if (!msgs.length) { statusEl.hidden = true; return; }
-  const replied = msgs.some((m) => m.from === "staff");
-  const seen = replied || (!!chat && chat.unread_staff === false);
-  const done = [true, seen, replied];
-  const now = done.findIndex((d) => !d);
-  statusEl.hidden = false;
-  statusEl.innerHTML = STEPS.map((s, i) => `<span class="hq-step${done[i] ? " is-done" : i === now ? " is-now" : ""}"><i aria-hidden="true">${done[i] ? "✓" : i + 1}</i>${s}</span>`).join('<span class="hq-sep"></span>');
-  statusEl.querySelectorAll(".hq-sep").forEach((x, i) => x.classList.toggle("is-done", done[i + 1]));
-}
-
+const seenIdx = () => {
+  const last = msgs.map((m) => m.from).lastIndexOf("staff");
+  const lastVisitor = msgs.map((m) => m.from).lastIndexOf("visitor");
+  return chat?.unread_staff === false ? lastVisitor : last;
+};
 const nearBottom = () => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 80;
 let stick = true;
 scroller.addEventListener("scroll", () => { stick = nearBottom(); }, { passive: true });
@@ -68,10 +61,10 @@ function paint() {
   const has = msgs.length > 0;
   intro.hidden = has;
   closedNote.hidden = !(chat?.status === "closed");
-  log.innerHTML = msgs.filter((m) => !m.text.startsWith(AI_TAG)).map((m) => m.from === "visitor"
-    ? `<div class="ai-user">${esc(m.text)}</div><span class="hq-msg-time ai-user-time">${esc(hhmm(m.at))}</span>`
+  const seen = seenIdx();
+  log.innerHTML = msgs.map((m, i) => ({ m, i })).filter(({ m }) => !m.text.startsWith(AI_TAG)).map(({ m, i }) => m.from === "visitor"
+    ? `<div class="ai-user">${esc(m.text)}</div><span class="hq-msg-time ai-user-time">${esc(hhmm(m.at))} <i class="hq-tick${i <= seen ? " is-seen" : ""}" aria-label="${i <= seen ? "本部が確認しました" : "送りました"}">${i <= seen ? "✓✓" : "✓"}</i></span>`
     : `<div class="ai-row"><i class="ai-av" aria-hidden="true"><svg viewBox="0 0 24 24" class="hq-ic"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg></i><div class="ai-body"><p class="hq-from">本部</p><p>${esc(m.text).replace(/\n/g, "<br>")}</p></div></div><span class="hq-msg-time">${esc(hhmm(m.at))}</span>`).join("");
-  paintStatus();
   $("#hq-share-row").hidden = !!chat || !aiTalk();
   if (stick) toBottom();
 }
