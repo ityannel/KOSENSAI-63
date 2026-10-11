@@ -6,7 +6,7 @@ export const cors = (request) => {
     "Access-Control-Allow-Origin": ORIGINS.includes(o) ? o : ORIGINS[0],
     Vary: "Origin",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Id",
     "Access-Control-Max-Age": "86400",
   };
 };
@@ -21,17 +21,25 @@ export const originOk = (request) => {
   return !o || ORIGINS.includes(o);
 };
 
-export async function rateLimit(request, name, limit, windowSec) {
-  const ip = request.headers.get("CF-Connecting-IP") ?? "anon";
+export async function rateLimit(request, name, limit, windowSec, who) {
+  const id = who ?? request.headers.get("CF-Connecting-IP") ?? "anon";
   const slot = Math.floor(Date.now() / (windowSec * 1000));
-  const key = new Request(`https://rate.invalid/${name}/${encodeURIComponent(ip)}/${slot}`);
+  const key = new Request(`https://rate.invalid/${name}/${encodeURIComponent(id)}/${slot}`);
   const cache = caches.default;
   const hit = await cache.match(key);
   const n = hit ? Number(await hit.text()) || 0 : 0;
   if (n >= limit) return false;
-  await cache.put(key, new Response(String(n + 1), { headers: { "Cache-Control": `max-age=${windowSec}` } }));
+  const left = Math.max(1, windowSec - Math.floor((Date.now() / 1000) % windowSec));
+  await cache.put(key, new Response(String(n + 1), { headers: { "Cache-Control": `max-age=${left}` } }));
   return true;
 }
+
+export const retryAfter = (windowSec) => Math.max(1, windowSec - Math.floor((Date.now() / 1000) % windowSec));
+
+export const clientId = (request) => {
+  const v = request.headers.get("X-Client-Id") ?? "";
+  return /^[A-Za-z0-9-]{16,64}$/.test(v) ? v : "";
+};
 
 export const MODELS = { ask: "gemini-3.5-flash-lite", moderate: "gemini-3.8-flash" };
 

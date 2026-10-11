@@ -1,4 +1,6 @@
-import { json, preflight, originOk, rateLimit, geminiStream, sseTextStream, cors, MODELS } from "../_lib/common.js";
+import { json, preflight, originOk, rateLimit, retryAfter, clientId, geminiStream, sseTextStream, cors, MODELS } from "../_lib/common.js";
+
+export const LIMITS = { device10m: 8, deviceDay: 30, ip10m: 200, ipDay: 1000, globalDay: 1300 };
 
 export const onRequestOptions = preflight;
 
@@ -12,6 +14,12 @@ const PERSONA = `あなたは「AIくん」。第63回 函館高専祭「縁」�
 - 日本語で聞かれたら日本語、英語で聞かれたら英語（口調は少し軽く）で答える。
 - 長くしない。3つの短い段落以内。箇条書きは、多くて5つ。箇条書きは「- 」で始める。強調は **こう** 書く。
 - 「AI なので、まちがうこともある。大事なことは本部で確かめてくれ」と、必要なときに添える（毎回は付けない）。
+いまの状況（LIVE）：
+- LIVE の now は、いまの日時。schedule は、最新の予定（時間変更・追加・削除のあと）。「いまやってる」「次は」「あと何分」は、now と schedule で答える。
+- LIVE の crowd は、会場の混雑（status）。shops は、模擬店の待ち時間・完売・休業（s）で、お店からの一言（m）もある。notice は、本部のお知らせ（urgent が true なら緊急）。weather は、いまの函館の天気。
+- 混雑・待ち時間・天気を答えるときは、「何分前の情報か」（ago）を、短く添える。ago が 30 分を超える、または stale が true のものは、「ちょっと古い情報だぜ」と断る。
+- LIVE に書いていない混雑・待ち時間・天気は、「いまの状況は分からねえ」と答える。作らない。shops に載っていないお店は、「待ち時間の知らせは出てねえ」と答える。
+- 緊急（urgent）の notice があるときは、関係しそうな質問の答えの最初に、その内容を伝える。
 場所の案内：
 - 場所・お店・展示・会場の名前を出したときは、そのすぐあとに、案内の印を付ける。形は [[map:ID]]（ID は CONTEXT の places / shops / exhibits の id、または events の placeId、stage の venueId）。ID は、CONTEXT にあるものだけを使う。作らない。
 - 「A から B への行きかた」を聞かれて、A と B の ID が、どちらも分かるときは、[[route:AのID>BのID]] を付ける。A（いまの場所）が分からなければ、聞き返すか、[[map:BのID]] だけにする。道順の細かい説明は、地図の案内に任せて、一言（方角や目印）だけ添える。
@@ -26,7 +34,14 @@ export async function onRequestPost(ctx) {
   const { request, env } = ctx;
   if (!originOk(request)) return json(request, 403, { error: "origin" });
   if (!env.GEMINI_API_KEY) return json(request, 503, { error: "not_configured" });
-  if (!(await rateLimit(request, "ask-10m", 20, 600)) || !(await rateLimit(request, "ask-1d", 80, 86400))) return json(request, 429, { error: "rate_limited" });
+  const cid = clientId(request);
+  const who = cid || `noid-${request.headers.get("CF-Connecting-IP") ?? "anon"}`;
+  const limited = (scope, window) => json(request, 429, { error: "rate_limited", scope, retry: retryAfter(window) });
+  if (!(await rateLimit(request, "ask-d10m", LIMITS.device10m, 600, who))) return limited("device", 600);
+  if (!(await rateLimit(request, "ask-d1d", LIMITS.deviceDay, 86400, who))) return limited("device-day", 86400);
+  if (!(await rateLimit(request, "ask-ip10m", LIMITS.ip10m, 600))) return limited("ip", 600);
+  if (!(await rateLimit(request, "ask-ip1d", LIMITS.ipDay, 86400))) return limited("ip", 86400);
+  if (!(await rateLimit(request, "ask-global1d", LIMITS.globalDay, 86400, "all"))) return limited("global", 86400);
 
   let body;
   try { body = await request.json(); } catch { return json(request, 400, { error: "bad_json" }); }
@@ -37,7 +52,7 @@ export async function onRequestPost(ctx) {
   while (turns.length && turns[0].role !== "user") turns.shift();
   if (!turns.length || turns.at(-1).role !== "user") return json(request, 400, { error: "no_question" });
 
-  const live = body?.live && typeof body.live === "object" ? clip(JSON.stringify(body.live), 6000) : "{}";
+  const live = body?.live && typeof body.live === "object" ? clip(JSON.stringify(body.live), 9000) : "{}";
   let facts = "{}";
   try {
     const r = await env.ASSETS.fetch(new URL("/assets/ai-context.json", request.url));

@@ -1,11 +1,27 @@
 import { STAGE, EVENTS, VENUES, MAP, SHOPS, HOMEROOMS, DEPT_EXHIBITS } from "./config.js";
 import { robotSvg } from "./ai-robot.js";
+import { startLive, liveSnapshot } from "./ai-live.js";
 
 const $ = (s) => document.querySelector(s);
 const local = ["localhost", "127.0.0.1"].includes(location.hostname);
 const API = local || location.hostname.endsWith("pages.dev") ? "" : "https://hakodate-kosensai.pages.dev";
 const mock = local && new URLSearchParams(location.search).has("mock");
 const KEY = "kosen63-ai-chat";
+const ID_KEY = "kosen63-ai-id", USE_KEY = "kosen63-ai-use";
+const LIMIT_10M = 8, LIMIT_DAY = 30;
+const clientId = () => {
+  try {
+    let v = localStorage.getItem(ID_KEY);
+    if (!v) { v = crypto.randomUUID(); localStorage.setItem(ID_KEY, v); }
+    return v;
+  } catch { return ""; }
+};
+const readUse = () => { try { return JSON.parse(localStorage.getItem(USE_KEY) ?? "[]").filter((t) => Date.now() - t < 86400000); } catch { return []; } };
+const writeUse = (a) => { try { localStorage.setItem(USE_KEY, JSON.stringify(a)); } catch {  } };
+function leftNow() {
+  const use = readUse(), recent = use.filter((t) => Date.now() - t < 600000);
+  return { day: Math.max(0, LIMIT_DAY - use.length), tenMin: Math.max(0, LIMIT_10M - recent.length), wait: recent.length >= LIMIT_10M ? Math.ceil((recent[0] + 600000 - Date.now()) / 60000) : 0 };
+}
 const SUGGEST = ["いまやってるステージは？", "トイレはどこ？", "おすすめの食べ物は？", "体育館への行き方"];
 
 const scroller = $("#ai-scroll"), log = $("#ai-log"), empty = $("#ai-empty"), form = $("#ai-form"), box = $("#ai-q"), send = $("#ai-send"), down = $("#ai-down"), newBtn = $("#ai-new");
@@ -84,7 +100,7 @@ function liveInfo() {
     ...STAGE.acts.map((a) => ({ n: a.name, d: day(a.start), t: `${hm(a.start)}〜${hm(a.end)}`, w: venue(STAGE.venue), k: a.kind ?? "ステージ" })),
     ...EVENTS.filter((e) => !e.stage).map((e) => ({ n: e.title, d: day(e.start), t: `${hm(e.start)}〜${hm(e.end)}`, w: venue(e.venue), k: e.kind ?? "企画" })),
   ];
-  return { now: new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }), schedule: items.slice(0, 60) };
+  return { now: new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }), schedule: items.slice(0, 60), ...liveSnapshot() };
 }
 
 const nearBottom = () => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 80;
@@ -100,6 +116,13 @@ function setBusy(on) {
   send.setAttribute("aria-label", on ? "とめる" : "送る");
   send.disabled = !on && !canSend();
   log.setAttribute("aria-busy", String(on));
+}
+
+function paintLeft() {
+  const l = leftNow();
+  const note = document.querySelector(".ai-left");
+  if (!note) return;
+  note.textContent = l.day <= 5 ? `今日は、あと${l.day}回まで聞けます。` : "";
 }
 
 function showEmpty(on) { empty.hidden = !on; newBtn.hidden = on; }
@@ -153,7 +176,9 @@ async function readStream(res, onText, signal) {
 }
 
 async function mockStream(onText, signal) {
-  const text = "おう、聞いてくれてありがとな。**体育館**はこっちだぜ。[[map:gym2]]\n\n## ステージ\n- 太平洋セメントアリーナで、ライブをやってるぜ。[[map:gym2]]\n## 食べ物\n- 模擬店は、校舎のほうに並んでるぜ。\n\nここからの行き方は、これだ。[[route:entrance>gym2]]";
+  const snap = liveSnapshot();
+  const text = `（ニセの返事：いまの状況 混雑${snap.crowd?.length ?? "-"}件・待ち時間${snap.shops?.length ?? "-"}件・お知らせ${snap.notice ? "あり" : "なし"}・天気${snap.weather?.text ?? "-"}）
+` + "おう、聞いてくれてありがとな。**体育館**はこっちだぜ。[[map:gym2]]\n\n## ステージ\n- 太平洋セメントアリーナで、ライブをやってるぜ。[[map:gym2]]\n## 食べ物\n- 模擬店は、校舎のほうに並んでるぜ。\n\nここからの行き方は、これだ。[[route:entrance>gym2]]";
   await new Promise((r) => setTimeout(r, 900));
   for (const ch of text.match(/[\s\S]{1,4}/g)) { if (signal.aborted) return; onText(ch); await new Promise((r) => setTimeout(r, 40)); }
 }
@@ -174,14 +199,19 @@ async function generate() {
   try {
     if (mock) await mockStream(onText, ctrl.signal);
     else {
-      const res = await fetch(`${API}/api/ask`, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: messages.slice(-8).map((m) => ({ role: m.role, text: m.text })), live: liveInfo() }) });
-      if (res.status === 429) throw new Error("rate");
+      const res = await fetch(`${API}/api/ask`, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json", "X-Client-Id": clientId() }, body: JSON.stringify({ messages: messages.slice(-8).map((m) => ({ role: m.role, text: m.text })), live: liveInfo() }) });
+      if (res.status === 429) {
+        const j = await res.json().catch(() => ({}));
+        const e = new Error("rate"); e.scope = j.scope; e.retry = j.retry; throw e;
+      }
       if (!res.ok) throw new Error("fail");
       if ((res.headers.get("content-type") ?? "").includes("event-stream")) await readStream(res, onText, ctrl.signal);
       else onText((await res.json()).text ?? "");
     }
     paint(true);
     if (!text.trim()) throw new Error("fail");
+    writeUse([...readUse(), Date.now()]);
+    paintLeft();
     if (ctrl.signal.aborted) body.insertAdjacentHTML("beforeend", '<p class="ai-stopped">とめました</p>');
     messages.push({ role: "ai", text }); save();
     actions(row, text, true);
@@ -191,7 +221,10 @@ async function generate() {
       else row.remove();
     } else {
       if (text.trim()) paint(true); else body.innerHTML = "";
-      const msg = e.message === "rate" ? "いま混み合ってるぜ。少し待ってから、もう一度頼む。" : "うまくつながらなかった。電波のいい所で、もう一度。急ぎなら、近くのスタッフか本部へ。";
+      const wait = Math.max(1, Math.ceil((e.retry ?? 600) / 60));
+      const msg = e.message === "rate"
+        ? (e.scope === "global" ? "今日は、たくさん聞かれて、もう答えられねえ。続きは、本部（学生会）で聞いてくれ。" : e.scope === "device-day" ? "今日は、もうたくさん聞いてくれたな。続きは、本部（学生会）で聞いてくれ。" : `いま混み合ってるぜ。あと${wait}分ほど待ってから、もう一度頼む。`)
+        : "うまくつながらなかった。電波のいい所で、もう一度。急ぎなら、近くのスタッフか本部へ。";
       body.insertAdjacentHTML("beforeend", `<p class="ai-err">${msg}<button type="button" data-retry>もう一度</button></p>`);
       body.querySelector("[data-retry]").addEventListener("click", () => { row.remove(); generate(); });
     }
@@ -204,6 +237,15 @@ async function generate() {
 function ask(q) {
   q = q.trim();
   if (busy || !q) return;
+  const left = leftNow();
+  if (left.day <= 0 || left.tenMin <= 0) {
+    showEmpty(false);
+    userRow(q);
+    const { body } = aiRow();
+    body.innerHTML = `<p>${left.day <= 0 ? "今日は、もうたくさん聞いてくれたな。これ以上は、答えられねえ。続きは、本部（学生会）で聞いてくれ。" : `ちょっと聞きすぎだぜ。あと${left.wait}分ほど待ってから、また聞いてくれ。`}</p>`;
+    stick = true; toBottom(false);
+    return;
+  }
   showEmpty(false);
   messages.push({ role: "user", text: q }); save();
   userRow(q);
@@ -253,6 +295,8 @@ for (const q of SUGGEST) {
 }
 setBusy(false);
 restore();
+startLive();
+paintLeft();
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
