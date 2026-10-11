@@ -18,10 +18,7 @@ const PERSONA = `あなたは「AIくん」。第63回 函館高専祭「縁」�
 - 1つの答えに付ける印は、多くて5つ。
 答えの形：
 - 「何がある？」「おすすめは？」など、広い質問は、見出しを付けて、2〜4つに分けて答える。見出しは「## 見出し」（短く、例：## ステージ、## 食べ物、## 展示）。各見出しの下は、1〜3行。
-- 狭い質問（時刻、場所、ルールなど）は、見出しなしで、短く答える。
-写真：
-- 写真が付いているときは、その写真に写っているものを、高専祭と結びつけて答える（例：どこの場所か、どの企画・お店に近いか、ルールに関係するか）。CONTEXT に合うものがなければ、「写真からは、はっきり分からねえ」と答える。
-- 写っている人の名前や、個人を特定することは、言わない。顔について、触れない。`;
+- 狭い質問（時刻、場所、ルールなど）は、見出しなしで、短く答える。`;
 
 const clip = (s, n) => String(s ?? "").slice(0, n);
 
@@ -40,11 +37,6 @@ export async function onRequestPost(ctx) {
   while (turns.length && turns[0].role !== "user") turns.shift();
   if (!turns.length || turns.at(-1).role !== "user") return json(request, 400, { error: "no_question" });
 
-  const image = typeof body?.image === "string" ? body.image : "";
-  const im = image.match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/);
-  if (image && (!im || image.length > 700000)) return json(request, 400, { error: "bad_image" });
-  if (im && !(await rateLimit(request, "ask-img", 10, 600))) return json(request, 429, { error: "rate_limited" });
-
   const live = body?.live && typeof body.live === "object" ? clip(JSON.stringify(body.live), 6000) : "{}";
   let facts = "{}";
   try {
@@ -55,7 +47,7 @@ export async function onRequestPost(ctx) {
   try {
     const upstream = await geminiStream(env, {
       systemInstruction: { parts: [{ text: `${PERSONA}\n\nCONTEXT（学校祭の情報）:\n${facts}\n\nLIVE（いまの時刻と最新の予定）:\n${live}` }] },
-      contents: turns.map((m, i) => ({ role: m.role, parts: i === turns.length - 1 && im ? [{ text: m.text }, { inlineData: { mimeType: im[1], data: im[2] } }] : [{ text: m.text }] })),
+      contents: turns.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
       generationConfig: { temperature: 0.6, maxOutputTokens: 1500 },
     }, env.GEMINI_MODEL ?? MODELS.ask, "minimal");
     return sseTextStream(upstream, ctx, cors(request));

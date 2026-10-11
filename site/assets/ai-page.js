@@ -9,7 +9,6 @@ const KEY = "kosen63-ai-chat";
 const SUGGEST = ["いまやってるステージは？", "トイレはどこ？", "おすすめの食べ物は？", "体育館への行き方"];
 
 const scroller = $("#ai-scroll"), log = $("#ai-log"), empty = $("#ai-empty"), form = $("#ai-form"), box = $("#ai-q"), send = $("#ai-send"), down = $("#ai-down"), newBtn = $("#ai-new");
-const photoBtn = $("#ai-photo"), fileIn = $("#ai-file"), attach = $("#ai-attach"), thumb = $("#ai-thumb"), thumbX = $("#ai-thumb-x");
 const ICON = {
   up: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
   stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3.5"/></svg>',
@@ -24,7 +23,7 @@ let messages = [];
 try { messages = JSON.parse(sessionStorage.getItem(KEY) ?? "[]").filter((m) => m && (m.role === "user" || m.role === "ai") && typeof m.text === "string"); } catch {  }
 const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(messages.slice(-30))); } catch {  } };
 
-let busy = false, ctrl = null, stick = true, pending = null;
+let busy = false, ctrl = null, stick = true;
 const coarse = matchMedia("(pointer: coarse)").matches;
 
 const places = new Map();
@@ -93,25 +92,22 @@ const toBottom = (smooth = true) => scroller.scrollTo({ top: scroller.scrollHeig
 scroller.addEventListener("scroll", () => { stick = nearBottom(); down.hidden = stick || !messages.length; }, { passive: true });
 down.addEventListener("click", () => { stick = true; toBottom(); });
 
-const canSend = () => !!box.value.trim() || !!pending;
+const canSend = () => !!box.value.trim();
 function setBusy(on) {
   busy = on;
   send.classList.toggle("is-stop", on);
   send.innerHTML = on ? ICON.stop : ICON.up;
   send.setAttribute("aria-label", on ? "とめる" : "送る");
   send.disabled = !on && !canSend();
-  photoBtn.disabled = on;
   log.setAttribute("aria-busy", String(on));
 }
 
 function showEmpty(on) { empty.hidden = !on; newBtn.hidden = on; }
 
-function userRow(text, img) {
+function userRow(text) {
   const el = document.createElement("div");
   el.className = "ai-user ai-msg-in";
-  if (img === true) el.insertAdjacentHTML("beforeend", '<span class="ai-photo-tag">写真つき</span>');
-  else if (img) { const i = document.createElement("img"); i.src = img; i.alt = "送った写真"; el.append(i); }
-  if (text) { const p = document.createElement("span"); p.textContent = text; el.append(p); }
+  el.textContent = text;
   log.append(el);
   return el;
 }
@@ -156,15 +152,13 @@ async function readStream(res, onText, signal) {
   }
 }
 
-async function mockStream(onText, signal, hasImage) {
-  const text = hasImage
-    ? "おう、写真を見たぜ。これは **体育館** の近くっぽいな。[[map:gym2]]\n\n## ステージ\n- 太平洋セメントアリーナで、ライブをやってるぜ。[[map:gym2]]\n## 食べ物\n- 模擬店は、校舎のほうに並んでるぜ。\n\nここからの行き方は、これだ。[[route:entrance>gym2]]"
-    : "おう、これは見た目を確かめるための、ニセの返事だぜ。\n- 1つ目の例だ\n- 2つ目の例だ\n**大事なこと**は、本部で確かめてくれよな。";
+async function mockStream(onText, signal) {
+  const text = "おう、聞いてくれてありがとな。**体育館**はこっちだぜ。[[map:gym2]]\n\n## ステージ\n- 太平洋セメントアリーナで、ライブをやってるぜ。[[map:gym2]]\n## 食べ物\n- 模擬店は、校舎のほうに並んでるぜ。\n\nここからの行き方は、これだ。[[route:entrance>gym2]]";
   await new Promise((r) => setTimeout(r, 900));
   for (const ch of text.match(/[\s\S]{1,4}/g)) { if (signal.aborted) return; onText(ch); await new Promise((r) => setTimeout(r, 40)); }
 }
 
-async function generate(image) {
+async function generate() {
   const { row, body } = aiRow();
   body.innerHTML = '<span class="ai-typing" aria-label="考え中"><i></i><i></i><i></i></span>';
   if (stick) toBottom();
@@ -178,9 +172,9 @@ async function generate(image) {
   };
   const onText = (t) => { text += t; paint(false); };
   try {
-    if (mock) await mockStream(onText, ctrl.signal, !!image);
+    if (mock) await mockStream(onText, ctrl.signal);
     else {
-      const res = await fetch(`${API}/api/ask`, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: messages.slice(-8).map((m) => ({ role: m.role, text: m.text })), live: liveInfo(), ...(image ? { image } : {}) }) });
+      const res = await fetch(`${API}/api/ask`, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: messages.slice(-8).map((m) => ({ role: m.role, text: m.text })), live: liveInfo() }) });
       if (res.status === 429) throw new Error("rate");
       if (!res.ok) throw new Error("fail");
       if ((res.headers.get("content-type") ?? "").includes("event-stream")) await readStream(res, onText, ctrl.signal);
@@ -199,7 +193,7 @@ async function generate(image) {
       if (text.trim()) paint(true); else body.innerHTML = "";
       const msg = e.message === "rate" ? "いま混み合ってるぜ。少し待ってから、もう一度頼む。" : "うまくつながらなかった。電波のいい所で、もう一度。急ぎなら、近くのスタッフか本部へ。";
       body.insertAdjacentHTML("beforeend", `<p class="ai-err">${msg}<button type="button" data-retry>もう一度</button></p>`);
-      body.querySelector("[data-retry]").addEventListener("click", () => { row.remove(); generate(image); });
+      body.querySelector("[data-retry]").addEventListener("click", () => { row.remove(); generate(); });
     }
   } finally {
     ctrl = null; setBusy(false);
@@ -207,19 +201,14 @@ async function generate(image) {
   }
 }
 
-let lastImage = null;
 function ask(q) {
   q = q.trim();
-  const image = pending;
-  if (busy || (!q && !image)) return;
-  if (!q) q = "この写真について、教えて。";
+  if (busy || !q) return;
   showEmpty(false);
-  messages.push({ role: "user", text: q, img: !!image }); save();
-  userRow(q, image);
-  lastImage = image;
-  clearPending();
+  messages.push({ role: "user", text: q }); save();
+  userRow(q);
   stick = true;
-  generate(image);
+  generate();
 }
 function regenerate() {
   if (busy) return;
@@ -229,12 +218,12 @@ function regenerate() {
   const rows = [...log.children];
   while (rows.length && !rows.at(-1).classList.contains("ai-user")) rows.pop().remove();
   stick = true;
-  generate(messages.at(-1).img ? lastImage : null);
+  generate();
 }
 
 function restore() {
   for (const m of messages) {
-    if (m.role === "user") userRow(m.text, m.img ? true : null);
+    if (m.role === "user") userRow(m.text);
     else { const { row, body } = aiRow(); render(body, m.text, true); row.classList.remove("ai-msg-in"); }
   }
   const last = [...log.querySelectorAll(".ai-row")].at(-1);
@@ -246,49 +235,15 @@ function restore() {
 
 function reset() {
   if (busy) ctrl?.abort();
-  messages = []; save(); lastImage = null;
+  messages = []; save();
   log.innerHTML = "";
   showEmpty(true);
-  box.value = ""; fit(); clearPending(); send.disabled = true;
+  box.value = ""; fit(); send.disabled = true;
   scroller.scrollTo({ top: 0 });
 }
 
 function fit() { box.style.height = "auto"; box.style.height = `${Math.min(box.scrollHeight, 132)}px`; }
 
-function clearPending() {
-  pending = null;
-  attach.hidden = true;
-  thumb.removeAttribute("src");
-  fileIn.value = "";
-  if (!busy) send.disabled = !box.value.trim();
-}
-async function shrink(file) {
-  const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const scale = Math.min(1, 1024 / Math.max(bmp.width, bmp.height));
-  const c = document.createElement("canvas");
-  c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
-  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
-  let q = 0.82, url = c.toDataURL("image/jpeg", q);
-  while (url.length > 600000 && q > 0.4) { q -= 0.1; url = c.toDataURL("image/jpeg", q); }
-  return url;
-}
-photoBtn.addEventListener("click", () => fileIn.click());
-fileIn.addEventListener("change", async () => {
-  const f = fileIn.files?.[0];
-  if (!f) return;
-  try {
-    pending = await shrink(f);
-    thumb.src = pending;
-    attach.hidden = false;
-    send.disabled = false;
-    if (stick) toBottom(false);
-  } catch {
-    clearPending();
-  }
-});
-thumbX.addEventListener("click", clearPending);
-
-document.querySelector("#ai-head-av").innerHTML = robotSvg();
 document.querySelector("#ai-empty-av").innerHTML = robotSvg();
 for (const q of SUGGEST) {
   const b = document.createElement("button");
@@ -317,8 +272,9 @@ newBtn.addEventListener("click", reset);
 
 const vv = window.visualViewport;
 if (vv) {
-  const sync = () => { document.querySelector(".ai-full").style.setProperty("--vvh", `${Math.round(vv.height)}px`); if (stick) toBottom(false); };
+  const sync = () => { document.querySelector(".ai-full").style.setProperty("--kb", `${Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop))}px`); if (stick) toBottom(false); };
   vv.addEventListener("resize", sync);
+  vv.addEventListener("scroll", sync);
   sync();
 }
 if (!coarse) box.focus();

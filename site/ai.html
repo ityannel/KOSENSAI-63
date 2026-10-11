@@ -20,13 +20,8 @@
 </head>
 <body class="mido-page ai-page" data-page="ai">
   <main class="mido mido-full ai-full" id="ai" aria-label="AIくん">
-    <header class="ai-head">
-      <span class="ai-who"><i class="ai-av" id="ai-head-av" aria-hidden="true"></i><b>AIくん</b></span>
-      <span class="ai-head-btns">
-        <button type="button" class="ai-icon" id="ai-new" aria-label="新しい会話" title="新しい会話" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-        <a class="ai-icon mido-close" href="./" aria-label="とじる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></a>
-      </span>
-    </header>
+    <button type="button" class="mido-close ai-new" id="ai-new" aria-label="新しい会話" title="新しい会話" hidden><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></button>
+    <a class="mido-close" href="./" aria-label="とじる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></a>
 
     <div class="ai-scroll" id="ai-scroll">
       <div class="ai-empty" id="ai-empty">
@@ -40,14 +35,12 @@
     <button type="button" class="ai-down" id="ai-down" aria-label="いちばん下へ" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
 
     <footer class="ai-foot">
-      <div class="ai-attach" id="ai-attach" hidden><img id="ai-thumb" alt="付ける写真"><button type="button" id="ai-thumb-x" aria-label="写真をはずす"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div>
       <form class="ai-form" id="ai-form">
-        <button type="button" class="ai-plus" id="ai-photo" aria-label="写真を付ける" title="写真を付ける"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="13" rx="3"/><circle cx="12" cy="12.5" r="3.2"/><path d="M8.5 6l1.2-2h4.6l1.2 2"/></svg></button>
-        <input type="file" id="ai-file" accept="image/*" hidden>
+        <svg class="ai-glass" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></svg>
         <textarea id="ai-q" rows="1" maxlength="200" placeholder="聞いてみる" aria-label="質問" enterkeyhint="send"></textarea>
         <button type="submit" class="ai-send" id="ai-send" aria-label="送る" disabled></button>
       </form>
-      <p class="ai-note">AIの答えは、まちがうことがあります。個人情報や、人の顔が写った写真は、送らないでください。<a href="terms.html">くわしく</a></p>
+      <p class="ai-note">AIの答えは、まちがうことがあります。個人情報は書かないでください。<a href="terms.html">くわしく</a></p>
     </footer>
   </main>
 

@@ -201,12 +201,10 @@ if (!onTop && !onMido) {
   links.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el); });
 }
 
-if (["", "mido", "rally", "vote"].includes(document.body.dataset.page ?? "") && !document.querySelector(".mapapp") && !document.querySelector(".ai-fab")) {
+if (["", "mido", "rally", "vote", "terms"].includes(document.body.dataset.page ?? "") && !document.querySelector(".mapapp") && !document.querySelector(".ai-fab")) {
   document.body.insertAdjacentHTML("beforeend", `<a class="ai-fab is-hidden" href="ai.html" aria-label="AIくんに聞く" title="AIくんに聞く">${robotSvg()}</a>`);
   const fab = document.querySelector(".ai-fab");
-  if (document.querySelector(".scene")) {
-    const sync = () => fab.classList.toggle("is-hidden", scrollY < 80);
-    addEventListener("scroll", sync, { passive: true });
-    sync();
-  } else setTimeout(() => fab.classList.remove("is-hidden"), 1200);
+  const sync = () => fab.classList.toggle("is-hidden", document.body.classList.contains("tabs-docked"));
+  new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  if (document.querySelector(".scene")) sync(); else fab.classList.remove("is-hidden");
 }
