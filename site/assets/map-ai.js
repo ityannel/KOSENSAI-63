@@ -101,8 +101,7 @@ function html() {
     </div>
     ${empty ? `<p class="sh-hint">おう、地図を見ながら聞いてくれ。場所は地図に印が出て、「回りたい」と言えばルートも引くぜ。</p>
       <div class="aim-chips">${SUGGEST.map.map((q) => `<button type="button" data-ai-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>` : ""}
-    <div class="aim-log" role="log" aria-live="polite">${rows.join("")}</div>
-    <p class="aim-note">AIの答えは、まちがうことがあります。${left.day <= 5 ? `今日は、あと${left.day}回まで聞けます。` : ""}<a href="terms.html">くわしく</a></p>`;
+    <div class="aim-log" role="log" aria-live="polite">${rows.join("")}</div>`;
 }
 
 function onClick(e) {
@@ -138,33 +137,47 @@ function onClick(e) {
 }
 
 const SEND = ICON.send;
+const GLASS = '<svg class="ai-glass" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></svg>';
 const skeleton = () => `<div class="aim"><div class="aim-main"></div>
-  <form class="aim-form" autocomplete="off">
-    <input class="aim-q" type="text" maxlength="200" placeholder="つづけて聞く" aria-label="AIくんに聞く" enterkeyhint="send">
-    <button type="submit" class="aim-send" aria-label="送る"></button>
-  </form></div>`;
+  <footer class="aim-foot">
+    <form class="ai-form" autocomplete="off">
+      ${GLASS}
+      <textarea class="aim-text" rows="1" maxlength="200" placeholder="聞いてみる" aria-label="質問" enterkeyhint="send"></textarea>
+      <button type="submit" class="ai-send" aria-label="送る"></button>
+    </form>
+    <p class="ai-note">AIの答えは、まちがうことがあります。個人情報は書かないでください。<a href="terms.html">くわしく</a> <span class="ai-left"></span></p>
+  </footer></div>`;
 
 function syncKeyboard() {
   const vv = window.visualViewport;
   const sheet = document.querySelector("#m-sheet");
   if (!vv || !sheet) return;
   const kb = Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop));
-  const on = kb > 80 && document.activeElement?.classList.contains("aim-q");
+  const on = kb > 80 && document.activeElement?.classList.contains("aim-text");
   sheet.classList.toggle("has-kb", on);
   sheet.style.setProperty("--ai-kb", `${on ? kb : 0}px`);
   sheet.style.setProperty("--ai-vvh", `${Math.round(vv.height)}px`);
 }
 
 function bindForm(body) {
-  const form = body.querySelector(".aim-form");
-  const input = form.querySelector(".aim-q");
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
+  const form = body.querySelector(".ai-form");
+  const input = form.querySelector(".aim-text");
+  const coarse = matchMedia("(pointer: coarse)").matches;
+  const fit = () => { input.style.height = "auto"; input.style.height = `${Math.min(input.scrollHeight, 132)}px`; };
+  const submit = () => {
     if (busy) { ctrl?.abort(); return; }
     const q = input.value.trim();
     if (!q) return;
     input.value = "";
+    fit();
     send(q);
+  };
+  form.addEventListener("submit", (e) => { e.preventDefault(); submit(); });
+  input.addEventListener("input", fit);
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.shiftKey || e.isComposing || coarse) return;
+    e.preventDefault();
+    submit();
   });
   input.addEventListener("focus", () => { setTimeout(syncKeyboard, 150); });
   input.addEventListener("blur", () => { setTimeout(syncKeyboard, 50); });
@@ -183,10 +196,12 @@ export function render(body) {
     body._aiHtml = "";
     bindForm(body);
   }
-  const btn = body.querySelector(".aim-send");
+  const btn = body.querySelector(".ai-send");
   btn.classList.toggle("is-stop", busy);
   btn.innerHTML = busy ? ICON.stop : SEND;
   btn.setAttribute("aria-label", busy ? "とめる" : "送る");
+  const l = leftNow().day;
+  body.querySelector(".ai-left").textContent = l <= 5 ? `今日は、あと${l}回まで聞けます。` : "";
   const h = html();
   if (body._aiHtml === h) return;
   const top = body.scrollTop;

@@ -1129,8 +1129,6 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 .aim-log:empty { display: none; }
 .aim .ai-body { box-shadow: -3px 2px 0 rgba(48, 44, 41, 0.35); font-size: 14.5px; }
 .aim .ai-link { cursor: pointer; font-family: inherit; }
-.aim-more, .aim-note { margin: 0; color: var(--ai-sub, #8A7A66); font-size: 0.74rem; line-height: 1.5; }
-.aim-note a { color: inherit; }
 
 .aim-tour { margin-top: 12px; padding: 10px 12px; border: 1.5px solid var(--m-tour); border-radius: 14px; background: color-mix(in srgb, var(--m-tour) 8%, #FFFBF2); }
 .aim-tour.is-on { box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-tour) 28%, transparent); }
@@ -1164,28 +1162,15 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 .m-results .m-ai-row + .m-list, .m-results .m-ai-row + .m-empty { margin-top: 14px; }
 
 .aim-main { display: flex; flex-direction: column; gap: 10px; }
-.aim-form { position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 8px; margin: 10px -18px -18px; padding: 10px 14px 12px; border-top: 1px solid var(--m-line); background: var(--grain), var(--iro), var(--paper); }
-.aim-q { flex: 1; min-width: 0; height: 42px; padding: 0 16px; border: 1.5px solid var(--ai-ink, #634A2E); border-radius: 21px; outline: none; background: #FFFBF2; color: var(--ai-ink, #634A2E); font: 700 16px var(--text-font); }
-.aim-q::placeholder { color: var(--ai-sub, #8A7A66); }
-.aim-q:focus { box-shadow: 0 0 0 3px rgba(200, 50, 58, 0.18); }
-.aim-send { flex: none; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 0; border-radius: 50%; background: var(--ai-ink, #634A2E); color: #FEEBC4; cursor: pointer; }
-.aim-send svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.aim-send.is-stop svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
-.aim-send:active { scale: 0.94; }
 .m-sheet.has-kb { bottom: var(--ai-kb); padding-bottom: 0; max-height: calc(var(--ai-vvh) - var(--m-top-h, 120px) - 8px); }
-:root[data-theme="dark"] .aim-q { background: #2a2420; color: #FEEBC4; }
 
 .m-sheet.is-ai { color: #fff; background: var(--grain), radial-gradient(70% 28% at 10% 4%, #6b5fa8 0%, transparent 70%), radial-gradient(60% 26% at 92% 30%, #d8457f 0%, transparent 70%), radial-gradient(70% 30% at 12% 70%, #e2622e 0%, transparent 70%), linear-gradient(180deg, #2f3953 0%, #6a4a78 40%, #b95a63 75%, #e59a58 100%); }
 .m-sheet.is-ai .m-grip { opacity: 0.85; }
 .m-sheet.is-ai .aim-head h2 { color: #fff; text-shadow: 0 1px 8px rgba(30, 24, 48, 0.35); }
 .m-sheet.is-ai .sh-hint { color: rgba(255, 255, 255, 0.88); }
-.m-sheet.is-ai .aim-note, .m-sheet.is-ai .aim-more { color: rgba(255, 255, 255, 0.85); }
 .m-sheet.is-ai .aim-chips button { border: 1px solid rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.12); color: #fff; }
 .m-sheet.is-ai .aim-chips button:active { background: rgba(255, 255, 255, 0.28); }
 .m-sheet.is-ai .aim .ai-user { align-self: flex-end; }
-.m-sheet.is-ai .aim-form { border-top: 0; background: rgba(40, 30, 60, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-.m-sheet.is-ai .aim-q { box-shadow: -3px 2px 0 rgba(48, 44, 41, 0.45); }
-.m-sheet.is-ai .aim-q:focus { box-shadow: -3px 2px 0 rgba(48, 44, 41, 0.45), 0 0 0 3px rgba(255, 255, 255, 0.35); }
 .m-sheet.is-ai .aim-tool { box-shadow: -2px 2px 0 rgba(48, 44, 41, 0.45); }
 .m-sheet.is-ai .aim .ai-body { box-shadow: -4px 3px 0 rgba(48, 44, 41, 0.45); }
 .m-sheet.is-ai .aim-tour { background: var(--grain), #FFFBF2; color: var(--ai-ink, #634A2E); }
@@ -1196,4 +1181,6 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 .m-results .m-ai-row:active { background: var(--grain), linear-gradient(100deg, #3c3760 0%, #77406a 50%, #c4713f 100%); }
 .m-results .m-ai-row small { color: rgba(255, 255, 255, 0.82); }
 .m-sheet.is-ai .aim-tool { color: var(--ai-ink, #634A2E); }
-.m-sheet.is-ai .aim-send { color: #FEEBC4; }
+.m-sheet.is-ai .aim-foot { position: sticky; bottom: -18px; z-index: 2; margin: 6px -18px -18px; padding: 26px 14px calc(8px + 2px); background: linear-gradient(180deg, rgba(229, 154, 88, 0) 0%, rgba(215, 126, 84, 0.94) 32%, #e59a58 100%); }
+.m-sheet.is-ai .aim-foot .ai-note { margin-top: 8px; }
+.m-sheet.is-ai .ai-form .aim-text { min-width: 0; }
