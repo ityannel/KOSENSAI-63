@@ -1,5 +1,6 @@
 import { ROOM_NAMES, SITE } from "./campus.js";
 import { STAGE, EVENTS, VENUES, MAP, SHOPS, HOMEROOMS, DEPT_EXHIBITS } from "./config.js";
+import { loadMiniMap, miniMapHtml } from "./ai-minimap.js";
 import { attachSuggest } from "./ai-suggest.js";
 import { robotSvg } from "./ai-robot.js";
 import { startLive, liveSnapshot } from "./ai-live.js";
@@ -44,28 +45,44 @@ function pull(text, final) {
   const { text: clean, marks, hq, next } = parseMarks(text, final);
   const links = [];
   const pinIds = [];
+  const pinLinks = [];
+  const flowIds = [];
+  let tourIds = null;
   for (const m of marks) {
     if (m.kind === "map") {
       const id = m.ids[0];
       if (places.has(id) && !pinIds.includes(id)) {
         pinIds.push(id);
-        links.push({ href: `map.html#${encodeURIComponent(id)}`, icon: ICON.pin, label: places.get(id), hint: "地図で見る" });
+        pinLinks.push({ href: `map.html#${encodeURIComponent(id)}`, icon: ICON.pin, label: places.get(id), hint: "地図で見る" });
       }
     } else if (m.kind === "route") {
       const [a, b] = m.ids;
-      if (places.has(a) && places.has(b)) links.push({ href: `map.html?from=${encodeURIComponent(a)}&to=${encodeURIComponent(b)}`, icon: ICON.route, label: `${places.get(a)} → ${places.get(b)}`, hint: "道案内" });
+      if (places.has(a) && places.has(b)) {
+        flowIds.push(a, b);
+        links.push({ href: `map.html?from=${encodeURIComponent(a)}&to=${encodeURIComponent(b)}`, icon: ICON.route, label: `${places.get(a)} → ${places.get(b)}`, hint: "道案内" });
+      }
     } else if (m.kind === "tour") {
       const ids = m.ids.filter((id, i, a) => places.has(id) && a.indexOf(id) === i);
-      if (ids.length >= 2 || (ids.length === 1 && readHere())) links.unshift({ href: `map.html?tour=${ids.map(encodeURIComponent).join(">")}`, icon: ICON.tour, label: `回るルート（${ids.length}か所）`, hint: "地図に出す", tour: ids });
+      if (ids.length >= 2 || (ids.length === 1 && readHere())) {
+        tourIds = ids;
+        flowIds.unshift(...ids);
+        links.unshift({ href: `map.html?tour=${ids.map(encodeURIComponent).join(">")}`, icon: ICON.tour, label: `回るルート（${ids.length}か所）`, hint: "地図に出す", tour: ids });
+      }
     }
   }
-  if (pinIds.length >= 2) links.push({ href: `map.html?pins=${pinIds.map(encodeURIComponent).join(",")}`, icon: ICON.pin, label: `ぜんぶ地図で見る（${pinIds.length}か所）`, hint: "地図" });
-  return { text: clean, links, hq, next, tour: links.find((l) => l.tour)?.tour ?? null };
+  const allIds = [...new Set([...flowIds, ...pinIds])];
+  const mini = final && allIds.length ? miniMapHtml(allIds.map((id) => ({ id, label: places.get(id) }))) : "";
+  let shown = [];
+  if (final && !mini) {
+    shown = [...links, ...pinLinks];
+    if (pinIds.length >= 2) shown.push({ href: `map.html?pins=${pinIds.map(encodeURIComponent).join(",")}`, icon: ICON.pin, label: `ぜんぶ地図で見る（${pinIds.length}か所）`, hint: "地図" });
+  }
+  return { text: clean, links: shown, mini, hq, next, tour: tourIds };
 }
 
 function render(body, text, final) {
-  const { text: clean, links, hq, next } = pull(text, final);
-  body.innerHTML = md(clean) + (links.length ? `<div class="ai-links">${links.map((l) => `<a class="ai-link${l.tour ? " is-tour" : ""}${l.hq ? " is-hq" : ""}" href="${l.href}">${l.icon}<span>${esc(l.label)}</span><small>${l.hint}</small></a>`).join("")}</div>` : "");
+  const { text: clean, links, mini, hq, next } = pull(text, final);
+  body.innerHTML = md(clean) + mini + (links.length ? `<div class="ai-links">${links.map((l) => `<a class="ai-link${l.tour ? " is-tour" : ""}${l.hq ? " is-hq" : ""}" href="${l.href}">${l.icon}<span>${esc(l.label)}</span><small>${l.hint}</small></a>`).join("")}</div>` : "");
   const row = body.closest(".ai-row");
   if (row) {
     const has = row.querySelector(".ai-hq-cta");
@@ -270,6 +287,7 @@ log.addEventListener("click", (e) => {
 });
 document.querySelector(".ai-note").innerHTML = noteHtml();
 setBusy(false);
+await loadMiniMap();
 restore();
 {
   const u = new URL(location.href), pre = u.searchParams.get("q");
