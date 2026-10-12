@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const top = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cfg = await import(pathToFileURL(path.join(top, "site/assets/config.js")).href);
-const { ROOM_NAMES } = await import(pathToFileURL(path.join(top, "site/assets/campus.js")).href);
+const { ROOM_NAMES, SITE, ENTRANCES } = await import(pathToFileURL(path.join(top, "site/assets/campus.js")).href);
 
 const hm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false });
 const md = (iso) => new Date(iso).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short" });
@@ -37,6 +37,13 @@ const ctx = {
     id: s.room ?? (s.place || cfg.HOMEROOMS[s.cls]) ?? `shops-${s.bldg}${s.floor}`, name: clean(s.name), group: s.group ?? "", where: s.place ?? (s.bldg ? `${s.bldg}棟${s.floor}` : (s.room ?? cfg.HOMEROOMS[s.cls] ?? "")), genre: s.food ? s.genre : ["あそび・体験"], note: clean(s.note),
   })),
   toilets: Object.entries(ROOM_NAMES).filter(([, n]) => /WC/.test(n)).map(([id, n]) => `${id[0]}棟${id[1]}階 ${/多目的/.test(n) ? "多目的" : /男/.test(n) ? "男子" : /女/.test(n) ? "女子" : "共用"} id=${id}`),
+  facilities: [
+    ...SITE.aed.map((a) => `AED（${a.sub}） id=${a.id}`),
+    ...SITE.vending.map((v) => `自動販売機（${v.sub}） id=${v.id}`),
+    `本部・インフォメーション（玄関ホール。救護・落とし物・景品交換） id=hq`,
+    ...Object.entries({ B109: "保健室", G106: "売店", G101: "二十一食堂（フードコート）", B110: "学生相談室" }).map(([id, n]) => `${n}（${id[0]}棟${id[1]}階） id=${id}`),
+    `出入口：${ENTRANCES.map((e) => e.name).join("、")}`,
+  ],
   exhibits: cfg.DEPT_EXHIBITS.map((d) => ({ id: d.place, dept: d.dept, where: d.where, items: d.items })),
   garbage: cfg.GARBAGE.map((g) => `${g.kind}：${g.examples}`),
 };
