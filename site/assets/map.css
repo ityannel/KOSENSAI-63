@@ -1168,8 +1168,6 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side > .m-help { display: none;
 .m-sheet.is-ai .m-grip { opacity: 0.85; }
 .m-sheet.is-ai .aim-head h2 { color: #fff; text-shadow: 0 1px 8px rgba(30, 24, 48, 0.35); }
 .m-sheet.is-ai .sh-hint { color: rgba(255, 255, 255, 0.88); }
-.m-sheet.is-ai .aim-chips button { border: 1px solid rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.12); color: #fff; }
-.m-sheet.is-ai .aim-chips button:active { background: rgba(255, 255, 255, 0.28); }
 .m-sheet.is-ai .aim .ai-user { align-self: flex-end; }
 .m-sheet.is-ai .aim-tool { box-shadow: -2px 2px 0 rgba(48, 44, 41, 0.45); }
 .m-sheet.is-ai .aim .ai-body { box-shadow: -4px 3px 0 rgba(48, 44, 41, 0.45); }
