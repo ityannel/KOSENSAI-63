@@ -255,18 +255,9 @@ function reset() {
 function fit() { box.style.height = "auto"; box.style.height = `${Math.min(box.scrollHeight, 132)}px`; }
 
 document.querySelector("#ai-empty-av").innerHTML = robotSvg();
-const SVG = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
-const CHIP_ICON = {
-  clock: SVG('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
-  food: SVG('<path d="M7 3v8a2 2 0 0 0 2 2v8M11 3v8a2 2 0 0 1-2 2M17 3c-2 2-2.5 5-2.5 8h2.5v10"/>'),
-  plan: ICON.tour,
-  route: ICON.route,
-  pin: ICON.pin,
-};
-const chipIcon = (q) => (/プラン|ルート|回る/.test(q) ? CHIP_ICON.plan : /行き方|道/.test(q) ? CHIP_ICON.route : /食べ|お店|模擬店|ごはん/.test(q) ? CHIP_ICON.food : /ステージ|いま|次|今日|最後|みどころ/.test(q) ? CHIP_ICON.clock : CHIP_ICON.pin);
 for (const q of SUGGEST.full) {
   const b = document.createElement("button");
-  b.type = "button"; b.innerHTML = `${chipIcon(q)}<span>${esc(q)}</span><i aria-hidden="true">›</i>`;
+  b.type = "button"; b.textContent = q;
   b.addEventListener("click", () => ask(q));
   $("#ai-chips").append(b);
 }
