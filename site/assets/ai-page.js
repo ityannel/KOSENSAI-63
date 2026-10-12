@@ -1,5 +1,6 @@
 import { ROOM_NAMES } from "./campus.js";
 import { STAGE, EVENTS, VENUES, MAP, SHOPS, HOMEROOMS, DEPT_EXHIBITS } from "./config.js";
+import { attachSuggest } from "./ai-suggest.js";
 import { robotSvg } from "./ai-robot.js";
 import { startLive, liveSnapshot } from "./ai-live.js";
 import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, nextHtml, askStream, errorText, limitText, readHere, readCtx, saveTour, SUGGEST } from "./ai-core.js";
@@ -283,10 +284,12 @@ form.addEventListener("submit", (e) => {
   e.preventDefault();
   if (busy) return void ctrl?.abort();
   const q = box.value;
+  sug.hide();
   box.value = ""; fit();
   ask(q);
   send.disabled = true;
 });
+const sug = attachSuggest({ input: box, mount: $("#ai-sug"), onPick: (q) => { box.value = ""; fit(); send.disabled = true; ask(q); } });
 box.addEventListener("input", () => { fit(); if (!busy) send.disabled = !canSend(); });
 box.addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || e.shiftKey || e.isComposing || coarse) return;

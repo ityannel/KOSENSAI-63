@@ -98,3 +98,8 @@ body.ai-page { background: linear-gradient(180deg, #2f3953, #7d4f6e 55%, #d9824f
 .ai-next button { padding: 8px 14px; border: 1.5px solid #634A2E; border-radius: 999px; background: var(--grain), #FFFBF2; color: #634A2E; font: 700 13.5px/1.3 var(--text-font); text-align: left; cursor: pointer; box-shadow: -3px 2px 0 rgba(48, 44, 41, 0.45); animation: ai-cta-in 0.4s both; }
 .ai-next button:active { translate: -3px 2px; box-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .ai-next button { animation: none; } }
+.ai-sug { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; box-sizing: border-box; margin: 0 0 8px; padding: 0 2px; }
+.ai-sug[hidden] { display: none; }
+.ai-sug button { padding: 8px 14px; border: 1.5px solid #634A2E; border-radius: 999px; background: var(--grain), #FFFBF2; color: #634A2E; font: 700 13px/1.3 var(--text-font); text-align: left; cursor: pointer; box-shadow: -3px 2px 0 rgba(48, 44, 41, 0.45); animation: ai-cta-in 0.25s both; }
+.ai-sug button:active { translate: -3px 2px; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .ai-sug button { animation: none; } }

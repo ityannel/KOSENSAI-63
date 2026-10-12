@@ -1,3 +1,4 @@
+import { attachSuggest } from "./ai-suggest.js";
 import { robotSvg } from "./ai-robot.js";
 import { STAGE, EVENTS, VENUES } from "./config.js";
 import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, nextHtml, askStream, errorText, limitText, saveTour, SUGGEST } from "./ai-core.js";
@@ -165,10 +166,16 @@ function bindForm(body) {
   const input = form.querySelector(".aim-text");
   const coarse = matchMedia("(pointer: coarse)").matches;
   const fit = () => { input.style.height = "auto"; input.style.height = `${Math.min(input.scrollHeight, 132)}px`; };
+  const mount = document.createElement("div");
+  mount.className = "ai-sug";
+  mount.hidden = true;
+  form.before(mount);
+  const sug = attachSuggest({ input, mount, onPick: (q) => { input.value = ""; fit(); send(q); } });
   const submit = () => {
     if (busy) { ctrl?.abort(); return; }
     const q = input.value.trim();
     if (!q) return;
+    sug.hide();
     input.value = "";
     fit();
     send(q);
