@@ -16,7 +16,7 @@
 
 ```
 site/                   公開する本体。ビルドなし。ここだけを配信する
-  assets/config.js      日程・企画・出演者・模擬店・協賛・文章。ふだんはここを直す
+  assets/config.js      日程・企画・出演者・模擬店・文章。ふだんはここを直す
   assets/*.js           画面ごとのコード（main / map / signage / tickets / detail / shops-board / side ...）
   assets/style.css      トップほか全体の見た目（約190KB。あとから足して上書きする作り）
   assets/map.css        マップの見た目
@@ -70,7 +70,7 @@ npx -y firebase-tools deploy --only hosting --project enishi-7f43f       # Fireb
 ## データの持ち方
 
 - `config.js` の `STAGE.acts`（出演）は `act(日, 開始, 終了, 名前, 種類, 一言, 紹介文, 写真, [追加の写真], インスタ)` で書く。写真は `site/assets/img/stage/` の webp（大きい版は `-l`）。
-- `EVENTS`（企画）、`LIST_EVENTS`（みどころのページだけに出す）、`SHOPS`（模擬店）、`GENRES`、`DEPT_EXHIBITS`（学科展示）、`SPONSORS`。
+- `EVENTS`（企画）、`LIST_EVENTS`（みどころのページだけに出す）、`SHOPS`（模擬店）、`GENRES`、`DEPT_EXHIBITS`（学科展示）。
 - **スケジュールの変更**は、Firestore の `site_schedule/current` の `changes`（キー＝各予定の `sid`）。時間の変更、`deleted: true`（削除）、`+` で始まるキー（追加した予定）を持つ。反映は `applySchedule`（`config.js`）が、配列を直接書き換える。ページを開くたびに適用されるので、`config.js` を読む側は、書き換え後の配列を見る。
 - お知らせは `site_live/current`（`assets/notice.js` が、トップ・マップ・サイネージ・プレビューで共有）。
 

@@ -18,7 +18,7 @@
 | 縁日（模擬店） | 店ごとの紹介、ジャンル、待ち時間・完売の表示（お店の人がスマホで更新） |
 | Enistagram | 来場者の投稿（写真・いいね・報告）。写真は確認してから公開できる |
 | スタンプラリー・投票 | QR を読むだけのスタンプ、模擬店総選挙 |
-| 会場ディスプレイ（サイネージ） | 校内の大きな画面に、ステージの「いま・次」、混雑、投稿、協賛を自動で切り替えて出す |
+| 会場ディスプレイ（サイネージ） | 校内の大きな画面に、ステージの「いま・次」、混雑、投稿を自動で切り替えて出す |
 | 本部コンソール（`site/staff/`） | お知らせ、スケジュールの変更・追加・削除、混雑、投稿の確認、模擬店の管理、集計 |
 | 英語の来場案内 | `site/en.html` |
 
@@ -38,7 +38,7 @@ python tools/serve.py
 
 ```
 site/                公開するサイト本体（ビルド不要）。ここを配信するだけ
-  assets/config.js   文章・日程・企画・協賛など。ふだんはここを書き換える
+  assets/config.js   文章・日程・企画など。ふだんはここを書き換える
   staff/             本部コンソール（スタッフ専用）
   README.md          サイトの作りの詳しい説明（日本語）
 firestore.rules      Firestore のセキュリティルール
@@ -54,7 +54,7 @@ app/ src/ public/    以前の試作（React / 旧アプリ）。いまのサイ
 
 1. **Firebase のプロジェクトを作る**（Firestore と Authentication）。`site/assets/live.js` の `firebaseConfig` を、自分のプロジェクトの値に書き換えます。この値は公開される前提のもので、守っているのは Firestore のルールです。
 2. **ルールを入れる**：`firestore.rules` をデプロイします。スタッフとして入れる人は、Firestore の `staff/{メールアドレス}` に登録した人だけです。
-3. **中身を書き換える**：`site/assets/config.js`（日程、企画、出演者、模擬店、協賛）、`site.config.json`（URL）、`site/assets/img/`（絵・ロゴ）。
+3. **中身を書き換える**：`site/assets/config.js`（日程、企画、出演者、模擬店）、`site.config.json`（URL）、`site/assets/img/`（絵・ロゴ）。
 4. **公開する**：`site/` を、Cloudflare Pages・Firebase Hosting・GitHub Pages など、静的ファイルを置ける場所へ。セキュリティの設定は `site/_headers`（Cloudflare Pages）と `firebase.json`（Firebase Hosting）にあります。
 
 ### ルールのテスト

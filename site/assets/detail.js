@@ -44,10 +44,9 @@ function close() {
   setTimeout(go, 450);
 }
 
-const mapLinks = (id) => `
-  <div class="dt-links">
-    <a class="mido-more dt-go" href="map.html#${esc(id)}"><span>地図で場所を見る</span></a>
-  </div>`;
+const links = (...items) => `<div class="dt-links">${items.filter(Boolean).join("")}</div>`;
+const mapLink = (id) => `<a class="mido-more dt-go" href="map.html#${esc(id)}"><span>地図で場所を見る</span></a>`;
+const askLink = (q) => `<a class="mido-more dt-go dt-ask" href="ai.html?q=${encodeURIComponent(q)}"><span>AIくんに聞く</span></a>`;
 
 export function openEvent(e, t = Date.now()) {
   const on = isOn(e, t), past = isPast(e, t);
@@ -65,10 +64,8 @@ export function openEvent(e, t = Date.now()) {
       ${[e.kind, e.mood].filter(Boolean).length ? `<div><dt>種類</dt><dd>${esc([e.kind, e.mood].filter(Boolean).join("・"))}</dd></div>` : ""}
     </dl>
     ${e.copy ? `<p class="dt-copy">${esc(e.copy).replace(/\n/g, "<br>")}</p>` : ""}
-    ${/^[\w.]{1,30}$/.test(e.insta ?? "") ? `<div class="dt-links"><a class="mido-more dt-go dt-insta" href="https://www.instagram.com/${esc(e.insta)}/" target="_blank" rel="noopener noreferrer"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><path d="M16.8 7.2h.01"/></svg>Instagram　@${esc(e.insta)}</span></a></div>` : ""}
     ${e.live ? '<p class="dt-note">YouTube で生配信します（配信中はトップページに出ます）。</p>' : ""}
-    ${mapLinks(e.venue)}
-    <a class="mido-more dt-go dt-ask" href="ai.html?q=${encodeURIComponent(`${e.title}について教えて。いまから行ける？`)}"><span>AIくんに聞く</span></a>`);
+    ${links(mapLink(e.venue), askLink(`${e.title}について教えて。いまから行ける？`))}`);
 }
 
 const where = (s) => {
@@ -123,9 +120,11 @@ export function openShop(s, now = Date.now()) {
       <div><dt>団体</dt><dd>${esc(s.group ?? "")}</dd></div>
       <div><dt>場所</dt><dd>${esc(where(s))}</dd></div>
     </dl>
-    ${vote ? `<a class="mido-more dt-go dt-vote" href="${esc(vote)}" target="_blank" rel="noopener"><span>模擬店総選挙で、このお店に投票</span></a>` : ""}
-    ${mapLinks(shopMapId(s))}
-    <a class="mido-more dt-go dt-ask" href="ai.html?q=${encodeURIComponent(`${s.name}は、いま混んでる？待ち時間は？`)}"><span>AIくんに聞く</span></a>`);
+    ${links(
+      vote && `<a class="mido-more dt-go dt-vote" href="${esc(vote)}" target="_blank" rel="noopener"><span>模擬店総選挙で、このお店に投票</span></a>`,
+      mapLink(shopMapId(s)),
+      askLink(`${s.name}は、いま混んでる？待ち時間は？`),
+    )}`);
   const live = document.querySelector("[data-live-shop]");
   if (live) { if (liveList) fillLive(live); liveShops(); }
 }

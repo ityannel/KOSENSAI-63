@@ -106,7 +106,7 @@ const ANSWERS = {
 
   more() {
     const items = [["#about", "高専祭について"], ["#schedule", "タイムテーブル"], ["#guide", "企画案内"], ["#pickup", "注目の模擬店"],
-      ["#info", "来場案内・ごみ"], ["#report", "食レポ・写真"], ["#sponsors", "協賛"]];
+      ["#info", "来場案内・ごみ"], ["#report", "食レポ・写真"]];
     return { line: "ほかにもいろいろあるよ！", html: `<div class="answer-grid">${items.map(([h, l]) => link(h, l)).join("")}</div>`, actions: [] };
   },
 };

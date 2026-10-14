@@ -15,7 +15,6 @@ const MENU = [
   ["ennichi", "縁日", "FOOD & FUN", svg('<path d="M3.5 9L5 4h14l1.5 5M3.5 9h17M3.5 9a2.8 2.8 0 0 0 5.6 0 2.9 2.9 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0M5 12v8h14v-8M10 20v-5h4v5"/>')],
   ["exhibit", "学科展示", "DEPARTMENTS", svg('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 15h9"/>')],
   ["info", "ご来場の皆さまへ", "INFO", svg('<path d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>')],
-  ["sponsors", "協賛", "SPONSORS", svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>')],
 ].filter(([id]) => !onTop || document.getElementById(id))
   .filter(([id]) => id !== "memory" || afterClose());
 function afterClose() {
@@ -100,7 +99,7 @@ document.body.insertAdjacentHTML("beforeend", `
     <ul class="pc-menu" id="pc-more">${MORE.map(([href, ja, en, icon], i) => `<li data-need="${MORE_NEEDS[href] ?? "*"}"><a href="${href}"${href === `${document.body.dataset.page}.html` ? ' aria-current="true"' : ""}><span class="pc-ic" style="--c:${COLORS[(i + 3) % COLORS.length]}">${icon}</span><span class="pc-txt"><b>${esc(ja)}</b></span></a></li>`).join("")}</ul>
   </nav>`);
 
-const SEC_OF = { memory: "memory", message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", exhibit: "exhibit", info: "info", sponsors: "sponsors" };
+const SEC_OF = { memory: "memory", message: "message", crowd: "crowd-now", pickup: "pickup", ennichi: "ennichi", exhibit: "exhibit", info: "info" };
 function orderMenu(blocks) {
   if (!Array.isArray(blocks)) return;
   const ul = document.querySelector(".pc-menu");

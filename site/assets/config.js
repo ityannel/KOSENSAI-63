@@ -18,7 +18,6 @@ export const NAV = [
   { label: "企画", href: "#guide" },
   { label: "みどころ", href: "#pickup" },
   { label: "来場案内", href: "#info" },
-  { label: "協賛", href: "#sponsors" },
 ];
 
 export const TOP_BLOCKS = [
@@ -30,7 +29,6 @@ export const TOP_BLOCKS = [
   ["ennichi", "縁日", "模擬店のチラシ"],
   ["exhibit", "学科展示", "5学科の展示（スクロールで順に開く）"],
   ["info", "ご来場の皆さまへ", "注意の札"],
-  ["sponsors", "協賛", "協賛企業のロゴ"],
 ];
 const P = (ids) => ids.map((t) => ({ id: t.replace(/^-/, ""), show: !t.startsWith("-") }));
 export const DEPT_EXHIBITS = [
@@ -47,8 +45,8 @@ export const DEPT_EXHIBITS = [
 ];
 
 export const TOP_PRESETS = {
-  before: P(["-memory", "message", "pickup", "ennichi", "exhibit", "info", "stamp", "-crowd", "sponsors"]),
-  during: P(["memory", "stamp", "crowd", "pickup", "ennichi", "exhibit", "info", "message", "sponsors"]),
+  before: P(["-memory", "message", "pickup", "ennichi", "exhibit", "info", "stamp", "-crowd"]),
+  during: P(["memory", "stamp", "crowd", "pickup", "ennichi", "exhibit", "info", "message"]),
 };
 
 export const MESSAGE = {
@@ -286,20 +284,6 @@ export const GARBAGE = [
 ];
 
 export const LEGAL = { takedownForm: "" };
-
-export const SPONSORS = {
-  count: 0,
-  list: [
-    { name: "NORTHWAVE（架空）", logo: "assets/img/sponsors/dummy-northwave.svg" },
-    { name: "はこだて電機（架空）", logo: "assets/img/sponsors/dummy-hakodate-denki.svg" },
-    { name: "北海みらい建設（架空）", logo: "assets/img/sponsors/dummy-hokkai-kensetsu.svg" },
-    { name: "aurora systems（架空）", logo: "assets/img/sponsors/dummy-aurora.svg" },
-    { name: "函館ベイ食品（架空）", logo: "assets/img/sponsors/dummy-bay-foods.svg" },
-    { name: "いさりび通信（架空）", logo: "assets/img/sponsors/dummy-isaribi.svg" },
-    { name: "TSUGARU MOTORS（架空）", logo: "assets/img/sponsors/dummy-tsugaru-motors.svg" },
-    { name: "五稜精機（架空）", logo: "assets/img/sponsors/dummy-goryo-seiki.svg" },
-  ],
-};
 
 export const RALLY = {
   goal: 5,

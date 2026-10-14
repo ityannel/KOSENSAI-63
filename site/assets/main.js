@@ -1,6 +1,6 @@
 import {
   FESTIVAL, NAV, MESSAGE, ABOUT, VENUES, CROWD, GUIDES, EVENTS, STAGE,
-  NOTICES, GARBAGE, SPONSORS, FX, SECRETS,
+  NOTICES, GARBAGE, FX, SECRETS,
 } from "./config.js";
 import { subscribeLive, subscribeCrowd, subscribeChatter, countVisit } from "./live.js";
 import { renderMini, renderVoteEntry } from "./rally.js";
@@ -74,15 +74,6 @@ function renderStatic() {
     <div class="garbage-card" style="--bin:${esc(g.color)}">
       <b>${esc(g.kind)}</b><small>${esc(g.examples)}</small>
     </div>`).join("");
-
-  $("#sponsor-lead").innerHTML = `計<b class="spon-num">${SPONSORS.count || "●"}</b>社のご協賛により開催しております。<br>ご協力いただいた皆さまに、<br>心より感謝申し上げます。`;
-  const sponsorTile = (s) => {
-    const inner = s.logo ? `<img src="${esc(s.logo)}" alt="${esc(s.name)}" loading="lazy" decoding="async">` : `<span>${esc(s.name)}</span>`;
-    return `<li>${s.url ? `<a class="spon-tile" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : `<span class="spon-tile">${inner}</span>`}</li>`;
-  };
-  $("#sponsor-list").innerHTML = SPONSORS.list.length
-    ? SPONSORS.list.map(sponsorTile).join("")
-    : Array.from({ length: 6 }, () => '<li aria-hidden="true"><span class="spon-tile is-empty">LOGO</span></li>').join("");
 
   $("#insta-link").href = FESTIVAL.instagram;
 
@@ -523,7 +514,7 @@ if (params.has("fireworks") || (nowMs() >= OPEN && nowMs() < OPEN + 90000)) {
 }
 
 if (matchMedia("(min-width: 600px)").matches && "IntersectionObserver" in window) {
-  const secs = ["days", "crowd-now", "pickup", "ennichi", "info", "sponsors"].map((id) => document.getElementById(id)).filter(Boolean);
+  const secs = ["days", "crowd-now", "pickup", "ennichi", "info"].map((id) => document.getElementById(id)).filter(Boolean);
   const seen = new Map();
   const io = new IntersectionObserver((es) => {
     for (const e of es) seen.set(e.target.id, e.isIntersecting);
@@ -533,7 +524,7 @@ if (matchMedia("(min-width: 600px)").matches && "IntersectionObserver" in window
   secs.forEach((s) => io.observe(s));
 
   const SHADE = { scene: [0, 0, 0, 0.45], days: [92, 20, 52, 0.5], "crowd-now": [58, 38, 66, 0.5], pickup: [110, 56, 12, 0.5],
-    ennichi: [110, 76, 20, 0.48], info: [24, 78, 70, 0.5], sponsors: [16, 22, 44, 0.55] };
+    ennichi: [110, 76, 20, 0.48], info: [24, 78, 70, 0.5] };
   const parts = [document.querySelector("main.scene"), ...secs].filter(Boolean);
   let queued = false;
   const shade = () => {

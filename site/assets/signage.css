@@ -362,12 +362,6 @@ body.is-hurry #slide { bottom: 160px; }
 .barw time .t-chg { align-items: center; }
 .nx .t .t-chg .t-old { font-size: 24px; }
 .chip .t-chg .t-old { font-size: .72em; }
-#wipe.has-spon b { top: 50%; }
-#wsp { position: absolute; left: 71%; top: 50%; width: 960px; opacity: 0; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 26px; }
-#wsp > span { font: 400 66px/1 var(--hud); letter-spacing: .12em; color: #fff; text-shadow: -5px 4px 0 rgba(48, 44, 41, .6); }
-#wsp .tile { position: relative; width: 100%; height: 360px; }
-#wsp .tile img { display: block; width: 100%; height: 100%; object-fit: contain;
-  filter: drop-shadow(7px 0 0 #fff) drop-shadow(-7px 0 0 #fff) drop-shadow(0 7px 0 #fff) drop-shadow(0 -7px 0 #fff) drop-shadow(-16px 13px 0 rgba(48, 44, 41, .55)); }
 
 body.portrait #stage { --sx: 76px; --st: 96px; --sb: 84px; }
 body.portrait #bgclock b { font-size: 300px; }
@@ -504,9 +498,6 @@ body.is-fw .grain { opacity: .25; }
 #sg-notice .nt-link { pointer-events: none; }
 @keyframes sgn-in { from { translate: 0 -100%; } }
 @keyframes notice-blink { 50% { opacity: .35; } }
-body.portrait #wipe.has-spon b { top: 50%; }
-body.portrait #wsp { left: 50%; top: 66%; width: 94%; }
-body.portrait #wsp .tile { height: 440px; }
 .now .kind { flex-wrap: wrap; align-items: center; }
 .now .kind .chip { white-space: nowrap; flex: none; }
 .now .mood { margin-top: 16px; font-size: 38px; font-weight: 700; line-height: 1.4; text-wrap: pretty; word-break: auto-phrase; }

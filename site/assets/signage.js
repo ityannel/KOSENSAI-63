@@ -1,5 +1,5 @@
 import { noticeOf, paintNotice } from "./notice.js";
-import { FESTIVAL, STAGE, EVENTS, SPONSORS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
+import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
 import { avatar, VERIFIED } from "./avatar.js";
@@ -505,24 +505,11 @@ function plan() {
 let order = [], idx = -1, timer = null, busy = false, dir = 1;
 const slide = $("#slide"), wipe = $("#wipe");
 
-const SPON = SPONSORS.list.filter((x) => x.logo).slice(0, 8);
-SPON.forEach((x) => { const im = new Image(); im.src = x.logo; });
-let wipeN = 0;
 async function cover() {
   wipe.querySelectorAll("i.b2").forEach((b) => b.getAnimations().forEach((x) => x.cancel()));
-  const wsp = wipe.querySelector("#wsp"), sp = SPON.length ? SPON[wipeN++ % SPON.length] : null;
-  if (wsp) wsp.getAnimations({ subtree: true }).forEach((a) => a.cancel());
-  wipe.classList.toggle("has-spon", !!(wsp && sp));
-  const portrait = document.body.classList.contains("portrait");
-  if (wsp && sp) {
-    wsp.querySelector("img").src = sp.logo; wsp.querySelector("img").alt = sp.name ?? "";
-    const from = portrait ? "translate(-50%, calc(-50% + 90px)) scale(.85)" : "translate(calc(-50% + 110px), -50%) scale(.85)";
-    wsp.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: "translate(-50%, -50%) scale(1.02)", offset: .7 }, { opacity: 1, transform: "translate(-50%, -50%) scale(1)" }], { duration: 900, delay: 1700, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
-  }
   const bars = [...wipe.querySelectorAll("i:not(.b2)")], seal = wipe.querySelector("b");
   const inn = bars.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(0) skewX(-14deg)" }], { duration: 520, delay: k * 70, easing: "cubic-bezier(.7,0,.3,1)", fill: "forwards" }));
-  seal.animate([{ opacity: 0, transform: "scale(2.2) rotate(-14deg)" }, { opacity: 1, transform: "scale(1) rotate(-6deg)", offset: .55 }, { opacity: 1, transform: "scale(1) rotate(-6deg)" }], { duration: 900, delay: 330, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
-  if (sp) seal.animate([{ transform: "translate(0, 0) scale(1) rotate(-6deg)" }, { transform: portrait ? "translate(0, -300px) scale(.8) rotate(-4deg)" : "translate(-470px, 0) scale(1) rotate(-4deg)" }], { duration: 1000, delay: 1250, easing: "cubic-bezier(.45,0,.2,1)", fill: "forwards" });
+  seal.animate([{ opacity: 0, transform: "scale(2.2) rotate(-14deg)" }, { opacity: 1, transform: "scale(1) rotate(-6deg)", offset: .55 }, { opacity: 1, transform: "scale(1) rotate(-6deg)" }], { duration: 360, delay: 330, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" });
   const COL = ["#d9669b", "#2f8fe0", "#a061c9", "#ffd24a", "#3BF53D", "#FEEBC4", "#ff6b5e"];
   wipe.querySelectorAll("s").forEach((d, k, all) => {
     const ang = (k / all.length) * Math.PI * 2 + 0.3, far = 360 + (k % 3) * 120;
@@ -530,15 +517,11 @@ async function cover() {
     d.animate([{ opacity: 1, transform: "translate(0, 0) scale(.3) rotate(0)" }, { opacity: 1, transform: `translate(${Math.cos(ang) * far}px, ${Math.sin(ang) * far}px) scale(1) rotate(${k * 70}deg)`, offset: .7 }, { opacity: 0, transform: `translate(${Math.cos(ang) * far * 1.15}px, ${Math.sin(ang) * far * 1.15 + 60}px) scale(.8) rotate(${k * 90}deg)` }], { duration: 1000, delay: 480, easing: "cubic-bezier(.2,.8,.3,1)", fill: "both" });
   });
   await Promise.all(inn.map((a) => a.finished.catch(() => {})));
-  if (sp) await sleep(2800);
   return () => {
     const top = [...wipe.querySelectorAll("i.b2")];
     const pass = top.map((b, k) => b.animate([{ transform: "translateX(-120%) skewX(-14deg)" }, { transform: "translateX(120%) skewX(-14deg)" }], { duration: 1100, delay: k * 70, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" }));
-    setTimeout(() => {
-      bars.forEach((b) => b.getAnimations().forEach((x) => x.cancel()));
-      seal.getAnimations().forEach((x) => x.cancel());
-      wsp?.getAnimations({ subtree: true }).forEach((x) => x.cancel());
-    }, 3 * 70 + 560);
+    setTimeout(() => seal.getAnimations().forEach((x) => x.cancel()), 400);
+    setTimeout(() => bars.forEach((b) => b.getAnimations().forEach((x) => x.cancel())), 3 * 70 + 560);
     return Promise.all(pass.map((a) => a.finished.catch(() => {})));
   };
 }
