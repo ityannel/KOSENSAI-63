@@ -157,8 +157,13 @@ export const LIST_EVENTS = [
   { title: "校内装飾", venue: "校内全域", start: "2026-10-25T10:00:00+09:00", end: "2026-10-25T16:00:00+09:00", kind: "展示", listOnly: true, copy: "1・2年生が彩る、\nにぎやかな花道へようこそ♪" },
 ];
 
-const act = (day, start, end, name, kind, mood, copy, photo = null, more = [], insta = "") =>
-  ({ name, kind, mood, copy, photo, more, insta, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` });
+const SHOW_SETLIST = false;
+const SETLIST_HEAD = /^(?:セットリスト|💗せっとりすと💗)\n/;
+const act = (day, start, end, name, kind, mood, copy, photo = null, more = [], insta = "") => {
+  const head = SETLIST_HEAD.exec(copy);
+  const setlist = head ? copy.slice(head[0].length).split("\n").map((s) => s.trim()).filter(Boolean) : [];
+  return { name, kind, mood, copy: head && !SHOW_SETLIST ? "" : copy, setlist, photo, more, insta, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` };
+};
 export const STAGE = {
   venue: "gym2",
   tentative: false,
