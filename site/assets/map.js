@@ -6,14 +6,14 @@ import { tStart, tPlain } from "./schedule.js";
 import { findRoute, describe, centerOf, buildingAt, setBlockedRooms } from "./route.js";
 import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
 import { robotSvg } from "./ai-robot.js";
-import { SUGGEST, HERE_KEY, HERE_SEC, saveCtx, readTour, saveTour } from "./ai-core.js";
+import { HERE_KEY, HERE_SEC, saveCtx, readTour, saveTour } from "./ai-core.js";
 import * as mapAi from "./map-ai.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
 const md = (iso) => new Date(iso).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric" });
 const $ = (s) => document.querySelector(s);
-const SEARCH_PH = "場所をさがす・AIくんに聞く";
+const SEARCH_PH = "場所をさがす";
 
 let getState = () => ({});
 const places = new Map();
@@ -2561,9 +2561,6 @@ function closeResults() {
   endMapPick();
   $("#m-q").placeholder = SEARCH_PH;
 }
-const aiRow = (q) => `<button type="button" class="m-ai-row" data-ask-ai="${esc(q)}"><i class="ai-av" aria-hidden="true">${robotSvg()}</i><span><b>AIくんに聞く</b><small>${q ? `「${esc(q)}」を聞く` : "近い場所・空いてる所・回るルートを相談"}</small></span></button>`;
-const aiChips = () => `<div class="aim-chips">${SUGGEST.map.map((t) => `<button type="button" data-ask-ai="${esc(t)}">${esc(t)}</button>`).join("")}</div>`;
-const QUESTION = /[？?]|ください|教えて|おしえて|したい|たい$|ルート|回る|まわる|おすすめ|オススメ|空い|すいて|近く|近い|どこ|どれ|どの|どう|いつ|何|行き方|ありますか|ですか/;
 function renderResults() {
   const q = $("#m-q").value;
   const box = $("#m-results");
@@ -2580,7 +2577,7 @@ function renderResults() {
   const hits = search(q);
   box.innerHTML = `${hits.length
     ? `<ul class="m-list">${hits.map((it) => itemHtml({ p: it.p, label: it.label, sub: it.sub, kind: it.kind })).join("")}</ul>`
-    : `<p class="m-empty">${picking ? `「${esc(q)}」は見つかりませんでした` : `場所の検索では見つかりませんでした。右下のロボットで、AIくんに聞けます`}</p>`}`;
+    : `<p class="m-empty">${picking ? `「${esc(q)}」は見つかりませんでした` : `場所の検索では見つかりませんでした`}</p>`}`;
 }
 function askAi(q) {
   if (mapAi.isBusy()) { toast("いま答えています。ちょっと待ってね"); return; }
@@ -2842,15 +2839,11 @@ export async function initMap(opts) {
   q.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeResults();
     if (e.key !== "Enter" || e.isComposing) return;
-    const text = q.value.trim();
-    if (text && !picking && (mode === "ai" || QUESTION.test(text) || text.length >= 12 || !$("#m-results [data-go]"))) { askAi(text); return; }
     $("#m-results [data-go]")?.click();
   });
   $("#m-clear").addEventListener("click", closeResults);
   document.querySelector(".m-ai")?.addEventListener("click", (e) => { e.preventDefault(); openAi(); });
   $("#m-results").addEventListener("click", (e) => {
-    const ai = e.target.closest("[data-ask-ai]");
-    if (ai) { if (ai.dataset.askAi) askAi(ai.dataset.askAi); else openAi(); return; }
     if (e.target.closest("[data-mappick]")) { beginMapPick(); return; }
     const go = e.target.closest("[data-go]");
     if (!go) return;
