@@ -75,7 +75,7 @@ export const VENUES = [
   { id: "cafeteria", name: "学食", alias: "二十一食堂" },
   { id: "library", name: "図書館", alias: "TSKEライブラリー" },
   { id: "entrance", name: "玄関ホール" },
-  { id: "ground", name: "総合グラウンド" },
+  { id: "ground", name: "HAKODATE DOCK SPORTS FIELD" },
 ];
 
 const CIVIL = "社会基盤工学科の展示：応用創造デザイン展示・上水道のしくみ・木製橋の実物展示・なんでも相談室（函館高専ってどんな学校？ 在学生が答えます）";
@@ -346,7 +346,7 @@ export const SIGNAGE = {
     cafeteria: { name: "二十一食堂", sub: "学食", mark: "bowl" },
     courtyard: { name: "中庭", sub: "B棟とC棟のあいだ", mark: "leaf" },
     library: { name: "TSKEライブラリー", sub: "図書館", mark: "book" },
-    ground: { name: "総合グラウンド", sub: "花火（学内の方限定）", mark: "firework" },
+    ground: { name: "HAKODATE DOCK SPORTS FIELD", sub: "花火（学内の方限定）", mark: "firework" },
   },
 };
 

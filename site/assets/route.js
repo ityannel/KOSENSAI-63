@@ -1,4 +1,4 @@
-import { PATHS, LINKS, BUILDINGS, M_PER_PT } from "./campus.js";
+import { PATHS, LINKS, BUILDINGS, M_PER_PT, restrictedBuildingShapes, placeRestricted } from "./campus.js";
 
 const STAIRS_COST = 40;
 const EV_COST = 70;
@@ -40,6 +40,19 @@ function cross(a, b, c, d) {
   return null;
 }
 
+let blockedRooms = [];
+export function setBlockedRooms(list) {
+  blockedRooms = list;
+  NET = null;
+}
+const inRect = (p, r) => p[0] >= r[0] && p[0] <= r[0] + r[2] && p[1] >= r[1] && p[1] <= r[1] + r[3];
+function blockedAt(floor, p) {
+  for (const s of restrictedBuildingShapes(floor)) {
+    if (s.rects.some((r) => inRect(p, r)) || (s.poly && inPoly(p, s.poly))) return true;
+  }
+  return blockedRooms.some((b) => b.floor === floor && inRect(p, b.rect));
+}
+
 function build() {
   const nodes = [];
   const adj = new Map();
@@ -70,6 +83,8 @@ function build() {
       const ts = [...new Set(s.cuts.map((t) => Math.round(t * 1e4) / 1e4))].sort((x, y) => x - y);
       const pts = ts.map((t) => [s.a[0] + (s.b[0] - s.a[0]) * t, s.a[1] + (s.b[1] - s.a[1]) * t]);
       for (let k = 1; k < pts.length; k++) {
+        const mid = [(pts[k - 1][0] + pts[k][0]) / 2, (pts[k - 1][1] + pts[k][1]) / 2];
+        if (blockedAt(floor, mid)) continue;
         const a = node(floor, pts[k - 1]), b = node(floor, pts[k]);
         if (a === b) continue;
         const w = dist(nodes[a].pt, nodes[b].pt);
@@ -82,6 +97,7 @@ function build() {
   for (const l of LINKS) {
     const ids = [];
     for (const [floor, at] of Object.entries(l.at)) {
+      if (blockedAt(floor, at)) continue;
       const near = nearestOnEdges(floor, at, edges, nodes);
       if (!near) continue;
       const p = node(floor, at);
@@ -194,6 +210,7 @@ function between(da, db, opts) {
 }
 
 export function findRoute(from, to, opts = {}) {
+  if (placeRestricted(from) || placeRestricted(to)) return null;
   const { nodes } = net();
   const a0 = centerOf(from), b0 = centerOf(to);
   if (from.floor === to.floor && (from.outdoor || !buildingAt(from.floor, a0)) && (to.outdoor || !buildingAt(to.floor, b0)) && lineClear(from.floor, a0, b0)) {

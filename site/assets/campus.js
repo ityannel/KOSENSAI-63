@@ -91,7 +91,7 @@ export const SITE = {
     [[156, 418], [172, 402], [231, 398], [264, 403], [290, 418], [284, 423], [258, 410], [231, 405], [196, 407], [172, 413], [164, 440], [162, 471], [165, 498], [174, 520], [184, 538], [199, 556], [210, 570], [195, 574], [176, 546], [160, 506], [151, 462], [150, 432]],
   ],
   areas: [
-    { id: "ground", kind: "field", name: "総合グラウンド", poly: [[292, 628], [1013, 630], [998, 1086], [400, 1086], [395, 1060], [370, 1000], [340, 900], [315, 800], [296, 720], [290, 660]], label: [680, 850] },
+    { id: "ground", kind: "field", name: "HAKODATE DOCK SPORTS FIELD", poly: [[292, 628], [1013, 630], [998, 1086], [400, 1086], [395, 1060], [370, 1000], [340, 900], [315, 800], [296, 720], [290, 660]], label: [680, 850] },
     { id: "ground2", kind: "field", name: "第2グラウンド", poly: [[968, 187], [1132, 187], [1200, 248], [1200, 468], [968, 468]], label: [1084, 330] },
     { id: "archery", kind: "field", name: "アーチェリー場", rect: [798, 62, 275, 55], label: [935, 90] },
     { id: "tennis", kind: "court", name: "テニスコート", rect: [1048, 1130, 153, 320], label: [1124, 1290] },
@@ -409,6 +409,24 @@ export const ROOM_NAMES = {
   K302: "ゼミナール室6", K303: "ゼミナール室5", K304: "プレゼンテーションルーム", K305: "ゼミナール室3", K306: "ゼミナール室4", K307: "WC男",
   L301: "講義室", L302: "講義室", L303: "講義室", L304: "WC男", L305: "WC女",
   H401: "計算機システム実験室", H402: "ソフトウェア工学実験室", H403: "計算機応用実験室", H404: "WC男", H405: "教員室", H406: "教員室",
-  H407: "情報処理実験室", H408: "論理回路設計実習室", H409: "教員室", H410: "教員室", L401: "多目的室", L402: "講義室",
+  H407: "情報処理実験室", H408: "論理回路設計実習室", H409: "教員室", H410: "教員室", L401: "VR研究室 L'HAKO", L402: "講義室",
   L403: "講義室", L404: "WC男", L405: "WC女",
 };
+
+export const RESTRICTED = {
+  rooms: ["M111", "M101"],
+  zones: [{ b: "K" }, { b: "E", floors: ["2F", "3F"] }, { b: "C", floors: ["3F"] }, { b: "H", floors: ["3F", "4F"] }],
+  labels: ["東京水道アリーナ（第一体育館）", "武道場", "専攻科棟（K棟）の全域", "物質環境（E棟）の2階・3階", "実験棟（C棟）の3階", "H棟の3階・4階"],
+};
+export const zoneRestricted = (bid, floor) => RESTRICTED.zones.some((z) => z.b === bid && (!z.floors || z.floors.includes(floor)));
+export const codeRestricted = (code) => !!code && (RESTRICTED.rooms.includes(code) || zoneRestricted(code[0], `${code[1]}F`));
+export const placeRestricted = (p) => !!p && (codeRestricted(p.code) || (p.codes ?? []).some(codeRestricted));
+export function restrictedBuildingShapes(floor) {
+  const out = [];
+  for (const b of BUILDINGS) {
+    const f = b[floor];
+    if (!f || f.roof || !zoneRestricted(b.id, floor)) continue;
+    out.push({ rects: f.rects ?? [], poly: f.poly ?? null });
+  }
+  return out;
+}

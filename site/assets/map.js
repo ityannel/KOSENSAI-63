@@ -1,9 +1,9 @@
 import { paintNotice } from "./notice.js";
 import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION, DEPT_EXHIBITS } from "./config.js";
-import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES } from "./campus.js";
+import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES, RESTRICTED, placeRestricted, restrictedBuildingShapes } from "./campus.js";
 import { avatar, VERIFIED } from "./avatar.js";
 import { tStart, tPlain } from "./schedule.js";
-import { findRoute, describe, centerOf, buildingAt } from "./route.js";
+import { findRoute, describe, centerOf, buildingAt, setBlockedRooms } from "./route.js";
 import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
 import { robotSvg } from "./ai-robot.js";
 import { SUGGEST, HERE_KEY, HERE_SEC, saveCtx, readTour, saveTour } from "./ai-core.js";
@@ -996,10 +996,19 @@ function drawFloor() {
   const roomEls = rooms.map((p) => shapeEl(p.rects ?? [p.rect], `room k-${p.kind}`, ` data-id="${p.id}"`));
   const festEls = fest.flatMap((p) => p.poly ? [`<polygon class="room k-${p.kind}" points="${p.poly.join(" ")}" data-id="${p.id}"${deptStyle(p)}/>`] : (p.zone ? p.rects.map((r) => [r]) : [p.rects ?? [p.rect]]).map((rs) => shapeEl(rs, `room k-${p.kind}${p.zone ? " is-zone" : ""}`, ` data-id="${p.id}"${deptStyle(p)}`)));
   const roomLabels = [...rooms.map((p) => roomLabel(p)), ...fest.flatMap(festLabels)];
+  const banned = [];
+  for (const s of restrictedBuildingShapes(floor)) {
+    s.rects.forEach((r) => banned.push(rectEl(...r, "restricted")));
+    if (s.poly) banned.push(`<polygon class="restricted" points="${s.poly.join(" ")}"/>`);
+  }
+  for (const c of RESTRICTED.rooms) {
+    const p = places.get(c);
+    if (p && p.floor === floor) (p.rects ?? [p.rect]).forEach((r) => banned.push(rectEl(...r, "restricted")));
+  }
   const site = siteSvg();
   const icons = [];
   const groups = [];
-  for (const p of rooms.filter(isToilet)) {
+  for (const p of rooms.filter((q) => isToilet(q) && !placeRestricted(q))) {
     const c = centerOf(p);
     const hc = p.kind === "toilet-hc";
     const g = groups.find((g) => g.hc === hc && Math.hypot(g.x - c[0], g.y - c[1]) < 18);
@@ -1031,6 +1040,7 @@ function drawFloor() {
 
   svg().innerHTML = `
     <defs><linearGradient id="e-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3d86f0"/><stop offset=".35" stop-color="#1361cc"/><stop offset=".65" stop-color="#0d5881"/><stop offset="1" stop-color="#ff5253"/></linearGradient><pattern id="m-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#ece7de"/><line x1="0" y1="0" x2="0" y2="6" stroke="#d6cfc2" stroke-width="2"/></pattern></defs>
+    <defs><pattern id="m-rs" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="9" height="9" fill="rgba(99,74,46,.08)"/><rect width="2" height="9" fill="rgba(99,74,46,.2)"/></pattern></defs>
     <rect class="ground" x="-2000" y="-2000" width="5000" height="5000"/>
     <g class="site${floor === "1F" ? "" : " is-dim"}">${site.shapes}</g>
     <g>${outs.join("")}</g>
@@ -1038,6 +1048,7 @@ function drawFloor() {
     <g>${edges.join("")}${fills.join("")}</g>
     <g>${voids.join("")}</g>
     <g id="m-rooms">${roomEls.join("")}${festEls.join("")}</g>
+    <g class="restricted-layer">${banned.join("")}</g>
     <g class="stairs-layer">${stairs.join("")}</g>
     <g>${overs.join("")}</g>
     <g id="m-sel"></g>
@@ -1608,22 +1619,25 @@ function renderSheet() {
   const dist = hp && !isHere ? bestRoute(hp, p) : null;
   const one = p.shopList?.length === 1 && p.shopList[0].name === p.name ? p.shopList[0] : null;
   const oneWait = one && waitOf(one, s);
+  const ban = placeRestricted(p);
   const html = `
     ${p.tentative || p.roomGuess ? `<p class="sh-kind">${p.tentative ? "【場所は仮】" : "【教室は仮】"}</p>` : ""}
     <h2 class="sh-title">${esc(titleOf(p))}${statusPill(oneWait)}${statusPill(crowd)}</h2>
     <p class="sh-sub">${esc(subOf(p))}</p>
     ${one ? `<p class="sh-sub">${esc([one.group, one.food ? "食べもの" : ""].filter(Boolean).join("・"))}${genreTags(one)}</p>${msgHtml(one, s)}` : ""}
     <div class="sh-row">
+      ${ban ? '<span class="sh-badge is-ban">入れません</span>' : ""}
       ${isHere ? `<span class="sh-badge is-here">${I.pin}いまここ</span>` : ""}
       ${now ? `<span class="sh-badge is-now">NOW ${esc(now.title)}</span>` : ""}
       ${dist ? `<span class="sh-badge">${I.walk}${dist.minutes}分・${dist.meters}m</span>` : ""}
       ${p.kind === "toilet-hc" ? '<span class="sh-badge">車いす・おむつ替え</span>' : ""}
     </div>
+    ${ban ? '<p class="sh-hint">この場所は、入れません。</p>' : ""}
     ${p.desc || one?.note ? `<p class="sh-desc">${esc(p.desc || one.note)}</p>` : ""}
     <div class="sh-actions">
-      ${isHere ? "" : `<button type="button" class="sh-btn primary" data-act="route">${I.route}経路</button>`}
-      ${isHere ? "" : `<button type="button" class="sh-btn" data-act="from">${I.start}ここから</button>`}
-      <button type="button" class="sh-btn" data-act="ask">いま混んでる？</button>
+      ${isHere || ban ? "" : `<button type="button" class="sh-btn primary" data-act="route">${I.route}経路</button>`}
+      ${isHere || ban ? "" : `<button type="button" class="sh-btn" data-act="from">${I.start}ここから</button>`}
+      ${ban ? "" : '<button type="button" class="sh-btn" data-act="ask">いま混んでる？</button>'}
       <button type="button" class="sh-btn is-icon" data-act="share" aria-label="共有" title="共有">${I.share}</button>
       ${p.kind === "deco" && DECOS.vote?.[p.grade] ? `<a class="sh-btn" href="${esc(DECOS.vote[p.grade])}" target="_blank" rel="noopener">投票する</a>` : ""}
       ${one && voteUrl(one, s.now) ? `<a class="sh-btn vote" href="${esc(voteUrl(one, s.now))}" target="_blank" rel="noopener">${I.vote}模擬店総選挙に投票</a>` : ""}
@@ -2159,6 +2173,7 @@ function select(id, { fly = true } = {}) {
 }
 
 function startRoute(toId, fromId) {
+  if ([toId, fromId].some((id) => id && placeRestricted(place(id)))) { toast("ここは、入れません"); return; }
   pushSheet();
   rt.to = toId ?? rt.to;
   rt.from = fromId ?? (here && place(here) ? place(here).id : rt.from);
@@ -2382,7 +2397,7 @@ function arriveHere(id) {
 
 const CHIPS = [
   { id: "now", label: "開催中", icon: LIST_ICON.now, match: (p) => getState().running?.some((e) => e.venue === p.id) },
-  { id: "toilet", label: "トイレ", icon: LIST_ICON.toilet, match: (p) => isToilet(p) && !byRoom.has(p.id) },
+  { id: "toilet", label: "トイレ", icon: LIST_ICON.toilet, match: (p) => isToilet(p) && !byRoom.has(p.id) && !placeRestricted(p) },
   { id: "food", label: "模擬店", icon: LIST_ICON.shop, match: (p) => p.shopList?.length > 0 },
   { id: "exhibit", label: "学科展示", icon: LIST_ICON.exhibit, match: (p) => p.fest && p.kind === "exhibit" },
   { id: "venue", label: "会場", icon: LIST_ICON.venue, match: (p) => p.fest && p.kind === "venue" },
@@ -2607,6 +2622,7 @@ export async function initMap(opts) {
   getState = opts.getState;
   const data = await (await fetch("assets/map/rooms.json")).json();
   buildPlaces(data.rooms);
+  setBlockedRooms(RESTRICTED.rooms.map((c) => places.get(c)).filter((p) => p?.rect).flatMap((p) => (p.rects ?? [p.rect]).map((rect) => ({ floor: p.floor, rect }))));
   buildIndex();
 
   const params = new URLSearchParams(location.search);
@@ -2916,6 +2932,7 @@ function openLegend() {
     ["場所", [
       [sw("k-shops"), "模擬店"], [sw("k-exhibit"), "学科展示"], [sw("k-venue"), "会場（ステージなど）"], [sw("k-hq"), "本部"],
       [sw("k-toilet"), "トイレ"], [sw("k-room"), "教室・そのほかの部屋"],
+      ['<svg viewBox="0 0 28 18" aria-hidden="true"><defs><pattern id="lg-rs" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="rgba(99,74,46,.08)"/><rect width="1.8" height="7" fill="rgba(99,74,46,.25)"/></pattern></defs><rect class="lg-sw k-ban" x="1" y="1" width="26" height="16" rx="3"/></svg>', "入れません"],
     ]],
     ["印", [
       [ic(`<g class="ic-wc">${person(0, "m", MAN)}</g>`), "男子トイレ"], [ic(`<g class="ic-wc">${person(0, "f", WOMAN)}</g>`), "女子トイレ"],
