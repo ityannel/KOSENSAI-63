@@ -1196,3 +1196,4 @@ body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side { gap: 8px; }
 body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side .m-floor { width: 44px; height: 36px; font-size: 1rem; }
 body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side :is(.m-fab, .m-compass, .mapapp .m-help.m-fab) { width: 42px; height: 42px; }
 body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side :is(.m-fab, .m-compass) svg { width: 22px; height: 22px; }
+@media (min-width: 600px) and (max-width: 999px) { .app-frame { width: 100%; } }
