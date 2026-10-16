@@ -2555,7 +2555,6 @@ function closeResults() {
   document.body.classList.remove("is-searching");
   $("#m-results").hidden = true;
   $("#m-clear").hidden = true;
-  $("#m-ask").hidden = true;
   $("#m-q").value = "";
   $("#m-q").blur();
   picking = null;
@@ -2568,7 +2567,6 @@ const QUESTION = /[？?]|ください|教えて|おしえて|したい|たい$|�
 function renderResults() {
   const q = $("#m-q").value;
   const box = $("#m-results");
-  $("#m-ask").hidden = !q.trim() || !!picking;
   if (!q.trim()) {
     const fest = MAP.places.map((v) => place(v.id)).filter(Boolean);
     const hp = here && place(here);
@@ -2580,10 +2578,9 @@ function renderResults() {
     return;
   }
   const hits = search(q);
-  $("#m-ask").hidden = !!picking;
   box.innerHTML = `${hits.length
     ? `<ul class="m-list">${hits.map((it) => itemHtml({ p: it.p, label: it.label, sub: it.sub, kind: it.kind })).join("")}</ul>`
-    : `<p class="m-empty">${picking ? `「${esc(q)}」は見つかりませんでした` : `場所の検索では見つかりませんでした。右のロボットを押すと、AIくんに聞けます`}</p>`}`;
+    : `<p class="m-empty">${picking ? `「${esc(q)}」は見つかりませんでした` : `場所の検索では見つかりませんでした。右下のロボットで、AIくんに聞けます`}</p>`}`;
 }
 function askAi(q) {
   if (mapAi.isBusy()) { toast("いま答えています。ちょっと待ってね"); return; }
@@ -2849,8 +2846,6 @@ export async function initMap(opts) {
     if (text && !picking && (mode === "ai" || QUESTION.test(text) || text.length >= 12 || !$("#m-results [data-go]"))) { askAi(text); return; }
     $("#m-results [data-go]")?.click();
   });
-  $("#m-ask").innerHTML = robotSvg();
-  $("#m-ask").addEventListener("click", () => { const q = $("#m-q").value.trim(); if (q) askAi(q); });
   $("#m-clear").addEventListener("click", closeResults);
   document.querySelector(".m-ai")?.addEventListener("click", (e) => { e.preventDefault(); openAi(); });
   $("#m-results").addEventListener("click", (e) => {
