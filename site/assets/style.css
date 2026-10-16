@@ -2006,3 +2006,8 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
   radial-gradient(ellipse 24% 120% at 97% 104%, #e8a548, transparent 72%),
   linear-gradient(165deg, #8a5f94, #b8668a);
   color: #FFFBF2; text-shadow: 0 calc(1.5 * var(--app-w) / 402) 0 rgba(48, 36, 58, .45); }
+@media (min-width: 600px) and (max-width: 999px) {
+  .pc-bg, .pc-rig, .pc-fg { display: none; }
+  html { background: linear-gradient(180deg, #2b2a3d, #14121b); }
+  :root[data-theme="light"] { background: #dcd6cb; }
+}
