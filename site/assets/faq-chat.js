@@ -16,8 +16,15 @@ const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const avatar = `<span class="qa-av" aria-hidden="true">${robotSvg()}</span>`;
 const botBox = (body, mark = "#C8323A") => `<div class="qa-bubble" style="--mark:${mark}"><div class="qa-head">${avatar}<small class="qa-who">案内くん</small><span class="qa-tag">決まった答え</span></div>${body}</div>`;
 const hot = FAQ.flatMap((g, gi) => g.items.map((it, i) => ({ gi, i, it }))).filter((x) => x.it.hot);
-const shown = FAQ.flatMap((g, gi) => g.items.map((it, i) => ({ gi, i, it }))).filter((x) => x.it.hot || (x.gi === 1 && x.i === 0));
-const facts = () => `<dl class="qa-facts">${shown.map(({ it }) => `<div class="qa-fact"><dt>${esc(it.q)}</dt><dd>${logo(fillFaq(it.a))}</dd></div>`).join("")}</dl><button type="button" class="qa-more" data-more>ほかの質問を見る</button>`;
+const pick3 = () => {
+  const all = FAQ.flatMap((g) => g.items);
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  return all.slice(0, 3);
+};
+const pairs = () => pick3().map((it) => `<div class="qa-pair"><div class="qa-msg is-me" style="--mark:${MARKS[it.icon]}"><div class="qa-bubble"><p>${esc(it.q)}</p></div></div><div class="qa-msg is-bot">${botBox(answerBody(it), MARKS[it.icon])}</div></div>`).join("") + '<button type="button" class="qa-more" data-more>ほかの質問を見る</button>';
 
 const QSVG = '<svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M10 9.3a2 2 0 1 1 2.6 1.9c-.5.2-.6.6-.6 1.1M12 14.1h.01"/></svg>';
 
@@ -28,9 +35,13 @@ let log, intro, sheet, panel, wrap, closeBtn, lastTrigger, locked = false;
 function mount() {
   const root = document.createElement("div");
   root.className = "qa-chat";
-  root.innerHTML = facts();
+  root.innerHTML = pairs();
   host.append(root);
   root.addEventListener("click", onChoose);
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((list) => list.forEach((en) => { if (en.isIntersecting) { io.unobserve(en.target); play(en.target); } }), { threshold: 0.6 });
+    root.querySelectorAll(".qa-msg.is-bot").forEach((li) => io.observe(li));
+  }
 
   const cats = FAQ.map((g, gi) => `<button type="button" class="qa-chip" data-cat="${gi}">${esc(g.group)}</button>`).join("");
   sheet = document.createElement("div");
