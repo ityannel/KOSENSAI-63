@@ -69,7 +69,7 @@ const sv = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const PC_LINKS = [
   ["https://www.google.com/maps/search/?api=1&query=%E5%87%BD%E9%A4%A8%E5%B7%A5%E6%A5%AD%E9%AB%98%E7%AD%89%E5%B0%82%E9%96%80%E5%AD%A6%E6%A0%A1", "Google マップ", sv('<path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/>'), true],
   ["https://www.hakodate-ct.ac.jp/", "学校サイト", sv('<path d="M3 10l9-5 9 5-9 5zM7 12.5V17c0 1.2 2.2 2.5 5 2.5s5-1.3 5-2.5v-4.5M21 10v5"/>'), true],
-  ["https://www.instagram.com/kosen_gakuseikai/", "インスタ", sv('<rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><path d="M16.8 7.2h.01"/>'), true],
+  ["https://www.instagram.com/hakodate.kosen_gakuseikai/", "インスタ", sv('<rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><path d="M16.8 7.2h.01"/>'), true],
   ["https://x.com/hnct_gakuseikai", "エックス", sv('<path d="M4 4h4.2l11.8 16h-4.2z"/><path d="M19.4 4l-6.2 7M4.6 20l6.2-7"/>'), true],
   ["en.html", "English", sv('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'), false],
 ];

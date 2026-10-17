@@ -7,7 +7,7 @@ export const FESTIVAL = {
     { label: "10月24日(土)", open: "2026-10-24T12:00:00+09:00", close: "2026-10-24T16:00:00+09:00" },
     { label: "10月25日(日)", open: "2026-10-25T10:00:00+09:00", close: "2026-10-25T16:00:00+09:00" },
   ],
-  instagram: "https://www.instagram.com/kosen_gakuseikai/",
+  instagram: "https://www.instagram.com/hakodate.kosen_gakuseikai/",
   instagramId: "@KOSEN_GAKUSEIKAI",
 };
 
