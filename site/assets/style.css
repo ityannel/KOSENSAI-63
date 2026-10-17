@@ -2202,3 +2202,6 @@ input:focus-visible, textarea:focus-visible { box-shadow: none; }
 .qa-flow-t { display: grid; gap: calc(2 * var(--u)); min-width: 0; text-align: left; }
 .qa-flow-t b { font-size: calc(12.5 * var(--u)); line-height: 1.15; white-space: nowrap; }
 .qa-flow-t small { font-family: var(--text-font); font-size: calc(9.5 * var(--u)); font-weight: 700; line-height: 1.1; white-space: nowrap; opacity: 0.92; }
+
+.rally-sorry { background: rgba(120, 28, 36, 0.55); color: #fff; text-shadow: 0 1px 0 rgba(48, 44, 41, 0.35); }
+.rally-sorry b { font-family: var(--hud-font); font-weight: 400; font-size: 1.2rem; letter-spacing: 0.03em; line-height: 1.4; }
