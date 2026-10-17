@@ -88,7 +88,7 @@ async function write(label, fn) {
 }
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
-const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "hq", "ai", "shops", "schedule", "print", "settings"];
+const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "hq", "ai", "shops", "schedule", "rally", "print", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
