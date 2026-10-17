@@ -58,7 +58,7 @@ export function rowHtml(e, t) {
   const on = isOn(e, t);
   const tags = [e.internal && "学内のみ", e.kind, e.mood].filter(Boolean).join("・");
   return `
-    <a class="tl-row is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}" href="map.html#${esc(e.venue)}">
+    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tl-row is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}" href="map.html#${esc(e.venue)}">
       <time>${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<small>〜${hhmm(e.end)}</small></b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<small>〜${hhmm(e.end)}</small>`}</time>
       <span class="tl-main"><b>${esc(e.title)}</b><small>${tags ? `${esc(tags)}　` : ""}@${esc(venueName(e.venue))}</small></span>
       ${on ? '<span class="tl-badge">NOW</span>' : ""}
