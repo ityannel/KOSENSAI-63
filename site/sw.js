@@ -1,4 +1,4 @@
-const VERSION = "kosen63-v475";
+const VERSION = "kosen63-v476";
 const CORE = [
   "./", "index.html", "map.html", "mido.html", "rally.html", "vote.html", "terms.html", "faq.html", "assets/faq-page.js", "assets/faq-chat.js", "assets/page-sheets.js", "assets/help-bar.js", "assets/scroll-lock.js", "assets/faq-text.js", "assets/faq-icons.js", "favicon.svg", "manifest.webmanifest",
   "assets/style.css", "assets/map.css", "assets/ai.css", "assets/intro.js", "assets/map-wide.js", "assets/test-loader.js",
