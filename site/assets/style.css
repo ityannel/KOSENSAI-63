@@ -2175,7 +2175,7 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .qa-sheet-foot .qa-q.is-current { background: var(--grain), #634A2E; color: #FEEBC4; box-shadow: inset 0 0 0 calc(2 * var(--u)) #FEEBC4, calc(-3 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, 0.45); }
 .visit[hidden] { display: none; }
 
-.slot-info { margin: calc(8 * var(--u)) 0 0; font-family: var(--text-font); font-weight: 900; font-size: max(11px, 3.1cqw); line-height: 1.5; white-space: nowrap; color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+.slot-info { margin: 1.4cqw 0 0; font-family: var(--hud-font); font-size: 4.1cqw; letter-spacing: 0.02em; line-height: 1.35; white-space: nowrap; color: #ECE6DC; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45); }
 
 @media (min-width: 600px) and (max-width: 999px) {
   :root:has(body:not(.mapapp)) { --app-w: min(100vw, 480px); }
@@ -2189,3 +2189,4 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 2px; box-shadow: 0 0 0 5px #3A2A1A; }
 
 .dept-pill { text-shadow: 0 1px 0 rgba(48, 44, 41, 0.55), 0 0 4px rgba(48, 44, 41, 0.4); }
+.slot-info span + span { margin-left: 0.55em; }
