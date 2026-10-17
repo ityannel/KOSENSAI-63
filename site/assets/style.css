@@ -1978,7 +1978,6 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
   .pc-links a:hover { translate: 0 -2px; }
   .pc-links a:active { translate: -4px 3px; filter: none; }
   .pc-links svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .visit-links, .visit-en { display: none; }
 }
 .rb { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .rb-dot, .rb-eye { fill: currentColor; stroke: none; }
