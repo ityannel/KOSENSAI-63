@@ -298,7 +298,6 @@ let screen = { w: 1, h: 1 };
 let offset = { x: 0, y: 0 };
 let cam = { bearing: 0, tilt: 0 };
 let camM = null;
-let extSortB = null;
 let kMin = 0.2;
 const K_MAX = 9, TILT_MAX = 45, TILT_ON = 40;
 
@@ -340,15 +339,6 @@ function layoutCam() {
   }
   el.style.setProperty("--brg", `${-cam.bearing}deg`);
   el.classList.toggle("is-3d", !flat);
-  el.classList.toggle("has-tilt", cam.tilt > 0);
-  {
-    const tt = Math.tan((cam.tilt * Math.PI) / 180), br = (cam.bearing * Math.PI) / 180;
-    el.style.setProperty("--lx", (-tt * Math.sin(br)).toFixed(4));
-    el.style.setProperty("--ly", (-tt * Math.cos(br)).toFixed(4));
-    el.style.setProperty("--sb", Math.sin(br).toFixed(4));
-    el.style.setProperty("--cb", Math.cos(br).toFixed(4));
-    if (cam.tilt > 0 && (extSortB === null || Math.abs(normDeg(cam.bearing - extSortB)) > 1)) sortExt();
-  }
   $("#m-compass")?.style.setProperty("--north", `${NORTH + cam.bearing}deg`);
   $("#m-compass")?.toggleAttribute("data-rotated", Math.abs(normDeg(NORTH + cam.bearing)) > 1);
   $("#m-tilt")?.setAttribute("aria-pressed", String(cam.tilt > 0));
@@ -981,99 +971,6 @@ function siteSvg() {
 }
 
 let floorLayer = null;
-const FLOOR_H = 16;
-const toPts = (q) => (Array.isArray(q) ? q : String(q).split(",").map(Number));
-const BLOCKS = [];
-BUILDINGS.forEach((b, bi) => FLOORS.forEach((fl, i) => {
-  const f = b[fl];
-  if (!f) return;
-  const shapes = [...(f.rects ?? []).map(([x, y, w, h]) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]), ...(f.poly ? [f.poly.map(toPts)] : [])];
-  for (const pts of shapes) {
-    const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
-    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    BLOCKS.push({ pts, bi, i, z0: i * FLOOR_H, z1: (i + 1) * FLOOR_H, x0, x1, y0, y1, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 });
-  }
-}));
-const inPoly = (x, y, pts) => {
-  let c = false;
-  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-    const [xi, yi] = pts[i], [xj, yj] = pts[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
-  }
-  return c;
-};
-const heightAt = (x, y) => {
-  let h = 0;
-  for (const k of BLOCKS) if (k.z1 > h && x >= k.x0 && x <= k.x1 && y >= k.y0 && y <= k.y1 && inPoly(x, y, k.pts)) h = k.z1;
-  return h;
-};
-function extrusion() {
-  return BLOCKS.map((k, n) => {
-    const { pts } = k;
-    const area = pts.reduce((a, [x, y], i) => { const [x2, y2] = pts[(i + 1) % pts.length]; return a + (x * y2 - x2 * y); }, 0);
-    const dir = area >= 0 ? 1 : -1;
-    const walls = pts.map(([x1, y1], i) => {
-      const [x2, y2] = pts[(i + 1) % pts.length];
-      const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
-      if (L < 0.01) return "";
-      const ux = dx / L, uy = dy / L, nx = uy * dir, ny = -ux * dir;
-      return `<rect class="ext-wall" width="1" height="1" style="--ax:${(ux * L).toFixed(3)};--ay:${(uy * L).toFixed(3)};--px:${x1};--py:${y1};--nx:${nx.toFixed(3)};--ny:${ny.toFixed(3)}"/>`;
-    }).join("");
-    const roof = `<polygon class="ext-roof" points="${pts.map((q) => q.join(",")).join(" ")}"/>`;
-    return `<g class="ext-b" data-k="${n}" style="--z0:${k.z0};--z1:${k.z1};--h:${FLOOR_H}">${walls}${roof}</g>`;
-  }).join("");
-}
-function sortExt() {
-  const root = document.getElementById("m-ext");
-  if (!root) return;
-  const br = (cam.bearing * Math.PI) / 180, sn = Math.sin(br), cs = Math.cos(br);
-  extSortB = cam.bearing;
-  const nodes = new Map([...root.children].map((g) => [Number(g.dataset.k), g]));
-  const order = [...nodes.keys()].sort((a, c) => (BLOCKS[a].cx * sn + BLOCKS[a].cy * cs) - (BLOCKS[c].cx * sn + BLOCKS[c].cy * cs));
-  const under = (hi, lo) => BLOCKS[lo].bi === BLOCKS[hi].bi && BLOCKS[lo].i < BLOCKS[hi].i && BLOCKS[lo].x0 < BLOCKS[hi].x1 && BLOCKS[lo].x1 > BLOCKS[hi].x0 && BLOCKS[lo].y0 < BLOCKS[hi].y1 && BLOCKS[lo].y1 > BLOCKS[hi].y0;
-  for (let pass = 0; pass < 6; pass++) {
-    let moved = false;
-    for (let p = 0; p < order.length; p++) {
-      const hi = order[p];
-      for (let q = p + 1; q < order.length; q++) {
-        const lo = order[q];
-        if (under(hi, lo)) { order.splice(q, 1); order.splice(p, 0, lo); moved = true; p++; }
-      }
-    }
-    if (!moved) break;
-  }
-  order.forEach((k) => root.appendChild(nodes.get(k)));
-}
-const LIFT_SEL = "#m-rooms .room, #m-labels text, #m-labels .ic, #m-icons .ic, #m-live .ic, #m-marks .ic, #m-sel > *, .stairs-layer > *, .restricted-layer > *, #m-deco .ic, #m-vend .ic, #m-aed .ic";
-function liftEl(el) {
-  let x, y;
-  if (el.tagName === "text") { x = Number(el.getAttribute("x")); y = Number(el.getAttribute("y")); }
-  else if (el.classList.contains("ic")) {
-    const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px/.exec(el.getAttribute("style") ?? "");
-    if (!m) return;
-    x = Number(m[1]); y = Number(m[2]);
-  } else {
-    try { const bb = el.getBBox(); x = bb.x + bb.width / 2; y = bb.y + bb.height / 2; } catch { return; }
-  }
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-  const h = heightAt(x, y);
-  if (h) { el.classList.add("lifted"); el.style.setProperty("--h", String(h)); }
-  else if (el.classList.contains("lifted")) { el.classList.remove("lifted"); el.style.removeProperty("--h"); }
-}
-function liftAll(root) {
-  if (root.matches?.(LIFT_SEL)) liftEl(root);
-  root.querySelectorAll?.(LIFT_SEL).forEach(liftEl);
-}
-let liftObs = null;
-function watchLift() {
-  if (liftObs) return;
-  const root = svg();
-  liftObs = new MutationObserver((records) => {
-    for (const r of records) r.addedNodes.forEach((n) => { if (n.nodeType === 1) liftAll(n); });
-  });
-  liftObs.observe(root, { childList: true, subtree: true });
-}
-
 function drawFloor() {
   const edges = [], fills = [], roofs = [], voids = [], labels = [];
   for (const b of BUILDINGS) {
@@ -1150,7 +1047,6 @@ function drawFloor() {
     <g>${roofs.join("")}</g>
     <g>${edges.join("")}${fills.join("")}</g>
     <g>${voids.join("")}</g>
-    <g id="m-ext">${extrusion()}</g>
     <g id="m-rooms">${roomEls.join("")}${festEls.join("")}</g>
     <g class="restricted-layer">${banned.join("")}</g>
     <g class="stairs-layer">${stairs.join("")}</g>
@@ -1168,10 +1064,6 @@ function drawFloor() {
     <g id="m-marks"></g>
     <g id="m-aimk"></g>`;
   floorLayer = floor;
-  extSortB = null;
-  if (cam.tilt > 0) sortExt();
-  liftAll(svg());
-  watchLift();
   labelKey = "";
   document.querySelectorAll(".m-floor").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.floor === floor)));
   applyView();
