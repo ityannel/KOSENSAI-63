@@ -1,4 +1,4 @@
-import { FAQ, FESTIVAL } from "./config.js";
+import { FAQ } from "./config.js";
 import { fillFaq } from "./faq-text.js";
 import { robotSvg } from "./ai-robot.js";
 import { P, FX, MARKS } from "./faq-icons.js";
@@ -7,9 +7,6 @@ import { barHtml } from "./help-bar.js";
 
 const host = document.getElementById("faq-chat");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const HHMM = new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
-const hhmm = (iso) => HHMM.format(new Date(iso));
-const hours = () => FESTIVAL.days.map((d) => `${d.label} ${hhmm(d.open)}〜${hhmm(d.close)}`).join("・");
 
 const fx = (k) => (FX[k] ?? []).map((t, i) => `<i class="vi-fx${t === "×" ? " is-batsu" : ""}" style="--n:${i}" aria-hidden="true">${esc(t)}</i>`).join("");
 const icon = (k) => `<svg viewBox="0 0 24 24" aria-hidden="true">${P[k]}</svg>`;
@@ -19,10 +16,10 @@ const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const avatar = `<span class="qa-av" aria-hidden="true">${robotSvg()}</span>`;
 const botBox = (body, mark = "#C8323A") => `<div class="qa-bubble" style="--mark:${mark}"><div class="qa-head">${avatar}<small class="qa-who">案内くん</small><span class="qa-tag">決まった答え</span></div>${body}</div>`;
 const hot = FAQ.flatMap((g, gi) => g.items.map((it, i) => ({ gi, i, it }))).filter((x) => x.it.hot);
+const shown = FAQ.flatMap((g, gi) => g.items.map((it, i) => ({ gi, i, it }))).filter((x) => x.it.hot || (x.gi === 1 && x.i === 0));
+const facts = () => `<dl class="qa-facts">${shown.map(({ it }) => `<div class="qa-fact"><dt>${esc(it.q)}</dt><dd>${logo(fillFaq(it.a))}</dd></div>`).join("")}</dl><button type="button" class="qa-more" data-more>ほかの質問を見る</button>`;
 
 const QSVG = '<svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M10 9.3a2 2 0 1 1 2.6 1.9c-.5.2-.6.6-.6 1.1M12 14.1h.01"/></svg>';
-
-const greeting = () => botBox(`<div class="qa-body"><p><b class="qa-lead">おう、いらっしゃい！</b>${esc(`案内くんだ。場所は函館高専（函館市戸倉町14-1）、日時は${hours()}だぜ。気になることを選んでくれ。ここでは決まった答えを返すぜ。ほかのことは、右下のロボットからAIくんに聞いてくれ！`)}</p></div>`);
 
 const chips = (list, label) => `<div class="qa-next">${label ? `<p class="qa-label">${esc(label)}</p>` : ""}<div class="qa-qs">${list.map(({ gi, i }) => `<button type="button" class="qa-q" data-gi="${gi}" data-i="${i}">${esc(FAQ[gi].items[i].q)}</button>`).join("")}</div></div>`;
 
@@ -31,7 +28,7 @@ let log, intro, sheet, panel, wrap, closeBtn, lastTrigger, locked = false;
 function mount() {
   const root = document.createElement("div");
   root.className = "qa-chat";
-  root.innerHTML = `<div class="qa-msg is-bot">${greeting()}</div>${chips(hot)}`;
+  root.innerHTML = facts();
   host.append(root);
   root.addEventListener("click", onChoose);
 
@@ -147,6 +144,8 @@ function openCategory(gi) {
 
 function onChoose(e) {
   if (e.target.closest("[data-close]")) { closeSheet(); return; }
+  const more = e.target.closest("[data-more]");
+  if (more) { lastTrigger = more; document.dispatchEvent(new CustomEvent("faq:open")); return; }
   const q = e.target.closest(".qa-q");
   if (q) { if (!sheet.contains(q)) lastTrigger = q; ask(Number(q.dataset.gi), Number(q.dataset.i)); return; }
   const c = e.target.closest(".qa-chip");

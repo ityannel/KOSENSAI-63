@@ -17,7 +17,7 @@ export const NAV = [
   { label: "スタンプ", href: "#rally" },
   { label: "企画", href: "#guide" },
   { label: "みどころ", href: "#pickup" },
-  { label: "案内くん", href: "#faq" },
+  { label: "質問", href: "#faq" },
 ];
 
 export const TOP_BLOCKS = [
@@ -28,7 +28,7 @@ export const TOP_BLOCKS = [
   ["pickup", "みどころ", "いま・次の企画のチケット"],
   ["ennichi", "縁日", "模擬店のチラシ"],
   ["exhibit", "学科展示", "5学科の展示（スクロールで順に開く）"],
-  ["faq", "案内くん", "FAQ。決まった答えで、よくある質問に答える"],
+  ["faq", "よくある質問", "入場・時間・雨・行き方・お金の答えを、そのまま表示"],
   ["info", "リンク", "地図・学校サイト・SNS・English・規約のボタン"],
 ];
 const P = (ids) => ids.map((t) => ({ id: t.replace(/^-/, ""), show: !t.startsWith("-") }));
