@@ -181,6 +181,6 @@ export function logQa(q, a) {
 export const HQ_REASONS = ["missing", "sick", "lost", "other"];
 export const hqHref = (reason) => `hq.html${HQ_REASONS.includes(reason) ? `?r=${reason}` : ""}`;
 const HQ_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg>';
-export const hqCtaHtml = (reason) => `<a class="ai-hq-cta" href="${hqHref(reason)}">${HQ_ICON}<span><b>本部に連絡する</b><small>スタッフに、チャットで伝えられます</small></span><i aria-hidden="true">›</i></a>`;
+export const hqCtaHtml = (reason) => `<a class="ai-hq-cta" href="${hqHref(reason)}">${HQ_ICON}<span><b>本部に連絡する</b><small>AIで解決しないとき。スタッフ（人）にチャットで伝えられます</small></span><i aria-hidden="true">›</i></a>`;
 export const noteHtml = () => 'AIはまちがうことがあります。<a href="terms.html">くわしく</a> <span class="ai-left"></span><a class="ai-hq-link" href="hq.html">本部に連絡する</a>';
 export const nextHtml = (list) => (list?.length ? `<div class="ai-next">${list.map((q) => `<button type="button" data-ai-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>` : "");

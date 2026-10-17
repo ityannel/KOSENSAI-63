@@ -1219,3 +1219,5 @@ body.mapapp { --e-blue: #C8323A; --e-navy: #634A2E; --e-red: #C8323A; --e-grad: 
 .ig-form .v-count { justify-self: end; margin: 8px 9px 0 0; }
 .ig-form .v-rule { margin: 16px 6px 0 8px; }
 .ig-form .v-msg { margin: 6px 6px 0 8px; }
+
+.m-sheet.is-ai .ai-sug button { color: var(--ai-ink, #634A2E); }
