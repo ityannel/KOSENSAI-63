@@ -121,6 +121,7 @@ function onFrameClick(e) {
   const a = e.target.closest?.("a[href]");
   if (!a) return;
   if (a.classList.contains("mido-close")) { e.preventDefault(); e.stopImmediatePropagation(); requestClose(); return; }
+  if (a.hasAttribute("data-tk") || a.hasAttribute("data-shop")) return;
   if (a.target === "_blank" || e.metaKey || e.ctrlKey || e.shiftKey) return;
   const href = a.getAttribute("href") ?? "";
   if (href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
