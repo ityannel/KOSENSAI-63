@@ -1,11 +1,12 @@
 import { paintNotice } from "./notice.js";
 import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION, DEPT_EXHIBITS } from "./config.js";
-import { VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES, RESTRICTED, placeRestricted, restrictedBuildingShapes } from "./campus.js";
+import { M_PER_PT, VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES, RESTRICTED, placeRestricted, restrictedBuildingShapes } from "./campus.js";
 import { avatar, VERIFIED } from "./avatar.js";
 import { tStart, tPlain } from "./schedule.js";
 import { findRoute, describe, centerOf, buildingAt, setBlockedRooms } from "./route.js";
 import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
 import { robotSvg } from "./ai-robot.js";
+import { OUTSIDE, OUTSIDE_BOUNDS, roadPath } from "./surroundings.js";
 import { HERE_KEY, HERE_SEC, saveCtx, readTour, saveTour } from "./ai-core.js";
 import * as mapAi from "./map-ai.js";
 
@@ -85,7 +86,7 @@ const TOILET_NAME = { "toilet-hc": "多目的トイレ", "toilet-m": "男子ト�
 export function titleOf(p) {
   if (!p) return "";
   if (isToilet(p)) return TOILET_NAME[p.kind];
-  if (p.fest || ["spot", "aed", "vending", "deco", "stairs", "ev", "door"].includes(p.kind) || p.outdoor) return p.name;
+  if (p.fest || ["spot", "aed", "vending", "deco", "stairs", "ev", "door", "outside"].includes(p.kind) || p.outdoor) return p.name;
   return GENERIC.test(p.name) ? `${p.code} ${p.name === p.code ? "" : p.name}`.trim() : p.name;
 }
 function whereOf(b, floor) {
@@ -93,6 +94,7 @@ function whereOf(b, floor) {
   return /^[A-Z]+棟$/.test(b.name) ? `${b.name.replace("棟", "")}-${floor}` : `${b.name} ${floor}`;
 }
 function subOf(p) {
+  if (p.far) return p.sub;
   if (p.kind === "aed" || p.kind === "vending") return `${p.sub}・${p.floor}`;
   if (p.kind === "deco") return `${p.sub}・${whereOf(buildingAt(p.floor, p.at), p.floor)}`;
   if (p.kind === "stairs" || p.kind === "ev") return whereOf(buildingAt(p.floor, p.at), p.floor);
@@ -139,6 +141,7 @@ function buildPlaces(rooms) {
   }
   if (!MAP.spots.some((sp) => sp.id === "gate")) places.set("gate", { id: "gate", kind: "spot", floor: "1F", at: SITE.gate.at, name: SITE.gate.name });
   for (const sp of MAP.spots) places.set(sp.id, { ...sp, kind: "spot" });
+  for (const q of OUTSIDE.pois) places.set(q.id, { id: q.id, kind: "outside", far: true, floor: "1F", at: q.at, name: q.name, short: q.short, poiKind: q.kind, sub: `学校の外・${POI_JA[q.kind] ?? "ばしょ"}` });
   for (const a of SITE.aed) places.set(a.id, { ...a, kind: "aed" });
   for (const v of SITE.vending ?? []) places.set(v.id, { ...v, kind: "vending" });
   for (const l of LINKS) for (const [f, at] of Object.entries(l.at)) {
@@ -281,7 +284,41 @@ function pointPlace(id) {
   return p;
 }
 
+const POI_JA = { tram: "市電の駅", bus: "バス停", store: "お店", temple: "お寺", shrine: "神社", school: "学校", park: "公園", airport: "空港", post: "郵便局", hospital: "病院", landmark: "目印" };
+const roadLen = (pts) => pts.reduce((s, p, i) => s + (i ? Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0), 0);
+function farRoute(from, to, opts) {
+  const gate = places.get("gate");
+  const same = (a, b) => a.id === b.id;
+  let legs, cost = 0;
+  if (from.far && to.far) {
+    const rd = roadPath(from.at, to.at);
+    if (!rd) return null;
+    legs = [{ floor: "1F", pts: rd, out: rd.slice(1).map((_, i) => i) }];
+  } else if (to.far) {
+    const base = same(from, gate) ? { legs: [{ floor: "1F", pts: [gate.at, gate.at], out: [0] }], cost: 0 } : bestRoute(from, gate, opts);
+    const rd = roadPath(gate.at, to.at);
+    if (!base || !rd) return null;
+    legs = base.legs.map((l) => ({ ...l, pts: [...l.pts] }));
+    const last = legs[legs.length - 1];
+    const n = last.pts.length;
+    last.pts.push(...rd.slice(1));
+    last.out = [...(last.out ?? []), ...rd.slice(1).map((_, i) => n - 1 + i)];
+    cost = base.cost;
+  } else {
+    const base = same(to, gate) ? { legs: [{ floor: "1F", pts: [gate.at, gate.at], out: [0] }], cost: 0 } : bestRoute(gate, to, opts);
+    const rd = roadPath(from.at, gate.at);
+    if (!base || !rd) return null;
+    legs = base.legs.map((l) => ({ ...l, pts: [...l.pts] }));
+    legs[0].pts = [...rd, ...legs[0].pts.slice(1)];
+    legs[0].out = [...rd.slice(1).map((_, i) => i), ...(legs[0].out ?? []).map((i) => i + rd.length - 1)];
+    cost = base.cost;
+  }
+  const pts = legs.reduce((s, l) => s + roadLen(l.pts), 0);
+  const meters = Math.max(5, Math.round((pts * M_PER_PT) / 5) * 5);
+  return { legs, meters, minutes: Math.max(1, Math.ceil(meters / 60)), cost: cost + pts, to, from, door: to.at };
+}
 function bestRoute(from, to, opts) {
+  if (from.far || to.far) return farRoute(from, to, opts);
   const split = (p) => (p.rects?.length > 1 ? p.rects.map((r) => ({ ...p, rect: r, labelRect: r })) : [p]);
   let best = null;
   for (const a of split(from)) for (const b of split(to)) {
@@ -300,11 +337,16 @@ let cam = { bearing: 0, tilt: 0 };
 let camM = null;
 let kMin = 0.2;
 const K_MAX = 9, TILT_MAX = 45, TILT_ON = 40;
+const PAN = (() => {
+  const x0 = Math.min(VIEW[0], OUTSIDE_BOUNDS[0]), y0 = Math.min(VIEW[1], OUTSIDE_BOUNDS[1]);
+  const x1 = Math.max(VIEW[0] + VIEW[2], OUTSIDE_BOUNDS[0] + OUTSIDE_BOUNDS[2]), y1 = Math.max(VIEW[1] + VIEW[3], OUTSIDE_BOUNDS[1] + OUTSIDE_BOUNDS[3]);
+  return [x0, y0, x1 - x0, y1 - y0];
+})();
 
 function measure() {
   const r = $("#m-canvas").getBoundingClientRect();
   screen = { w: Math.max(1, r.width), h: Math.max(1, r.height) };
-  kMin = Math.min(screen.w / VIEW[2], screen.h / VIEW[3]) * 0.9;
+  kMin = Math.min(screen.w / PAN[2], screen.h / PAN[3]) * 0.9;
   layoutCam();
 }
 function layoutCam() {
@@ -435,6 +477,7 @@ function settleView() {
   const far = svg().classList.contains("is-far");
   svg().classList.toggle("is-far", k < (far ? 1.15 : 1.05));
   updateLabels();
+  updatePoi();
 }
 const labelTop = new Map();
 const labelBottom = new Map();
@@ -459,8 +502,8 @@ function updateBadges() {
 function clampView() {
   view.k = Math.max(kMin, Math.min(K_MAX, view.k));
   const vw = size.w / view.k, vh = size.h / view.k;
-  const cx = Math.max(VIEW[0], Math.min(VIEW[0] + VIEW[2], view.x + vw / 2));
-  const cy = Math.max(VIEW[1], Math.min(VIEW[1] + VIEW[3], view.y + vh / 2));
+  const cx = Math.max(PAN[0], Math.min(PAN[0] + PAN[2], view.x + vw / 2));
+  const cy = Math.max(PAN[1], Math.min(PAN[1] + PAN[3], view.y + vh / 2));
   view.x = cx - vw / 2;
   view.y = cy - vh / 2;
 }
@@ -933,9 +976,18 @@ const festLabels = (p) => [p.shopList?.length ? shopLabels(p) : p.dept ? deptLab
 
 function siteSvg() {
   const out = [`<polygon class="site-bound" points="${SITE.boundary.join(" ")}"/>`];
+  const ptsOf = (a) => a.map((q) => q.join(",")).join(" ");
+  for (const p of OUTSIDE.apron) out.push(`<polygon class="out-apron" points="${ptsOf(p)}"/>`);
+  for (const t of OUTSIDE.taxi) out.push(`<polyline class="out-taxi" points="${ptsOf(t)}"/>`);
+  for (const r of OUTSIDE.runway) out.push(`<polyline class="out-runway" points="${ptsOf(r)}"/><polyline class="out-runway-line" points="${ptsOf(r)}"/>`);
+  for (const kind of ["t", "p"]) for (const r of OUTSIDE.roads) if (r.kind === kind) out.push(`<polyline class="road-out ${kind === "p" ? "is-major" : "is-minor"}" points="${ptsOf(r.pts)}"/>`);
+  out.push(`<polyline class="road-out is-minor" points="345,1150 ${OUTSIDE.gateLink.join(",")}"/>`);
+  for (const b of OUTSIDE.big) out.push(`<polygon class="out-bldg" points="${ptsOf(b)}"/>`);
+  for (const b of OUTSIDE.poiBld) out.push(`<polygon class="out-bldg is-poi" points="${ptsOf(b)}"/>`);
+  out.push(`<polyline class="green-road" points="${ptsOf(OUTSIDE.greenRoad)}"/>`);
+  out.push(`<polyline class="tram-bed" points="${ptsOf(OUTSIDE.tram)}"/><polyline class="tram-rail" points="${ptsOf(OUTSIDE.tram)}"/>`);
   for (const pv of SITE.paved ?? []) out.push(`<polygon class="paved" points="${pv.join(" ")}"/>`);
   for (const pk of SITE.parking ?? []) out.push(`<polygon class="parking" points="${pk.join(" ")}"/>`);
-  for (const r of SITE.publicRoads) out.push(`<polyline class="road-public" points="${r.pts.join(" ")}"/>`);
   for (const r of SITE.roadNames ?? []) out.push(`<polyline class="road road-named" data-id="${r.id}" style="stroke:${r.color}" points="${r.pts.join(" ")}"/>`);
   for (const r of SITE.roads) out.push(`<polyline class="road" points="${r.join(" ")}"/>`);
   const flabels = [], fways = [];
@@ -950,6 +1002,7 @@ function siteSvg() {
     flabels.push(roadText("lb-foot", f.name, f.label, f.along ?? [f.pts[0], f.pts[f.pts.length - 1]], 1.8));
   }
   for (const r of SITE.roadNames ?? []) flabels.push(roadText("", r.name, r.at, r.along, 1.3, `fill:${r.ink}`));
+  for (const lb of OUTSIDE.labels) flabels.push(roadText("lb-out", lb.name, lb.at, lb.along, 0.12));
   const labels = [];
   for (const a of SITE.areas) {
     const shape = a.poly ? `<polygon class="area k-${a.kind}" data-id="${a.id}" points="${a.poly.join(" ")}"/>` : rectEl(...a.rect, `area k-${a.kind}`, ` data-id="${a.id}"`);
@@ -970,6 +1023,30 @@ function siteSvg() {
   return { shapes: out.join(""), labels: labels.join("") };
 }
 
+const POI_K = { 1: 0, 2: 0.08, 3: 0.2 };
+const POI_GLYPH = {
+  tram: '<path d="M8 5h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM6 10.5h12M9 19l1.5-3M15 19l-1.5-3"/>',
+  bus: '<path d="M6 5h12a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM5 10h14M8 19v-3M16 19v-3"/>',
+  store: '<path d="M5 11v7h14v-7M4 11l1.5-5h13L20 11zM4 11a2.6 2.6 0 0 0 5.3 0 2.6 2.6 0 0 0 5.4 0 2.6 2.6 0 0 0 5.3 0M10 18v-4h4v4"/>',
+  temple: '<path d="M12 4l8 5H4zM6.5 9v9M17.5 9v9M4.5 18h15M9.5 13h5"/>',
+  shrine: '<path d="M4 7h16M6 10h12M8 7v11M16 7v11M12 10v3"/>',
+  school: '<path d="M3 9l9-4 9 4-9 4zM7 11.5V16c0 1.4 2.3 2.5 5 2.5s5-1.1 5-2.5v-4.5"/>',
+  park: '<path d="M12 4a4.5 4.5 0 0 1 3.5 7.3h-7A4.5 4.5 0 0 1 12 4zM12 11.3V19M9 19h6"/>',
+  airport: '<path d="M19.5 14.5l-6.5-3V6.2a1 1 0 0 0-2 0v5.3l-6.5 3v1.6l6.5-1.6v3.4l-1.7 1v1.2l2.7-.6 2.7.6V18.9l-1.7-1v-3.4l6.5 1.6z"/>',
+  post: '<path d="M4 7h16v10H4zM4 8l8 6 8-6"/>',
+  hospital: '<path d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z"/>',
+  landmark: '<path d="M12 20s5.5-4.8 5.5-9.5a5.5 5.5 0 0 0-11 0C6.5 15.2 12 20 12 20zM12 10.5m-1.8 0a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0"/>',
+};
+function poiHtml() {
+  return OUTSIDE.pois.map((q) => {
+    const glyph = POI_GLYPH[q.kind] ?? POI_GLYPH.landmark;
+    return `<g data-p="${q.p}" data-id="${esc(q.id)}">${icon(q.at[0], q.at[1], `ic-poi k-${q.kind}`, `<title>${esc(q.name)}</title><rect class="bg" x="-8.5" y="-8.5" width="17" height="17" rx="3.5"/><g class="fg" transform="translate(-6 -6) scale(0.5)">${glyph}</g><text x="13" y="0">${esc(q.short)}</text>`)}</g>`;
+  }).join("");
+}
+function updatePoi() {
+  const k = view.k;
+  document.querySelectorAll("#m-poi > g").forEach((g) => g.classList.toggle("is-hidden", k < POI_K[g.dataset.p]));
+}
 let floorLayer = null;
 function drawFloor() {
   const edges = [], fills = [], roofs = [], voids = [], labels = [];
@@ -1041,7 +1118,7 @@ function drawFloor() {
   svg().innerHTML = `
     <defs><linearGradient id="e-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3d86f0"/><stop offset=".35" stop-color="#1361cc"/><stop offset=".65" stop-color="#0d5881"/><stop offset="1" stop-color="#ff5253"/></linearGradient><pattern id="m-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#ece7de"/><line x1="0" y1="0" x2="0" y2="6" stroke="#d6cfc2" stroke-width="2"/></pattern></defs>
     <defs><pattern id="m-rs" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="9" height="9" fill="rgba(99,74,46,.08)"/><rect width="2" height="9" fill="rgba(99,74,46,.2)"/></pattern></defs>
-    <rect class="ground" x="-2000" y="-2000" width="5000" height="5000"/>
+    <rect class="ground" x="${PAN[0] - 2000}" y="${PAN[1] - 2000}" width="${PAN[2] + 4000}" height="${PAN[3] + 4000}"/>
     <g class="site${floor === "1F" ? "" : " is-dim"}">${site.shapes}</g>
     <g>${outs.join("")}</g>
     <g>${roofs.join("")}</g>
@@ -1057,6 +1134,7 @@ function drawFloor() {
     <g id="m-route"></g>
     <g id="m-labels"><g class="site-labels${floor === "1F" ? "" : " is-dim"}">${site.labels}</g>${labels.join("")}${roomLabels.join("")}</g>
     <g id="m-icons">${icons.join("")}</g>
+    <g id="m-poi">${poiHtml()}</g>
     <g id="m-live"></g>
     <g id="m-deco">${[...places.values()].filter((p) => p.kind === "deco" && p.floor === floor).map((p) => `<g data-id="${p.id}" style="cursor:pointer">${icon(...p.at, `ic-deco g${p.grade}`, `<title>${esc(p.name)}</title>${ICON.deco}`)}</g>`).join("")}</g>
     <g id="m-vend">${(SITE.vending ?? []).filter((v) => v.floor === floor).map((v) => `<g data-id="${v.id}" style="cursor:pointer">${icon(...v.at, "ic-vend", `<title>${esc(v.name)}</title>${ICON.vend}`)}</g>`).join("")}</g>
@@ -1124,6 +1202,10 @@ export function renderMap() {
     const lv = CROWD.venues.includes(id) ? CROWD.levels[s.crowd?.[id]?.level] : null;
     el.classList.toggle("has-crowd", !!lv);
     if (lv) el.style.setProperty("--lv", lv.color); else el.style.removeProperty("--lv");
+    const rp = places.get(id);
+    const wk = rp?.shopList?.length ? roomWait(rp, s) : null;
+    el.classList.toggle("has-wait", !!wk);
+    if (wk) el.style.setProperty("--wl", WAIT_COLOR[wk]); else el.style.removeProperty("--wl");
     el.classList.toggle("is-selected", mode === "place" && id === selected);
   });
   const live = [];
@@ -1148,7 +1230,7 @@ export function renderMap() {
     const row = items.map(([w, inner, cls]) => { const g = `<g class="${cls}" transform="translate(${x + w / 2} 0)">${inner}</g>`; x += w + gap; return g; }).join("");
     const [lx, ly, lw, lh] = p.labelRect ?? p.rect;
     const [, , rw, rh] = p.rect;
-    live.push(icon(lx + lw / 2, ly + lh / 2, "ic-badges", `<g class="row">${row}</g>`).replace('<g class="ic ', `<g data-for="${esc(p.id)}" data-id="${esc(p.id)}" style="cursor:pointer" data-rw="${total}" data-w="${rw}" data-h="${rh}" class="ic `));
+    live.push(icon(lx + lw / 2, ly + lh / 2, "ic-badges", `<g class="row">${row}</g>`).replace('<g class="ic ', `<g data-for="${esc(p.id)}" data-id="${esc(p.id)}" data-rw="${total}" data-w="${rw}" data-h="${rh}" class="ic `));
   }
   badgeIds = rowIds;
   $("#m-live").innerHTML = live.join("");
@@ -1541,6 +1623,15 @@ function msgHtml(sh, s) {
   return `<p class="sh-msg"><b>お店から</b>${esc(d.message)}${d.message_at ? `<small>${esc(s.agoText(d.message_at))}</small>` : ""}</p>`;
 }
 const statusPill = (x) => x ? `<span class="wait ${x.cls}${x.stale ? " is-stale" : ""}">${esc(x.label)}${x.ago ? `<small>${esc(x.ago)}</small>` : ""}</span>` : "";
+const WAIT_COLOR = { normal: "#1e8e3e", "10min": "#e8a317", "20min": "#d93025", soldout: "#6b6b6b", closed: "#4b5a8a" };
+function roomWait(p, s) {
+  let best = null;
+  for (const sh of p.shopList ?? []) {
+    const k = shopDocFor(sh, s.shops)?.status;
+    if (WAIT[k] && (!best || WAIT[k].rank > WAIT[best].rank)) best = k;
+  }
+  return best;
+}
 function worstWait(p, s) {
   let w = null;
   for (const sh of p.shopList ?? []) { const x = waitOf(sh, s); if (x && (!w || x.rank > w.rank)) w = x; }
@@ -2086,7 +2177,7 @@ LIST_ICON.bike = li('<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="
 LIST_ICON.deco = li('<rect x="3" y="7" width="18" height="13" rx="2.5"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8.5 7l1.5-2.5h4L15.5 7"/>');
 function itemHtml({ p, r, label, sub, kind }) {
   const k = kind ?? p.kind;
-  const ic = LIST_ICON[k] ?? (k === "room" ? esc(p.code?.[0] ?? "") : "");
+  const ic = p.far ? li(POI_GLYPH[p.poiKind] ?? POI_GLYPH.landmark) : LIST_ICON[k] ?? (k === "room" ? esc(p.code?.[0] ?? "") : "");
   return `<li><button type="button" class="m-item" data-go="${esc(p.id)}"><span class="ico k-${k}${p.grade ? ` g${p.grade}` : ""}">${ic}</span>
     <span class="txt"><b>${esc(label ?? titleOf(p))}</b><small>${esc(sub ?? subOf(p))}</small></span>
     ${r ? `<span class="dist"><b>${r.minutes}分</b><br>${r.meters}m</span>` : ""}</button></li>`;
@@ -2173,7 +2264,7 @@ function select(id, { fly = true } = {}) {
   syncUrl();
   renderMap();
   setSheet(false);
-  if (fly) animateTo(p.rect ? viewFor(p.rect, 3.2) : viewFor([p.at[0] - 45, p.at[1] - 45, 90, 90], 2.4));
+  if (fly) animateTo(p.rect ? viewFor(p.rect, 3.2) : p.far ? viewFor([p.at[0] - 330, p.at[1] - 330, 660, 660], 0.3) : viewFor([p.at[0] - 45, p.at[1] - 45, 90, 90], 2.4));
 }
 
 function startRoute(toId, fromId) {
@@ -2473,7 +2564,7 @@ function buildIndex() {
       (p.shopList ?? []).flatMap((x) => x.genre ?? []).map((g) => `${g} ${g.replace("系", "")} ${GENRE_YOMI[g] ?? ""}`).join(" "),
     ].join(" ");
     addItem({ p, rank: p.fest || ["aed", "vending", "deco"].includes(p.kind) ? 0 : p.kind === "spot" || p.outdoor ? 1 : isToilet(p) ? 2 : 3 },
-      [p.name, titleOf(p), p.code, ...(p.codes ?? []), p.dept].filter(Boolean).join(" "),
+      [p.name, p.short, titleOf(p), p.code, ...(p.codes ?? []), p.dept].filter(Boolean).join(" "),
       [p.sub, p.roomName, cls, b?.name, b?.sub, floorWords(p.floor), p.id].filter(Boolean).join(" "),
       [p.desc, kindWords].filter(Boolean).join(" "));
   }

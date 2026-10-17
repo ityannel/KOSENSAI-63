@@ -30,3 +30,5 @@ The source code is under the [MIT License](LICENSE). The materials below are **n
 上のものは、それぞれのライセンスにしたがいます。
 
 天気は [Open-Meteo](https://open-meteo.com/) の API（非商用は無料）を利用しています。
+
+マップの学校のまわり（市電・バス停・お店・お寺・道路など）の位置は、[OpenStreetMap](https://www.openstreetmap.org/copyright) のデータ（© OpenStreetMap contributors、[ODbL](https://opendatacommons.org/licenses/odbl/)）をもとにしています。`site/assets/surroundings.js` に入れています。湯川寺とバス停「函館高専前」の位置は、データになかったため、およその位置です。
