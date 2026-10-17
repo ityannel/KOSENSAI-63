@@ -1224,8 +1224,13 @@ body.mapapp { --e-blue: #C8323A; --e-navy: #634A2E; --e-red: #C8323A; --e-grad: 
 
 #map-svg #m-ext { display: none; pointer-events: none; }
 #map-svg.has-tilt #m-ext { display: inline; }
-#map-svg .ext-l { transform: translate(calc(var(--lx, 0) * var(--h) * 1px), calc(var(--ly, 0) * var(--h) * 1px)); }
-#map-svg .ext-wall, #map-svg .ext-floor, #map-svg .ext-roof { stroke-linejoin: round; }
-#map-svg .ext-wall { fill: color-mix(in srgb, var(--m-bldg) calc(52% + var(--t) * 38%), #4a3a28); stroke: none; }
-#map-svg .ext-floor { fill: color-mix(in srgb, var(--m-bldg) calc(52% + var(--t) * 38%), #4a3a28); stroke: var(--m-bldg-edge); stroke-width: 0.8; }
-#map-svg .ext-roof { fill: color-mix(in srgb, var(--m-bldg) 82%, #ffffff); stroke: var(--m-bldg-edge); stroke-width: 1.6; }
+#map-svg .lifted { translate: calc(var(--lx, 0) * var(--h, 0) * 1px) calc(var(--ly, 0) * var(--h, 0) * 1px); }
+#map-svg .ext-wall {
+  --f: calc(var(--nx) * var(--sb, 0) + var(--ny) * var(--cb, 1));
+  --g: calc(var(--nx) * var(--cb, 1) - var(--ny) * var(--sb, 0));
+  transform: matrix(var(--ax), var(--ay), calc(var(--lx, 0) * var(--h)), calc(var(--ly, 0) * var(--h)), var(--px), var(--py));
+  opacity: clamp(0, calc(var(--f) * 40), 1);
+  fill: color-mix(in srgb, var(--m-bldg) calc(60% + var(--f) * 14% + var(--g) * 8%), #3a2c1c);
+  stroke: none;
+}
+#map-svg .ext-roof { translate: calc(var(--lx, 0) * var(--h) * 1px) calc(var(--ly, 0) * var(--h) * 1px); fill: color-mix(in srgb, var(--m-bldg) 80%, #ffffff); stroke: var(--m-bldg-edge); stroke-width: 1.4; stroke-linejoin: round; }

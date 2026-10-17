@@ -345,6 +345,8 @@ function layoutCam() {
     const tt = Math.tan((cam.tilt * Math.PI) / 180), br = (cam.bearing * Math.PI) / 180;
     el.style.setProperty("--lx", (-tt * Math.sin(br)).toFixed(4));
     el.style.setProperty("--ly", (-tt * Math.cos(br)).toFixed(4));
+    el.style.setProperty("--sb", Math.sin(br).toFixed(4));
+    el.style.setProperty("--cb", Math.cos(br).toFixed(4));
     if (cam.tilt > 0 && (extSortB === null || Math.abs(normDeg(cam.bearing - extSortB)) > 1)) sortExt();
   }
   $("#m-compass")?.style.setProperty("--north", `${NORTH + cam.bearing}deg`);
@@ -979,32 +981,56 @@ function siteSvg() {
 }
 
 let floorLayer = null;
-const FLOOR_H = 16, SLICES = 3;
+const FLOOR_H = 16;
+const BLD_H = BUILDINGS.map((b) => {
+  const n = FLOORS.filter((fl) => b[fl]).length;
+  const shapes = [];
+  for (const fl of FLOORS) {
+    const f = b[fl];
+    if (!f) continue;
+    (f.rects ?? []).forEach(([x, y, w, h]) => shapes.push({ pts: [[x, y], [x + w, y], [x + w, y + h], [x, y + h]] }));
+    if (f.poly) shapes.push({ pts: f.poly.map((q) => (Array.isArray(q) ? q : String(q).split(",").map(Number))) });
+  }
+  return { n, h: n * FLOOR_H, shapes };
+}).filter((b) => b.n);
+const inPoly = (x, y, pts) => {
+  let c = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i], [xj, yj] = pts[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+};
+const heightAt = (x, y) => {
+  for (const b of BLD_H) if (b.shapes.some((s) => inPoly(x, y, s.pts))) return b.h;
+  return 0;
+};
 function extrusion() {
   const out = [];
-  for (const b of BUILDINGS) {
-    const levels = FLOORS.map((fl, i) => ({ f: b[fl], i })).filter((l) => l.f && (l.f.rects?.length || l.f.poly));
-    if (!levels.length) continue;
-    const base = levels[0].f;
-    const xs = [], ys = [];
-    (base.rects ?? []).forEach(([x, y, w, h]) => { xs.push(x, x + w); ys.push(y, y + h); });
-    if (base.poly) base.poly.forEach((q) => { const [x, y] = Array.isArray(q) ? q : String(q).split(",").map(Number); xs.push(x); ys.push(y); });
-    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const layers = [];
-    levels.forEach((l, n) => {
-      const last = n === levels.length - 1;
-      const shape = (cls) => (l.f.rects?.length ? shapeEl(l.f.rects, cls) : "") + (l.f.poly ? `<polygon class="${cls}" points="${l.f.poly.join(" ")}"/>` : "");
-      for (let k = 1; k <= SLICES; k++) {
-        const top = k === SLICES;
-        const h = (n + k / SLICES) * FLOOR_H;
-        const t = (n + k / SLICES) / levels.length;
-        const cls = top ? (last ? "ext-roof" : "ext-floor") : "ext-wall";
-        layers.push(`<g class="ext-l" style="--h:${h.toFixed(2)};--t:${t.toFixed(3)}">${shape(cls)}</g>`);
-      }
-    });
-    out.push({ cx, cy, html: `<g class="ext-b" data-cx="${cx}" data-cy="${cy}">${layers.join("")}</g>` });
-  }
-  return out.map((o) => o.html).join("");
+  BUILDINGS.forEach((b) => {
+    const n = FLOORS.filter((fl) => b[fl]).length;
+    const base = b["1F"] ?? b[FLOORS.find((fl) => b[fl])];
+    if (!n || !base) return;
+    const H = n * FLOOR_H;
+    const prisms = [];
+    (base.rects ?? []).forEach(([x, y, w, h]) => prisms.push([[x, y], [x + w, y], [x + w, y + h], [x, y + h]]));
+    if (base.poly) prisms.push(base.poly.map((q) => (Array.isArray(q) ? q : String(q).split(",").map(Number))));
+    for (const pts of prisms) {
+      const area = pts.reduce((a, [x, y], i) => { const [x2, y2] = pts[(i + 1) % pts.length]; return a + (x * y2 - x2 * y); }, 0);
+      const dir = area >= 0 ? 1 : -1;
+      const cx = pts.reduce((a, q) => a + q[0], 0) / pts.length, cy = pts.reduce((a, q) => a + q[1], 0) / pts.length;
+      const walls = pts.map(([x1, y1], i) => {
+        const [x2, y2] = pts[(i + 1) % pts.length];
+        const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+        if (L < 0.01) return "";
+        const ux = dx / L, uy = dy / L, nx = uy * dir, ny = -ux * dir;
+        return `<rect class="ext-wall" width="1" height="1" style="--ax:${(ux * L).toFixed(3)};--ay:${(uy * L).toFixed(3)};--px:${x1};--py:${y1};--nx:${nx.toFixed(3)};--ny:${ny.toFixed(3)}"/>`;
+      }).join("");
+      const roof = `<polygon class="ext-roof" points="${pts.map((q) => q.join(",")).join(" ")}"/>`;
+      out.push(`<g class="ext-b" data-cx="${cx.toFixed(1)}" data-cy="${cy.toFixed(1)}" style="--h:${H}">${walls}${roof}</g>`);
+    }
+  });
+  return out.join("");
 }
 function sortExt() {
   const root = document.getElementById("m-ext");
@@ -1013,6 +1039,35 @@ function sortExt() {
   extSortB = cam.bearing;
   const items = [...root.children].map((g) => ({ g, v: Number(g.dataset.cx) * sn + Number(g.dataset.cy) * cs }));
   items.sort((a, c) => a.v - c.v).forEach((it) => root.appendChild(it.g));
+}
+const LIFT_SEL = "#m-rooms .room, #m-labels text, #m-labels .ic, #m-icons .ic, #m-live .ic, #m-marks .ic, #m-sel > *, .stairs-layer > *, .restricted-layer > *, #m-deco .ic, #m-vend .ic, #m-aed .ic";
+function liftEl(el) {
+  let x, y;
+  if (el.tagName === "text") { x = Number(el.getAttribute("x")); y = Number(el.getAttribute("y")); }
+  else if (el.classList.contains("ic")) {
+    const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px/.exec(el.getAttribute("style") ?? "");
+    if (!m) return;
+    x = Number(m[1]); y = Number(m[2]);
+  } else {
+    try { const bb = el.getBBox(); x = bb.x + bb.width / 2; y = bb.y + bb.height / 2; } catch { return; }
+  }
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  const h = heightAt(x, y);
+  if (h) { el.classList.add("lifted"); el.style.setProperty("--h", String(h)); }
+  else if (el.classList.contains("lifted")) { el.classList.remove("lifted"); el.style.removeProperty("--h"); }
+}
+function liftAll(root) {
+  if (root.matches?.(LIFT_SEL)) liftEl(root);
+  root.querySelectorAll?.(LIFT_SEL).forEach(liftEl);
+}
+let liftObs = null;
+function watchLift() {
+  if (liftObs) return;
+  const root = svg();
+  liftObs = new MutationObserver((records) => {
+    for (const r of records) r.addedNodes.forEach((n) => { if (n.nodeType === 1) liftAll(n); });
+  });
+  liftObs.observe(root, { childList: true, subtree: true });
 }
 
 function drawFloor() {
@@ -1091,10 +1146,10 @@ function drawFloor() {
     <g>${roofs.join("")}</g>
     <g>${edges.join("")}${fills.join("")}</g>
     <g>${voids.join("")}</g>
+    <g id="m-ext">${extrusion()}</g>
     <g id="m-rooms">${roomEls.join("")}${festEls.join("")}</g>
     <g class="restricted-layer">${banned.join("")}</g>
     <g class="stairs-layer">${stairs.join("")}</g>
-    <g id="m-ext">${extrusion()}</g>
     <g>${overs.join("")}</g>
     <g id="m-sel"></g>
     <g id="m-hl"></g>
@@ -1111,6 +1166,8 @@ function drawFloor() {
   floorLayer = floor;
   extSortB = null;
   if (cam.tilt > 0) sortExt();
+  liftAll(svg());
+  watchLift();
   labelKey = "";
   document.querySelectorAll(".m-floor").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.floor === floor)));
   applyView();
