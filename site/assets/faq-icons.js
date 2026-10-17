@@ -38,8 +38,8 @@ export const FX = {
 };
 
 export const MARKS = {
-  clock: "#D9892B", car: "#3F8DB8", bus: "#3F8DB8", fire: "#D9603F", camera: "#D8637A", mic: "#8A68B8", vote: "#C9A11E", exit: "#5E9C45", nosmoke: "#3E9A86",
+  clock: "#D9892B", car: "#3F8DB8", bus: "#3F8DB8", fire: "#D9603F", camera: "#D8637A", mic: "#8A68B8", vote: "#8F6D05", exit: "#5E9C45", nosmoke: "#3E9A86",
   ticket: "#D9892B", rain: "#3F8DB8", reenter: "#5E9C45", bike: "#3F8DB8", paw: "#D9603F", stroller: "#D8637A", baby: "#D8637A", wheel: "#3E9A86",
-  yen: "#C9A11E", battery: "#C9A11E", luggage: "#8A68B8", shoe: "#D9892B", doc: "#3E9A86", toilet: "#3F8DB8", bin: "#5E9C45", cross: "#C8323A",
+  yen: "#8F6D05", battery: "#8F6D05", luggage: "#8A68B8", shoe: "#D9892B", doc: "#3E9A86", toilet: "#3F8DB8", bin: "#5E9C45", cross: "#C8323A",
   search: "#8A68B8", phone: "#3E9A86", stamp: "#D9603F",
 };

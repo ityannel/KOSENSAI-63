@@ -115,14 +115,21 @@ async function startReal() {
   const { fs, db, a } = kit;
   uid = a.currentUser.uid;
   const chatRef = fs.doc(db, "hq_chats", uid);
-  fs.onSnapshot(chatRef, (s) => {
+  const listen = (ref, onNext, tries = 0) => {
+    let stop = null;
+    stop = fs.onSnapshot(ref, onNext, () => {
+      stop?.();
+      if (tries < 5) setTimeout(() => listen(ref, onNext, tries + 1), 1500 * (tries + 1));
+    });
+  };
+  listen(chatRef, (s) => {
     chat = s.exists() ? s.data() : null;
     if (chat) { try { localStorage.setItem(HQ_FLAG, "1"); } catch {  } }
     if (chat?.unread_visitor && !document.hidden) fs.updateDoc(chatRef, { unread_visitor: false }).catch(() => {});
     paint();
     paintPush();
   });
-  fs.onSnapshot(fs.query(fs.collection(db, "hq_chats", uid, "msgs"), fs.orderBy("at")), (s) => {
+  listen(fs.query(fs.collection(db, "hq_chats", uid, "msgs"), fs.orderBy("at")), (s) => {
     msgs = s.docs.map((d) => { const v = d.data(); return { id: d.id, from: v.from, text: v.text, at: v.at?.toMillis?.() ?? Date.now() }; });
     paint();
     if (chat?.unread_visitor && !document.hidden) fs.updateDoc(chatRef, { unread_visitor: false }).catch(() => {});

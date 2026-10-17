@@ -329,7 +329,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 .k-msg {
   --u: calc(100cqi / 402);
   position: relative; height: calc(266 * var(--u)); margin: 0; overflow: hidden;
-  background: linear-gradient(#6e887d, #6f92a0);
+  background: linear-gradient(#587267, #4b7080);
 }
 .k-msg-photo { position: absolute; right: 0; bottom: 0; width: calc(233 * var(--u)); height: auto; }
 .k-msg-title { position: absolute; left: calc(27 * var(--u)); top: calc(28.5 * var(--u)); font-family: var(--hud-font); font-size: calc(32 * var(--u)); line-height: 1; }
@@ -2174,3 +2174,18 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .qa-sheet-foot .qa-qs { justify-content: flex-start; }
 .qa-sheet-foot .qa-q.is-current { background: var(--grain), #634A2E; color: #FEEBC4; box-shadow: inset 0 0 0 calc(2 * var(--u)) #FEEBC4, calc(-3 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, 0.45); }
 .visit[hidden] { display: none; }
+
+.slot-info { margin: calc(8 * var(--u)) 0 0; font-family: var(--text-font); font-weight: 900; font-size: max(11px, 3.1cqw); line-height: 1.5; white-space: nowrap; color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+
+@media (min-width: 600px) and (max-width: 999px) {
+  :root:has(body:not(.mapapp)) { --app-w: min(100vw, 480px); }
+}
+@media (max-width: 359px) {
+  .site-tabs { left: calc(var(--app-x, 0px) + 8px); right: calc(var(--app-x, 0px) + 8px); gap: 2px; padding: 4px; }
+  .site-tabs a { gap: 4px; padding: 0 6px; min-width: 0; font-size: 0.9rem; }
+  .site-tabs svg { width: 17px; height: 17px; }
+  .site-tabs .e-word { font-size: 0.8rem; }
+}
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 2px; box-shadow: 0 0 0 5px #3A2A1A; }
+
+.dept-pill { text-shadow: 0 1px 0 rgba(48, 44, 41, 0.55), 0 0 4px rgba(48, 44, 41, 0.4); }

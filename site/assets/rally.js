@@ -295,6 +295,8 @@ function render() {
         <ol class="rc-rules">
           <li>校内の数か所に置いてある QR を読む（はじめの1個は、玄関のインフォメーションで）</li>
           <li>スタンプが<em>${stampGoal()}個</em>たまったら達成</li>
+          ${RALLY.claimPlace ? `<li>${esc(RALLY.claimPlace)}で、景品と交換できます</li>` : ""}
+          <li>QRの場所は、地図の「スタンプ」でさがせます</li>
         </ol>
       </span>
     </button>

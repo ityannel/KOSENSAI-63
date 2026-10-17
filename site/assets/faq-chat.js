@@ -15,14 +15,7 @@ const logo = (s) => esc(s).replace(/Enistagram\s*/g, '<img class="vi-logo" src="
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const avatar = `<span class="qa-av" aria-hidden="true">${robotSvg()}</span>`;
 const botBox = (body, mark = "#C8323A", head = true) => `<div class="qa-bubble" style="--mark:${mark}">${head ? `<div class="qa-head">${avatar}<small class="qa-who">案内くん</small><span class="qa-tag">決まった答え</span></div>` : ""}${body}</div>`;
-const pick3 = () => {
-  const all = FAQ.flatMap((g) => g.items);
-  for (let i = all.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [all[i], all[j]] = [all[j], all[i]];
-  }
-  return all.slice(0, 3);
-};
+const pick3 = () => FAQ.flatMap((g) => g.items).filter((it) => it.top).slice(0, 3);
 const pairs = () => pick3().map((it) => `<div class="qa-pair"><div class="qa-msg is-me" style="--mark:${MARKS[it.icon]}"><div class="qa-bubble"><p>${esc(it.q)}</p></div></div><div class="qa-msg is-bot">${botBox(answerBody(it), MARKS[it.icon], false)}</div></div>`).join("") + '<button type="button" class="mido-more" data-more><span>ほかの質問を見る</span></button>';
 
 const QSVG = '<svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M10 9.3a2 2 0 1 1 2.6 1.9c-.5.2-.6.6-.6 1.1M12 14.1h.01"/></svg>';

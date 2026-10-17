@@ -2032,12 +2032,16 @@ function renderNowSheet(body, s) {
     return;
   }
   const t = s.now;
-  const soon = EVENTS.filter((e) => Date.parse(e.start) > t && Date.parse(e.start) - t <= 3600000).sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  const soonList = STAGE.acts.length ? [...EVENTS.filter((e) => !e.stage), ...STAGE.acts.map((a) => ({ ...a, title: a.name, venue: STAGE.venue }))] : EVENTS;
+  const soon = soonList.filter((e) => Date.parse(e.start) > t && Date.parse(e.start) - t <= 3600000).sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
   const busy = [...places.values()].filter((p) => p.shopList?.length).map((p) => ({ p, w: worstWait(p, s) })).filter((x) => x.w && x.w.rank >= 2)
     .sort((a, b) => b.w.rank - a.w.rank);
+  const calm = [...places.values()].filter((p) => p.shopList?.length).map((p) => ({ p, hit: p.shopList.filter((sh) => shopDocFor(sh, s.shops)?.status === "normal"), w: worstWait(p, s) }))
+    .filter((x) => x.hit.length && !x.w);
   body.innerHTML = `<p class="sh-kind">開催状況（リアルタイム）</p><h2 class="sh-title">開催中</h2>
     ${s.running?.length ? `<ul class="m-list">${s.running.map((e) => venueItem(e, e.end ? `〜${hhmm(e.end)}` : "", true)).join("")}</ul>` : '<p class="sh-hint">いまやっている企画はありません。</p>'}
     ${soon.length ? `<h3 class="sh-h">このあと1時間</h3><ul class="m-list">${soon.map((e) => venueItem(e, `${tPlain(e)}〜`, false)).join("")}</ul>` : ""}
+    ${calm.length ? `<h3 class="sh-h">待たずに買えるお店</h3><ul class="m-list">${calm.map(({ p, hit }) => itemHtml({ p, sub: `待ちなし・${hit.map((x) => x.name).join("・")}` })).join("")}</ul>` : ""}
     ${busy.length ? `<h3 class="sh-h">混んでいる・売り切れ・休業中のお店</h3><ul class="m-list">${busy.map(({ p, w }) => itemHtml({ p, sub: `${w.label}・${p.shopList.map((x) => x.name).join("・")}` })).join("")}</ul>` : ""}`;
 }
 function renderStampSheet(body, s) {

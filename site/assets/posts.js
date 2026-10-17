@@ -62,6 +62,7 @@ function kit() {
 }
 async function signedIn() {
   const k = await kit();
+  await k.a.authStateReady?.();
   if (!k.a.currentUser) await k.auth.signInAnonymously(k.a);
   return k;
 }

@@ -78,7 +78,7 @@ function renderSpots() {
   const hidden = (h) => {
     const side = h.box[0] > POSTER_W * 0.62 ? "left" : "right";
     return `
-      <button type="button" class="spot is-secret${found.includes(h.id) ? " found" : ""}" id="secret-${h.id}" data-secret="${h.id}"
+      <button type="button" tabindex="-1" class="spot is-secret${found.includes(h.id) ? " found" : ""}" id="secret-${h.id}" data-secret="${h.id}"
         aria-label="絵の中の小さな秘密" style="${boxStyle(h.box)}">
         <span class="bubble bubble-${side}" aria-hidden="true">${esc(h.line)}</span>
       </button>`;
