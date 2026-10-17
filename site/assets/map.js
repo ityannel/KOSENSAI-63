@@ -982,17 +982,18 @@ function siteSvg() {
 
 let floorLayer = null;
 const FLOOR_H = 16;
-const BLD_H = BUILDINGS.map((b) => {
-  const n = FLOORS.filter((fl) => b[fl]).length;
-  const shapes = [];
-  for (const fl of FLOORS) {
-    const f = b[fl];
-    if (!f) continue;
-    (f.rects ?? []).forEach(([x, y, w, h]) => shapes.push({ pts: [[x, y], [x + w, y], [x + w, y + h], [x, y + h]] }));
-    if (f.poly) shapes.push({ pts: f.poly.map((q) => (Array.isArray(q) ? q : String(q).split(",").map(Number))) });
+const toPts = (q) => (Array.isArray(q) ? q : String(q).split(",").map(Number));
+const BLOCKS = [];
+BUILDINGS.forEach((b, bi) => FLOORS.forEach((fl, i) => {
+  const f = b[fl];
+  if (!f) return;
+  const shapes = [...(f.rects ?? []).map(([x, y, w, h]) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]), ...(f.poly ? [f.poly.map(toPts)] : [])];
+  for (const pts of shapes) {
+    const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    BLOCKS.push({ pts, bi, i, z0: i * FLOOR_H, z1: (i + 1) * FLOOR_H, x0, x1, y0, y1, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 });
   }
-  return { n, h: n * FLOOR_H, shapes };
-}).filter((b) => b.n);
+}));
 const inPoly = (x, y, pts) => {
   let c = false;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
@@ -1002,43 +1003,46 @@ const inPoly = (x, y, pts) => {
   return c;
 };
 const heightAt = (x, y) => {
-  for (const b of BLD_H) if (b.shapes.some((s) => inPoly(x, y, s.pts))) return b.h;
-  return 0;
+  let h = 0;
+  for (const k of BLOCKS) if (k.z1 > h && x >= k.x0 && x <= k.x1 && y >= k.y0 && y <= k.y1 && inPoly(x, y, k.pts)) h = k.z1;
+  return h;
 };
 function extrusion() {
-  const out = [];
-  BUILDINGS.forEach((b) => {
-    const n = FLOORS.filter((fl) => b[fl]).length;
-    const base = b["1F"] ?? b[FLOORS.find((fl) => b[fl])];
-    if (!n || !base) return;
-    const H = n * FLOOR_H;
-    const prisms = [];
-    (base.rects ?? []).forEach(([x, y, w, h]) => prisms.push([[x, y], [x + w, y], [x + w, y + h], [x, y + h]]));
-    if (base.poly) prisms.push(base.poly.map((q) => (Array.isArray(q) ? q : String(q).split(",").map(Number))));
-    for (const pts of prisms) {
-      const area = pts.reduce((a, [x, y], i) => { const [x2, y2] = pts[(i + 1) % pts.length]; return a + (x * y2 - x2 * y); }, 0);
-      const dir = area >= 0 ? 1 : -1;
-      const cx = pts.reduce((a, q) => a + q[0], 0) / pts.length, cy = pts.reduce((a, q) => a + q[1], 0) / pts.length;
-      const walls = pts.map(([x1, y1], i) => {
-        const [x2, y2] = pts[(i + 1) % pts.length];
-        const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
-        if (L < 0.01) return "";
-        const ux = dx / L, uy = dy / L, nx = uy * dir, ny = -ux * dir;
-        return `<rect class="ext-wall" width="1" height="1" style="--ax:${(ux * L).toFixed(3)};--ay:${(uy * L).toFixed(3)};--px:${x1};--py:${y1};--nx:${nx.toFixed(3)};--ny:${ny.toFixed(3)}"/>`;
-      }).join("");
-      const roof = `<polygon class="ext-roof" points="${pts.map((q) => q.join(",")).join(" ")}"/>`;
-      out.push(`<g class="ext-b" data-cx="${cx.toFixed(1)}" data-cy="${cy.toFixed(1)}" style="--h:${H}">${walls}${roof}</g>`);
-    }
-  });
-  return out.join("");
+  return BLOCKS.map((k, n) => {
+    const { pts } = k;
+    const area = pts.reduce((a, [x, y], i) => { const [x2, y2] = pts[(i + 1) % pts.length]; return a + (x * y2 - x2 * y); }, 0);
+    const dir = area >= 0 ? 1 : -1;
+    const walls = pts.map(([x1, y1], i) => {
+      const [x2, y2] = pts[(i + 1) % pts.length];
+      const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+      if (L < 0.01) return "";
+      const ux = dx / L, uy = dy / L, nx = uy * dir, ny = -ux * dir;
+      return `<rect class="ext-wall" width="1" height="1" style="--ax:${(ux * L).toFixed(3)};--ay:${(uy * L).toFixed(3)};--px:${x1};--py:${y1};--nx:${nx.toFixed(3)};--ny:${ny.toFixed(3)}"/>`;
+    }).join("");
+    const roof = `<polygon class="ext-roof" points="${pts.map((q) => q.join(",")).join(" ")}"/>`;
+    return `<g class="ext-b" data-k="${n}" style="--z0:${k.z0};--z1:${k.z1};--h:${FLOOR_H}">${walls}${roof}</g>`;
+  }).join("");
 }
 function sortExt() {
   const root = document.getElementById("m-ext");
   if (!root) return;
-  const b = (cam.bearing * Math.PI) / 180, sn = Math.sin(b), cs = Math.cos(b);
+  const br = (cam.bearing * Math.PI) / 180, sn = Math.sin(br), cs = Math.cos(br);
   extSortB = cam.bearing;
-  const items = [...root.children].map((g) => ({ g, v: Number(g.dataset.cx) * sn + Number(g.dataset.cy) * cs }));
-  items.sort((a, c) => a.v - c.v).forEach((it) => root.appendChild(it.g));
+  const nodes = new Map([...root.children].map((g) => [Number(g.dataset.k), g]));
+  const order = [...nodes.keys()].sort((a, c) => (BLOCKS[a].cx * sn + BLOCKS[a].cy * cs) - (BLOCKS[c].cx * sn + BLOCKS[c].cy * cs));
+  const under = (hi, lo) => BLOCKS[lo].bi === BLOCKS[hi].bi && BLOCKS[lo].i < BLOCKS[hi].i && BLOCKS[lo].x0 < BLOCKS[hi].x1 && BLOCKS[lo].x1 > BLOCKS[hi].x0 && BLOCKS[lo].y0 < BLOCKS[hi].y1 && BLOCKS[lo].y1 > BLOCKS[hi].y0;
+  for (let pass = 0; pass < 6; pass++) {
+    let moved = false;
+    for (let p = 0; p < order.length; p++) {
+      const hi = order[p];
+      for (let q = p + 1; q < order.length; q++) {
+        const lo = order[q];
+        if (under(hi, lo)) { order.splice(q, 1); order.splice(p, 0, lo); moved = true; p++; }
+      }
+    }
+    if (!moved) break;
+  }
+  order.forEach((k) => root.appendChild(nodes.get(k)));
 }
 const LIFT_SEL = "#m-rooms .room, #m-labels text, #m-labels .ic, #m-icons .ic, #m-live .ic, #m-marks .ic, #m-sel > *, .stairs-layer > *, .restricted-layer > *, #m-deco .ic, #m-vend .ic, #m-aed .ic";
 function liftEl(el) {

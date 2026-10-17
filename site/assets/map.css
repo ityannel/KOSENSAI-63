@@ -1228,9 +1228,9 @@ body.mapapp { --e-blue: #C8323A; --e-navy: #634A2E; --e-red: #C8323A; --e-grad: 
 #map-svg .ext-wall {
   --f: calc(var(--nx) * var(--sb, 0) + var(--ny) * var(--cb, 1));
   --g: calc(var(--nx) * var(--cb, 1) - var(--ny) * var(--sb, 0));
-  transform: matrix(var(--ax), var(--ay), calc(var(--lx, 0) * var(--h)), calc(var(--ly, 0) * var(--h)), var(--px), var(--py));
+  transform: matrix(var(--ax), var(--ay), calc(var(--lx, 0) * var(--h)), calc(var(--ly, 0) * var(--h)), calc(var(--px) + var(--lx, 0) * var(--z0)), calc(var(--py) + var(--ly, 0) * var(--z0)));
   opacity: clamp(0, calc(var(--f) * 40), 1);
-  fill: color-mix(in srgb, var(--m-bldg) calc(60% + var(--f) * 14% + var(--g) * 8%), #3a2c1c);
+  fill: color-mix(in srgb, var(--m-bldg) calc(58% + var(--f) * 14% + var(--g) * 8% + var(--z0) * 0.22%), #3a2c1c);
   stroke: none;
 }
-#map-svg .ext-roof { translate: calc(var(--lx, 0) * var(--h) * 1px) calc(var(--ly, 0) * var(--h) * 1px); fill: color-mix(in srgb, var(--m-bldg) 80%, #ffffff); stroke: var(--m-bldg-edge); stroke-width: 1.4; stroke-linejoin: round; }
+#map-svg .ext-roof { translate: calc(var(--lx, 0) * var(--z1) * 1px) calc(var(--ly, 0) * var(--z1) * 1px); fill: color-mix(in srgb, var(--m-bldg) 80%, #ffffff); stroke: var(--m-bldg-edge); stroke-width: 1.4; stroke-linejoin: round; }
