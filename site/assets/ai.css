@@ -126,3 +126,4 @@ body.ai-page:not(.hq-page) { background: linear-gradient(180deg, #1f3a4d, #2f6a8
 
 .ai-body, .aim .ai-body, .m-sheet.is-ai .aim .ai-body { padding: 12px 16px; border: 3px solid #634A2E; border-radius: 12px; background: var(--grain), #FFFDF4; box-shadow: none !important; filter: drop-shadow(-5px 4px 0 rgba(48, 44, 41, 0.6)); }
 .ai-user { border-radius: 10px; filter: drop-shadow(-4px 3px 0 rgba(48, 44, 41, 0.5)); }
+body.ai-page:not(.hq-page) { background: linear-gradient(180deg, #1f3a4d, #2f6a80 55%, #8ec3c9); }
