@@ -116,19 +116,22 @@ function play(li) {
   setTimeout(() => t.classList.remove("is-play"), 1500);
 }
 
-function morph(update) {
-  const from = (intro.hidden ? log : intro).offsetHeight;
+function grow(el, update) {
+  const w0 = el.offsetWidth, h0 = el.offsetHeight;
   update();
-  if (calm || !log.animate) return;
-  const to = log.offsetHeight;
-  if (Math.abs(from - to) < 2) return;
-  log.style.overflow = "hidden";
-  const a = log.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 460, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
-  const end = () => { log.style.overflow = ""; };
+  if (calm || !el.animate) return;
+  const w1 = el.offsetWidth, h1 = el.offsetHeight;
+  if (Math.abs(w0 - w1) < 2 && Math.abs(h0 - h1) < 2) return;
+  el.style.boxSizing = "border-box";
+  el.style.overflow = "hidden";
+  const a = el.animate([{ width: `${w0}px`, height: `${h0}px` }, { width: `${w1}px`, height: `${h1}px` }], { duration: 440, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+  const end = () => { el.style.overflow = ""; el.style.boxSizing = ""; };
   a.onfinish = end;
   a.oncancel = end;
   setTimeout(end, 700);
 }
+
+const fadeIn = (el) => { if (!calm && el?.animate) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, delay: 90, easing: "ease-out", fill: "backwards" }); };
 
 function showTop() {
   panel.scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
@@ -136,13 +139,21 @@ function showTop() {
 }
 
 function talk(userText, body, mark) {
-  morph(() => {
-    log.replaceChildren();
-    intro.hidden = true;
-    log.hidden = false;
-    addMsg("is-me qa-in", `<div class="qa-bubble"><p>${esc(userText)}</p></div>`);
-    play(addMsg("is-bot qa-in", botBox(body, mark)));
-  });
+  const me = log.hidden ? null : log.querySelector(".is-me .qa-bubble");
+  const bot = log.hidden ? null : log.querySelector(".is-bot .qa-bubble");
+  if (me && bot) {
+    grow(me, () => { me.innerHTML = `<p>${esc(userText)}</p>`; });
+    fadeIn(me.firstElementChild);
+    grow(bot, () => { bot.style.setProperty("--mark", mark); bot.innerHTML = body; });
+    fadeIn(bot.firstElementChild);
+    play(bot.closest(".qa-msg"));
+    return;
+  }
+  log.replaceChildren();
+  intro.hidden = true;
+  log.hidden = false;
+  addMsg("is-me qa-in", `<div class="qa-bubble"><p>${esc(userText)}</p></div>`);
+  play(addMsg("is-bot qa-in", botBox(body, mark)));
 }
 
 function markCurrent(gi, i) {

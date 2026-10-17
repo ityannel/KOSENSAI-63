@@ -375,10 +375,10 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 .mido-past { margin: 0 auto calc(10 * var(--u)); }
 .mido-more:active { translate: calc(-8 * var(--u)) calc(5 * var(--u)); filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
 .tk { position: relative; display: block; rotate: var(--tilt, 0deg); color: #634A2E; text-decoration: none; transition: translate 0.12s ease; -webkit-tap-highlight-color: transparent; }
-.tk:active:not(:has(.tk-photo:active)) { translate: calc(-13 * var(--u)) calc(6 * var(--u)); }
+.tk:active:not(:has(.tk-photo:active)) { translate: calc(-8 * var(--u)) calc(4 * var(--u)); }
 .tk-shape { transition: filter 0.12s ease; }
 .tk:active:not(:has(.tk-photo:active)) .tk-shape { filter: drop-shadow(0 0 0 rgba(48, 44, 41, 0)); }
-.tk-shape { filter: drop-shadow(calc(-13 * var(--u)) calc(6 * var(--u)) 0 rgba(48, 44, 41, 0.7)); }
+.tk-shape { filter: drop-shadow(calc(-8 * var(--u)) calc(4 * var(--u)) 0 rgba(48, 44, 41, 0.62)); }
 .tk-body {
   --stub: calc(82 * var(--u)); --r: calc(8.8 * var(--u)); --o: calc(2.6 * var(--u));
   display: grid; grid-template-columns: var(--stub) minmax(0, 1fr); min-height: calc(123 * var(--u)); border-radius: calc(8 * var(--u));
