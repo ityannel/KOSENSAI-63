@@ -1221,3 +1221,11 @@ body.mapapp { --e-blue: #C8323A; --e-navy: #634A2E; --e-red: #C8323A; --e-grad: 
 .ig-form .v-msg { margin: 6px 6px 0 8px; }
 
 .m-sheet.is-ai .ai-sug button { color: var(--ai-ink, #634A2E); }
+
+#map-svg #m-ext { display: none; pointer-events: none; }
+#map-svg.has-tilt #m-ext { display: inline; }
+#map-svg .ext-l { transform: translate(calc(var(--lx, 0) * var(--h) * 1px), calc(var(--ly, 0) * var(--h) * 1px)); }
+#map-svg .ext-wall, #map-svg .ext-floor, #map-svg .ext-roof { stroke-linejoin: round; }
+#map-svg .ext-wall { fill: color-mix(in srgb, var(--m-bldg) calc(52% + var(--t) * 38%), #4a3a28); stroke: none; }
+#map-svg .ext-floor { fill: color-mix(in srgb, var(--m-bldg) calc(52% + var(--t) * 38%), #4a3a28); stroke: var(--m-bldg-edge); stroke-width: 0.8; }
+#map-svg .ext-roof { fill: color-mix(in srgb, var(--m-bldg) 82%, #ffffff); stroke: var(--m-bldg-edge); stroke-width: 1.6; }

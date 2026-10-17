@@ -298,6 +298,7 @@ let screen = { w: 1, h: 1 };
 let offset = { x: 0, y: 0 };
 let cam = { bearing: 0, tilt: 0 };
 let camM = null;
+let extSortB = null;
 let kMin = 0.2;
 const K_MAX = 9, TILT_MAX = 45, TILT_ON = 40;
 
@@ -339,6 +340,13 @@ function layoutCam() {
   }
   el.style.setProperty("--brg", `${-cam.bearing}deg`);
   el.classList.toggle("is-3d", !flat);
+  el.classList.toggle("has-tilt", cam.tilt > 0);
+  {
+    const tt = Math.tan((cam.tilt * Math.PI) / 180), br = (cam.bearing * Math.PI) / 180;
+    el.style.setProperty("--lx", (-tt * Math.sin(br)).toFixed(4));
+    el.style.setProperty("--ly", (-tt * Math.cos(br)).toFixed(4));
+    if (cam.tilt > 0 && (extSortB === null || Math.abs(normDeg(cam.bearing - extSortB)) > 1)) sortExt();
+  }
   $("#m-compass")?.style.setProperty("--north", `${NORTH + cam.bearing}deg`);
   $("#m-compass")?.toggleAttribute("data-rotated", Math.abs(normDeg(NORTH + cam.bearing)) > 1);
   $("#m-tilt")?.setAttribute("aria-pressed", String(cam.tilt > 0));
@@ -971,6 +979,42 @@ function siteSvg() {
 }
 
 let floorLayer = null;
+const FLOOR_H = 16, SLICES = 3;
+function extrusion() {
+  const out = [];
+  for (const b of BUILDINGS) {
+    const levels = FLOORS.map((fl, i) => ({ f: b[fl], i })).filter((l) => l.f && (l.f.rects?.length || l.f.poly));
+    if (!levels.length) continue;
+    const base = levels[0].f;
+    const xs = [], ys = [];
+    (base.rects ?? []).forEach(([x, y, w, h]) => { xs.push(x, x + w); ys.push(y, y + h); });
+    if (base.poly) base.poly.forEach((q) => { const [x, y] = Array.isArray(q) ? q : String(q).split(",").map(Number); xs.push(x); ys.push(y); });
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const layers = [];
+    levels.forEach((l, n) => {
+      const last = n === levels.length - 1;
+      const shape = (cls) => (l.f.rects?.length ? shapeEl(l.f.rects, cls) : "") + (l.f.poly ? `<polygon class="${cls}" points="${l.f.poly.join(" ")}"/>` : "");
+      for (let k = 1; k <= SLICES; k++) {
+        const top = k === SLICES;
+        const h = (n + k / SLICES) * FLOOR_H;
+        const t = (n + k / SLICES) / levels.length;
+        const cls = top ? (last ? "ext-roof" : "ext-floor") : "ext-wall";
+        layers.push(`<g class="ext-l" style="--h:${h.toFixed(2)};--t:${t.toFixed(3)}">${shape(cls)}</g>`);
+      }
+    });
+    out.push({ cx, cy, html: `<g class="ext-b" data-cx="${cx}" data-cy="${cy}">${layers.join("")}</g>` });
+  }
+  return out.map((o) => o.html).join("");
+}
+function sortExt() {
+  const root = document.getElementById("m-ext");
+  if (!root) return;
+  const b = (cam.bearing * Math.PI) / 180, sn = Math.sin(b), cs = Math.cos(b);
+  extSortB = cam.bearing;
+  const items = [...root.children].map((g) => ({ g, v: Number(g.dataset.cx) * sn + Number(g.dataset.cy) * cs }));
+  items.sort((a, c) => a.v - c.v).forEach((it) => root.appendChild(it.g));
+}
+
 function drawFloor() {
   const edges = [], fills = [], roofs = [], voids = [], labels = [];
   for (const b of BUILDINGS) {
@@ -1050,6 +1094,7 @@ function drawFloor() {
     <g id="m-rooms">${roomEls.join("")}${festEls.join("")}</g>
     <g class="restricted-layer">${banned.join("")}</g>
     <g class="stairs-layer">${stairs.join("")}</g>
+    <g id="m-ext">${extrusion()}</g>
     <g>${overs.join("")}</g>
     <g id="m-sel"></g>
     <g id="m-hl"></g>
@@ -1064,6 +1109,8 @@ function drawFloor() {
     <g id="m-marks"></g>
     <g id="m-aimk"></g>`;
   floorLayer = floor;
+  extSortB = null;
+  if (cam.tilt > 0) sortExt();
   labelKey = "";
   document.querySelectorAll(".m-floor").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.floor === floor)));
   applyView();
