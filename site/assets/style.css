@@ -1975,6 +1975,7 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
   .pc-links a:nth-child(4) { --lk: #634A2E; color: #FEEBC4; rotate: -2deg; }
   .pc-links a:nth-child(5) { --lk: linear-gradient(110deg, #3F9F99, #5BB8D4 50%, #8E7CC3); color: #fff; rotate: -1deg; width: 100%; justify-content: center; }
   .pc-links a:nth-child(5) { background: var(--grain), linear-gradient(110deg, #3F9F99, #5BB8D4 50%, #8E7CC3); }
+  .pc-links a:nth-child(6) { --lk: #FEEBC4; color: #634A2E; rotate: 1deg; width: 100%; justify-content: center; }
   .pc-links a:hover { translate: 0 -2px; }
   .pc-links a:active { translate: -4px 3px; filter: none; }
   .pc-links svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -2172,3 +2173,4 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
 .qa-sheet .qa-grp .qa-label { margin: 0; text-align: left; }
 .qa-sheet-foot .qa-qs { justify-content: flex-start; }
 .qa-sheet-foot .qa-q.is-current { background: var(--grain), #634A2E; color: #FEEBC4; box-shadow: inset 0 0 0 calc(2 * var(--u)) #FEEBC4, calc(-3 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, 0.45); }
+.visit[hidden] { display: none; }

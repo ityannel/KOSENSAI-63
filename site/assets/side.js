@@ -72,8 +72,9 @@ const PC_LINKS = [
   ["https://www.instagram.com/hakodate.kosen_gakuseikai/", "インスタ", sv('<rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><path d="M16.8 7.2h.01"/>'), true],
   ["https://x.com/hnct_gakuseikai", "エックス", sv('<path d="M4 4h4.2l11.8 16h-4.2z"/><path d="M19.4 4l-6.2 7M4.6 20l6.2-7"/>'), true],
   ["en.html", "English", sv('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'), false],
+  ["terms.html", "利用規約", sv('<path d="M6.5 3.5h8l3 3v14h-11z"/><path d="M14.5 3.5v3h3M9 11h6M9 14.5h6"/>'), false],
 ];
-const pcLinksHtml = PC_LINKS.map(([href, label, icon, ext]) => `<a href="${href}"${ext ? ' target="_blank" rel="noopener noreferrer"' : ' lang="en" hreflang="en"'}>${icon}<span>${label}</span></a>`).join("");
+const pcLinksHtml = PC_LINKS.map(([href, label, icon, ext]) => `<a href="${href}"${ext ? ' target="_blank" rel="noopener noreferrer"' : href === "en.html" ? ' lang="en" hreflang="en"' : ""}>${icon}<span>${label}</span></a>`).join("");
 
 document.body.insertAdjacentHTML("beforeend", `
   <div class="pc-bg" aria-hidden="true">
@@ -132,6 +133,10 @@ new MutationObserver(() => syncMore(lastBlocks)).observe(document.body, { attrib
 
 const logo = document.querySelector(".pc-logo");
 const logoIn = logo.querySelector(".pc-logo-in");
+const pcMq = matchMedia("(min-width: 1000px)");
+const syncInfo = () => document.getElementById("info")?.toggleAttribute("hidden", pcMq.matches);
+syncInfo();
+pcMq.addEventListener("change", syncInfo);
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
 const pcLayers = [document.querySelector(".pc-bg"), document.querySelector(".pc-fg")];
 let par = null, parFrame = 0;
