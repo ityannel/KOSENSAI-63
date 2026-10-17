@@ -1041,7 +1041,6 @@ body.mapapp {
 .sh-desc, .sh-title { white-space: pre-line; }
 
 #m-heading, #m-fit { display: none !important; }
-#m-compass:not([data-rotated]) { display: none; }
 
 .ig-av.is-official i { background: #FFFBF2; padding: 2px; }
 .ig-av.is-official i img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
@@ -1190,10 +1189,33 @@ body.mapapp {
 #m-legend-body h3 { margin: 14px 0 6px; font-family: var(--hud-font); font-weight: 400; font-size: 1rem; letter-spacing: 0.06em; color: var(--ink); }
 #m-legend-body li { font-weight: 700; color: var(--ink); }
 #m-legend-body ul { gap: 8px; }
-body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side { top: auto; bottom: calc(var(--m-sheet-h, 0px) + 10px); }
-@media (min-width: 1000px) { body.is-wide:not(.is-feed):has(.m-sheet:not([hidden])) .m-side { top: 86px; bottom: auto; } }
-body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side { gap: 8px; }
-body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side .m-floor { width: 44px; height: 36px; font-size: 1rem; }
-body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side :is(.m-fab, .m-compass, .mapapp .m-help.m-fab) { width: 42px; height: 42px; }
-body:has(.m-sheet:not([hidden]):not(.is-min)) .m-side :is(.m-fab, .m-compass) svg { width: 22px; height: 22px; }
+body .m-side { gap: 8px; }
+body .m-side .m-compass { order: -1; }
+body .m-side .m-floor { width: 44px; height: 38px; font-size: 1rem; }
+body .m-side :is(.m-fab, .m-compass, .mapapp .m-help.m-fab) { width: 44px; height: 44px; }
+body .m-side :is(.m-fab, .m-compass) svg { width: 22px; height: 22px; }
 @media (min-width: 600px) and (max-width: 999px) { .app-frame { width: 100%; } }
+
+body.mapapp { --e-blue: #C8323A; --e-navy: #634A2E; --e-red: #C8323A; --e-grad: linear-gradient(#634A2E, #634A2E); --e-soft: #F6E3B8; --e-line: #634A2E; --e-bg: none; }
+.m-feed .f-body { padding: 6px 14px 96px; }
+.m-feed .v-list { gap: 18px; }
+.m-feed .v-post.ig-post, .e-embed .v-post.ig-post { padding: 0 0 12px; border: 3px solid #634A2E; border-radius: 12px; background: var(--grain), #FFFDF4; box-shadow: none; overflow: hidden; filter: drop-shadow(-5px 4px 0 rgba(48, 44, 41, 0.5)); }
+.m-feed .v-post.ig-post + .v-post.ig-post { padding-top: 0; border-top: 3px solid #634A2E; }
+.f-head { background: var(--grain), #FFFBF2; border-bottom: 3px solid #634A2E; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.f-seg { background: rgba(99, 74, 46, 0.14); }
+.f-fab { background: var(--grain), #634A2E; color: #FEEBC4; box-shadow: none; filter: drop-shadow(-4px 3px 0 rgba(48, 44, 41, 0.5)); }
+.ig-acts .v-like.is-on, .ig-post .v-post.is-reply .v-like.is-on { color: #C8323A !important; }
+.m-feed .v-replies { border-left-color: rgba(99, 74, 46, 0.25); }
+.e-embed { padding: 0 4px; border: 0; background: none; }
+.ig-fhead { background: var(--grain), #FFFBF2; border-bottom: 3px solid #634A2E; }
+.ig-fhead b { font-family: var(--hud-font); font-weight: 400; font-size: 1.2rem; letter-spacing: 0.03em; color: #634A2E; }
+.ig-pick { margin: 16px 6px 0 8px; border: 3px solid #634A2E; border-radius: 12px; background: var(--grain), #FFFDF4; filter: drop-shadow(-5px 4px 0 rgba(48, 44, 41, 0.5)); }
+.ig-pick-empty { color: #634A2E; }
+.ig-pick-empty b { font-family: var(--hud-font); font-weight: 400; font-size: 1.15rem; letter-spacing: 0.03em; }
+.ig-caprow { margin: 20px 6px 0 8px; padding: 12px 14px; border: 3px solid #634A2E; border-radius: 12px; background: var(--grain), #FFFDF4; filter: drop-shadow(-5px 4px 0 rgba(48, 44, 41, 0.5)); }
+.ig-placerow { margin: 14px 6px 0 8px; padding: 4px 14px; border: 3px solid #634A2E; border-radius: 12px; background: var(--grain), #FFFDF4; filter: drop-shadow(-5px 4px 0 rgba(48, 44, 41, 0.5)); }
+.ig-placerow .ig-placebtn { border-top: 0; }
+.ig-caprow { margin-top: 18px; }
+.ig-form .v-count { justify-self: end; margin: 8px 9px 0 0; }
+.ig-form .v-rule { margin: 16px 6px 0 8px; }
+.ig-form .v-msg { margin: 6px 6px 0 8px; }
