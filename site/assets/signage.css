@@ -548,3 +548,6 @@ body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 8; }
 
 .now.has-ph > p.cp { text-shadow: 0 0 8px rgba(255, 248, 232, .95), 0 0 3px rgba(255, 248, 232, .9); }
 .now.has-ph[data-tone="dark"] > p.cp { text-shadow: 0 1px 8px rgba(0, 0, 0, .75), 0 0 3px rgba(0, 0, 0, .6); }
+.stage .ttl { margin-top: 12px; font-size: 72px; }
+.stage .grid { margin-top: 20px; padding-bottom: 10px; }
+body.portrait .stage .ttl { font-size: 64px; }

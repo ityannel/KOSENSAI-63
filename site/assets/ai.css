@@ -120,3 +120,6 @@ body.ai-page { background: linear-gradient(180deg, #2f3953, #7d4f6e 55%, #d9824f
 .ai-mm-list span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-mm-list em { flex: none; padding: 1px 7px; border-radius: 999px; background: rgba(99, 74, 46, 0.14); font-style: normal; font-size: 11px; }
 .ai-mm-list i { flex: none; font-style: normal; opacity: 0.5; font-size: 18px; }
+
+body.ai-page:not(.hq-page) { background: linear-gradient(180deg, #1f3a4d, #2f6a80 55%, #5fa7b0); }
+.ai-page:not(.hq-page) .ai-full { background: var(--grain), radial-gradient(70% 28% at 10% 4%, #3F9F99 0%, transparent 70%), radial-gradient(60% 26% at 92% 30%, #5BB8D4 0%, transparent 70%), radial-gradient(70% 30% at 12% 70%, #8E7CC3 0%, transparent 70%), linear-gradient(180deg, #1f3a4d 0%, #2f6a80 45%, #4a8f9f 78%, #8ec3c9 100%); }

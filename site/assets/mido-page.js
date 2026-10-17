@@ -1,3 +1,4 @@
+import { pullDown } from "./pulldown.js";
 import { FESTIVAL } from "./config.js";
 import { ALL_TICKETS as TICKETS, ticketHtml, rowHtml, isOn, isPast, dayOf, esc, venueName } from "./tickets.js";
 import { drawThread, watchThread } from "./thread.js";
@@ -77,16 +78,17 @@ document.getElementById("mido-tickets").addEventListener("click", (e) => {
 
 const sheet = document.querySelector(".mido-full");
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fromSite = document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1;
+let gone = false;
+const go = () => { if (gone) return; gone = true; fromSite ? history.back() : location.assign("./#pickup"); };
 function close(e) {
   e?.preventDefault();
-  const fromSite = document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1;
-  let gone = false;
-  const go = () => { if (gone) return; gone = true; fromSite ? history.back() : location.assign("./#pickup"); };
   if (calm) return go();
   sheet.classList.add("is-closing");
   sheet.addEventListener("animationend", go, { once: true });
   setTimeout(go, 600);
 }
+pullDown(sheet, go, { page: true });
 document.querySelector(".mido-close").addEventListener("click", close);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !e.target.closest?.("input")) close(e); });
 addEventListener("pageshow", () => sheet.classList.remove("is-closing"));

@@ -34,3 +34,6 @@
 .hq-push button:active { scale: 0.96; }
 .hq-push span { color: #6b573b; font-size: 12.5px; font-weight: 700; line-height: 1.5; }
 .hq-push span:empty { display: none; }
+
+body.hq-page { background: linear-gradient(180deg, #3a1018, #7d1f2a 55%, #c8323a); }
+.hq-page .ai-full { background: var(--grain), radial-gradient(70% 28% at 10% 4%, #8f1d22 0%, transparent 70%), radial-gradient(60% 26% at 92% 30%, #e2622e 0%, transparent 70%), radial-gradient(70% 30% at 12% 70%, #c8323a 0%, transparent 70%), linear-gradient(180deg, #3a1018 0%, #7d1f2a 40%, #c8323a 78%, #e88a5a 100%); }

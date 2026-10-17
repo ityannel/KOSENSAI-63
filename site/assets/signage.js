@@ -528,7 +528,7 @@ async function cover() {
 const BG = { intro: ["#3f9f99", "#9BD7D0"], posts: ["#2f8fe0", "#9BD7D0"], popular: ["#d9669b", "#F2A96A"], shop: ["#ee7b30", "#efc696"], crowd: ["#3f9f99", "#F1D08A"],
   stage: ["#ee7b30", "#B5655A"], way: ["#B5655A", "#F2A96A"], share: ["#a061c9", "#2f8fe0"], fireworks: ["#0b1030", "#3a1d5c"], closing: ["#3f9f99", "#9BD7D0"] };
 function fitNow(el) {
-  const limit = () => slide.getBoundingClientRect().bottom - 28;
+  const limit = () => slide.getBoundingClientRect().bottom - 10;
   const nxs = [...el.querySelectorAll(".nx")];
   while (nxs.length > 1 && nxs[nxs.length - 1].getBoundingClientRect().bottom > limit()) nxs.pop().remove();
   const p = el.querySelector(".now > p.cp");

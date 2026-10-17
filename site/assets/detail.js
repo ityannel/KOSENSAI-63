@@ -1,6 +1,7 @@
 import { SHOPS, GENRES, HOMEROOMS, MAP, ELECTION } from "./config.js";
 import { ALL_TICKETS, ticketHtml, isOn, isPast, esc, hhmm, venueName, photosOf } from "./tickets.js";
 import { tRange } from "./schedule.js";
+import { pullDown, resetPull } from "./pulldown.js";
 
 const fmt = (iso, o) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", ...o }).format(new Date(iso));
 const dayText = (iso) => `${fmt(iso, { month: "numeric" })}.${fmt(iso, { day: "numeric" })} ${fmt(iso, { weekday: "short" }).toUpperCase()}`;
@@ -22,6 +23,7 @@ function build() {
   body = document.getElementById("dt-body");
   root.addEventListener("click", (e) => { if (e.target.closest("[data-dt-close]")) close(); });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && !root.hidden) close(); });
+  pullDown(sheet, hide);
 }
 function open(html) {
   build();
@@ -29,13 +31,19 @@ function open(html) {
   body.innerHTML = html;
   root.hidden = false;
   root.classList.remove("is-closing");
+  resetPull(sheet);
   document.documentElement.classList.add("dt-open");
   sheet.scrollTop = 0;
   sheet.focus({ preventScroll: true });
 }
+function hide() {
+  root.hidden = true;
+  document.documentElement.classList.remove("dt-open");
+  lastFocus?.focus?.({ preventScroll: true });
+}
 function close() {
   if (!root || root.hidden) return;
-  const done = () => { root.hidden = true; document.documentElement.classList.remove("dt-open"); lastFocus?.focus?.({ preventScroll: true }); };
+  const done = hide;
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return done();
   root.classList.add("is-closing");
   let gone = false;

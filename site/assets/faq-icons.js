@@ -1,0 +1,45 @@
+export const P = {
+  clock: '<circle cx="12" cy="12" r="8.5"/><g class="a-spin"><path d="M12 7.5V12l3 2"/></g>',
+  car: '<g class="a-lines"><path d="M1.2 9.5h2.3M.5 12.5h2.3"/></g><g class="a-drive"><path d="M4 15.5V12l1.8-4.2A2 2 0 0 1 7.6 6.5h8.8a2 2 0 0 1 1.8 1.3L20 12v3.5M4 15.5h16M4 15.5v2M20 15.5v2M4 12h16"/><circle cx="7.5" cy="15.5" r="1.2"/><circle cx="16.5" cy="15.5" r="1.2"/></g>',
+  fire: '<g class="a-burst"><path d="M12 12v9M12 12l-5.5-5.5M12 12l5.5-5.5M12 12H4M12 12h8M12 12V3.5M12 12l-4 6M12 12l4 6"/></g><circle cx="12" cy="12" r="1.6"/>',
+  camera: '<g class="a-jolt"><rect x="3.5" y="7" width="17" height="12" rx="2.5"/><circle cx="12" cy="13" r="3.4"/><path d="M8.5 7l1.3-2.2h4.4L15.5 7"/></g><circle class="a-flash" cx="12" cy="12" r="11"/>',
+  mic: '<g class="a-shake"><rect x="9" y="3.5" width="6" height="10" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3.5M9 20.5h6"/></g><g class="a-waves"><path d="M3 8a7 7 0 0 0 0 6M21 8a7 7 0 0 1 0 6"/></g>',
+  vote: '<g class="a-drop"><path d="M8.5 13.5V6.5l6-2 1.5 9"/></g><path d="M4 13.5h16v6.5H4zM9 16.8h6"/>',
+  bus: '<g class="a-drive"><rect x="4" y="5" width="16" height="12.5" rx="2.5"/><path d="M4 11.5h16M7.5 17.5V20M16.5 17.5V20M8 14.5h.01M16 14.5h.01M8 8h8"/></g>',
+  exit: '<path d="M14 4.5h5.5v15H14"/><g class="a-go"><path d="M4.5 12H14M10.5 8.5L14 12l-3.5 3.5"/></g>',
+  nosmoke: '<g class="a-no"><circle cx="12" cy="12" r="8.5"/><path d="M6 12h9M17 12h1"/><path d="M6 6l12 12"/></g>',
+  ticket: '<g class="a-jolt"><path d="M3.5 7.5h17v3a1.8 1.8 0 0 0 0 3.5v3h-17v-3a1.8 1.8 0 0 0 0-3.5z"/><path d="M14.5 7.5v9" stroke-dasharray="1.6 2.2"/></g>',
+  rain: '<g class="a-drop"><path d="M3 12.5a9 9 0 0 1 18 0z"/><path d="M12 12.5V18a2 2 0 0 1-4 0"/></g><g class="a-waves"><path d="M16 15l-1 3M20 15l-1 3M18 20l-1 2"/></g>',
+  reenter: '<g class="a-spin"><path d="M19 12a7 7 0 0 0-12-5l-2 2M5 5v4h4M5 12a7 7 0 0 0 12 5l2-2M19 19v-4h-4"/></g>',
+  bike: '<g class="a-drive"><circle cx="6" cy="16" r="3.2"/><circle cx="18" cy="16" r="3.2"/><path d="M6 16l3.5-7H13l5 7M9.5 9L12 16M13 9h2.5"/></g>',
+  paw: '<g class="a-shake"><circle cx="8" cy="9" r="1.6"/><circle cx="12" cy="6.5" r="1.6"/><circle cx="16" cy="9" r="1.6"/><path d="M12 11.5c-3 0-5 2.7-5 5 0 1.6 1.4 2.5 3 2 .7-.2 1.4-.4 2-.4s1.3.2 2 .4c1.6.5 3-.4 3-2 0-2.3-2-5-5-5z"/></g><path d="M4.5 4.5l15 15"/>',
+  stroller: '<g class="a-drive"><path d="M4 5h2.5l1.5 9h9a4.5 4.5 0 0 0 4.5-4.5V9H8.2"/><circle cx="9" cy="18.5" r="1.7"/><circle cx="17" cy="18.5" r="1.7"/></g>',
+  baby: '<g class="a-jolt"><circle cx="12" cy="12.5" r="8"/><path d="M9 11.5h.01M15 11.5h.01M9.5 15c1.4 1.4 3.6 1.4 5 0M12 4.5c.4-1.4 2-1.8 3-1"/></g>',
+  wheel: '<g class="a-go"><circle cx="11" cy="4.5" r="1.7"/><path d="M11 8v6h5l2.5 5M11 11h5M8.5 11.5a5.5 5.5 0 1 0 6.5 7.5"/></g>',
+  yen: '<g class="a-spin"><circle cx="12" cy="12" r="8.5"/></g><path d="M9 8l3 4.5L15 8M12 12.5V17M9.5 13h5M9.5 15h5"/>',
+  battery: '<g class="a-jolt"><rect x="3.5" y="8" width="14" height="8" rx="2"/><path d="M20 11v2M11 9.5l-2 3h3l-2 3"/></g><path d="M4 4l16 16"/>',
+  luggage: '<g class="a-jolt"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M9 8V6.2A1.5 1.5 0 0 1 10.5 4.7h3A1.5 1.5 0 0 1 15 6.2V8M4 13h16"/></g>',
+  shoe: '<g class="a-go"><path d="M3.5 16.5v-4l5-1.5 2 2h4l3.5 1.5a2 2 0 0 1 1.5 2v2h-16z"/><path d="M3.5 16.5h16"/></g>',
+  doc: '<g class="a-drop"><path d="M6.5 3.5h8l3 3v14h-11z"/><path d="M14.5 3.5v3h3M9 11h6M9 14.5h6"/></g>',
+  toilet: '<g class="a-jolt"><circle cx="7.5" cy="5" r="1.7"/><circle cx="16.5" cy="5" r="1.7"/><path d="M7.5 8.5v11M5 9h5l-.3 5.5M16.5 8.5l-2.8 7h5.6zM16.5 15.5v4"/></g>',
+  bin: '<g class="a-drop"><path d="M5 7h14M9 7V5h6v2M7 7l1 12.5h8L17 7M10 10.5v6M14 10.5v6"/></g>',
+  cross: '<g class="a-burst"><path d="M9 4.5h6V9h4.5v6H15v4.5H9V15H4.5V9H9z"/></g>',
+  search: '<g class="a-shake"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></g>',
+  phone: '<g class="a-shake"><path d="M7 4h3l1.5 4-2 1.5a10 10 0 0 0 5 5l1.5-2 4 1.5v3a2 2 0 0 1-2 2A14 14 0 0 1 5 6a2 2 0 0 1 2-2z"/></g>',
+  stamp: '<g class="a-drop"><circle cx="12" cy="7" r="3"/><path d="M11 10v3.5H7.5A1.5 1.5 0 0 0 6 15v1.5h12V15a1.5 1.5 0 0 0-1.5-1.5H13V10"/></g><path d="M5 20h14"/>',
+};
+
+export const FX = {
+  clock: ["チクタク"], car: ["ブーン"], bus: ["ブロロロ"], fire: ["ドーン！"], camera: ["パシャ！", "パシャ！"],
+  mic: ["ワー！", "ワー！", "キャー！"], vote: ["ストン"], exit: ["ダッ！"], nosmoke: ["×"],
+  ticket: ["ピッ"], rain: ["ザーッ"], reenter: ["くるっ"], bike: ["シャーッ"], paw: ["ダメ！"], stroller: ["コロコロ"],
+  baby: ["オギャー！"], wheel: ["スイー"], yen: ["チャリン"], battery: ["ピコン"], luggage: ["ドサッ"], shoe: ["ザッ"],
+  doc: ["ペラッ"], toilet: ["ジャー"], bin: ["ポイッ"], cross: ["ふぅ…"], search: ["キョロ", "キョロ"], phone: ["プルル"], stamp: ["ポンッ！"],
+};
+
+export const MARKS = {
+  clock: "#D9892B", car: "#3F8DB8", bus: "#3F8DB8", fire: "#D9603F", camera: "#D8637A", mic: "#8A68B8", vote: "#C9A11E", exit: "#5E9C45", nosmoke: "#3E9A86",
+  ticket: "#D9892B", rain: "#3F8DB8", reenter: "#5E9C45", bike: "#3F8DB8", paw: "#D9603F", stroller: "#D8637A", baby: "#D8637A", wheel: "#3E9A86",
+  yen: "#C9A11E", battery: "#C9A11E", luggage: "#8A68B8", shoe: "#D9892B", doc: "#3E9A86", toilet: "#3F8DB8", bin: "#5E9C45", cross: "#C8323A",
+  search: "#8A68B8", phone: "#3E9A86", stamp: "#D9603F",
+};

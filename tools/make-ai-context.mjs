@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const top = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cfg = await import(pathToFileURL(path.join(top, "site/assets/config.js")).href);
+const { fillFaq } = await import(pathToFileURL(path.join(top, "site/assets/faq-text.js")).href);
 const { ROOM_NAMES, SITE, ENTRANCES, RESTRICTED, codeRestricted } = await import(pathToFileURL(path.join(top, "site/assets/campus.js")).href);
 
 const hm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -20,10 +21,10 @@ const ctx = {
     days: cfg.FESTIVAL.days.map((d) => ({ date: md(d.open), open: hm(d.open), close: hm(d.close) })),
     venue: "函館工業高等専門学校（函館市戸倉町14-1）",
     about: cfg.ABOUT,
-    access: "市電やバスなどの公共交通機関で来場。駐車場が限られているため、車での来場はご遠慮ください。函館大学や近隣のコンビニ・スーパーには停めないこと。",
+    access: "市電「湯の川」から徒歩約15分、バス停「函館高専前」から徒歩1分。車でも来場できるが、駐車場には限りがあるので、市電やバスでの来場をおすすめする。函館大学や近隣のコンビニ・スーパーには停めないこと。",
     contact: "函館工業高等専門学校 学生会（高専祭実行委員会）。学校へのお問い合わせは学生課 TEL 0138-59-6334",
   },
-  rules: [...cfg.VISIT.map((v) => `${v.title}：${clean(v.detail)}`), ...cfg.NOTICES],
+  faq: cfg.FAQ.flatMap((g) => g.items.map((i) => `${i.q} → ${clean(fillFaq(i.a))}`)),
   venues: cfg.VENUES.map((v) => ({ name: v.name, alias: v.alias ?? "" })),
   places: cfg.MAP.places.filter((p) => p.name).map((p) => ({ id: p.id, name: p.name, sub: p.sub ?? "", room: p.room ?? "", kind: p.kind ?? "", desc: clean(p.desc) })),
   stage: {

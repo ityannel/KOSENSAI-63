@@ -14,7 +14,7 @@ const MENU = [
   ["pickup", "みどころ", "HIGHLIGHTS", svg('<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.8 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>')],
   ["ennichi", "縁日", "FOOD & FUN", svg('<path d="M3.5 9L5 4h14l1.5 5M3.5 9h17M3.5 9a2.8 2.8 0 0 0 5.6 0 2.9 2.9 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0M5 12v8h14v-8M10 20v-5h4v5"/>')],
   ["exhibit", "学科展示", "DEPARTMENTS", svg('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 15h9"/>')],
-  ["info", "ご来場の皆さまへ", "INFO", svg('<path d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>')],
+  ["faq", "案内くん", "FAQ", svg('<path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z"/>')],
 ].filter(([id]) => !onTop || document.getElementById(id))
   .filter(([id]) => id !== "memory" || afterClose());
 function afterClose() {
@@ -200,7 +200,7 @@ if (!onTop && !onMido) {
   links.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el); });
 }
 
-if (["", "mido", "rally", "vote", "terms"].includes(document.body.dataset.page ?? "") && !document.querySelector(".mapapp") && !document.querySelector(".ai-fab")) {
+if (["", "mido", "rally", "vote", "terms", "faq"].includes(document.body.dataset.page ?? "") && !document.querySelector(".mapapp") && !document.querySelector(".ai-fab")) {
   document.body.insertAdjacentHTML("beforeend", `<a class="ai-fab is-hidden" href="ai.html" aria-label="AIくんに聞く" title="AIくんに聞く">${robotSvg()}</a>`);
   const fab = document.querySelector(".ai-fab");
   const sync = () => fab.classList.toggle("is-hidden", document.body.classList.contains("tabs-docked"));
