@@ -15,7 +15,6 @@ const logo = (s) => esc(s).replace(/Enistagram\s*/g, '<img class="vi-logo" src="
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const avatar = `<span class="qa-av" aria-hidden="true">${robotSvg()}</span>`;
 const botBox = (body, mark = "#C8323A", head = true) => `<div class="qa-bubble" style="--mark:${mark}">${head ? `<div class="qa-head">${avatar}<small class="qa-who">案内くん</small><span class="qa-tag">決まった答え</span></div>` : ""}${body}</div>`;
-const hot = FAQ.flatMap((g, gi) => g.items.map((it, i) => ({ gi, i, it }))).filter((x) => x.it.hot);
 const pick3 = () => {
   const all = FAQ.flatMap((g) => g.items);
   for (let i = all.length - 1; i > 0; i--) {
@@ -28,7 +27,7 @@ const pairs = () => pick3().map((it) => `<div class="qa-pair"><div class="qa-msg
 
 const QSVG = '<svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M10 9.3a2 2 0 1 1 2.6 1.9c-.5.2-.6.6-.6 1.1M12 14.1h.01"/></svg>';
 
-const chips = (list, label) => `<div class="qa-next">${label ? `<p class="qa-label">${esc(label)}</p>` : ""}<div class="qa-qs">${list.map(({ gi, i }) => `<button type="button" class="qa-q" data-gi="${gi}" data-i="${i}">${esc(FAQ[gi].items[i].q)}</button>`).join("")}</div></div>`;
+const allQuestions = () => `<div class="qa-all">${FAQ.map((g, gi) => `<section class="qa-grp"><p class="qa-label">${esc(g.group)}</p><div class="qa-qs">${g.items.map((it, i) => `<button type="button" class="qa-q" data-gi="${gi}" data-i="${i}" aria-pressed="false">${esc(it.q)}</button>`).join("")}</div></section>`).join("")}</div>`;
 
 let log, intro, sheet, panel, wrap, closeBtn, lastTrigger, locked = false;
 
@@ -43,7 +42,6 @@ function mount() {
     root.querySelectorAll(".qa-msg.is-bot").forEach((li) => io.observe(li));
   }
 
-  const cats = FAQ.map((g, gi) => `<button type="button" class="qa-chip" data-cat="${gi}">${esc(g.group)}</button>`).join("");
   sheet = document.createElement("div");
   sheet.className = "qa-sheet";
   sheet.hidden = true;
@@ -51,9 +49,9 @@ function mount() {
     <div class="qa-sheet-wrap"><div class="qa-sheet-panel" role="dialog" aria-modal="true" aria-label="案内くんの答え" tabindex="-1">
       <button type="button" class="qa-sheet-x" data-close aria-label="とじる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
       <div class="qa-sheet-body">
-        <div class="qa-intro"><i class="qa-intro-ic" aria-hidden="true">${QSVG}</i><h2>よくある質問</h2><p>気になることを選んでくれ。決まった答えを返すぜ。</p>${chips(hot)}</div>
+        <div class="qa-intro"><i class="qa-intro-ic" aria-hidden="true">${QSVG}</i><h2>よくある質問</h2><p>知りたいことを、下から選んでくれ。</p></div>
         <ol class="qa-log" role="log" aria-live="polite" aria-label="案内くんとの会話"></ol>
-        <div class="qa-sheet-foot"><p class="qa-label">ほかの話題</p><div class="qa-cats">${cats}</div></div>
+        <div class="qa-sheet-foot">${allQuestions()}</div>
       </div>
       <div class="qa-sheet-bar">${barHtml("faq")}</div>
     </div></div>`;
@@ -108,6 +106,7 @@ function addMsg(cls, inner) {
 }
 
 function showDefault() {
+  markCurrent(null, null);
   log.replaceChildren();
   log.hidden = true;
   intro.hidden = false;
@@ -130,27 +129,30 @@ function keepVisible(el) {
   el.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" });
 }
 
-function talk(userText, body, mark, extra = "") {
+function talk(userText, body, mark) {
   log.replaceChildren();
   intro.hidden = true;
   log.hidden = false;
   addMsg("is-me qa-in", `<div class="qa-bubble"><p>${esc(userText)}</p></div>`);
-  const li = addMsg("is-bot qa-in", botBox(body, mark) + extra);
+  const li = addMsg("is-bot qa-in", botBox(body, mark));
   play(li);
   keepVisible(li);
 }
 
-function ask(gi, i) {
-  const it = FAQ[gi].items[i];
-  const rest = FAQ[gi].items.map((_, k) => ({ gi, i: k })).filter((x) => x.i !== i);
-  openSheet();
-  talk(it.q, answerBody(it), MARKS[it.icon], chips(rest, "つづけて聞く"));
+function markCurrent(gi, i) {
+  sheet.querySelectorAll(".qa-all .qa-q").forEach((q) => {
+    const on = gi !== null && Number(q.dataset.gi) === gi && Number(q.dataset.i) === i;
+    q.classList.toggle("is-current", on);
+    q.setAttribute("aria-pressed", String(on));
+  });
 }
 
-function openCategory(gi) {
-  const g = FAQ[gi];
+function ask(gi, i) {
+  const it = FAQ[gi].items[i];
   openSheet();
-  talk(`「${g.group}」のこと`, `<div class="qa-body"><p><b class="qa-lead">${esc(g.group)}だな！</b>どれが知りたいか、選んでくれ。</p></div>`, undefined, chips(g.items.map((_, i) => ({ gi, i })), "聞けること"));
+  markCurrent(gi, i);
+  talk(it.q, answerBody(it), MARKS[it.icon]);
+  panel.scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
 }
 
 function onChoose(e) {
@@ -159,8 +161,6 @@ function onChoose(e) {
   if (more) { lastTrigger = more; document.dispatchEvent(new CustomEvent("faq:open")); return; }
   const q = e.target.closest(".qa-q");
   if (q) { if (!sheet.contains(q)) lastTrigger = q; ask(Number(q.dataset.gi), Number(q.dataset.i)); return; }
-  const c = e.target.closest(".qa-chip");
-  if (c) { lastTrigger = c; openCategory(Number(c.dataset.cat)); }
 }
 
 if (host) mount();
