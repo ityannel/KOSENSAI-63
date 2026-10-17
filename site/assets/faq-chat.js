@@ -1,6 +1,5 @@
 import { FAQ } from "./config.js";
 import { fillFaq } from "./faq-text.js";
-import { robotSvg } from "./ai-robot.js";
 import { P, FX, MARKS } from "./faq-icons.js";
 import { lockScroll, unlockScroll } from "./scroll-lock.js";
 import { barHtml } from "./help-bar.js";
@@ -13,10 +12,9 @@ const icon = (k) => `<svg viewBox="0 0 24 24" aria-hidden="true">${P[k]}</svg>`;
 const logo = (s) => esc(s).replace(/Enistagram\s*/g, '<img class="vi-logo" src="assets/img/enista-puffy.webp" width="666" height="117" alt="Enistagram">');
 
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const avatar = `<span class="qa-av" aria-hidden="true">${robotSvg()}</span>`;
-const botBox = (body, mark = "#C8323A", head = true) => `<div class="qa-bubble" style="--mark:${mark}">${head ? `<div class="qa-head">${avatar}<small class="qa-who">案内くん</small><span class="qa-tag">決まった答え</span></div>` : ""}${body}</div>`;
+const botBox = (body, mark = "#C8323A") => `<div class="qa-bubble" style="--mark:${mark}">${body}</div>`;
 const pick3 = () => FAQ.flatMap((g) => g.items).filter((it) => it.top).slice(0, 3);
-const pairs = () => pick3().map((it) => `<div class="qa-pair"><div class="qa-msg is-me" style="--mark:${MARKS[it.icon]}"><div class="qa-bubble"><p>${esc(it.q)}</p></div></div><div class="qa-msg is-bot">${botBox(answerBody(it), MARKS[it.icon], false)}</div></div>`).join("") + '<button type="button" class="mido-more" data-more><span>ほかの質問を見る</span></button>';
+const pairs = () => pick3().map((it) => `<div class="qa-pair"><div class="qa-msg is-me" style="--mark:${MARKS[it.icon]}"><div class="qa-bubble"><p>${esc(it.q)}</p></div></div><div class="qa-msg is-bot">${botBox(answerBody(it), MARKS[it.icon])}</div></div>`).join("") + '<button type="button" class="mido-more" data-more><span>ほかの質問を見る</span></button>';
 
 const QSVG = '<svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M10 9.3a2 2 0 1 1 2.6 1.9c-.5.2-.6.6-.6 1.1M12 14.1h.01"/></svg>';
 
@@ -39,11 +37,11 @@ function mount() {
   sheet.className = "qa-sheet";
   sheet.hidden = true;
   sheet.innerHTML = `<div class="qa-sheet-back" data-close></div>
-    <div class="qa-sheet-wrap"><div class="qa-sheet-panel" role="dialog" aria-modal="true" aria-label="案内くんの答え" tabindex="-1">
+    <div class="qa-sheet-wrap"><div class="qa-sheet-panel" role="dialog" aria-modal="true" aria-label="よくある質問の答え" tabindex="-1">
       <button type="button" class="qa-sheet-x" data-close aria-label="とじる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
       <div class="qa-sheet-body">
-        <div class="qa-intro"><i class="qa-intro-ic" aria-hidden="true">${QSVG}</i><h2>よくある質問</h2><p>知りたいことを、下から選んでくれ。</p></div>
-        <ol class="qa-log" role="log" aria-live="polite" aria-label="案内くんとの会話"></ol>
+        <div class="qa-intro"><i class="qa-intro-ic" aria-hidden="true">${QSVG}</i><h2>よくある質問</h2><p>知りたいことを、下から選んでください。</p></div>
+        <ol class="qa-log" role="log" aria-live="polite" aria-label="よくある質問の答え"></ol>
         <div class="qa-sheet-foot">${allQuestions()}</div>
       </div>
       <div class="qa-sheet-bar">${barHtml("faq")}</div>
@@ -112,24 +110,39 @@ function answerBody(it) {
 }
 
 function play(li) {
-  const t = li.querySelector(".qa-ic") ?? li.querySelector(".qa-av");
+  const t = li.querySelector(".qa-ic");
   if (calm || !t) return;
   t.classList.add("is-play");
   setTimeout(() => t.classList.remove("is-play"), 1500);
 }
 
-function keepVisible(el) {
-  el.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" });
+function morph(update) {
+  const from = (intro.hidden ? log : intro).offsetHeight;
+  update();
+  if (calm || !log.animate) return;
+  const to = log.offsetHeight;
+  if (Math.abs(from - to) < 2) return;
+  log.style.overflow = "hidden";
+  const a = log.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 460, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+  const end = () => { log.style.overflow = ""; };
+  a.onfinish = end;
+  a.oncancel = end;
+  setTimeout(end, 700);
+}
+
+function showTop() {
+  panel.scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
+  setTimeout(() => { if (panel.scrollTop > 0) panel.scrollTop = 0; }, calm ? 0 : 650);
 }
 
 function talk(userText, body, mark) {
-  log.replaceChildren();
-  intro.hidden = true;
-  log.hidden = false;
-  addMsg("is-me qa-in", `<div class="qa-bubble"><p>${esc(userText)}</p></div>`);
-  const li = addMsg("is-bot qa-in", botBox(body, mark));
-  play(li);
-  keepVisible(li);
+  morph(() => {
+    log.replaceChildren();
+    intro.hidden = true;
+    log.hidden = false;
+    addMsg("is-me qa-in", `<div class="qa-bubble"><p>${esc(userText)}</p></div>`);
+    play(addMsg("is-bot qa-in", botBox(body, mark)));
+  });
 }
 
 function markCurrent(gi, i) {
@@ -145,7 +158,7 @@ function ask(gi, i) {
   openSheet();
   markCurrent(gi, i);
   talk(it.q, answerBody(it), MARKS[it.icon]);
-  panel.scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
+  showTop();
 }
 
 function onChoose(e) {

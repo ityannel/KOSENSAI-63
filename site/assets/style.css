@@ -2190,3 +2190,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 .dept-pill { text-shadow: 0 1px 0 rgba(48, 44, 41, 0.55), 0 0 4px rgba(48, 44, 41, 0.4); }
 .slot-info span + span { margin-left: 0.55em; }
+
+.qa-log .qa-msg.qa-in { animation: qa-nu 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.qa-log .qa-msg.is-bot.qa-in { animation-delay: 0.09s; }
+@keyframes qa-nu { from { opacity: 0; translate: 0 calc(16 * var(--u)); scale: 0.97; } }
+@media (prefers-reduced-motion: reduce) { .qa-log .qa-msg.qa-in { animation: none; } }
+
+.mido-view button[aria-pressed="true"], .mido-chips button[aria-pressed="true"], .ennichi-chips button[aria-pressed="true"], .qa-chip[aria-pressed="true"] { background: var(--grain), #634A2E; color: #FEEBC4; box-shadow: inset 0 0 0 calc(2 * var(--u)) #FEEBC4, calc(-3 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, 0.45); }
+.site-tabs a[aria-current="page"] { box-shadow: inset 0 0 0 2px #FEEBC4; }
