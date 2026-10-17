@@ -16,11 +16,9 @@ const botBox = (body, mark = "#C8323A") => `<div class="qa-bubble" style="--mark
 const pick3 = () => FAQ.flatMap((g) => g.items).filter((it) => it.top).slice(0, 3);
 const pairs = () => pick3().map((it) => `<div class="qa-pair"><div class="qa-msg is-me" style="--mark:${MARKS[it.icon]}"><div class="qa-bubble"><p>${esc(it.q)}</p></div></div><div class="qa-msg is-bot">${botBox(answerBody(it), MARKS[it.icon])}</div></div>`).join("") + '<button type="button" class="mido-more" data-more><span>ほかの質問を見る</span></button>';
 
-const QSVG = '<svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M10 9.3a2 2 0 1 1 2.6 1.9c-.5.2-.6.6-.6 1.1M12 14.1h.01"/></svg>';
-
 const allQuestions = () => `<div class="qa-all">${FAQ.map((g, gi) => `<section class="qa-grp"><p class="qa-label">${esc(g.group)}</p><div class="qa-qs">${g.items.map((it, i) => `<button type="button" class="qa-q" data-gi="${gi}" data-i="${i}" aria-pressed="false">${esc(it.q)}</button>`).join("")}</div></section>`).join("")}</div>`;
 
-let log, intro, sheet, panel, wrap, closeBtn, lastTrigger, locked = false;
+let log, sheet, panel, wrap, closeBtn, lastTrigger, locked = false;
 
 function mount() {
   const root = document.createElement("div");
@@ -40,7 +38,6 @@ function mount() {
     <div class="qa-sheet-wrap"><div class="qa-sheet-panel" role="dialog" aria-modal="true" aria-label="よくある質問の答え" tabindex="-1">
       <button type="button" class="qa-sheet-x" data-close aria-label="とじる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
       <div class="qa-sheet-body">
-        <div class="qa-intro"><i class="qa-intro-ic" aria-hidden="true">${QSVG}</i><h2>よくある質問</h2><p>知りたいことを、下から選んでください。</p></div>
         <ol class="qa-log" role="log" aria-live="polite" aria-label="よくある質問の答え"></ol>
         <div class="qa-sheet-foot">${allQuestions()}</div>
       </div>
@@ -51,8 +48,7 @@ function mount() {
   panel = sheet.querySelector(".qa-sheet-body");
   closeBtn = sheet.querySelector(".qa-sheet-x");
   log = sheet.querySelector(".qa-log");
-  intro = sheet.querySelector(".qa-intro");
-  log.hidden = true;
+  showDefault();
   sheet.addEventListener("click", onChoose);
   addEventListener("keydown", (e) => { if (e.key === "Escape" && !sheet.hidden) closeSheet(); });
   addEventListener("resize", place);
@@ -96,11 +92,14 @@ function addMsg(cls, inner) {
   return li;
 }
 
+const WELCOME = { q: "ここは何？", say: "高専祭「縁」へようこそ", icon: "search", a: "ここは、よくある質問のコーナーです。知りたいことを、下から選んでください。自由に聞きたいときは AIくん、スタッフに伝えたいときは本部へ（いちばん下の帯から）。" };
+
 function showDefault() {
   markCurrent(null, null);
+  log.hidden = false;
   log.replaceChildren();
-  log.hidden = true;
-  intro.hidden = false;
+  addMsg("is-me", `<div class="qa-bubble"><p>${esc(WELCOME.q)}</p></div>`);
+  addMsg("is-bot", botBox(answerBody(WELCOME), MARKS[WELCOME.icon]));
 }
 
 function answerBody(it) {
@@ -150,7 +149,6 @@ function talk(userText, body, mark) {
     return;
   }
   log.replaceChildren();
-  intro.hidden = true;
   log.hidden = false;
   addMsg("is-me qa-in", `<div class="qa-bubble"><p>${esc(userText)}</p></div>`);
   play(addMsg("is-bot qa-in", botBox(body, mark)));
