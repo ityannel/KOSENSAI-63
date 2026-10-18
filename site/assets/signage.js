@@ -455,7 +455,6 @@ const slideWay = {
       <div class="body">
         <ul>${routes.map((r, i) => { const d = SIGNAGE.dests[r.to]; return `<li class="slide-l ${r.to === hot ? "hot" : ""}" style="--i:${i}"><span class="mk">${ic(d?.mark)}</span>
           <span class="nm">${esc(d?.name ?? r.to)}<small>${esc(d?.sub ?? "")}</small></span><span class="sy">${esc(r.say)}<small>歩いて${r.min}分</small></span>${arrow(r.dir)}</li>`; }).join("")}</ul>
-        <div class="qrbox pop" style="--i:6"><img src="${qr(url, 320)}" alt=""><b>スマホで道案内</b><small>QR を読みこむと、ここから行き先まで地図で案内</small></div>
       </div>` };
   },
 };
@@ -733,6 +732,20 @@ function fitNow(el) {
     p.style.setProperty("--dur", `${Math.max(8, dist / 22 + 5)}s`);
   }
 }
+const FIT = ".plate b, .way li .nm, .nx b, .cv h3, .cv .lv";
+function fitText(root) {
+  root.querySelectorAll(FIT).forEach((n) => {
+    n.style.whiteSpace = "nowrap"; n.style.minWidth = "0"; n.style.overflow = "hidden";
+    const smalls = [...n.querySelectorAll("small")].map((s) => [s, parseFloat(getComputedStyle(s).fontSize)]);
+    const base = parseFloat(getComputedStyle(n).fontSize);
+    let r = 1;
+    while (n.scrollWidth > n.clientWidth + 1 && r > 0.45) {
+      r *= 0.94;
+      n.style.fontSize = `${base * r}px`;
+      smalls.forEach(([s, f]) => { s.style.fontSize = `${f * r}px`; });
+    }
+  });
+}
 function panOverflow(el, dur) {
   setTimeout(() => {
     if (!el.isConnected) return;
@@ -767,6 +780,7 @@ async function show(i, first = false) {
     const el = slide.firstElementChild;
     numify(el);
     fitNow(el);
+    fitText(el);
     panOverflow(el, built.dur);
     const bp = $("#bgphoto");
     if (!bp) {  } else if (built.bgPhoto) { bp.style.backgroundImage = `url("${built.bgPhoto}")`; bp.classList.add("on"); } else bp.classList.remove("on");

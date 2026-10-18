@@ -640,3 +640,6 @@ body.portrait:not(.no-sgqr) .sl { bottom: 230px; }
 .sl.pan { clip-path: inset(0 -800px); }
 .pc, .plate, .cv, .now, .way li, .qrbox, .ls, .nx, .bubble, .mapbox { border: 4px solid #634A2E; }
 .nx.hot { border-color: #634A2E; }
+.way .body { grid-template-columns: 1fr; }
+.way li .nm small, .way li .sy, .way li .sy small, .plate .wk, .nx small, .nx time, .nx .w { white-space: nowrap; }
+.plate.wkp b { flex: 1; min-width: 0; }
