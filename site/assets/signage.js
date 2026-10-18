@@ -123,15 +123,17 @@ const siteUrl = (path) => new URL(path, location.href).href;
 const sgQr = document.createElement("div");
 sgQr.id = "sg-qr";
 document.getElementById("stage").append(sgQr);
-function paintSgQr() {
-  if (sgQr.dataset.ok) return;
-  const src = qr(siteUrl("./"), 256, { colorDark: "#FFF6E4", colorLight: "rgba(0,0,0,0)" });
+let sgQrUrl = "";
+function setSgQr(url = siteUrl("./")) {
+  if (url === sgQrUrl && sgQr.dataset.ok) return;
+  const src = qr(url, 256, { colorDark: "#FFF6E4", colorLight: "rgba(0,0,0,0)" });
   if (!src) return;
+  sgQrUrl = url;
   sgQr.innerHTML = `<img src="${src}" alt=""><span>スマホで見る！</span>`;
   sgQr.dataset.ok = "1";
 }
-const sgQrTimer = setInterval(() => { paintSgQr(); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
-paintSgQr();
+const sgQrTimer = setInterval(() => { setSgQr(sgQrUrl || undefined); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
+setSgQr();
 async function photos(list) {
   const got = {};
   await Promise.race([Promise.all(list.filter((p) => p.has_photo).map((p) => loadPhoto(p.id).then((s) => { got[p.id] = s; }).catch(() => {}))), sleep(7000)]);
@@ -168,7 +170,7 @@ const slidePosts = {
     const got = await photos(rot.slice(0, 6));
     const pick = rot.filter((p) => !p.has_photo || got[p.id]).slice(0, 3);
     if (!pick.length) return null;
-    return { dur: 15000, cls: "posts", after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
+    return { dur: 15000, cls: "posts", qrUrl: siteUrl("map.html?tab=feed"), after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
       <span class="tag slide-l"><i>${ic("image")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　最新の投稿</span>
       <h1 class="ttl">${chars("みんなの「いま」")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got)).join("")}</div>` };
@@ -181,7 +183,7 @@ const slidePopular = {
     const got = await photos(liked.slice(0, 6));
     const pick = liked.filter((p) => !p.has_photo || got[p.id]).slice(0, 3);
     if (pick.length < 2) return null;
-    return { dur: 14000, cls: "posts popular", after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
+    return { dur: 14000, cls: "posts popular", qrUrl: siteUrl("map.html?tab=feed"), after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
       <span class="tag slide-l"><i>${ic("heart")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　人気の投稿</span>
       <h1 class="ttl">${chars("いま、いちばん人気！")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got, i + 1)).join("")}</div>` };
@@ -209,7 +211,7 @@ const slideShop = {
     const rm = spot && room && !/^pt-/.test(room) ? await routeMap(spot.here, room).catch((e) => { console.warn(e); return null; }) : null;
     const lines = String(s.note ?? "").split(/\n/).filter(Boolean);
     const name = flat(s.name);
-    return { dur: rm ? 16000 : 13000, cls: "shop", after: (root) => rm?.play(root), html: `
+    return { dur: rm ? 16000 : 13000, cls: "shop", qrUrl: siteUrl(`map.html${room || s.place ? `#${encodeURIComponent(room || s.place)}` : ""}`), after: (root) => rm?.play(root), html: `
       <span class="tag slide-l"><i>${ic("store")}</i>ピックアップ模擬店</span>
       <div class="body">
         <i class="ghost" aria-hidden="true">${esc(s.group ?? "")}</i>
@@ -245,7 +247,7 @@ const slideCrowd = {
     const easy = fresh.filter((d) => d.status === "normal").slice(0, 5);
     const busy = fresh.filter((d) => d.status === "20min" || d.status === "soldout").slice(0, 5);
     const li = (d) => `<li><span>${esc(flat(d.name))}</span><em style="--c:${WAIT[d.status]?.[1]}">${WAIT[d.status]?.[0]}</em></li>`;
-    return { dur: 11000, cls: "crowd", html: `
+    return { dur: 11000, cls: "crowd", qrUrl: siteUrl("map.html"), html: `
       <span class="tag slide-l"><i>${ic("people")}</i>いまの混雑</span>
       <h1 class="ttl">${chars("人の多さは、どのくらい？")}</h1>
       <div class="row">${cards}</div>
@@ -295,7 +297,7 @@ const slideStage = {
     const nx = later.map((a, k) => row(dayOf(a.s) !== dayOf(t) ? `あした ${dayOf(a.s)}` : k === 0 && cur ? "NEXT" : "THEN", a.name, tStart(a), [a.kind, a.mood].filter(Boolean).join("　"), k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k, a.photo));
     if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, tStart(nextEv), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
-    return { dur: hot ? 15000 : 13000, cls: "stage", after(el) {
+    return { dur: hot ? 15000 : 13000, cls: "stage", qrUrl: siteUrl(`map.html#${STAGE.venue}`), after(el) {
       const fill = el.querySelector(".barw .bar i");
       if (fill && cur) { const upd = () => { if (!el.isConnected) return clearInterval(bid); fill.style.width = `${Math.min(100, Math.max(0, Math.round(((now() - cur.s) / (cur.e - cur.s)) * 1000) / 10))}%`; }; const bid = setInterval(upd, 1000); upd(); }
       const card = el.querySelector(".now.has-ph"), imgs = [...el.querySelectorAll(".now .ph")];
@@ -342,7 +344,7 @@ const slideWay = {
     const url = siteUrl(`map.html?here=${encodeURIComponent(spot.here)}`);
     const t = now(), hot = hurryItem(t)?.venue;
     const routes = [...spot.routes].sort((x, y) => (y.to === hot) - (x.to === hot)).slice(0, hot ? 4 : 5);
-    return { dur: 14000, cls: "way", html: `
+    return { dur: 14000, cls: "way", qrUrl: url, html: `
       <span class="tag slide-l"><i>${ic("compass")}</i>道案内</span>
       <h1 class="ttl">${chars(`${spot.name}から`)}</h1>
       <div class="body">
@@ -442,17 +444,29 @@ const slideShare = {
 const slideStamp = {
   async build() {
     const url = siteUrl("rally.html");
-    return { dur: 15000, cls: "share stamp", html: `
+    const goal = Math.max(1, RALLY.goal);
+    const TILT = [-9, 7, -4, 11, -12, 5];
+    const slots = Array.from({ length: goal }, (_, i) => (i < 2
+      ? `<li class="rc-slot is-stamped" style="--tilt:${TILT[i]}deg"><span class="rc-ring"><i class="rc-hanko">縁</i></span></li>`
+      : `<li class="rc-slot"><span class="rc-ring"><b>${i + 1}</b></span></li>`)).join("");
+    return { dur: 16000, cls: "share stamp", html: `
       <div class="wrap">
         <div>
           <h1>${chars("スタンプを" + "\n" + "集めよう！")}</h1>
           <div class="how">
-            <div class="rise" style="--i:6"><i>1</i>校内の QR を読むと、スタンプが押される</div>
-            <div class="rise" style="--i:7"><i>2</i>はじめの1個は、玄関のインフォメーションで</div>
-            <div class="rise" style="--i:8"><i>3</i>${RALLY.goal}個そろえたら、${esc(RALLY.claimPlace)}へ</div>
+            <div class="rise" style="--i:6"><i>1</i><span>校内の QR を読むと、スタンプが押される</span></div>
+            <div class="rise" style="--i:7"><i>2</i><span>はじめの1個は、玄関のインフォメーションで</span></div>
+            <div class="rise" style="--i:8"><i>3</i><span>${goal}個そろえたら、${esc(RALLY.claimPlace)}へ</span></div>
           </div>
+          <div class="goqr rise" style="--i:9"><img src="${qr(url, 200)}" alt=""><span class="cap">スマホで<br>スタンプカードを開く</span></div>
         </div>
-        <div class="scan pop" style="--i:4"><i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i><img src="${qr(url)}" alt=""><span class="cap">スマホでスタンプカードを開く</span></div>
+        <div class="stampcard pop" style="--i:4">
+          <span class="rcs-face">
+            <span class="rc-head"><img class="rc-logo" src="assets/img/logo-s.webp" alt=""><span class="rc-name"><b>スタンプラリー</b><small>第${esc(FESTIVAL.edition)}回 函館高専祭「縁」</small></span></span>
+            <ol class="rc-slots">${slots}</ol>
+            <span class="rc-foot"><b class="rc-state">${goal}個そろえて、景品ゲット！</b></span>
+          </span>
+        </div>
       </div>` };
   },
 };
@@ -466,7 +480,7 @@ function closedState(t) {
 const slideClosing = {
   async build() {
     const c = closedState(now());
-    return { dur: 60000, cls: "closing", html: `
+    return { dur: 60000, cls: "closing", qrUrl: siteUrl("./"), html: `
       <span class="en pop" style="--i:0"><img src="assets/img/logo-s.webp" alt="縁"></span>
       <h1 class="rise" style="--i:2">${c?.final === false ? "本日の" : ""}一般公開は終了しました</h1>
       <p class="rise" style="--i:4">ご来場ありがとうございました</p>` };
@@ -477,7 +491,7 @@ const fwEvent = () => EVENTS.find((e) => e.title === "花火");
 function fireworksNow(t = now()) { const e = fwEvent(); return !!e && t >= Date.parse(e.start) && t < Date.parse(e.end); }
 const slideFireworks = {
   async build() {
-    return { dur: 90000, cls: "fwslide", html: `<h1 class="fwt">${chars("花火！")}</h1>` };
+    return { dur: 90000, cls: "fwslide", qrUrl: siteUrl("map.html#ground"), html: `<h1 class="fwt">${chars("花火！")}</h1>` };
   },
 };
 const fwCv = $("#fw"), fwCtx = fwCv.getContext("2d");
@@ -592,6 +606,8 @@ async function show(i, first = false) {
     let uncover = null;
     if (!first) uncover = await cover();
     slide.innerHTML = `<section class="sl ${built.cls}">${built.html}</section>`;
+    document.body.classList.toggle("no-sgqr", /(^| )(share|stamp)( |$)/.test(built.cls));
+    setSgQr(built.qrUrl);
     const [c1, c2] = BG[key] ?? BG.intro;
     stage.style.setProperty("--bg1", c1); stage.style.setProperty("--bg2", c2); stage.style.setProperty("--a", c1);
     const el = slide.firstElementChild;

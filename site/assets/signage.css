@@ -561,3 +561,27 @@ body.portrait .stage .ttl { font-size: 64px; }
 #sg-qr img { display: block; width: 160px; height: 160px; margin: 0 auto; }
 #sg-qr span { display: block; margin-top: 8px; font: 400 30px/1.2 var(--hud); letter-spacing: .04em; white-space: nowrap; }
 body.portrait #sg-qr { top: auto; right: auto; left: 36px; bottom: 28px; }
+body.no-sgqr #sg-qr { display: none; }
+.share .how, .share .how *, .share .cap, .share .goqr * { text-shadow: none !important; }
+.share .how span { flex: 1; min-width: 0; }
+.stamp .goqr { margin-top: 36px; display: flex; align-items: center; gap: 28px; }
+.stamp .goqr img { display: block; width: 190px; height: 190px; padding: 14px; border-radius: 22px; background: #fff; }
+.stamp .goqr .cap { position: static; font: 400 38px/1.3 var(--hud); letter-spacing: .03em; }
+.stampcard { --u: 2.2px; --hud-font: var(--hud); --text-font: "Zen Kaku Gothic New", sans-serif; justify-self: center; width: 860px; rotate: -1.2deg; filter: drop-shadow(-10px 8px 0 rgba(48, 44, 41, .55)); color: #634A2E; }
+.stampcard .rcs-face { position: relative; display: flex; flex-direction: column; aspect-ratio: 91 / 72; padding: calc(16 * var(--u)) calc(18 * var(--u)) calc(12 * var(--u)); border-radius: calc(10 * var(--u)); background: linear-gradient(115deg, rgba(216, 69, 127, .08), rgba(227, 164, 58, .1)), #FFFBF2; box-shadow: inset 0 0 0 calc(6 * var(--u)) #FFFBF2, inset 0 0 0 calc(7.5 * var(--u)) #C8323A; overflow: hidden; }
+.stampcard .rc-head { display: flex; align-items: center; gap: calc(9 * var(--u)); padding-bottom: calc(8 * var(--u)); border-bottom: calc(1.5 * var(--u)) dashed rgba(99, 74, 46, .3); }
+.stampcard .rc-logo { flex: none; width: calc(38 * var(--u)); height: auto; }
+.stampcard .rc-name { display: grid; line-height: 1.2; }
+.stampcard .rc-name b { font-family: var(--hud-font); font-weight: 400; font-size: calc(19 * var(--u)); }
+.stampcard .rc-name small { font-family: var(--text-font); font-weight: 700; font-size: calc(12 * var(--u)); opacity: .75; }
+.stampcard .rc-slots { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: calc(8 * var(--u)) 0; margin: 0; padding: calc(8 * var(--u)) 0 0; list-style: none; }
+.stampcard .rc-slot { display: grid; justify-items: center; width: calc(100 * var(--u)); text-align: center; }
+.stampcard .rc-ring { position: relative; display: grid; place-items: center; width: calc(58 * var(--u)); aspect-ratio: 1; border: calc(2 * var(--u)) dashed rgba(99, 74, 46, .32); border-radius: 50%; }
+.stampcard .rc-ring b { font-family: var(--hud-font); font-weight: 400; font-size: calc(24 * var(--u)); color: rgba(99, 74, 46, .22); }
+.stampcard .is-stamped .rc-ring { border-color: transparent; }
+.stampcard .rc-hanko { display: grid; place-items: center; width: calc(64 * var(--u)); aspect-ratio: 1; border: calc(3.5 * var(--u)) solid #C8323A; border-radius: 50%; color: #C8323A; font-family: var(--hud-font); font-style: normal; font-size: calc(36 * var(--u)); line-height: 1; rotate: var(--tilt, -8deg); opacity: .88; }
+.stampcard .rc-foot { display: flex; justify-content: center; padding-top: calc(6 * var(--u)); }
+.stampcard .rc-state { font-family: var(--hud-font); font-weight: 400; font-size: calc(16 * var(--u)); }
+body.portrait .stampcard { width: 760px; }
+.stamp .how { font-size: 36px; }
+body.portrait .stampcard { --u: 1.9px; width: 740px; }
