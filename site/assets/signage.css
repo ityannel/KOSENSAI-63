@@ -556,11 +556,12 @@ body.portrait .stage .ttl { font-size: 64px; }
 .now .ph { animation: ph-pan 15s linear both; }
 .nx.has-ph::before { animation: nx-pan 20s linear both; }
 @media (prefers-reduced-motion: reduce) { .now .ph, .nx.has-ph::before { animation: none; } }
-#sg-qr { position: absolute; z-index: 35; top: 28px; right: 36px; width: 168px; text-align: center; color: #FFF6E4; filter: drop-shadow(-3px 3px 0 rgba(48, 44, 41, .45)); }
+#sg-qr { position: absolute; z-index: 35; top: 24px; right: 28px; width: 284px; text-align: center; color: #FFF6E4; filter: drop-shadow(-3px 3px 0 rgba(48, 44, 41, .45)); }
 #sg-qr:not([data-ok]) { display: none; }
-#sg-qr img { display: block; width: 160px; height: 160px; margin: 0 auto; }
-#sg-qr span { display: block; margin-top: 8px; font: 400 30px/1.2 var(--hud); letter-spacing: .04em; white-space: nowrap; }
-body.portrait #sg-qr { top: auto; right: auto; left: 36px; bottom: 28px; }
+#sg-qr b { display: block; padding: 22px; border-radius: 26px; background: #fff; }
+#sg-qr img { display: block; width: 240px; height: 240px; image-rendering: pixelated; }
+#sg-qr span { display: block; margin-top: 8px; font: 400 34px/1.2 var(--hud); letter-spacing: .04em; white-space: nowrap; }
+body.portrait #sg-qr { top: auto; right: auto; left: 28px; bottom: 24px; }
 body.no-sgqr #sg-qr { display: none; }
 .share .how, .share .how *, .share .cap, .share .goqr * { text-shadow: none !important; }
 .share .how span { flex: 1; min-width: 0; }

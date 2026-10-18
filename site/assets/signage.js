@@ -126,10 +126,10 @@ document.getElementById("stage").append(sgQr);
 let sgQrUrl = "";
 function setSgQr(url = siteUrl("./")) {
   if (url === sgQrUrl && sgQr.dataset.ok) return;
-  const src = qr(url, 256, { colorDark: "#FFF6E4", colorLight: "rgba(0,0,0,0)" });
+  const src = qr(url, 400, { colorDark: "#1d1612", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.L });
   if (!src) return;
   sgQrUrl = url;
-  sgQr.innerHTML = `<img src="${src}" alt=""><span>スマホで見る！</span>`;
+  sgQr.innerHTML = `<b><img src="${src}" alt=""></b><span>スマホで見る！</span>`;
   sgQr.dataset.ok = "1";
 }
 const sgQrTimer = setInterval(() => { setSgQr(sgQrUrl || undefined); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
