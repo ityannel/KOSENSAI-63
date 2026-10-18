@@ -446,10 +446,37 @@ const slideStamp = {
     const url = siteUrl("rally.html");
     const goal = Math.max(1, RALLY.goal);
     const TILT = [-9, 7, -4, 11, -12, 5];
-    const slots = Array.from({ length: goal }, (_, i) => (i < 2
-      ? `<li class="rc-slot is-stamped" style="--tilt:${TILT[i]}deg"><span class="rc-ring"><i class="rc-hanko">縁</i></span></li>`
-      : `<li class="rc-slot"><span class="rc-ring"><b>${i + 1}</b></span></li>`)).join("");
-    return { dur: 16000, cls: "share stamp", html: `
+    const slots = Array.from({ length: goal }, (_, i) => `<li class="rc-slot" style="--tilt:${TILT[i % TILT.length]}deg"><span class="rc-ring"><b>${i + 1}</b><i class="rc-hanko">縁</i><i class="rc-pon">ポンッ</i></span></li>`).join("");
+    const CONFETTI = ["#d9669b", "#2f8fe0", "#a061c9", "#ffd24a", "#3BF53D", "#FEEBC4", "#ff6b5e"];
+    const burst = (box) => {
+      for (let k = 0; k < 110; k++) {
+        const p = document.createElement("s");
+        p.style.cssText = `background:${CONFETTI[k % CONFETTI.length]};width:${10 + (k % 4) * 5}px;height:${16 + (k % 3) * 6}px`;
+        box.append(p);
+        const ang = Math.random() * Math.PI * 2, far = 260 + Math.random() * 620;
+        const dx = Math.cos(ang) * far, dy = Math.sin(ang) * far * 0.7 - 140;
+        p.animate([
+          { transform: "translate(0, 0) rotate(0deg)", opacity: 1 },
+          { transform: `translate(${dx}px, ${dy}px) rotate(${Math.random() * 720}deg)`, opacity: 1, offset: 0.5 },
+          { transform: `translate(${dx * 1.08}px, ${dy + 460}px) rotate(${Math.random() * 900}deg)`, opacity: 0 },
+        ], { duration: 2000 + Math.random() * 1000, easing: "cubic-bezier(.2,.7,.4,1)", fill: "forwards" }).finished.then(() => p.remove()).catch(() => {});
+      }
+    };
+    const play = (el) => {
+      const card = el.querySelector(".stampcard"), inner = el.querySelector(".sc-in"), items = [...el.querySelectorAll(".rc-slot")], state = el.querySelector(".rc-state"), box = el.querySelector(".sc-confetti");
+      const at = (ms, fn) => setTimeout(() => { if (el.isConnected) fn(); }, ms);
+      items.forEach((s, i) => at(2300 + i * 820, () => {
+        s.classList.add("is-on");
+        inner.classList.remove("bump"); void inner.offsetWidth; inner.classList.add("bump");
+      }));
+      at(2300 + items.length * 820 + 200, () => {
+        card.classList.add("is-done");
+        state.textContent = "達成！ 景品と交換できます";
+        burst(box);
+        setTimeout(() => { if (el.isConnected) burst(box); }, 700);
+      });
+    };
+    return { dur: 17000, cls: "share stamp", after: play, html: `
       <div class="wrap">
         <div>
           <h1>${chars("スタンプを" + "\n" + "集めよう！")}</h1>
@@ -461,11 +488,12 @@ const slideStamp = {
           <div class="goqr rise" style="--i:9"><img src="${qr(url, 200)}" alt=""><span class="cap">スマホで<br>スタンプカードを開く</span></div>
         </div>
         <div class="stampcard pop" style="--i:4">
-          <span class="rcs-face">
+          <span class="sc-confetti" aria-hidden="true"></span><span class="sc-clear" aria-hidden="true">達成！</span>
+          <span class="sc-in"><span class="rcs-face">
             <span class="rc-head"><img class="rc-logo" src="assets/img/logo-s.webp" alt=""><span class="rc-name"><b>スタンプラリー</b><small>第${esc(FESTIVAL.edition)}回 函館高専祭「縁」</small></span></span>
             <ol class="rc-slots">${slots}</ol>
             <span class="rc-foot"><b class="rc-state">${goal}個そろえて、景品ゲット！</b></span>
-          </span>
+          </span></span>
         </div>
       </div>` };
   },
