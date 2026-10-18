@@ -1,5 +1,5 @@
 import { noticeOf, paintNotice } from "./notice.js";
-import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE } from "./config.js";
+import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE, RALLY } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
 import { avatar, VERIFIED } from "./avatar.js";
@@ -120,6 +120,18 @@ const qr = (text, size = 440) => {
   return box.querySelector("canvas")?.toDataURL("image/png") ?? "";
 };
 const siteUrl = (path) => new URL(path, location.href).href;
+const sgQr = document.createElement("div");
+sgQr.id = "sg-qr";
+document.getElementById("stage").append(sgQr);
+function paintSgQr() {
+  if (sgQr.dataset.ok) return;
+  const src = qr(siteUrl("./"), 256);
+  if (!src) return;
+  sgQr.innerHTML = `<img src="${src}" alt=""><span>スマホで、縁のサイトへ</span>`;
+  sgQr.dataset.ok = "1";
+}
+const sgQrTimer = setInterval(() => { paintSgQr(); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
+paintSgQr();
 async function photos(list) {
   const got = {};
   await Promise.race([Promise.all(list.filter((p) => p.has_photo).map((p) => loadPhoto(p.id).then((s) => { got[p.id] = s; }).catch(() => {}))), sleep(7000)]);
@@ -427,6 +439,24 @@ const slideShare = {
   },
 };
 
+const slideStamp = {
+  async build() {
+    const url = siteUrl("rally.html");
+    return { dur: 15000, cls: "share stamp", html: `
+      <div class="wrap">
+        <div>
+          <h1>${chars("スタンプを" + "\n" + "集めよう！")}</h1>
+          <div class="how">
+            <div class="rise" style="--i:6"><i>1</i>校内の QR を読むと、スタンプが押される</div>
+            <div class="rise" style="--i:7"><i>2</i>はじめの1個は、玄関のインフォメーションで</div>
+            <div class="rise" style="--i:8"><i>3</i>${RALLY.goal}個そろえたら、${esc(RALLY.claimPlace)}へ</div>
+          </div>
+        </div>
+        <div class="scan pop" style="--i:4"><i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i><img src="${qr(url)}" alt=""><span class="cap">スマホでスタンプカードを開く</span></div>
+      </div>` };
+  },
+};
+
 const CLOSING_MIN = 5;
 function closedState(t) {
   const days = FESTIVAL.days.map((d) => ({ close: Date.parse(d.close) }));
@@ -495,11 +525,11 @@ const fwStop = () => { fwOn = false; };
 function syncFireworks() { const on = fireworksNow(); document.body.classList.toggle("is-fw", on); on ? fwStart() : fwStop(); }
 setInterval(syncFireworks, 2000); syncFireworks();
 
-const SLIDES = { stage: slideStage, closing: slideClosing, fireworks: slideFireworks, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare };
+const SLIDES = { stage: slideStage, closing: slideClosing, fireworks: slideFireworks, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare, stamp: slideStamp };
 function plan() {
   if (closedState(now())) return ["closing"];
   if (fireworksNow()) return ["fireworks"];
-  const base = ["stage", "posts", "shop", "crowd", "popular", "shop", "way", "shop", "share"];
+  const base = ["stage", "posts", "shop", "crowd", "popular", "stamp", "shop", "way", "shop", "share"];
   if (hurryItem(now())) base.splice(4, 0, "stage");
   return base;
 }
