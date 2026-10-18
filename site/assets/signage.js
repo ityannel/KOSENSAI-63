@@ -179,10 +179,12 @@ function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
   if (same) {
     sgQr.querySelector(".ss-label").textContent = label;
   } else {
-    sgQr.innerHTML = `<h2>スマホで見る！</h2><div class="ss-phone" aria-hidden="true"><i class="ss-island"></i><div class="ss-screen"><iframe src="${esc(url)}" title="" tabindex="-1" scrolling="no"></iframe></div></div><b class="ss-qr"><img src="${src}" alt=""></b><p class="ss-label">${esc(label)}</p>`;
+    const portrait = document.body.classList.contains("portrait");
+    const phone = portrait ? "" : `<div class="ss-phone" aria-hidden="true"><i class="ss-island"></i><div class="ss-screen"><iframe src="${esc(url)}" title="" tabindex="-1" scrolling="no"></iframe></div></div>`;
+    sgQr.innerHTML = `<h2>スマホで見る！</h2>${phone}<b class="ss-qr"><img src="${src}" alt=""></b><p class="ss-label">${esc(label)}</p>`;
     const token = ++demoToken;
     const frame = sgQr.querySelector("iframe");
-    if (kind) runDemo(frame, kind, token).catch(() => {});
+    if (frame && kind) runDemo(frame, kind, token).catch(() => {});
   }
   sgQr.dataset.ok = "1";
 }
