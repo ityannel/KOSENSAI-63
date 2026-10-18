@@ -123,7 +123,21 @@ const siteUrl = (path) => new URL(path, location.href).href;
 const sgQr = document.createElement("div");
 sgQr.id = "sg-qr";
 document.getElementById("stage").append(sgQr);
-let sgQrUrl = "", sgQrLabel = "", demoToken = 0;
+const ALT = {
+  stage: [null, { url: "mido.html", label: "見どころの見かた", kind: "mido" }],
+  shop: [null, { url: "map.html", label: "模擬店のさがしかた", kind: "shops" }],
+  popular: [{ url: "ai.html", label: "AIくんに聞いてみよう", kind: "ai" }],
+  crowd: [{ url: "./", label: "ホームの機能いろいろ", kind: "home" }],
+};
+const altN = {};
+function pickDemo(key, built) {
+  const list = ALT[key];
+  if (!list) return built;
+  const n = altN[key] = (altN[key] ?? -1) + 1;
+  const a = list[n % list.length];
+  return a ? { ...built, qrUrl: siteUrl(a.url), qrLabel: a.label, qrKind: a.kind } : built;
+}
+let sgQrUrl = "", sgQrLabel = "", sgQrKind = "", demoToken = 0;
 const waitMs = (ms) => new Promise((r) => setTimeout(r, ms));
 async function runDemo(frame, kind, token) {
   const alive = () => token === demoToken && frame.isConnected;
@@ -141,6 +155,15 @@ async function runDemo(frame, kind, token) {
     frame.parentElement.append(d);
     setTimeout(() => d.remove(), 900);
   };
+  const glide = (sc, to, ms = 1700) => new Promise((res) => {
+    const from = sc.scrollTop, t0 = performance.now();
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / ms);
+      sc.scrollTop = from + (to - from) * (k < 0.5 ? 2 * k * k : 1 - ((-2 * k + 2) ** 2) / 2);
+      if (k < 1 && alive()) requestAnimationFrame(step); else res();
+    };
+    requestAnimationFrame(step);
+  });
   await until(() => doc()?.readyState === "complete" && !doc().querySelector("#m-loading"), 12000);
   if (!alive()) return;
   await waitMs(1600);
@@ -164,20 +187,46 @@ async function runDemo(frame, kind, token) {
     await waitMs(1100);
     const first = doc().querySelector("#m-results [data-go]");
     if (first && alive()) { tap(first); await waitMs(350); first.click(); }
+  } else if (kind === "home" || kind === "mido") {
+    const sc = doc().scrollingElement;
+    if (kind === "mido") {
+      const tk = await until(() => doc().querySelector("#mido-tickets .tk"), 5000);
+      if (tk && alive()) { await glide(sc, 260); await waitMs(400); const t1 = doc().querySelector("#mido-tickets .tk"); if (t1) { tap(t1); await waitMs(350); t1.click(); await waitMs(2600); doc().querySelector("[data-dt-close]")?.click(); await waitMs(600); } }
+    }
+    for (const y of [500, 1100, 1700, 2300, 2900]) { if (!alive()) return; await glide(sc, y); await waitMs(900); }
+  } else if (kind === "shops") {
+    const chip = await until(() => [...doc().querySelectorAll("#m-chips .m-chip")].find((b) => /模擬店/.test(b.textContent)), 5000);
+    if (chip && alive()) {
+      tap(chip); await waitMs(350); chip.click(); await waitMs(1800);
+      const first = await until(() => doc().querySelector("#m-sheet-body [data-go]"), 3000);
+      if (first && alive()) { tap(first); await waitMs(350); first.click(); }
+    }
+  } else if (kind === "ai") {
+    const box = await until(() => doc().querySelector("#ai-q"), 5000);
+    if (box) {
+      const type = async (chars) => { box.value = ""; for (const ch of chars) { if (!alive()) return; box.value += ch; box.dispatchEvent(new (doc().defaultView.Event)("input", { bubbles: true })); await waitMs(420); } };
+      tap(box); box.focus(); await waitMs(700);
+      await type(["ト", "イ"]); await waitMs(2400);
+      await type(["ス", "テ"]); await waitMs(2400);
+      await type(["ス", "タ"]); await waitMs(2400);
+      box.value = ""; box.dispatchEvent(new (doc().defaultView.Event)("input", { bubbles: true }));
+    }
   } else if (kind === "feed") {
     const list = await until(() => doc().querySelector("#m-feed-list"), 5000);
-    if (list) for (const y of [300, 700, 1100]) { if (!alive()) return; list.scrollTo({ top: y, behavior: "smooth" }); await waitMs(2400); }
+    if (list) for (const y of [300, 700, 1100]) { if (!alive()) return; await glide(list, y); await waitMs(900); }
   }
   if (alive()) { await waitMs(2500); if (alive()) { frame.src = sgQrUrl; runDemo(frame, kind, token); } }
 }
 function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
-  if (url === sgQrUrl && label === sgQrLabel && sgQr.dataset.ok) return;
+  if (url === sgQrUrl && label === sgQrLabel && kind === sgQrKind && sgQr.dataset.ok) return;
   const src = qr(url, 400, { colorDark: "#1d1612", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.L });
   if (!src) return;
   const same = url === sgQrUrl;
-  sgQrUrl = url; sgQrLabel = label;
+  sgQrUrl = url; sgQrLabel = label; sgQrKind = kind;
   if (same) {
     sgQr.querySelector(".ss-label").textContent = label;
+    const frame = sgQr.querySelector("iframe");
+    if (frame && kind) { const token = ++demoToken; frame.src = url; runDemo(frame, kind, token).catch(() => {}); }
   } else {
     const portrait = document.body.classList.contains("portrait");
     const phone = portrait ? "" : `<div class="ss-phone" aria-hidden="true"><i class="ss-island"></i><div class="ss-screen"><iframe src="${esc(url)}" title="" tabindex="-1" scrolling="no"></iframe></div></div>`;
@@ -188,7 +237,7 @@ function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
   }
   sgQr.dataset.ok = "1";
 }
-const sgQrTimer = setInterval(() => { setSgQr(sgQrUrl || undefined, sgQrLabel || undefined); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
+const sgQrTimer = setInterval(() => { setSgQr(sgQrUrl || undefined, sgQrLabel || undefined, sgQrKind); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
 setSgQr();
 async function photos(list) {
   const got = {};
@@ -697,6 +746,7 @@ async function show(i, first = false) {
     }
     if (!built) { built = await slideShare.build(); order = ["share"]; i = 0; }
     const key = order[i];
+    built = pickDemo(key, built);
     let uncover = null;
     if (!first) { document.body.classList.add("wipe-on"); uncover = await cover(); }
     slide.innerHTML = `<section class="sl ${built.cls}">${built.html}</section>`;
