@@ -556,12 +556,22 @@ body.portrait .stage .ttl { font-size: 64px; }
 .now .ph { animation: ph-pan 15s linear both; }
 .nx.has-ph::before { animation: nx-pan 20s linear both; }
 @media (prefers-reduced-motion: reduce) { .now .ph, .nx.has-ph::before { animation: none; } }
-#sg-qr { position: absolute; z-index: 35; top: 24px; right: 28px; width: 284px; text-align: center; color: #FFF6E4; filter: drop-shadow(-3px 3px 0 rgba(48, 44, 41, .45)); }
+#sg-qr { position: absolute; z-index: 35; top: 0; right: 0; bottom: 0; width: 440px; box-sizing: border-box; padding: 34px 32px 30px; display: flex; flex-direction: column; align-items: center; text-align: center; color: #FFF6E4; background: linear-gradient(180deg, rgba(48, 24, 40, .34), rgba(48, 24, 40, .5)); border-left: 4px solid rgba(255, 246, 228, .35); }
 #sg-qr:not([data-ok]) { display: none; }
-#sg-qr b { display: block; padding: 22px; border-radius: 26px; background: #fff; }
-#sg-qr img { display: block; width: 240px; height: 240px; image-rendering: pixelated; }
-#sg-qr span { display: block; margin-top: 8px; font: 400 34px/1.2 var(--hud); letter-spacing: .04em; white-space: nowrap; }
-body.portrait #sg-qr { top: auto; right: auto; left: 28px; bottom: 24px; }
+#sg-qr h2 { margin: 0; font: 400 54px/1.1 var(--hud); letter-spacing: .04em; }
+#sg-qr .ss-phone { --ps: .6564; position: relative; flex: none; margin-top: 18px; width: calc(390px * var(--ps) + 20px); height: calc(822px * var(--ps) + 20px); box-sizing: border-box; padding: 10px; border-radius: 32px; background: #17161a; box-shadow: -8px 7px 0 rgba(48, 44, 41, .45), inset 0 0 0 2px #3a3940; }
+#sg-qr .ss-screen { position: relative; width: 100%; height: 100%; border-radius: 23px; overflow: hidden; background: #FBF3E0; }
+#sg-qr .ss-screen iframe { position: absolute; left: 0; top: 30px; width: 390px; height: calc(822px - 30px / var(--ps)); border: 0; transform: scale(var(--ps)); transform-origin: 0 0; pointer-events: none; background: #fff; }
+#sg-qr .ss-island { position: absolute; z-index: 2; left: 50%; top: 17px; width: 62px; height: 17px; translate: -50% 0; border-radius: 9px; background: #000; }
+#sg-qr .ss-qr { display: block; margin-top: 18px; padding: 16px; border-radius: 24px; background: #fff; box-shadow: -8px 7px 0 rgba(48, 44, 41, .45); }
+#sg-qr img { display: block; width: 236px; height: 236px; image-rendering: pixelated; }
+#sg-qr .ss-label { margin: 14px 0 0; font: 400 32px/1.25 var(--hud); letter-spacing: .03em; color: #FFE9A8; }
+body.portrait #sg-qr { top: auto; left: 0; width: auto; height: 490px; padding: 26px 44px; display: grid; grid-template-columns: 250px 1fr; grid-template-rows: auto 1fr auto; column-gap: 48px; align-items: start; justify-items: start; text-align: left; border-left: 0; border-top: 4px solid rgba(255, 246, 228, .35); }
+body.portrait #sg-qr .ss-phone { --ps: .5; grid-column: 1; grid-row: 1 / 4; margin-top: 0; }
+body.portrait #sg-qr h2 { grid-column: 2; grid-row: 1; font-size: 54px; }
+body.portrait #sg-qr .ss-qr { grid-column: 2; grid-row: 2; margin-top: 14px; }
+body.portrait #sg-qr img { width: 224px; height: 224px; }
+body.portrait #sg-qr .ss-label { grid-column: 2; grid-row: 3; margin-top: 10px; font-size: 38px; align-self: end; }
 body.no-sgqr #sg-qr { display: none; }
 .share .how, .share .how *, .share .cap, .share .goqr * { text-shadow: none !important; }
 .share .how span { flex: 1; min-width: 0; }
@@ -624,5 +634,7 @@ body.wipe-on #sg-qr { opacity: 0; transition-duration: .12s; }
 @keyframes sc-shake-big { 0%, 100% { translate: 0 0; } 10% { translate: -14px 8px; } 20% { translate: 12px -10px; } 30% { translate: -10px -8px; } 40% { translate: 12px 10px; } 50% { translate: -8px 6px; } 60% { translate: 8px -6px; } 75% { translate: -4px 3px; } 90% { translate: 3px -2px; } }
 .stampcard.is-done .sc-clear { animation-duration: 3.6s; }
 .stampcard.is-done .rcs-face { animation-duration: .6s; animation-iteration-count: 6; }
-body:not(.portrait):not(.no-sgqr) .sl { right: 332px; }
-body.portrait:not(.no-sgqr) .sl { bottom: 300px; }
+body:not(.portrait):not(.no-sgqr) .sl { right: 480px; }
+body.portrait:not(.no-sgqr) .sl { bottom: 430px; }
+#sg-qr .ss-tap { position: absolute; z-index: 3; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; border: 4px solid #fff; background: rgba(255, 255, 255, .5); box-shadow: 0 0 0 4px rgba(0, 0, 0, .15); pointer-events: none; animation: ss-tap .85s ease-out both; }
+@keyframes ss-tap { 0% { scale: .3; opacity: 0; } 25% { scale: 1; opacity: 1; } 100% { scale: 1.5; opacity: 0; } }

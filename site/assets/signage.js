@@ -123,16 +123,70 @@ const siteUrl = (path) => new URL(path, location.href).href;
 const sgQr = document.createElement("div");
 sgQr.id = "sg-qr";
 document.getElementById("stage").append(sgQr);
-let sgQrUrl = "";
-function setSgQr(url = siteUrl("./")) {
-  if (url === sgQrUrl && sgQr.dataset.ok) return;
+let sgQrUrl = "", sgQrLabel = "", demoToken = 0;
+const waitMs = (ms) => new Promise((r) => setTimeout(r, ms));
+async function runDemo(frame, kind, token) {
+  const alive = () => token === demoToken && frame.isConnected;
+  const doc = () => frame.contentDocument;
+  const until = async (fn, ms = 9000) => {
+    const t0 = Date.now();
+    while (alive() && Date.now() - t0 < ms) { try { const v = fn(); if (v) return v; } catch {  } await waitMs(150); }
+    return null;
+  };
+  const tap = (el) => {
+    const r = el.getBoundingClientRect(), ps = parseFloat(getComputedStyle(frame.closest(".ss-phone")).getPropertyValue("--ps")) || 0.65;
+    const d = document.createElement("i");
+    d.className = "ss-tap";
+    d.style.left = `${(r.left + r.width / 2) * ps}px`; d.style.top = `${(r.top + r.height / 2) * ps}px`;
+    frame.parentElement.append(d);
+    setTimeout(() => d.remove(), 900);
+  };
+  await until(() => doc()?.readyState === "complete" && !doc().querySelector("#m-loading"), 12000);
+  if (!alive()) return;
+  await waitMs(1600);
+  if (kind === "place") {
+    const btn = await until(() => doc().querySelector('.sh-btn[data-act="route"]'), 4000);
+    if (btn && alive()) { tap(btn); await waitMs(350); btn.click(); }
+    await waitMs(1500);
+    const q = doc().querySelector("#m-q");
+    if (q && alive()) {
+      tap(q); q.focus(); await waitMs(800);
+      for (const ch of ["玄", "関"]) { if (!alive()) return; q.value += ch; q.dispatchEvent(new (doc().defaultView.Event)("input", { bubbles: true })); await waitMs(420); }
+      await waitMs(1000);
+      const first = doc().querySelector("#m-results [data-go]");
+      if (first && alive()) { tap(first); await waitMs(350); first.click(); }
+    }
+  } else if (kind === "search") {
+    const q = doc().querySelector("#m-q");
+    if (!q) return;
+    tap(q); q.focus(); await waitMs(900);
+    for (const ch of ["ト", "イ", "レ"]) { if (!alive()) return; q.value += ch; q.dispatchEvent(new (doc().defaultView.Event)("input", { bubbles: true })); await waitMs(380); }
+    await waitMs(1100);
+    const first = doc().querySelector("#m-results [data-go]");
+    if (first && alive()) { tap(first); await waitMs(350); first.click(); }
+  } else if (kind === "feed") {
+    const list = await until(() => doc().querySelector("#m-feed-list"), 5000);
+    if (list) for (const y of [300, 700, 1100]) { if (!alive()) return; list.scrollTo({ top: y, behavior: "smooth" }); await waitMs(2400); }
+  }
+  if (alive()) { await waitMs(2500); if (alive()) { frame.src = sgQrUrl; runDemo(frame, kind, token); } }
+}
+function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
+  if (url === sgQrUrl && label === sgQrLabel && sgQr.dataset.ok) return;
   const src = qr(url, 400, { colorDark: "#1d1612", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.L });
   if (!src) return;
-  sgQrUrl = url;
-  sgQr.innerHTML = `<b><img src="${src}" alt=""></b><span>スマホで見る！</span>`;
+  const same = url === sgQrUrl;
+  sgQrUrl = url; sgQrLabel = label;
+  if (same) {
+    sgQr.querySelector(".ss-label").textContent = label;
+  } else {
+    sgQr.innerHTML = `<h2>スマホで見る！</h2><div class="ss-phone" aria-hidden="true"><i class="ss-island"></i><div class="ss-screen"><iframe src="${esc(url)}" title="" tabindex="-1" scrolling="no"></iframe></div></div><b class="ss-qr"><img src="${src}" alt=""></b><p class="ss-label">${esc(label)}</p>`;
+    const token = ++demoToken;
+    const frame = sgQr.querySelector("iframe");
+    if (kind) runDemo(frame, kind, token).catch(() => {});
+  }
   sgQr.dataset.ok = "1";
 }
-const sgQrTimer = setInterval(() => { setSgQr(sgQrUrl || undefined); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
+const sgQrTimer = setInterval(() => { setSgQr(sgQrUrl || undefined, sgQrLabel || undefined); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
 setSgQr();
 async function photos(list) {
   const got = {};
@@ -170,7 +224,7 @@ const slidePosts = {
     const got = await photos(rot.slice(0, 6));
     const pick = rot.filter((p) => !p.has_photo || got[p.id]).slice(0, 3);
     if (!pick.length) return null;
-    return { dur: 15000, cls: "posts", qrUrl: siteUrl("map.html?tab=feed"), after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
+    return { dur: 15000, cls: "posts", qrUrl: siteUrl("map.html?tab=feed"), qrLabel: "みんなの投稿を見る", qrKind: "feed", after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
       <span class="tag slide-l"><i>${ic("image")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　最新の投稿</span>
       <h1 class="ttl">${chars("みんなの「いま」")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got)).join("")}</div>` };
@@ -183,7 +237,7 @@ const slidePopular = {
     const got = await photos(liked.slice(0, 6));
     const pick = liked.filter((p) => !p.has_photo || got[p.id]).slice(0, 3);
     if (pick.length < 2) return null;
-    return { dur: 14000, cls: "posts popular", qrUrl: siteUrl("map.html?tab=feed"), after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
+    return { dur: 14000, cls: "posts popular", qrUrl: siteUrl("map.html?tab=feed"), qrLabel: "人気の投稿を見る", qrKind: "feed", after: countUp, bgPhoto: got[pick.find((p) => got[p.id])?.id] ?? null, html: `
       <span class="tag slide-l"><i>${ic("heart")}</i><img class="elogo-s" src="assets/img/enistagram.webp" alt="Enistagram">　人気の投稿</span>
       <h1 class="ttl">${chars("いま、いちばん人気！")}</h1>
       <div class="row">${pick.map((p, i) => postCard(p, i, got, i + 1)).join("")}</div>` };
@@ -211,7 +265,7 @@ const slideShop = {
     const rm = spot && room && !/^pt-/.test(room) ? await routeMap(spot.here, room).catch((e) => { console.warn(e); return null; }) : null;
     const lines = String(s.note ?? "").split(/\n/).filter(Boolean);
     const name = flat(s.name);
-    return { dur: rm ? 16000 : 13000, cls: "shop", qrUrl: siteUrl(`map.html${room || s.place ? `#${encodeURIComponent(room || s.place)}` : ""}`), after: (root) => rm?.play(root), html: `
+    return { dur: rm ? 16000 : 13000, cls: "shop", qrUrl: siteUrl(`map.html${room || s.place ? `#${encodeURIComponent(room || s.place)}` : ""}`), qrLabel: "このお店の場所を見る", qrKind: "place", after: (root) => rm?.play(root), html: `
       <span class="tag slide-l"><i>${ic("store")}</i>ピックアップ模擬店</span>
       <div class="body">
         <i class="ghost" aria-hidden="true">${esc(s.group ?? "")}</i>
@@ -247,7 +301,7 @@ const slideCrowd = {
     const easy = fresh.filter((d) => d.status === "normal").slice(0, 5);
     const busy = fresh.filter((d) => d.status === "20min" || d.status === "soldout").slice(0, 5);
     const li = (d) => `<li><span>${esc(flat(d.name))}</span><em style="--c:${WAIT[d.status]?.[1]}">${WAIT[d.status]?.[0]}</em></li>`;
-    return { dur: 11000, cls: "crowd", qrUrl: siteUrl("map.html"), html: `
+    return { dur: 11000, cls: "crowd", qrUrl: siteUrl("map.html"), qrLabel: "混雑を地図で見る", qrKind: "search", html: `
       <span class="tag slide-l"><i>${ic("people")}</i>いまの混雑</span>
       <h1 class="ttl">${chars("人の多さは、どのくらい？")}</h1>
       <div class="row">${cards}</div>
@@ -297,7 +351,7 @@ const slideStage = {
     const nx = later.map((a, k) => row(dayOf(a.s) !== dayOf(t) ? `あした ${dayOf(a.s)}` : k === 0 && cur ? "NEXT" : "THEN", a.name, tStart(a), [a.kind, a.mood].filter(Boolean).join("　"), k === 0 && hot && !cur && hot.s === a.s && hot.title === a.name, 2 + k, a.photo));
     if (nextEv) nx.push(row(dayOf(nextEv.s) === dayOf(t) ? "このあと" : "つぎの企画", nextEv.title, tStart(nextEv), `${dayOf(nextEv.s) === dayOf(t) ? "" : `${dayOf(nextEv.s)}　`}${venueName(nextEv.venue)}${nextEv.internal ? "（学内の方限定）" : ""}`, hot && hot.s === nextEv.s && hot.title === nextEv.title, 2 + later.length));
     const mini = onEv.length ? `<p class="mini rise" style="--i:4">開催中：${onEv.map((e) => `<em class="nm">${esc(e.title)}</em>（${esc(venueName(e.venue))}）`).join("　")}</p>` : "";
-    return { dur: hot ? 15000 : 13000, cls: "stage", qrUrl: siteUrl(`map.html#${STAGE.venue}`), after(el) {
+    return { dur: hot ? 15000 : 13000, cls: "stage", qrUrl: siteUrl(`map.html#${STAGE.venue}`), qrLabel: "ステージの場所を見る", qrKind: "place", after(el) {
       const fill = el.querySelector(".barw .bar i");
       if (fill && cur) { const upd = () => { if (!el.isConnected) return clearInterval(bid); fill.style.width = `${Math.min(100, Math.max(0, Math.round(((now() - cur.s) / (cur.e - cur.s)) * 1000) / 10))}%`; }; const bid = setInterval(upd, 1000); upd(); }
       const card = el.querySelector(".now.has-ph"), imgs = [...el.querySelectorAll(".now .ph")];
@@ -344,7 +398,7 @@ const slideWay = {
     const url = siteUrl(`map.html?here=${encodeURIComponent(spot.here)}`);
     const t = now(), hot = hurryItem(t)?.venue;
     const routes = [...spot.routes].sort((x, y) => (y.to === hot) - (x.to === hot)).slice(0, hot ? 4 : 5);
-    return { dur: 14000, cls: "way", qrUrl: url, html: `
+    return { dur: 14000, cls: "way", qrUrl: url, qrLabel: "道案内をスマホで", html: `
       <span class="tag slide-l"><i>${ic("compass")}</i>道案内</span>
       <h1 class="ttl">${chars(`${spot.name}から`)}</h1>
       <div class="body">
@@ -529,7 +583,7 @@ const fwEvent = () => EVENTS.find((e) => e.title === "花火");
 function fireworksNow(t = now()) { const e = fwEvent(); return !!e && t >= Date.parse(e.start) && t < Date.parse(e.end); }
 const slideFireworks = {
   async build() {
-    return { dur: 90000, cls: "fwslide", qrUrl: siteUrl("map.html#ground"), html: `<h1 class="fwt">${chars("花火！")}</h1>` };
+    return { dur: 90000, cls: "fwslide", qrUrl: siteUrl("map.html#ground"), qrLabel: "花火の場所を見る", qrKind: "place", html: `<h1 class="fwt">${chars("花火！")}</h1>` };
   },
 };
 const fwCv = $("#fw"), fwCtx = fwCv.getContext("2d");
@@ -645,7 +699,7 @@ async function show(i, first = false) {
     if (!first) { document.body.classList.add("wipe-on"); uncover = await cover(); }
     slide.innerHTML = `<section class="sl ${built.cls}">${built.html}</section>`;
     document.body.classList.toggle("no-sgqr", /(^| )(share|stamp)( |$)/.test(built.cls));
-    setSgQr(built.qrUrl);
+    setSgQr(built.qrUrl, built.qrLabel, built.qrKind);
     const [c1, c2] = BG[key] ?? BG.intro;
     stage.style.setProperty("--bg1", c1); stage.style.setProperty("--bg2", c2); stage.style.setProperty("--a", c1);
     const el = slide.firstElementChild;
