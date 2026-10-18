@@ -733,6 +733,16 @@ function fitNow(el) {
     p.style.setProperty("--dur", `${Math.max(8, dist / 22 + 5)}s`);
   }
 }
+function panOverflow(el, dur) {
+  setTimeout(() => {
+    if (!el.isConnected) return;
+    const dist = el.scrollHeight - el.clientHeight;
+    if (dist < 10) return;
+    el.classList.add("pan");
+    const run = Math.max(3500, dur - 7000);
+    for (const c of el.children) c.animate([{ translate: "0 0" }, { translate: `0 ${-Math.ceil(dist + 16)}px` }], { duration: run, delay: 400, easing: "ease-in-out", fill: "forwards" });
+  }, 2800);
+}
 async function show(i, first = false) {
   if (busy) return;
   busy = true; clearTimeout(timer);
@@ -757,6 +767,7 @@ async function show(i, first = false) {
     const el = slide.firstElementChild;
     numify(el);
     fitNow(el);
+    panOverflow(el, built.dur);
     const bp = $("#bgphoto");
     if (!bp) {  } else if (built.bgPhoto) { bp.style.backgroundImage = `url("${built.bgPhoto}")`; bp.classList.add("on"); } else bp.classList.remove("on");
     idx = i;
