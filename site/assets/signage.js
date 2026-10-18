@@ -270,12 +270,12 @@ const slideStage = {
     const main = cur
       ? `<div class="now slide-l${cur.photo ? " has-ph" : ""}"><span class="lab">NOW ON STAGE</span>${phOf(cur)}<div class="eq">${Array.from({ length: 30 }, (_, k) => `<i style="--k:${k};--h:${30 + Math.round(Math.random() * 55)}%"></i>`).join("")}</div>
           <h2>${esc(cur.name)}</h2>${chips(cur)}
-          ${cur.copy ? `<p class="cp"><span class="in">${esc(cur.copy).replace(/\n/g, "<br>")}</span></p>` : ""}
+          ${(cur.copyNoSet ?? cur.copy) ? `<p class="cp"><span class="in">${esc(cur.copyNoSet ?? cur.copy).replace(/\n/g, "<br>")}</span></p>` : ""}
           <div class="barw"><time>${tStart(cur)}</time><div class="bar"><i style="width:${Math.round(((t - cur.s) / (cur.e - cur.s)) * 100)}%"></i></div><time>${tEnd(cur)}</time></div></div>`
       : nxt
         ? `<div class="now wait slide-l${nxt.photo ? " has-ph" : ""}"><span class="lab">${dayOf(nxt.s) === dayOf(t) ? "NEXT" : `あした ${dayOf(nxt.s)}`}</span>${phOf(nxt)}
           <h2 class="nm">${esc(nxt.name)}</h2>${chips(nxt, `<span class="chip">${tRange(nxt)}</span>`)}
-          ${nxt.copy ? `<p class="cp"><span class="in">${esc(nxt.copy).replace(/\n/g, "<br>")}</span></p>` : ""}</div>`
+          ${(nxt.copyNoSet ?? nxt.copy) ? `<p class="cp"><span class="in">${esc(nxt.copyNoSet ?? nxt.copy).replace(/\n/g, "<br>")}</span></p>` : ""}</div>`
         : `<div class="now wait slide-l"><span class="lab">STAGE</span><h2>おやすみ</h2></div>`;
     const row = (small, title, time, sub, hotRow, n, photo = "") => `<div class="nx ${small === "NEXT" ? "is-next" : "is-then"} ${hotRow ? "hot" : ""}${photo ? " has-ph" : ""} rise" style="--i:${n}${photo ? `;--ph:url('/${esc(String(photo).replace(/^\//, ""))}')` : ""}"><span class="t">${time}</span><span class="w"><small>${small}</small><b class="nm">${esc(title)}</b><i>${esc(sub)}</i></span></div>`;
     const later = ACTS.filter((a) => a.s > t).slice(cur ? 0 : 1).slice(0, (nextEv ? 3 : 4) - (hot ? 1 : 0));
