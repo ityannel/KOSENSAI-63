@@ -611,3 +611,15 @@ body.wipe-on #sg-qr { opacity: 0; transition-duration: .12s; }
 .stampcard.is-done .rcs-face { animation: sc-glow .9s ease-in-out 3; }
 @keyframes sc-glow { 50% { box-shadow: inset 0 0 0 calc(6 * var(--u)) #FFFBF2, inset 0 0 0 calc(7.5 * var(--u)) #C8323A, 0 0 calc(60 * var(--u)) calc(10 * var(--u)) rgba(255, 210, 74, .85); } }
 .stampcard.is-done .rc-state { color: #C8323A; font-size: calc(19 * var(--u)); }
+.stampcard .rc-ring s { position: absolute; left: 50%; top: 50%; display: block; border-radius: 3px; z-index: 3; }
+.sc-rays { position: absolute; left: 50%; top: 50%; z-index: -1; width: 2600px; height: 2600px; translate: -50% -50%; border-radius: 50%; opacity: 0; pointer-events: none; background: repeating-conic-gradient(from 0deg, rgba(255, 236, 140, .75) 0deg 7deg, rgba(255, 236, 140, 0) 7deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 4%, transparent 62%); mask-image: radial-gradient(circle, #000 4%, transparent 62%); }
+.stampcard.is-done .sc-rays { animation: sc-rays 4.2s ease-out both; }
+@keyframes sc-rays { 0% { opacity: 0; rotate: 0deg; scale: .3; } 12% { opacity: 1; scale: 1; } 80% { opacity: .9; } 100% { opacity: 0; rotate: 70deg; scale: 1.1; } }
+.sc-flash { position: absolute; inset: 0; z-index: 60; pointer-events: none; background: #fff; opacity: 0; animation: sc-flash .8s ease-out both; }
+@keyframes sc-flash { 0% { opacity: .95; } 100% { opacity: 0; } }
+.stamp .wrap.shake { animation: sc-shake .22s linear; }
+.stamp .wrap.shake-big { animation: sc-shake-big .9s linear; }
+@keyframes sc-shake { 0%, 100% { translate: 0 0; } 25% { translate: -4px 3px; } 50% { translate: 4px -3px; } 75% { translate: -3px -2px; } }
+@keyframes sc-shake-big { 0%, 100% { translate: 0 0; } 10% { translate: -14px 8px; } 20% { translate: 12px -10px; } 30% { translate: -10px -8px; } 40% { translate: 12px 10px; } 50% { translate: -8px 6px; } 60% { translate: 8px -6px; } 75% { translate: -4px 3px; } 90% { translate: 3px -2px; } }
+.stampcard.is-done .sc-clear { animation-duration: 3.6s; }
+.stampcard.is-done .rcs-face { animation-duration: .6s; animation-iteration-count: 6; }
