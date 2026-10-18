@@ -637,9 +637,13 @@ body:not(.portrait):not(.no-sgqr) .sl { right: 480px; }
 body.portrait:not(.no-sgqr) .sl { bottom: 230px; }
 #sg-qr .ss-tap { position: absolute; z-index: 3; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; border: 4px solid #fff; background: rgba(255, 255, 255, .5); box-shadow: 0 0 0 4px rgba(0, 0, 0, .15); pointer-events: none; animation: ss-tap .85s ease-out both; }
 @keyframes ss-tap { 0% { scale: .3; opacity: 0; } 25% { scale: 1; opacity: 1; } 100% { scale: 1.5; opacity: 0; } }
-.sl.pan { clip-path: inset(0 -800px); }
 .pc, .plate, .cv, .now, .way li, .qrbox, .ls, .nx, .bubble, .mapbox { border: 4px solid #634A2E; }
 .nx.hot { border-color: #634A2E; }
 .way .body { grid-template-columns: 1fr; }
 .way li .nm small, .way li .sy, .way li .sy small, .plate .wk, .nx small, .nx time, .nx .w { white-space: nowrap; }
 .plate.wkp b { flex: 1; min-width: 0; }
+@property --ft { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --fb { syntax: "<length>"; inherits: false; initial-value: 44px; }
+.pan-win { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; --ft: 0px; --fb: 44px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--ft), #000 calc(100% - var(--fb)), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 var(--ft), #000 calc(100% - var(--fb)), transparent 100%); }
+.pan-win.no-fade { -webkit-mask-image: none; mask-image: none; }
+.pan-in { flex: none; display: flex; flex-direction: column; }

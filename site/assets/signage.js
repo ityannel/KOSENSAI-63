@@ -746,14 +746,26 @@ function fitText(root) {
     }
   });
 }
-function panOverflow(el, dur) {
+function wrapPan(el, cls) {
+  if (/(^| )(posts|popular|share|stamp|closing|fwslide)( |$)/.test(cls)) return;
+  if (el.scrollHeight - el.clientHeight < 10) return;
+  const body = [...el.children].filter((c) => !c.matches(".tag, .ttl, h1"));
+  if (!body.length) return;
+  const win = document.createElement("div"), inn = document.createElement("div");
+  win.className = "pan-win"; inn.className = "pan-in";
+  body[0].before(win);
+  win.append(inn);
+  body.forEach((c) => inn.append(c));
+}
+function startPan(el, dur) {
   setTimeout(() => {
-    if (!el.isConnected) return;
-    const dist = el.scrollHeight - el.clientHeight;
-    if (dist < 10) return;
-    el.classList.add("pan");
+    const win = el.querySelector(".pan-win"), inn = el.querySelector(".pan-in");
+    if (!win || !el.isConnected) return;
+    const dist = inn.scrollHeight - win.clientHeight;
+    if (dist < 8) { win.classList.add("no-fade"); return; }
     const run = Math.max(3500, dur - 7000);
-    for (const c of el.children) c.animate([{ translate: "0 0" }, { translate: `0 ${-Math.ceil(dist + 16)}px` }], { duration: run, delay: 400, easing: "ease-in-out", fill: "forwards" });
+    inn.animate([{ translate: "0 0" }, { translate: `0 ${-Math.ceil(dist + 8)}px` }], { duration: run, delay: 500, easing: "ease-in-out", fill: "forwards" });
+    win.animate([{ "--ft": "0px", "--fb": "44px" }, { "--ft": "44px", "--fb": "44px", offset: 0.08 }, { "--ft": "44px", "--fb": "44px", offset: 0.9 }, { "--ft": "44px", "--fb": "0px" }], { duration: run + 500, delay: 500, fill: "forwards" });
   }, 2800);
 }
 async function show(i, first = false) {
@@ -781,11 +793,11 @@ async function show(i, first = false) {
     numify(el);
     fitNow(el);
     fitText(el);
-    panOverflow(el, built.dur);
+    wrapPan(el, built.cls);
     const bp = $("#bgphoto");
     if (!bp) {  } else if (built.bgPhoto) { bp.style.backgroundImage = `url("${built.bgPhoto}")`; bp.classList.add("on"); } else bp.classList.remove("on");
     idx = i;
-    if (uncover) { const p = uncover(); await sleep(120); el.classList.add("go"); built.after?.(el); await p; } else { el.classList.add("go"); built.after?.(el); }
+    if (uncover) { const p = uncover(); await sleep(120); el.classList.add("go"); built.after?.(el); startPan(el, built.dur); await p; } else { el.classList.add("go"); built.after?.(el); startPan(el, built.dur); }
     if (!params.get("only")) timer = setTimeout(() => { dir = 1; go(idx + 1); }, built.dur);
     else timer = setTimeout(() => { dir = 1; go(idx); }, built.dur);
   } finally { document.body.classList.remove("wipe-on"); busy = false; }
