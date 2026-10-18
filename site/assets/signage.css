@@ -551,3 +551,8 @@ body.is-hurry .now > p:not(.mood) { -webkit-line-clamp: 8; }
 .stage .ttl { margin-top: 12px; font-size: 72px; }
 .stage .grid { margin-top: 20px; padding-bottom: 10px; }
 body.portrait .stage .ttl { font-size: 64px; }
+@keyframes ph-pan { from { object-position: 0% 0%; } to { object-position: 100% 100%; } }
+@keyframes nx-pan { from { background-position: 70% 0%; } to { background-position: 70% 100%; } }
+.now .ph { animation: ph-pan 15s linear both; }
+.nx.has-ph::before { animation: nx-pan 20s linear both; }
+@media (prefers-reduced-motion: reduce) { .now .ph, .nx.has-ph::before { animation: none; } }

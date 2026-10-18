@@ -56,7 +56,8 @@ sgNotice.id = "sg-notice"; sgNotice.hidden = true;
 sgNotice.innerHTML = '<div class="sgn-in"></div>';
 document.getElementById("stage").append(sgNotice);
 function paintSgNotice() {
-  const n = noticeOf(liveNow, "signage", now());
+  const raw = noticeOf(liveNow, "signage", now());
+  const n = raw?.urgent ? raw : null;
   if ((n?.key ?? "") === (sgNotice.dataset.ntKey ?? "")) return;
   sgNotice.dataset.ntKey = n?.key ?? "";
   sgNotice.hidden = !n;
