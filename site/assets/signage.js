@@ -113,10 +113,10 @@ const heart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-
 const ARROW = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M12 50h66M52 22l28 28-28 28" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ROT = { right: 0, downright: 45, down: 90, downleft: 135, left: 180, upleft: 225, up: 270, upright: 315 };
 const arrow = (dir, cls = "ar") => `<span class="${cls}" style="--rot:${ROT[dir] ?? 0}deg">${ARROW}</span>`;
-const qr = (text, size = 440) => {
+const qr = (text, size = 440, colors = {}) => {
   if (!window.QRCode) return "";
   const box = document.createElement("div");
-  new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.M });
+  new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.M, ...colors });
   return box.querySelector("canvas")?.toDataURL("image/png") ?? "";
 };
 const siteUrl = (path) => new URL(path, location.href).href;
@@ -125,9 +125,9 @@ sgQr.id = "sg-qr";
 document.getElementById("stage").append(sgQr);
 function paintSgQr() {
   if (sgQr.dataset.ok) return;
-  const src = qr(siteUrl("./"), 256);
+  const src = qr(siteUrl("./"), 256, { colorDark: "#FFF6E4", colorLight: "rgba(0,0,0,0)" });
   if (!src) return;
-  sgQr.innerHTML = `<img src="${src}" alt=""><span>スマホで、縁のサイトへ</span>`;
+  sgQr.innerHTML = `<img src="${src}" alt=""><span>スマホで見る！</span>`;
   sgQr.dataset.ok = "1";
 }
 const sgQrTimer = setInterval(() => { paintSgQr(); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
