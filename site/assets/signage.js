@@ -454,9 +454,9 @@ const slideStamp = {
         <div>
           <h1>${chars("スタンプを" + "\n" + "集めよう！")}</h1>
           <div class="how">
-            <div class="rise" style="--i:6"><i>1</i><span>校内の QR を読むと、スタンプが押される</span></div>
-            <div class="rise" style="--i:7"><i>2</i><span>はじめの1個は、玄関のインフォメーションで</span></div>
-            <div class="rise" style="--i:8"><i>3</i><span>${goal}個そろえたら、${esc(RALLY.claimPlace)}へ</span></div>
+            <div class="rise" style="--i:6"><i>1</i><span>校内の QR を読むと、<wbr>スタンプが押される</span></div>
+            <div class="rise" style="--i:7"><i>2</i><span>はじめの1個は、<wbr>玄関のインフォメーションで</span></div>
+            <div class="rise" style="--i:8"><i>3</i><span>${goal}個そろえたら、<wbr>${esc(RALLY.claimPlace)}へ</span></div>
           </div>
           <div class="goqr rise" style="--i:9"><img src="${qr(url, 200)}" alt=""><span class="cap">スマホで<br>スタンプカードを開く</span></div>
         </div>
@@ -604,7 +604,7 @@ async function show(i, first = false) {
     if (!built) { built = await slideShare.build(); order = ["share"]; i = 0; }
     const key = order[i];
     let uncover = null;
-    if (!first) uncover = await cover();
+    if (!first) { document.body.classList.add("wipe-on"); uncover = await cover(); }
     slide.innerHTML = `<section class="sl ${built.cls}">${built.html}</section>`;
     document.body.classList.toggle("no-sgqr", /(^| )(share|stamp)( |$)/.test(built.cls));
     setSgQr(built.qrUrl);
@@ -619,7 +619,7 @@ async function show(i, first = false) {
     if (uncover) { const p = uncover(); await sleep(120); el.classList.add("go"); built.after?.(el); await p; } else { el.classList.add("go"); built.after?.(el); }
     if (!params.get("only")) timer = setTimeout(() => { dir = 1; go(idx + 1); }, built.dur);
     else timer = setTimeout(() => { dir = 1; go(idx); }, built.dur);
-  } finally { busy = false; }
+  } finally { document.body.classList.remove("wipe-on"); busy = false; }
 }
 function go(i) { const el = slide.firstElementChild; if (el) el.classList.add("out"); return show(i); }
 addEventListener("keydown", (e) => {

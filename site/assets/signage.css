@@ -585,3 +585,6 @@ body.no-sgqr #sg-qr { display: none; }
 body.portrait .stampcard { width: 760px; }
 .stamp .how { font-size: 36px; }
 body.portrait .stampcard { --u: 1.9px; width: 740px; }
+#sg-qr { transition: opacity .4s ease; }
+body.wipe-on #sg-qr { opacity: 0; transition-duration: .12s; }
+.stamp .how span { word-break: keep-all; text-wrap: balance; }
