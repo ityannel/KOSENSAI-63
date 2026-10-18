@@ -624,3 +624,5 @@ body.wipe-on #sg-qr { opacity: 0; transition-duration: .12s; }
 @keyframes sc-shake-big { 0%, 100% { translate: 0 0; } 10% { translate: -14px 8px; } 20% { translate: 12px -10px; } 30% { translate: -10px -8px; } 40% { translate: 12px 10px; } 50% { translate: -8px 6px; } 60% { translate: 8px -6px; } 75% { translate: -4px 3px; } 90% { translate: 3px -2px; } }
 .stampcard.is-done .sc-clear { animation-duration: 3.6s; }
 .stampcard.is-done .rcs-face { animation-duration: .6s; animation-iteration-count: 6; }
+body:not(.portrait):not(.no-sgqr) .sl { right: 332px; }
+body.portrait:not(.no-sgqr) .sl { bottom: 300px; }
