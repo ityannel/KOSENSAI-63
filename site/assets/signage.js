@@ -151,6 +151,7 @@ function pickDemo(key, built) {
   const a = list[n % list.length];
   return a ? { ...built, qrUrl: siteUrl(a.url), qrLabel: a.label, qrKind: a.kind } : built;
 }
+const demoSrc = (u) => u + (u.includes("?") ? "&" : "?") + "demo=1";
 let sgQrUrl = "", sgQrLabel = "", sgQrKind = "", demoToken = 0;
 const waitMs = (ms) => new Promise((r) => setTimeout(r, ms));
 async function runDemo(frame, kind, token) {
@@ -230,7 +231,7 @@ async function runDemo(frame, kind, token) {
     const list = await until(() => doc().querySelector("#m-feed-list"), 5000);
     if (list) for (const y of [300, 700, 1100]) { if (!alive()) return; await glide(list, y); await waitMs(900); }
   }
-  if (alive()) { await waitMs(2500); if (alive()) { frame.src = sgQrUrl; runDemo(frame, kind, token).catch(() => {}); } }
+  if (alive()) { await waitMs(2500); if (alive()) { frame.src = demoSrc(sgQrUrl); runDemo(frame, kind, token).catch(() => {}); } }
 }
 function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
   if (url === sgQrUrl && label === sgQrLabel && kind === sgQrKind && sgQr.dataset.ok) return;
@@ -241,10 +242,10 @@ function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
   if (same) {
     sgQr.querySelector(".ss-label").textContent = label;
     const frame = sgQr.querySelector("iframe");
-    if (frame && kind) { const token = ++demoToken; frame.src = url; runDemo(frame, kind, token).catch(() => {}); }
+    if (frame && kind) { const token = ++demoToken; frame.src = demoSrc(url); runDemo(frame, kind, token).catch(() => {}); }
   } else {
     const portrait = document.body.classList.contains("portrait");
-    const phone = portrait ? "" : `<div class="ss-phone" aria-hidden="true"><i class="ss-island"></i><div class="ss-screen"><iframe src="${esc(url)}" title="" tabindex="-1" scrolling="no"></iframe></div></div>`;
+    const phone = portrait ? "" : `<div class="ss-phone" aria-hidden="true"><i class="ss-island"></i><div class="ss-screen"><iframe src="${esc(demoSrc(url))}" title="" tabindex="-1" scrolling="no"></iframe></div></div>`;
     sgQr.innerHTML = `<h2>スマホで見る！</h2>${phone}<b class="ss-qr"><img src="${src}" alt=""></b><p class="ss-label">${esc(label)}</p>`;
     const token = ++demoToken;
     const frame = sgQr.querySelector("iframe");

@@ -356,8 +356,8 @@
               <button type="button" class="btn btn-ghost btn-sm" id="sg-open">開く</button>
             </div>
           </div>
-          <section class="sg-grp" data-grp="where"><header><h3>設置する場所と、見る人の向き</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
-            <div id="sg-where" class="sg-where"><p class="muted small">地図を読み込んでいます…</p></div></section>
+          <section class="sg-grp sg-grp-where" data-grp="where"><header><h3>設置する場所と、見る人の向き</h3><button type="button" class="btn btn-ghost btn-sm" id="sg-to-map">下の地図で決める ↓</button></header>
+            <p class="muted small">板の位置と向きは、いちばん下の「校内の地図」で動かして、「保存する」を押します。</p></section>
           <section class="sg-grp" data-grp="orient"><header><h3>画面の向き</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
             <select id="sg-orient"><option value="auto">自動（画面に合わせる）</option><option value="landscape">横</option><option value="portrait">縦</option></select></section>
           <section class="sg-grp" data-grp="slides"><header><h3>出すページ（全部にチェック＝すべて出す）</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
@@ -370,6 +370,10 @@
             <input id="sg-note" maxlength="200" autocomplete="off"></section>
           <div class="ai-save"><button class="btn btn-primary" type="submit">保存する</button><button type="button" class="btn btn-ghost" id="sg-reload">いま、再読み込みさせる</button><button type="button" class="btn btn-ghost btn-danger" id="sg-del">登録をやめる</button></div>
         </form>
+        <article class="card" id="sg-overview">
+          <header class="card-head"><h2>校内の地図（画面を置いている場所）</h2><button type="button" class="btn btn-primary btn-sm" id="sg-where-save" disabled>この場所を保存</button></header>
+          <div id="sg-where" class="sg-where"><p class="muted small">地図を読み込んでいます…</p></div>
+        </article>
       </section>
 
       <section class="view" id="view-shops" data-title="模擬店" data-eyebrow="SHOPS" hidden>

@@ -914,3 +914,14 @@ h1, h2, h3 { font-weight: 400; }
 .sg-mapbar, .sg-compass, .sg-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .sg-mapbar button, .sg-compass button, .sg-chips button { padding: 6px 12px; border: 1.5px solid #634A2E; border-radius: 999px; background: #FFFBF2; color: #634A2E; font: 700 .85rem inherit; cursor: pointer; }
 .sg-mapbar button[aria-pressed="true"] { background: #634A2E; color: #FEEBC4; }
+.sg-form.is-bulk .sg-grp-where { display: none; }
+.sg-other { cursor: pointer; }
+.sg-other .sg-board-r { fill: #55536b; }
+.sg-board-r.is-act { fill: #C8323A; }
+.sg-lbl { fill: #2b2a3d; text-anchor: middle; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 3px; pointer-events: none; }
+.sg-lbl.is-act { fill: #C8323A; }
+.sg-tray { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sg-tray:empty { display: none; }
+.sg-tray button { padding: 6px 12px; border: 1.5px dashed #634A2E; border-radius: 999px; background: #FFFBF2; color: #634A2E; font: 700 .85rem inherit; cursor: pointer; }
+.sg-deg input { width: 4.5em; }
+.sg-form .ai-save { position: sticky; bottom: 0; padding: 10px 0; background: var(--card-bg, #fff); z-index: 2; }

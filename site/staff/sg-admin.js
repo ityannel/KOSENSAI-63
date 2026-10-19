@@ -31,15 +31,16 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     }).join("") : '<p class="muted small">まだ、画面はありません。「＋ 画面を登録」を押すか、サイネージのページを開くと、ここに出ます。</p>';
     $("#sg-count").textContent = selected.size ? `${selected.size}台を選んでいます` : "チェックして選ぶと、まとめて編集できます";
     $("#sg-bulk").disabled = selected.size < 2;
+    picker?.setDevices(ids.map((id) => { const d = devices.get(id), l = ms(seen.get(id)?.seen); return { id, name: d?.name, place: d?.place && typeof d.place.x === "number" ? d.place : null, heading: Number.isFinite(Number(d?.heading)) ? Number(d.heading) : 270, live: l && now - l < 150000 }; }));
     $("#sg-all").checked = ids.length > 0 && ids.every((id) => selected.has(id));
   }
 
   async function ensurePicker() {
-    pickerP ??= createPicker($("#sg-where"), () => {}).then((p) => { picker = p; return p; }).catch((err) => { console.warn("[staff] 地図:", err); $("#sg-where").innerHTML = '<p class="muted small">地図を読み込めませんでした。</p>'; return null; });
+    pickerP ??= createPicker($("#sg-where"), { onSelect: (id, put) => { selected.clear(); openForm([id], !devices.has(id), false).then(() => { if (put) picker?.placeCenter(); }); } }).then((p) => { picker = p; paintList(); return p; }).catch((err) => { console.warn("[staff] 地図:", err); $("#sg-where").innerHTML = '<p class="muted small">地図を読み込めませんでした。</p>'; return null; });
     return pickerP;
   }
 
-  async function openForm(ids, isNew = false) {
+  async function openForm(ids, isNew = false, scroll = true) {
     targets = ids;
     form.hidden = false;
     form.classList.toggle("is-bulk", bulk());
@@ -65,8 +66,9 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     $("#sg-reload").hidden = bulk() ? false : !devices.has(ids[0]);
     paintList();
     const p = await ensurePicker();
-    p?.set({ place: d.place ?? null, heading: d.heading ?? 270 });
-    form.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    p?.setActive(bulk() ? null : ids[0], { name: d.name ?? "", place: d.place ?? null, heading: d.heading ?? 270 });
+    $("#sg-where-save").disabled = bulk();
+    if (scroll) form.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 
   function patch(grp) {
@@ -126,7 +128,10 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     try { await navigator.clipboard.writeText($("#sg-url").value); toast("URLをコピーしました"); } catch { $("#sg-url").select(); }
   });
   $("#sg-open").addEventListener("click", () => window.open($("#sg-url").value, "_blank", "noopener"));
-  $("#sg-close").addEventListener("click", () => { targets = []; form.hidden = true; paintList(); });
+  $("#sg-close").addEventListener("click", () => { targets = []; form.hidden = true; picker?.setActive(null); $("#sg-where-save").disabled = true; paintList(); });
+  $("#sg-name").addEventListener("input", (e) => picker?.setName(e.target.value));
+  $("#sg-to-map").addEventListener("click", () => $("#sg-overview").scrollIntoView({ block: "start", behavior: "smooth" }));
+  $("#sg-where-save").addEventListener("click", () => { if (targets.length === 1) form.requestSubmit(); });
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -157,7 +162,7 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     if (bulk() || !devices.has(id) || !confirm("この画面の登録をやめますか？（画面は、そのまま表示されます）")) return;
     try {
       await fs.deleteDoc(fs.doc(db, "signage_devices", id));
-      targets = []; form.hidden = true;
+      targets = []; form.hidden = true; picker?.setActive(null); $("#sg-where-save").disabled = true;
       toast("登録をやめました");
     } catch { toast("消せませんでした", true); }
   });
@@ -171,4 +176,5 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     paintList();
   });
   setInterval(paintList, 30000);
+  ensurePicker();
 }
