@@ -21,14 +21,14 @@ export async function listDevices(onList) {
   let kit;
   try { kit = await signedInKit(); } catch { onList([]); return; }
   const { fs, db } = kit;
-  fs.onSnapshot(fs.collection(db, "signage_devices"), (s) => onList(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => onList([]));
+  fs.onSnapshot(fs.collection(db, "signage_devices"), { includeMetadataChanges: true }, (s) => { if (!s.metadata.fromCache) onList(s.docs.map((d) => ({ id: d.id, ...d.data() }))); }, () => onList([]));
 }
 
 export async function watchDevice(onConfig) {
   let kit;
   try { kit = await signedInKit(); } catch { return; }
   const { fs, db } = kit;
-  fs.onSnapshot(fs.doc(db, "signage_devices", deviceId), (s) => onConfig(s.exists() ? s.data() : null), () => onConfig(null));
+  fs.onSnapshot(fs.doc(db, "signage_devices", deviceId), { includeMetadataChanges: true }, (s) => { if (!s.metadata.fromCache) onConfig(s.exists() ? s.data() : null); }, () => onConfig(null));
   const beat = () => fs.setDoc(fs.doc(db, "signage_seen", deviceId), {
     seen: fs.serverTimestamp(),
     w: innerWidth,
