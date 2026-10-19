@@ -253,6 +253,15 @@ function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
   }
   sgQr.dataset.ok = "1";
 }
+let qrInTimer = 0;
+function qrIn() {
+  if (!sgQr.dataset.ok) return;
+  clearTimeout(qrInTimer);
+  sgQr.classList.remove("qr-in");
+  void sgQr.offsetWidth;
+  sgQr.classList.add("qr-in");
+  qrInTimer = setTimeout(() => sgQr.classList.remove("qr-in"), 2000);
+}
 const sgQrTimer = setInterval(() => { setSgQr(sgQrUrl || undefined, sgQrLabel || undefined, sgQrKind); if (sgQr.dataset.ok) clearInterval(sgQrTimer); }, 500);
 setSgQr();
 async function photos(list) {
@@ -442,9 +451,10 @@ function paintHurry() {
   if (key === hurryKey) { if (h) { const m = Math.max(0, Math.ceil((h.s - now()) / 60000)); const mm = el.querySelector("[data-min]"); if (mm) { mm.textContent = m ? `あと${m}分` : "まもなく"; numify(mm); } } return; }
   hurryKey = key;
   document.body.classList.toggle("is-hurry", !!h);
-  if (!h) { el.hidden = true; el.innerHTML = ""; return; }
+  if (!h) { el.classList.add("out"); setTimeout(() => { if (!hurryKey) { el.hidden = true; el.innerHTML = ""; el.classList.remove("out"); } }, 500); return; }
   const d = SIGNAGE.dests[h.venue], r = spot?.routes.find((x) => x.to === h.venue);
   const m = Math.max(0, Math.ceil((h.s - now()) / 60000));
+  el.classList.remove("out");
   el.hidden = false;
   el.innerHTML = `<span class="run"><i>🏃</i></span><span class="big">急げ！</span>
     <span class="txt"><b><span data-min>${m ? `あと${m}分` : "まもなく"}</span>で　<span class="nm">${esc(h.title)}</span></b></span>
@@ -896,7 +906,7 @@ async function show(i, first = false) {
     if (uncover) { const p = uncover(); await sleep(120); el.classList.add("go"); built.after?.(el); startPan(el, built.dur); await p; } else { el.classList.add("go"); built.after?.(el); startPan(el, built.dur); }
     if (!params.get("only")) timer = setTimeout(() => { dir = 1; go(idx + 1); }, built.dur);
     else timer = setTimeout(() => { dir = 1; go(idx); }, built.dur);
-  } finally { document.body.classList.remove("wipe-on"); busy = false; }
+  } finally { document.body.classList.remove("wipe-on"); qrIn(); busy = false; }
 }
 function go(i) { const el = slide.firstElementChild; if (el) el.classList.add("out"); return show(i); }
 addEventListener("keydown", (e) => {

@@ -676,3 +676,20 @@ body.portrait.is-hurry:not(.no-sgqr) #slide { bottom: 190px; }
 .shop .body { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); }
 body.portrait .shop .body, body.portrait .way .body, .way .body { grid-template-columns: minmax(0, 1fr); }
 .shop .body > *, .way .body > * { min-width: 0; }
+@keyframes qrin { from { opacity: 0; translate: 140px 0; } }
+@keyframes qrinp { from { opacity: 0; translate: 0 140px; } }
+@keyframes hrise { from { opacity: 0; translate: 0 90px; } }
+@keyframes hout { to { translate: 0 100%; } }
+#sg-qr.qr-in { animation: qrin .9s var(--spring) backwards; }
+body.portrait #sg-qr.qr-in { animation-name: qrinp; }
+#sg-qr.qr-in > * { animation: hrise .8s var(--ease) backwards; }
+#sg-qr.qr-in > :nth-child(1) { animation-delay: .25s; }
+#sg-qr.qr-in > :nth-child(2) { animation-delay: .37s; }
+#sg-qr.qr-in > :nth-child(3) { animation-delay: .49s; }
+#sg-qr.qr-in > :nth-child(4) { animation-delay: .61s; }
+#hurry.out { animation: hout .45s var(--ease) both; }
+#hurry .run { animation: hrise .7s var(--ease) .3s backwards, run .5s steps(2) infinite; }
+#hurry .big { animation: hrise .7s var(--spring) .4s backwards, shake 1.2s ease-in-out infinite; }
+#hurry .txt { animation: hrise .7s var(--ease) .52s backwards; }
+#hurry .arr { animation: hrise .7s var(--ease) .64s backwards, nudge .9s ease-in-out infinite; }
+#slide { transition: bottom .5s var(--ease); }
