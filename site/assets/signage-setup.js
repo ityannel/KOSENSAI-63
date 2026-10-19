@@ -1,15 +1,21 @@
 import { deviceId, listDevices } from "./signage-device.js";
 
-const PICK = "kosen63-sg-pick", ID = "kosen63-sg-id";
+const ID = "kosen63-sg-id";
 const params = new URLSearchParams(location.search);
 const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const put = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch {  } };
 
-export const needSetup = () => params.has("setup") || (!params.has("d") && !params.has("at") && !params.has("only") && !params.has("now") && !get(PICK));
+export const needSetup = () => params.has("setup");
+let offered = false;
+export const offerSetup = (registered) => {
+  if (offered || registered || params.has("d") || params.has("at") || params.has("only") || params.has("now")) return;
+  offered = true;
+  openSetup(90000);
+};
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-export function openSetup() {
+export function openSetup(autoCloseMs = 0) {
   if (document.getElementById("sg-setup")) return;
   const box = document.createElement("div");
   box.id = "sg-setup";
@@ -29,13 +35,14 @@ export function openSetup() {
       <button type="button" class="ss-close" data-close>閉じる</button>
     </div>`;
   };
-  const done = (reload) => { put(PICK, "1"); if (reload) location.replace(new URL(location.pathname + location.search.replace(/[?&]setup=1/, "").replace(/^&/, "?"), location.href).href); else box.remove(); };
+  const done = (reload) => { clearTimeout(timer); if (reload) location.replace(new URL(location.pathname + location.search.replace(/[?&]setup=1/, "").replace(/^&/, "?"), location.href).href); else box.remove(); };
   box.addEventListener("click", (e) => {
     const dev = e.target.closest("[data-dev]");
     if (dev) { put(ID, dev.dataset.dev); done(true); return; }
-    if (e.target.closest("[data-none]")) { done(true); return; }
-    if (e.target.closest("[data-close]")) { put(PICK, "1"); box.remove(); }
+    if (e.target.closest("[data-none]")) { done(false); return; }
+    if (e.target.closest("[data-close]")) { clearTimeout(timer); box.remove(); }
   });
+  const timer = autoCloseMs ? setTimeout(() => box.remove(), autoCloseMs) : 0;
   document.body.append(box);
   paint();
   listDevices((list) => { devices = list; if (box.isConnected) paint(); });

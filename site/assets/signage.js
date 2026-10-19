@@ -1,6 +1,6 @@
 import { noticeOf, paintNotice } from "./notice.js";
 import { watchDevice } from "./signage-device.js";
-import { needSetup, openSetup, wireSetupTriggers } from "./signage-setup.js";
+import { needSetup, openSetup, offerSetup, wireSetupTriggers } from "./signage-setup.js";
 import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE, RALLY } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
@@ -735,6 +735,7 @@ let spotSeq = 0;
 function applyDevice(c) {
   const before = JSON.stringify([devCfg?.slides, devCfg?.only, devCfg?.only_until]);
   devCfg = c;
+  offerSetup(!!c);
   facing = [0, 90, 180, 270].includes(Number(c?.facing)) ? Number(c.facing) : 0;
   if (!params.get("at")) {
     const seq = ++spotSeq;
