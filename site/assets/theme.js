@@ -2,7 +2,7 @@
   const KEY = "kosen63-theme", TINT_KEY = "kosen63-tint";
   const root = document.documentElement;
   const lite = (() => {
-    try { if (self !== top && /[?&]demo=1/.test(location.search)) return false; } catch {  }
+    try { if (self !== top && /[?&]sgphone=1/.test(location.search)) return false; } catch {  }
     const q = new URLSearchParams(location.search).get("lite");
     try { if (q === "1" || q === "0") localStorage.setItem("kosen63-lite", q); } catch {  }
     let saved = null;

@@ -151,7 +151,7 @@ function pickDemo(key, built) {
   const a = list[n % list.length];
   return a ? { ...built, qrUrl: siteUrl(a.url), qrLabel: a.label, qrKind: a.kind } : built;
 }
-const demoSrc = (u) => { const [base, hash = ""] = u.split("#"); return `${base}${base.includes("?") ? "&" : "?"}demo=1${hash ? `#${hash}` : ""}`; };
+const demoSrc = (u) => { const [base, hash = ""] = u.split("#"); return `${base}${base.includes("?") ? "&" : "?"}sgphone=1${hash ? `#${hash}` : ""}`; };
 let sgQrUrl = "", sgQrLabel = "", sgQrKind = "", demoToken = 0;
 const waitMs = (ms) => new Promise((r) => setTimeout(r, ms));
 async function runDemo(frame, kind, token) {
