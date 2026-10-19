@@ -9,6 +9,7 @@ import { robotSvg } from "./ai-robot.js";
 import { OUTSIDE, OUTSIDE_BOUNDS, roadPath } from "./surroundings.js";
 import { HERE_KEY, HERE_SEC, saveCtx, readTour, saveTour } from "./ai-core.js";
 import * as mapAi from "./map-ai.js";
+const REDUCED = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
@@ -404,7 +405,7 @@ function setCam(bearing, tilt) {
 let camAnim = 0;
 function animateCam(b1, t1, ms = 380) {
   cancelAnimationFrame(camAnim);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) ms = 1;
+  if (REDUCED()) ms = 1;
   const b0 = cam.bearing, t0 = cam.tilt, db = normDeg(b1 - b0), s0 = performance.now();
   const step = (now) => {
     const t = Math.min(1, (now - s0) / ms), e = 1 - Math.pow(1 - t, 3);
@@ -547,7 +548,7 @@ function relayout(change) {
 let anim = 0;
 function animateTo(target, ms = 420) {
   cancelAnimationFrame(anim);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) ms = 0;
+  if (REDUCED()) ms = 0;
   const from = { ...view }, t0 = performance.now();
   if (ms) ms = Math.min(700, Math.max(300, ms * (0.7 + 0.25 * Math.abs(Math.log(target.k / from.k)))));
   const c0 = { x: from.x + size.w / from.k / 2, y: from.y + size.h / from.k / 2 };
@@ -574,7 +575,7 @@ function zoomAt(sx, sy, f) {
 }
 function animateZoomAt(sx, sy, f, ms = 260) {
   cancelAnimationFrame(anim);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { zoomAt(sx, sy, f); return; }
+  if (REDUCED()) { zoomAt(sx, sy, f); return; }
   const v0 = { ...view }, t0 = performance.now(), k1 = Math.max(kMin, Math.min(K_MAX, v0.k * f));
   const wx = v0.x + sx / v0.k, wy = v0.y + sy / v0.k;
   const step = (now) => {
@@ -588,7 +589,7 @@ function animateZoomAt(sx, sy, f, ms = 260) {
 }
 function fling(vx, vy) {
   cancelAnimationFrame(anim);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (REDUCED()) return;
   let last = performance.now();
   const step = (now) => {
     const dt = Math.min(32, now - last);
@@ -1575,7 +1576,7 @@ const sheet = () => $("#m-sheet");
 function setSheet(open) {
   sheet().classList.remove("is-min");
   sheet().classList.toggle("is-open", open);
-  if (!open) $("#m-sheet-body").scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  if (!open) $("#m-sheet-body").scrollTo({ top: 0, behavior: REDUCED() ? "auto" : "smooth" });
   $("#m-grip").setAttribute("aria-label", open ? "たたむ" : "広げる");
 }
 function minimizeSheet() {
@@ -2330,7 +2331,7 @@ function focusStep(i) {
   renderMap();
   renderSheet();
   setSheet(false);
-  document.querySelector(`#m-sheet [data-step="${i}"]`)?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  document.querySelector(`#m-sheet [data-step="${i}"]`)?.scrollIntoView({ block: "nearest", behavior: REDUCED() ? "auto" : "smooth" });
   afterSheet(() => animateTo(viewFor([st.at[0] - 25, st.at[1] - 25, 50, 50], 4.5)));
   if (changed) {
     toast(`${parseInt(st.floor)}階の地図に切りかえました`);

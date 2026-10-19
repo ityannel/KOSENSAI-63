@@ -1267,3 +1267,5 @@ body.mapapp { --e-blue: #C8323A; --e-navy: #634A2E; --e-red: #C8323A; --e-grad: 
 .m-sheet-body .ig-form .ig-title { margin-top: 0; }
 body:has(#m-feed.is-composing) .m-tabs { display: none; }
 .ig-form .ig-pick { aspect-ratio: 16 / 10; }
+html.lite #m-tilt { display: none !important; }
+html.lite #map-svg * { filter: none !important; }
