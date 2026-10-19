@@ -26,7 +26,7 @@ export async function listDevices(onList) {
 
 export async function watchDevice(onConfig) {
   let kit;
-  try { kit = await signedInKit(); } catch { return; }
+  try { kit = await signedInKit(); } catch { onConfig(null); return; }
   const { fs, db } = kit;
   fs.onSnapshot(fs.doc(db, "signage_devices", deviceId), { includeMetadataChanges: true }, (s) => { if (!s.metadata.fromCache) onConfig(s.exists() ? s.data() : null); }, () => onConfig(null));
   const beat = () => fs.setDoc(fs.doc(db, "signage_seen", deviceId), {
