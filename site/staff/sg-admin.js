@@ -13,10 +13,11 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
   const urlOf = (id) => `${baseUrl()}?d=${encodeURIComponent(id)}`;
   const newId = () => `sg-${Math.random().toString(36).slice(2, 8)}`;
   const bulk = () => targets.length > 1;
+  const allIds = () => [...new Set([...devices.keys(), ...[...seen].filter(([, s]) => Date.now() - ms(s?.seen) < 900000).map(([id]) => id)])];
   const whereText = (d) => (d?.place ? "地図で置いた場所" : "");
 
   function paintList() {
-    const ids = [...new Set([...devices.keys(), ...seen.keys()])];
+    const ids = allIds();
     const now = Date.now();
     ids.sort((x, y) => (ms(seen.get(y)?.seen) - ms(seen.get(x)?.seen)) || x.localeCompare(y));
     list.innerHTML = ids.length ? ids.map((id) => {
@@ -25,7 +26,7 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
         <label class="sg-sel" title="まとめて編集するときに、チェックします"><input type="checkbox" data-sel="${esc(id)}"${selected.has(id) ? " checked" : ""}></label>
         <button type="button" class="sg-open" data-id="${esc(id)}">
           <i class="sg-dot${live ? " is-live" : ""}" title="${live ? "いま表示中" : "しばらく反応なし"}"></i>
-          <span class="sg-main"><b>${esc(d?.name || "（未登録の画面）")}</b><small>${esc(id)}${whereText(d) ? `・${whereText(d)}` : ""}</small></span>
+          <span class="sg-main"><b>${esc(d?.name || "（まだ登録していない画面）")}</b><small>${esc(id)}${whereText(d) ? `・${whereText(d)}` : ""}</small></span>
           <span class="sg-meta">${s ? `${esc(`${s.w ?? "?"}×${s.h ?? "?"}`)}・${s.o === "portrait" ? "縦" : "横"}<br>${last ? esc(time(last)) : ""}` : "まだ開かれていません"}</span>
           ${d ? "" : '<em class="tag tag-warn">未登録</em>'}</button></div>`;
     }).join("") : '<p class="muted small">まだ、画面はありません。「＋ 画面を登録」を押すか、サイネージのページを開くと、ここに出ます。</p>';
@@ -109,7 +110,7 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
 
   $("#sg-new").addEventListener("click", () => { selected.clear(); openForm([newId()], true); });
   $("#sg-all").addEventListener("change", (e) => {
-    const ids = [...new Set([...devices.keys(), ...seen.keys()])];
+    const ids = allIds();
     selected = new Set(e.target.checked ? ids : []);
     paintList();
   });
