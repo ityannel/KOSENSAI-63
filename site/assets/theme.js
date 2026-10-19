@@ -11,7 +11,12 @@
     return (navigator.deviceMemory && navigator.deviceMemory <= 4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || !!c?.saveData || /(^|-)2g$|3g/.test(c?.effectiveType ?? "");
   })();
   if (lite) root.classList.add("lite");
-  const setLite = (on) => { try { localStorage.setItem("kosen63-lite", on ? "1" : "0"); } catch {  } location.reload(); };
+  const setLite = (on) => {
+    try { localStorage.setItem("kosen63-lite", on ? "1" : "0"); } catch {  }
+    const u = new URL(location.href);
+    u.searchParams.delete("lite");
+    location.replace(u.href);
+  };
   const liteUi = () => {
     const st = document.createElement("style");
     st.textContent = ".lite-note{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));z-index:9999;display:flex;align-items:center;gap:8px;width:min(92vw,380px);box-sizing:border-box;translate:-50% 0;padding:10px 12px;border:2px solid #634A2E;border-radius:14px;background:#FFFBF2;color:#634A2E;font:700 13px/1.5 'Zen Kaku Gothic New',sans-serif;box-shadow:-4px 3px 0 rgba(48,44,41,.45)}.lite-note span{flex:1}.lite-note button,.lite-btn{padding:6px 12px;border:1.5px solid #634A2E;border-radius:999px;background:#FEEBC4;color:#634A2E;font:700 12.5px 'Zen Kaku Gothic New',sans-serif;cursor:pointer}.lite-note .x{padding:4px 9px;border:0;background:none;font-size:18px;line-height:1}.lite-btn{padding:10px 18px;font-size:14px}";
