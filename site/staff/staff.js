@@ -180,7 +180,7 @@ function startListening() {
   listen(fs.doc(db, "site_schedule", "current"), (snap) => { state.schedule = snap.exists() ? (snap.data().changes ?? {}) : {}; renderSchedule(); });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
-    snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: v.level, updated_at: toMs(v.updated_at) }; });
+    snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: Math.min(v.level, 2), updated_at: toMs(v.updated_at) }; });
     renderCrowd(); renderOverview();
   });
   listen(fs.doc(db, "chatter", "current"), (snap) => { state.chatter = snap.data() ?? {}; renderChatter(); renderOverview(); });
@@ -235,7 +235,7 @@ function renderOverview() {
   const pending = state.posts.filter((p) => p.photo_status === "pending" && !p.hidden).length;
   const reported = state.posts.filter((p) => p.reports > 0 && !p.hidden).length;
   const soldout = allShops().filter((s) => s.status === "soldout").length;
-  const limited = CROWD.venues.filter((v) => state.crowd[v]?.level === 3).length;
+  const limited = CROWD.venues.filter((v) => state.crowd[v]?.level === 2).length;
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
   const visitsToday = state.visits[today] ?? 0;
   const visitsAll = Object.values(state.visits).reduce((a, b) => a + b, 0);
@@ -256,7 +256,7 @@ function renderOverview() {
     kpi("隠し縁 ぜんぶ見つけた人", sc.all ?? 0, secretSub, "var(--rose)", "#overview"),
     kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts"),
     kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts"),
-    kpi("入場制限中の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),
+    kpi("入場制限の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),
     kpi("完売の模擬店", soldout, `${allShops().length}店のうち`, "var(--amber)", "#shops"),
   ].join("");
   const badge = $("#nav-posts-badge");

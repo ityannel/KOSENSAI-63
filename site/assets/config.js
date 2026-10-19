@@ -126,10 +126,9 @@ export const CROWD = {
   venues: ["gym2", "entrance", "zacros"],
   short: { gym2: "体育館", entrance: "玄関", zacros: "講義室" },
   levels: [
-    { label: "空いています", color: "#6CBAB5" },
-    { label: "ふつう", color: "#F1D08A" },
-    { label: "混雑しています", color: "#F2A96A" },
-    { label: "入場制限中", color: "#E0655A" },
+    { label: "空いてる", color: "#6CBAB5" },
+    { label: "混んでる", color: "#F2A96A" },
+    { label: "入場制限", color: "#E0655A" },
   ],
   staleMinutes: 30,
 };

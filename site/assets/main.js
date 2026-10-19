@@ -329,8 +329,8 @@ function agoText(ms) {
   if (min < 60) return `${min}分前`;
   return `${Math.floor(min / 60)}時間前`;
 }
-const CN_DEEP = ["#3E9A86", "#C9A11E", "#D9892B", "#C8323A"];
-const QUEUE = [1, 2, 4, 6];
+const CN_DEEP = ["#3E9A86", "#D9892B", "#C8323A"];
+const QUEUE = [1, 4, 6];
 const PERSON = [
   '<circle cx="0" cy="-29" r="5"/><path d="M-6-22h12l1.5 11h-3l.5 11h-3.5l-1.5-8-1.5 8h-3.5l.5-11h-3z"/>',
   '<circle cx="0" cy="-27" r="4.6"/><path d="M-5.5-20.5h11l2 10.5h-3l.5 10h-3.5l-1.5-7.5-1.5 7.5h-3.5l.5-10h-3z"/><rect x="5" y="-17" width="4.5" height="6" rx="1"/>',
@@ -340,10 +340,10 @@ const PERSON = [
 function queueSvg(level) {
   const n = QUEUE[level] ?? 0;
   const people = Array.from({ length: n }, (_, i) => {
-    const x = (level >= 3 ? 208 : 222) - i * 27;
+    const x = (level >= 2 ? 208 : 222) - i * 27;
     return `<g class="cn-p" style="--d:${(i * 0.17).toFixed(2)}s" transform="translate(${x} 64)">${PERSON[(i + level) % PERSON.length]}</g>`;
   }).join("");
-  const rope = level >= 3 ? '<g class="cn-rope"><path d="M226 64V41M252 64V41"/><path class="cn-rope-line" d="M226 45q13 10 26 0"/><circle cx="226" cy="40" r="2.6"/><circle cx="252" cy="40" r="2.6"/></g>' : "";
+  const rope = level >= 2 ? '<g class="cn-rope"><path d="M226 64V41M252 64V41"/><path class="cn-rope-line" d="M226 45q13 10 26 0"/><circle cx="226" cy="40" r="2.6"/><circle cx="252" cy="40" r="2.6"/></g>' : "";
   return `<svg class="cn-scene" viewBox="60 16 240 52" aria-hidden="true">
     <path class="cn-ground" d="M4 64.5H296"/>
     <g class="cn-door"><path d="M244 64V26a4 4 0 0 1 4-4h40a4 4 0 0 1 4 4v38"/><path d="M256 64V36h20v28"/><path d="M240 22h56"/></g>

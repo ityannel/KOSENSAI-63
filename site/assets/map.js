@@ -1647,7 +1647,7 @@ function renderSheet() {
   const ban = placeRestricted(p);
   const html = `
     ${p.tentative || p.roomGuess ? `<p class="sh-kind">${p.tentative ? "【場所は仮】" : "【教室は仮】"}</p>` : ""}
-    <h2 class="sh-title">${esc(titleOf(p))}${statusPill(oneWait)}${statusPill(crowd, "混み具合：")}</h2>
+    <h2 class="sh-title">${esc(titleOf(p))}${statusPill(oneWait)}${statusPill(crowd)}</h2>
     <p class="sh-sub">${esc(subOf(p))}</p>
     ${one ? `<p class="sh-sub">${esc([one.group, one.food ? "食べもの" : ""].filter(Boolean).join("・"))}${genreTags(one)}</p>${msgHtml(one, s)}` : ""}
     <div class="sh-row">
@@ -1687,7 +1687,7 @@ function renderHome(body, s) {
     <div class="sh-venues">${venues.map((p) => {
       const c = crowdOf(p.id, s);
       const now = s.phase === "during" && s.running?.some((e) => e.venue === p.id);
-      return `<button type="button" class="sh-venue${now ? " is-now" : ""}" data-go="${p.id}"><b>${esc(p.name)}</b><small>${c ? statusPill(c, "混み具合：") : esc(p.floor)}${now ? "・NOW" : ""}</small></button>`;
+      return `<button type="button" class="sh-venue${now ? " is-now" : ""}" data-go="${p.id}"><b>${esc(p.name)}</b><small>${c ? statusPill(c) : esc(p.floor)}${now ? "・NOW" : ""}</small></button>`;
     }).join("")}</div>`;
 }
 
@@ -2055,7 +2055,7 @@ function renderNowSheet(body, s) {
     const p = place(e.venue);
     const c = p && crowdOf(p.id, s);
     return `<li><button type="button" class="m-item" ${p ? `data-go="${esc(p.id)}"` : "disabled"}><span class="ico k-venue">${now ? LIST_ICON.now : LIST_ICON.next}</span>
-      <span class="txt"><b>${esc(e.title)}</b><small>${e.internal ? "学内のみ・" : ""}${esc(p ? titleOf(p) : "")}${when ? `・${esc(when)}` : ""}${c ? `・混み具合：${esc(c.label)}` : ""}</small></span>
+      <span class="txt"><b>${esc(e.title)}</b><small>${e.internal ? "学内のみ・" : ""}${esc(p ? titleOf(p) : "")}${when ? `・${esc(when)}` : ""}${c ? `・${esc(c.label)}` : ""}</small></span>
       ${now ? '<span class="sh-badge is-now">NOW</span>' : ""}</button></li>`;
   };
   if (s.phase !== "during") {

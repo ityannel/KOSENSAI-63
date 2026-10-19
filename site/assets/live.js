@@ -112,7 +112,7 @@ export async function subscribeCrowd(callback) {
         const data = {};
         snap.forEach((d) => {
           const v = d.data();
-          data[d.id] = { level: v.level, updated_at: v.updated_at?.toMillis?.() ?? null };
+          data[d.id] = { level: Math.min(v.level, 2), updated_at: v.updated_at?.toMillis?.() ?? null };
         });
         callback(data);
       },
