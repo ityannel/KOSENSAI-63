@@ -1,6 +1,5 @@
 import { HOME } from "../assets/campus.js";
-import { SIGNAGE } from "../assets/config.js";
-import { loadMiniMap, locatePoint, baseMapSvg } from "../assets/ai-minimap.js";
+import { loadMiniMap, baseMapSvg } from "../assets/ai-minimap.js";
 
 const angDiff = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
 const COMPASS = [["北", 270], ["東", 0], ["南", 90], ["西", 180]];
@@ -9,17 +8,16 @@ const norm = (a) => ((Math.round(a) % 360) + 360) % 360;
 export async function createPicker(root, onChange) {
   await loadMiniMap();
   const [hx, hy, hw, hh] = HOME;
-  const spots = Object.entries(SIGNAGE.spots).map(([key, s]) => ({ key, name: s.name, at: locatePoint(s.here) })).filter((s) => s.at);
-  const st = { spot: "", place: null, heading: 270 };
+  const st = { place: null, heading: 270 };
   let view = { x: hx, y: hy, w: hw, h: hh };
 
-  root.innerHTML = `<div class="sg-mapwrap"><svg class="sg-svg" tabindex="0" role="application" aria-label="校内の地図。画面の板を、動かしたり、まわしたりできます">${baseMapSvg()}<g class="sg-ghosts"></g><g class="sg-board"></g></svg>
+  root.innerHTML = `<div class="sg-mapwrap"><svg class="sg-svg" tabindex="0" role="application" aria-label="校内の地図。画面の板を、動かしたり、まわしたりできます">${baseMapSvg()}<g class="sg-board"></g></svg>
       <div class="sg-zoom"><button type="button" data-z="in" aria-label="拡大">＋</button><button type="button" data-z="out" aria-label="縮小">－</button><button type="button" data-z="all" aria-label="全体">全体</button></div></div>
     <p class="muted small sg-hint">板（画面）を、ドラッグで動かします。○をドラッグすると、まわせます（Shiftで15度ずつ）。地図の何もない所をクリックすると、板がそこへ動きます。ホイールで拡大・縮小、地図をドラッグで移動。</p>
     <div class="sg-compass" aria-label="見る人が向いている方向"><span class="muted small">見る人の向き：</span>${COMPASS.map(([t, a]) => `<button type="button" data-head="${a}">${t}</button>`).join("")}<button type="button" data-head="-1" aria-label="左に15度">⟲15°</button><button type="button" data-head="+1" aria-label="右に15度">⟳15°</button></div>
-    <div class="sg-chips"><span class="muted small">決まった場所：</span>${spots.map((s) => `<button type="button" data-spot="${s.key}">${s.name}</button>`).join("")}<button type="button" data-clear class="is-ghost">置かない</button></div>
+    <div class="sg-chips"><button type="button" data-clear class="is-ghost">板を片づける（置かない）</button></div>
     <p class="muted small" id="sg-where-txt"></p>`;
-  const svg = root.querySelector("svg"), boardG = root.querySelector(".sg-board"), ghosts = root.querySelector(".sg-ghosts"), txt = root.querySelector("#sg-where-txt");
+  const svg = root.querySelector("svg"), boardG = root.querySelector(".sg-board"), txt = root.querySelector("#sg-where-txt");
 
   const applyView = () => svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`);
   const scale = () => (view.w / hw) * 1.25 + 0.15;
@@ -31,10 +29,9 @@ export async function createPicker(root, onChange) {
   const emit = () => { draw(); onChange?.(api.get()); };
 
   function draw() {
-    ghosts.innerHTML = spots.map((s) => `<circle class="sg-ghost${st.spot === s.key ? " is-on" : ""}" cx="${s.at[0]}" cy="${s.at[1]}" r="${10 * scale()}"/>`).join("");
     if (!st.place) {
       boardG.innerHTML = "";
-      txt.textContent = "まだ、板が置かれていません。地図をクリックするか、「決まった場所」を押してください。";
+      txt.textContent = "まだ、板が置かれていません。地図をクリックして、板を置いてください。";
       return;
     }
     const s = scale(), th = st.heading - 270;
@@ -48,9 +45,7 @@ export async function createPicker(root, onChange) {
         <circle class="sg-rot" cx="0" cy="-52" r="10" data-rot/><text class="sg-rot-t" x="0" y="-47">↻</text>
       </g>`;
     const dir = COMPASS.reduce((b, c) => (angDiff(c[1], st.heading) < angDiff(b[1], st.heading) ? c : b));
-    txt.textContent = st.spot
-      ? `「${SIGNAGE.spots[st.spot].name}」（決まった場所。標準の案内文を使います）`
-      : `見る人は、ほぼ${dir[0]}を向いています（${norm(st.heading)}度）。道案内の矢印は、この向きに合わせて、自動で作ります。`;
+    txt.textContent = `見る人は、ほぼ${dir[0]}を向いています（${norm(st.heading)}度）。道案内の矢印は、この向きに合わせて、自動で作ります。`;
   }
 
   let drag = null;
@@ -70,12 +65,10 @@ export async function createPicker(root, onChange) {
       if (e.shiftKey) a = Math.round(a / 15) * 15;
       else for (const c of [0, 90, 180, 270, 360]) if (angDiff(a, c) < 4) a = c;
       st.heading = norm(a);
-      st.spot = "";
       emit();
     } else if (drag.kind === "move" && st.place) {
       const p = toMap(e);
       st.place = { x: Math.round(p.x + drag.dx), y: Math.round(p.y + drag.dy), floor: "1F" };
-      st.spot = "";
       emit();
     } else if (drag.kind === "bg") {
       const r = svg.getBoundingClientRect(), k = view.w / r.width;
@@ -87,7 +80,6 @@ export async function createPicker(root, onChange) {
   svg.addEventListener("pointerup", (e) => {
     if (drag?.kind === "bg" && !drag.moved) {
       st.place = { x: Math.round(drag.mx), y: Math.round(drag.my), floor: "1F" };
-      st.spot = "";
       emit();
     }
     drag = null;
@@ -107,8 +99,8 @@ export async function createPicker(root, onChange) {
     if (!st.place) return;
     const step = e.shiftKey ? 10 : 2;
     const m = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
-    if (m) { e.preventDefault(); st.place = { ...st.place, x: st.place.x + m[0], y: st.place.y + m[1] }; st.spot = ""; emit(); }
-    else if (e.key === "[" || e.key === "]") { st.heading = norm(st.heading + (e.key === "]" ? 5 : -5)); st.spot = ""; emit(); }
+    if (m) { e.preventDefault(); st.place = { ...st.place, x: st.place.x + m[0], y: st.place.y + m[1] }; emit(); }
+    else if (e.key === "[" || e.key === "]") { st.heading = norm(st.heading + (e.key === "]" ? 5 : -5)); emit(); }
   });
 
   root.addEventListener("click", (e) => {
@@ -122,30 +114,17 @@ export async function createPicker(root, onChange) {
       if (!st.place) return;
       const v = h.dataset.head;
       st.heading = v === "+1" ? norm(st.heading + 15) : v === "-1" ? norm(st.heading - 15) : Number(v);
-      st.spot = "";
       emit();
       return;
     }
-    const sp = e.target.closest("[data-spot]");
-    if (sp) {
-      const s = spots.find((x) => x.key === sp.dataset.spot);
-      st.spot = s.key;
-      st.place = { x: Math.round(s.at[0]), y: Math.round(s.at[1]), floor: "1F" };
-      view = { ...view, x: s.at[0] - view.w / 2, y: s.at[1] - view.h / 2 };
-      applyView();
-      emit();
-      return;
-    }
-    if (e.target.closest("[data-clear]")) { st.spot = ""; st.place = null; emit(); }
+    if (e.target.closest("[data-clear]")) { st.place = null; emit(); }
   });
 
   const api = {
-    get: () => ({ spot: st.spot, place: st.place ? { ...st.place } : null, heading: st.heading }),
-    set: ({ spot = "", place = null, heading = 270 } = {}) => {
-      st.spot = spot;
+    get: () => ({ place: st.place ? { ...st.place } : null, heading: st.heading }),
+    set: ({ place = null, heading = 270 } = {}) => {
       st.heading = Number.isFinite(Number(heading)) ? norm(Number(heading)) : 270;
-      const sp = spot ? spots.find((x) => x.key === spot) : null;
-      st.place = place && typeof place.x === "number" ? { x: place.x, y: place.y, floor: place.floor ?? "1F" } : sp ? { x: Math.round(sp.at[0]), y: Math.round(sp.at[1]), floor: "1F" } : null;
+      st.place = place && typeof place.x === "number" ? { x: place.x, y: place.y, floor: place.floor ?? "1F" } : null;
       view = st.place ? { x: st.place.x - hw / 2, y: st.place.y - hh / 2, w: hw, h: hh } : { x: hx, y: hy, w: hw, h: hh };
       applyView();
       draw();

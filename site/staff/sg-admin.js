@@ -13,7 +13,7 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
   const urlOf = (id) => `${baseUrl()}?d=${encodeURIComponent(id)}`;
   const newId = () => `sg-${Math.random().toString(36).slice(2, 8)}`;
   const bulk = () => targets.length > 1;
-  const whereText = (d) => (d?.spot ? "決まった場所" : d?.place ? "地図で置いた場所" : "");
+  const whereText = (d) => (d?.place ? "地図で置いた場所" : "");
 
   function paintList() {
     const ids = [...new Set([...devices.keys(), ...seen.keys()])];
@@ -65,15 +65,15 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     $("#sg-reload").hidden = bulk() ? false : !devices.has(ids[0]);
     paintList();
     const p = await ensurePicker();
-    p?.set({ spot: d.spot ?? "", place: d.place ?? null, heading: d.heading ?? 270 });
+    p?.set({ place: d.place ?? null, heading: d.heading ?? 270 });
     form.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 
   function patch(grp) {
     switch (grp) {
       case "where": {
-        const w = picker?.get() ?? { spot: "", place: null, heading: 270 };
-        return { spot: w.spot, place: w.spot ? null : w.place, heading: w.heading };
+        const w = picker?.get() ?? { place: null, heading: 270 };
+        return { spot: "", place: w.place, heading: w.heading };
       }
       case "orient": return { orient: $("#sg-orient").value };
       case "slides": {

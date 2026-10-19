@@ -1,6 +1,6 @@
 import { noticeOf, paintNotice } from "./notice.js";
 import { watchDevice } from "./signage-device.js";
-import { pickedSpot, needSetup, openSetup, wireSetupTriggers } from "./signage-setup.js";
+import { needSetup, openSetup, wireSetupTriggers } from "./signage-setup.js";
 import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE, RALLY } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
@@ -92,7 +92,7 @@ const placeName = (id) => {
   return /^pt-/.test(id) ? "校内" : id;
 };
 
-const at = params.get("at") || pickedSpot();
+const at = params.get("at");
 let spot = SIGNAGE.spots[at] ?? null;
 const IC = {
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
@@ -737,8 +737,7 @@ function applyDevice(c) {
   facing = [0, 90, 180, 270].includes(Number(c?.facing)) ? Number(c.facing) : 0;
   if (!params.get("at")) {
     const seq = ++spotSeq;
-    if (c?.spot && SIGNAGE.spots[c.spot]) spot = SIGNAGE.spots[c.spot];
-    else if (c?.place && typeof c.place.x === "number" && typeof c.place.y === "number") {
+    if (c?.place && typeof c.place.x === "number" && typeof c.place.y === "number") {
       dynSpot(c.place, Number.isFinite(Number(c.heading)) ? Number(c.heading) : 270, c.name).then((s) => { if (seq === spotSeq && s) spot = s; });
     } else spot = null;
   }
