@@ -151,7 +151,7 @@ function pickDemo(key, built) {
   const a = list[n % list.length];
   return a ? { ...built, qrUrl: siteUrl(a.url), qrLabel: a.label, qrKind: a.kind } : built;
 }
-const demoSrc = (u) => u + (u.includes("?") ? "&" : "?") + "demo=1";
+const demoSrc = (u) => { const [base, hash = ""] = u.split("#"); return `${base}${base.includes("?") ? "&" : "?"}demo=1${hash ? `#${hash}` : ""}`; };
 let sgQrUrl = "", sgQrLabel = "", sgQrKind = "", demoToken = 0;
 const waitMs = (ms) => new Promise((r) => setTimeout(r, ms));
 async function runDemo(frame, kind, token) {
@@ -708,7 +708,7 @@ function plan() {
   return allow.length ? allow : base;
 }
 const pageStart = Date.now();
-const DYN_DESTS = ["gym2", "hq", "zacros", "cafeteria", "library", "courtyard", "ground"];
+const DYN_DESTS = ["gym2", "hq", "zacros", "ground"];
 const DIRS = [["right", 0], ["downright", 45], ["down", 90], ["downleft", 135], ["left", 180], ["upleft", 225], ["up", 270], ["upright", 315]];
 const SAY = { up: "まっすぐ", upright: "右前へ", right: "右へ", downright: "右うしろへ", down: "うしろへ", downleft: "左うしろへ", left: "左へ", upleft: "左前へ" };
 const angDiff = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };

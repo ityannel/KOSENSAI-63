@@ -13,16 +13,18 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
   const urlOf = (id) => `${baseUrl()}?d=${encodeURIComponent(id)}`;
   const newId = () => `sg-${Math.random().toString(36).slice(2, 8)}`;
   const bulk = () => targets.length > 1;
-  const allIds = () => [...new Set([...devices.keys(), ...[...seen].filter(([, s]) => Date.now() - ms(s?.seen) < 900000).map(([id]) => id)])];
+  const allIds = () => [...new Set([...devices.keys(), ...[...seen].filter(([, s]) => Date.now() - ms(s?.seen) < 300000).map(([id]) => id)])];
   const whereText = (d) => (d?.place ? "地図で置いた場所" : "");
 
   function paintList() {
     const ids = allIds();
     const now = Date.now();
-    ids.sort((x, y) => (ms(seen.get(y)?.seen) - ms(seen.get(x)?.seen)) || x.localeCompare(y));
+    const reg = (id) => devices.has(id);
+    ids.sort((x, y) => (reg(y) - reg(x)) || (reg(x) ? (devices.get(x).name || x).localeCompare(devices.get(y).name || y, "ja") : ms(seen.get(y)?.seen) - ms(seen.get(x)?.seen)));
+    const firstUn = ids.find((id) => !reg(id));
     list.innerHTML = ids.length ? ids.map((id) => {
       const d = devices.get(id), s = seen.get(id), last = ms(s?.seen), live = last && now - last < 150000;
-      return `<div class="sg-row${targets.includes(id) ? " is-on" : ""}">
+      return `${id === firstUn ? '<p class="sg-sub">いま開かれている、登録していない画面（押して登録できます）</p>' : ""}<div class="sg-row${targets.includes(id) ? " is-on" : ""}">
         <label class="sg-sel" title="まとめて編集するときに、チェックします"><input type="checkbox" data-sel="${esc(id)}"${selected.has(id) ? " checked" : ""}></label>
         <button type="button" class="sg-open" data-id="${esc(id)}">
           <i class="sg-dot${live ? " is-live" : ""}" title="${live ? "いま表示中" : "しばらく反応なし"}"></i>

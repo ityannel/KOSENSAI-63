@@ -140,10 +140,11 @@ export async function pointRoutes(point, ids) {
     let r = null;
     try { r = findRoute(from, to); } catch {  }
     if (!r?.legs?.length) continue;
-    const pts = r.legs[0].pts;
-    let k = 1;
-    while (k < pts.length - 1 && Math.hypot(pts[k][0] - pts[0][0], pts[k][1] - pts[0][1]) < 14) k++;
-    if (!pts[k]) continue;
+    const pts = r.legs.filter((l) => l.floor === from.floor).flatMap((l) => l.pts);
+    let acc = 0, k = 1;
+    while (k < pts.length - 1 && acc < 60) { acc += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); k++; }
+    const total = pts.reduce((s, q, i) => (i ? s + Math.hypot(q[0] - pts[i - 1][0], q[1] - pts[i - 1][1]) : 0), 0);
+    if (!pts[k] || total < 25 || r.minutes <= 1) continue;
     out.push({ to: id, minutes: r.minutes, ang: (Math.atan2(pts[k][1] - pts[0][1], pts[k][0] - pts[0][0]) * 180) / Math.PI });
   }
   return out;

@@ -925,3 +925,4 @@ h1, h2, h3 { font-weight: 400; }
 .sg-tray button { padding: 6px 12px; border: 1.5px dashed #634A2E; border-radius: 999px; background: #FFFBF2; color: #634A2E; font: 700 .85rem inherit; cursor: pointer; }
 .sg-deg input { width: 4.5em; }
 .sg-form .ai-save { position: sticky; bottom: 0; padding: 10px 0; background: var(--card-bg, #fff); z-index: 2; }
+.sg-sub { margin: 10px 0 0; font-size: .82rem; font-weight: 700; color: #7a736c; }

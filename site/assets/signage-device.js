@@ -36,6 +36,7 @@ export async function watchDevice(onConfig) {
     o: document.body.classList.contains("portrait") ? "portrait" : "landscape",
     path: (location.pathname + location.search).slice(0, 80),
   }).catch(() => {});
+  if (params.has("now") || params.has("only") || params.has("test")) return;
   beat();
   setInterval(beat, 60000);
 }
