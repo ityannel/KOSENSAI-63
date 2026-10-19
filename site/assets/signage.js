@@ -233,7 +233,13 @@ async function runDemo(frame, kind, token) {
   }
   if (alive()) { await waitMs(2500); if (alive()) { frame.src = demoSrc(sgQrUrl); runDemo(frame, kind, token).catch(() => {}); } }
 }
+const withHere = (u) => {
+  if (!spot?.here || !/map\.html/.test(u) || /[?&]here=/.test(u)) return u;
+  const [base, hash = ""] = u.split("#");
+  return `${base}${base.includes("?") ? "&" : "?"}here=${encodeURIComponent(spot.here)}${hash ? `#${hash}` : ""}`;
+};
 function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
+  url = withHere(url);
   if (url === sgQrUrl && label === sgQrLabel && kind === sgQrKind && sgQr.dataset.ok) return;
   const src = qr(url, 400, { colorDark: "#1d1612", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.L });
   if (!src) return;
@@ -455,6 +461,7 @@ function paintHurry() {
   const d = SIGNAGE.dests[h.venue], r = spot?.routes.find((x) => x.to === h.venue);
   const m = Math.max(0, Math.ceil((h.s - now()) / 60000));
   el.classList.remove("out");
+  el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
   el.hidden = false;
   el.innerHTML = `<span class="run"><i>🏃</i></span><span class="big">急げ！</span>
     <span class="txt"><b><span data-min>${m ? `あと${m}分` : "まもなく"}</span>で　<span class="nm">${esc(h.title)}</span></b></span>
