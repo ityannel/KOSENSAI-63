@@ -1849,7 +1849,7 @@ function voiceSection(p, s) {
 function fillPhotos(root) {
   observePhotos(root, (img) => img.closest(".f-cell")?.remove() ?? img.remove());
 }
-function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, draft = null, onPickPlace, onDone, onCancel }) {
+function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, draft = null, chrome = false, onPickPlace, onDone, onCancel }) {
   const parent = replyTo && (getState().posts ?? []).find((x) => x.id === replyTo);
   let pid = draft?.place ?? placeId ?? parent?.place ?? "";
   let starsVal = 0, file = null;
@@ -1860,8 +1860,8 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
       <button type="submit" class="ig-post-btn" value="send">投稿する</button>
       <p class="v-msg" role="status"></p></form>`;
   } else {
-    root.innerHTML = `<form class="v-form ig-form">
-      <header class="ig-fhead"><button type="button" class="ig-fbtn is-icon" data-cancel aria-label="キャンセル">${I.close}</button><b>新規投稿</b><button type="submit" class="ig-fbtn is-share is-icon" value="send" aria-label="シェア">${I.send}</button></header>
+    root.innerHTML = `${chrome ? `<i class="ig-grip" aria-hidden="true"></i><button type="button" class="m-sheet-x" data-cancel aria-label="閉じる">${I.close}</button>` : ""}<form class="v-form ig-form">
+      <h2 class="ig-title">新規投稿</h2>
       <label class="ig-pick"><input type="file" name="photo" accept="image/*">
         <span class="ig-pick-empty">${I.camera}<b>写真を追加</b></span>
         <img class="v-preview" alt="えらんだ写真" hidden></label>
@@ -1872,9 +1872,14 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
         : `<p class="ig-row">${I.pin}<span>${esc(titleOf(place(pid)))}</span></p>`}
       <div class="v-shopbox"></div>
       <p class="v-rule">顔や名札が写らないように。悪口・個人情報は書かないでください。すぐ公開され、本部が消すことがあります。<a href="terms.html" target="_blank" rel="noopener">ご利用にあたって</a></p>
-      <p class="v-msg" role="status"></p>
+      <p class="v-msg" role="alert"></p>
+      <div class="ig-actions"><button type="button" class="sh-btn" data-cancel>やめる</button><button type="submit" class="sh-btn primary" value="send">${I.send}投稿する</button></div>
     </form>`;
   }
+  const born = Date.now();
+  root.addEventListener("click", (e) => {
+    if (draft && Date.now() - born < 700) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
   const f = root.querySelector("form"), msg = root.querySelector(".v-msg"), box = root.querySelector(".v-shopbox");
   const drawShops = () => {
     if (!box) return;
@@ -1919,16 +1924,23 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
   f.addEventListener("submit", async (e) => {
     e.preventDefault();
     const send = f.querySelector('[value="send"]'), cancel = root.querySelector("[data-cancel]");
+    const sendHtml = send.innerHTML;
     send.disabled = true;
+    send.textContent = "送信中…";
     if (cancel) cancel.disabled = true;
-    msg.textContent = "送っています…";
+    msg.textContent = "送っています…（数秒かかります。このままお待ちください）";
+    msg.scrollIntoView({ block: "nearest" });
     const shops = place(pid)?.shopList ?? [];
     try {
       await submitPost({ kind: starsVal ? "review" : "post", place: pid, shop: starsVal ? (f.shop?.value ?? shops[0]?.name ?? null) : null,
         stars: starsVal || null, text: f.text.value, file, replyTo });
       if (f.isConnected) onDone?.(); else toast("公開しました");
     } catch (err) {
-      msg.textContent = err.message;
+      const why = err?.message || "送れませんでした。もう一度ためしてください";
+      msg.textContent = why;
+      msg.scrollIntoView({ block: "center", behavior: "smooth" });
+      toast(why);
+      send.innerHTML = sendHtml;
       send.disabled = false;
       if (cancel) cancel.disabled = false;
     }
@@ -2068,10 +2080,11 @@ function renderFeed(force = false) {
 }
 function openFeedCompose(draft = null) {
   const box = $("#m-feed-compose");
-  const close = () => { box.hidden = true; box.innerHTML = ""; $("#m-feed-post").hidden = false; };
+  const close = () => { box.hidden = true; box.innerHTML = ""; $("#m-feed-post").hidden = false; $("#m-feed").classList.remove("is-composing"); };
   box.hidden = false;
   $("#m-feed-post").hidden = true;
-  composeForm(box, { pickPlace: true, draft, onPickPlace: (d, o) => (o?.reopen ? (close(), openFeedCompose(d)) : startPostPick(d)), onDone: () => { close(); feedView = "timeline"; renderFeed(true); toast("ありがとう！公開しました"); }, onCancel: close });
+  $("#m-feed").classList.add("is-composing");
+  composeForm(box, { pickPlace: true, draft, chrome: true, onPickPlace: (d, o) => (o?.reopen ? (close(), openFeedCompose(d)) : startPostPick(d)), onDone: () => { close(); feedView = "timeline"; renderFeed(true); toast("ありがとう！公開しました"); }, onCancel: close });
   box.scrollTop = 0;
 }
 
@@ -2080,6 +2093,7 @@ function startPostPick(draft) {
   postPick = { draft };
   const box = $("#m-feed-compose");
   box.hidden = true; box.innerHTML = ""; $("#m-feed-post").hidden = false;
+  $("#m-feed").classList.remove("is-composing");
   setTab("map");
   let bar = $("#m-postpick");
   if (!bar) {
@@ -2790,8 +2804,9 @@ export async function initMap(opts) {
   $("#m-scan-x").addEventListener("click", closeScanner);
   $("#m-help").addEventListener("click", openLegend);
   $("#m-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
-  $("#m-feed-post").addEventListener("click", openFeedCompose);
+  $("#m-feed-post").addEventListener("click", () => openFeedCompose());
   $("#m-feed").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget && e.currentTarget.classList.contains("is-composing")) { $("#m-feed-compose [data-cancel]")?.click(); return; }
     const fv = e.target.closest("[data-fv]");
     if (fv) { feedView = fv.dataset.fv; renderFeed(true); return; }
     const op = e.target.closest("[data-open]");

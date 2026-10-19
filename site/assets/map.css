@@ -1253,3 +1253,17 @@ body.mapapp { --e-blue: #C8323A; --e-navy: #634A2E; --e-red: #C8323A; --e-grad: 
 #map-svg .ic-poi.k-post .bg, #map-svg .ic-poi.k-hospital .bg { fill: #8a7a66; }
 #map-svg #m-poi > g.is-hidden { display: none; }
 #map-svg #m-poi > g { cursor: pointer; }
+.ig-grip { display: block; width: 40px; height: 5px; margin: 6px auto 4px; border-radius: 3px; background: rgba(99, 74, 46, .3); }
+.ig-title { margin: 2px 6px 0 8px; font-family: var(--hud-font); font-weight: 400; font-size: 1.7rem; line-height: 1.2; color: #634A2E; }
+.ig-actions { position: sticky; bottom: 0; z-index: 2; display: grid; grid-template-columns: 1fr 1.7fr; gap: 12px; margin: 16px 6px 0 8px; padding: 12px 0 calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(to bottom, rgba(255, 251, 242, 0), #FFFBF2 28%); }
+.ig-actions .sh-btn { justify-content: center; min-height: 52px; font-size: 1.05rem; }
+.ig-actions .sh-btn:disabled { opacity: .5; }
+.ig-form .v-msg:not(:empty) { margin: 14px 6px 0 8px; padding: 10px 14px; border: 2px solid #C8323A; border-radius: 12px; background: #fde8e6; color: #8f1d22; font-size: .95rem; line-height: 1.5; }
+.ig-form .v-msg:empty { display: none; }
+.mapapp .m-feed .f-compose { top: auto; bottom: 0; max-height: min(92dvh, calc(100dvh - 30px)); padding: 8px 14px 0; border-radius: 12px 12px 0 0; background: var(--grain), var(--iro), var(--paper); box-shadow: 0 -3px 0 rgba(99, 74, 46, .12), 0 -6px 18px rgba(48, 44, 41, .18); }
+.mapapp .m-feed .f-compose .m-sheet-x { position: absolute; top: 10px; right: 10px; }
+.mapapp .m-feed.is-composing::before { content: ""; position: fixed; inset: 0; z-index: 2; background: rgba(48, 44, 41, .38); }
+.mapapp .m-feed .f-compose .ig-form { max-width: 520px; padding-bottom: 6px; }
+.m-sheet-body .ig-form .ig-title { margin-top: 0; }
+body:has(#m-feed.is-composing) .m-tabs { display: none; }
+.ig-form .ig-pick { aspect-ratio: 16 / 10; }
