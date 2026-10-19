@@ -233,13 +233,7 @@ async function runDemo(frame, kind, token) {
   }
   if (alive()) { await waitMs(2500); if (alive()) { frame.src = demoSrc(sgQrUrl); runDemo(frame, kind, token).catch(() => {}); } }
 }
-const withHere = (u) => {
-  if (!spot?.here || !/map\.html/.test(u) || /[?&]here=/.test(u)) return u;
-  const [base, hash = ""] = u.split("#");
-  return `${base}${base.includes("?") ? "&" : "?"}here=${encodeURIComponent(spot.here)}${hash ? `#${hash}` : ""}`;
-};
 function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
-  url = withHere(url);
   if (url === sgQrUrl && label === sgQrLabel && kind === sgQrKind && sgQr.dataset.ok) return;
   const src = qr(url, 400, { colorDark: "#1d1612", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.L });
   if (!src) return;
@@ -479,7 +473,7 @@ rebuildSchedule();
 const slideWay = {
   async build() {
     if (!spot) return null;
-    const url = siteUrl(`map.html?here=${encodeURIComponent(spot.here)}`);
+    const url = siteUrl("map.html");
     const t = now(), hot = hurryItem(t)?.venue;
     const routes = [...spot.routes].sort((x, y) => (y.to === hot) - (x.to === hot)).slice(0, hot ? 4 : 5);
     return { dur: 14000, cls: "way", qrUrl: url, qrLabel: "道案内をスマホで", html: `

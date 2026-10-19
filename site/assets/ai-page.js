@@ -4,7 +4,7 @@ import { loadMiniMap, miniMapHtml } from "./ai-minimap.js";
 import { attachSuggest } from "./ai-suggest.js";
 import { robotSvg } from "./ai-robot.js";
 import { startLive, liveSnapshot } from "./ai-live.js";
-import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, nextHtml, askStream, errorText, limitText, readHere, readCtx, saveTour, SUGGEST } from "./ai-core.js";
+import { isLocal, esc, md, parseMarks, loadChat, saveChat, recordUse, logQa, leftNow, hqCtaHtml, noteHtml, nextHtml, askStream, errorText, limitText, readCtx, saveTour, SUGGEST } from "./ai-core.js";
 
 const $ = (s) => document.querySelector(s);
 const mock = isLocal && new URLSearchParams(location.search).has("mock");
@@ -63,7 +63,7 @@ function pull(text, final) {
       }
     } else if (m.kind === "tour") {
       const ids = m.ids.filter((id, i, a) => places.has(id) && a.indexOf(id) === i);
-      if (ids.length >= 2 || (ids.length === 1 && readHere())) {
+      if (ids.length >= 2) {
         tourIds = ids;
         flowIds.unshift(...ids);
         links.unshift({ href: `map.html?tour=${ids.map(encodeURIComponent).join(">")}`, icon: ICON.tour, label: `回るルート（${ids.length}か所）`, hint: "地図に出す", tour: ids });
@@ -108,15 +108,11 @@ function liveInfo() {
   return { now: new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }), schedule: items.slice(0, 60), ...liveSnapshot() };
 }
 function mapInfo() {
-  const here = readHere();
   const c = readCtx();
-  const sameHere = c && (c.here ?? null) === (here ?? null);
   return {
-    here: nameOf(here),
     selected: nameOf(c?.selected),
     floor: c?.floor ?? null,
     route: c?.to ? { from: nameOf(c.from), to: nameOf(c.to), minutes: c.minutes ?? null, meters: c.meters ?? null } : null,
-    near: sameHere && Array.isArray(c.near) ? c.near.slice(0, 12) : [],
     tour: null,
   };
 }

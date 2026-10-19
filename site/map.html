@@ -75,7 +75,6 @@
 
   <div class="m-side">
     <div class="m-floors" id="m-floors" role="radiogroup" aria-label="階"></div>
-    <button type="button" class="m-fab m-qr" id="m-locate" aria-label="「いまここ」QRを読む" title="「いまここ」QRを読む"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M8 8h3v3H8zM13 8h3v3h-3zM8 13h3v3H8zM13 13h1.5M16 13v3h-3"/></svg></button>
     <button type="button" class="m-fab m-heading" id="m-heading" aria-label="地図を自分の向いている方向に合わせる" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6.5 17L12 16l-6.5 4z"/></svg></button>
     <button type="button" class="m-compass" id="m-compass" aria-label="北を上にする（もう一度押すと校内図の向き）"><i></i><b>N</b></button>
     <button type="button" class="m-fab m-tilt" id="m-tilt" aria-label="地図を傾けて見る" aria-pressed="false">3D</button>
@@ -107,12 +106,6 @@
   </nav>
 
   <p class="m-toast" id="m-toast" role="status" hidden></p>
-  <dialog class="m-scan" id="m-scan" aria-label="「いまここ」QRを読む">
-    <p class="scan-title">「いまここ」QRを読む</p>
-    <div class="scan-view"><video playsinline muted></video><i class="scan-frame" aria-hidden="true"></i></div>
-    <p class="scan-msg" role="status"></p>
-    <button type="button" class="sh-btn" id="m-scan-x">やめる</button>
-  </dialog>
   <dialog class="m-legend" id="m-legend" aria-label="地図の見かた">
     <div class="lg-head"><h2>地図の見かた</h2><button type="button" class="m-sheet-x" data-close aria-label="閉じる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div id="m-legend-body"></div>

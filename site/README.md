@@ -18,9 +18,9 @@ URL は環境ごとにちがうので、リポジトリのいちばん上の **`
 ```
 
 - サイトの中のリンクや本部コンソールが作る QR は、開いているページの場所から作るので、どの環境でもそのまま動く
-- 印刷する QR（`tools/make-here-qr.py`・`tools/make-rally-qr.py`）と、LINE や X に貼ったときの画像（OGP）は、選んだ環境の URL で作る
+- 印刷する QR（`tools/make-rally-qr.py`）と、LINE や X に貼ったときの画像（OGP）は、選んだ環境の URL で作る
   - `python tools/set-base-url.py`（`--env preview` など）… 公開する前に1回動かすと、HTML の OGP の URL を書きかえる
-  - `python tools/make-here-qr.py --env preview` のように `--env` で選ぶ（書かなければ `default`）。URL を直接書いてもよい
+  - `python tools/make-rally-qr.py --env preview` のように `--env` で選ぶ（書かなければ `default`）。URL を直接書いてもよい
 - `python tools/serve.py` は `local` の URL のポートで開く
 
 ## ファイル
@@ -73,13 +73,6 @@ python tools/update-font-subset.py
 
 トップとは別のページ。部屋を押すと中身（企画・お店・スタンプ）、混雑は部屋の色、今やっている企画に NOW、スタンプを押したお店にハンコ。
 「探す」でトイレ・本部・ごみ箱・出入口・エレベーター・お店・企画の場所を光らせる。`map.html#gym1` でその部屋を選んだ状態で開く。
-
-- **いまここ**：校内の入口や廊下に QR（`map.html?here=部屋ID`）を貼る。読むと地図にいまの場所が出る（2時間覚えている）。
-  印刷用のページは次で作る（引数なしなら学校のサーバーの URL）：
-
-```
-python tools/make-here-qr.py
-```
 
 - 部屋の中身・種類・スタンプのお店は `config.js` の `MAP`。今は**仮の図**（四角を並べただけ）。
   校舎の図ができたら、Figma で部屋ごとにレイヤー名を `MAP.rooms` の id にして SVG で書き出し、`MAP.floors` の `svg` に指定する（読み込みの仕組みはこれから）
