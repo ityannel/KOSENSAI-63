@@ -673,3 +673,6 @@ body.portrait.is-hurry:not(.no-sgqr) #slide { bottom: 190px; }
 .way ul, .way li { min-width: 0; }
 .way li .nm { min-width: 0; overflow-wrap: anywhere; }
 .way li .nm small, .way li .sy { white-space: normal; }
+.shop .body { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); }
+body.portrait .shop .body, body.portrait .way .body, .way .body { grid-template-columns: minmax(0, 1fr); }
+.shop .body > *, .way .body > * { min-width: 0; }
