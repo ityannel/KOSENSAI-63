@@ -342,7 +342,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 .k-msg-body .k-num { font-size: 1.25em; line-height: 0; }
 
 :root {
-  --grain: url("/assets/img/grain.png");
+  --grain: url("/assets/img/grain-s.png");
 }
 .mido {
   container-type: inline-size; --u: calc(100cqi / 402);
