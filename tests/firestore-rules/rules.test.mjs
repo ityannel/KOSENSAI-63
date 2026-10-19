@@ -270,7 +270,7 @@ await t("staff cannot change the push endpoint", assertFails(updateDoc(doc(staff
 await t("visitor cannot delete a chat", assertFails(deleteDoc(doc(anon, "hq_chats/anon1"))));
 await t("staff can delete a chat", assertSucceeds(deleteDoc(doc(staff, "hq_chats/anon1"))));
 
-const sgDev = (db, id = "sg-abc123", extra = {}) => setDoc(doc(db, `signage_devices/${id}`), { name: "玄関ホール", spot: "lecture1", orient: "auto", facing: 0, slides: [], only: "", only_until: 0, banner: "", banner_until: 0, note: "", updated_at: serverTimestamp(), updated_by: "honbu@example.com", ...extra });
+const sgDev = (db, id = "sg-abc123", extra = {}) => setDoc(doc(db, `signage_devices/${id}`), { name: "玄関ホール", spot: "", place: { x: 400, y: 440, floor: "1F" }, heading: 270, orient: "auto", facing: 0, slides: [], only: "", only_until: 0, banner: "", banner_until: 0, note: "", updated_at: serverTimestamp(), updated_by: "honbu@example.com", ...extra });
 await t("anyone can read signage_devices", assertSucceeds(getDoc(doc(nobody, "signage_devices/sg-abc123"))));
 await t("staff can register a signage device", assertSucceeds(sgDev(staff)));
 await t("visitors cannot register a signage device", assertFails(sgDev(anon, "sg-zzz999")));

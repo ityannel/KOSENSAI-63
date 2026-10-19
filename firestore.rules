@@ -81,11 +81,13 @@ service cloud.firestore {
     match /signage_devices/{id} {
       allow read: if true;
       allow create, update: if isStaff() && stamped() && id.size() >= 3 && id.size() <= 40
-        && data().keys().hasOnly(['name', 'spot', 'orient', 'facing', 'slides', 'only', 'only_until', 'banner', 'banner_until', 'reload_at', 'note', 'updated_at', 'updated_by'])
+        && data().keys().hasOnly(['name', 'spot', 'place', 'heading', 'orient', 'facing', 'slides', 'only', 'only_until', 'banner', 'banner_until', 'reload_at', 'note', 'updated_at', 'updated_by'])
         && data().name is string && data().name.size() <= 40
         && data().spot is string && data().only is string
         && data().orient in ['auto', 'landscape', 'portrait']
         && data().facing in [0, 90, 180, 270]
+        && data().heading is number && data().heading >= 0 && data().heading < 360
+        && (data().place == null || (data().place is map && data().place.x is number && data().place.y is number))
         && data().slides is list && data().slides.size() <= 8
         && data().banner is string && data().banner.size() <= 120
         && data().note is string && data().note.size() <= 200;

@@ -341,33 +341,33 @@
         <article class="card">
           <header class="card-head"><h2>画面の一覧</h2><button type="button" class="btn btn-primary btn-sm" id="sg-new">＋ 画面を登録</button></header>
           <p class="muted small">会場のモニターごとに、場所・向き・出すページを決められます。登録しなくても、サイネージのページを開けば、そのまま表示されます（登録するまでは、標準の設定）。緑の点は、いま表示中の画面です。</p>
+          <div class="sg-bar"><label class="sg-chk"><input type="checkbox" id="sg-all"><span>すべて選ぶ</span></label><span class="muted small" id="sg-count"></span><button type="button" class="btn btn-ghost btn-sm" id="sg-bulk" disabled>選んだ画面を、まとめて編集</button></div>
           <div class="sg-list" id="sg-list"></div>
         </article>
         <form class="card sg-form" id="sg-form" hidden>
           <header class="card-head"><h2 id="sg-form-title">画面の設定</h2><button type="button" class="btn btn-ghost btn-sm" id="sg-close">閉じる</button></header>
-          <label class="field"><span>画面の名前（例：玄関ホールの右壁）</span><input id="sg-name" maxlength="40" autocomplete="off"></label>
-          <div class="sg-url-row">
-            <label class="field"><span>この画面のURL（モニターのブラウザで開きます）</span><input id="sg-url" readonly></label>
-            <input id="sg-id" type="hidden">
-            <button type="button" class="btn btn-ghost btn-sm" id="sg-copy">コピー</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="sg-open">開く</button>
+          <p class="muted small" id="sg-bulk-note" hidden>選んだ画面を、まとめて変えます。変えたい項目だけ、「変更する」にチェックを入れてください（チェックのない項目は、今のまま残ります）。</p>
+          <div id="sg-single" class="sg-single">
+            <label class="field"><span>画面の名前（例：玄関ホールの右壁）</span><input id="sg-name" maxlength="40" autocomplete="off"></label>
+            <div class="sg-url-row">
+              <label class="field"><span>この画面のURL（モニターのブラウザで開きます）</span><input id="sg-url" readonly></label>
+              <input id="sg-id" type="hidden">
+              <button type="button" class="btn btn-ghost btn-sm" id="sg-copy">コピー</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="sg-open">開く</button>
+            </div>
           </div>
-          <div class="sg-grid">
-            <label class="field"><span>設置する場所（道案内の出発地）</span><select id="sg-spot"></select></label>
-            <label class="field"><span>画面の向き</span><select id="sg-orient"><option value="auto">自動（画面に合わせる）</option><option value="landscape">横</option><option value="portrait">縦</option></select></label>
-            <label class="field"><span>設置する壁面の向き（矢印をまわします）</span><select id="sg-facing"></select></label>
-          </div>
-          <fieldset class="sg-fs"><legend>出すページ（全部にチェック＝すべて出す）</legend><div id="sg-slides" class="sg-slides"></div></fieldset>
-          <h3 class="ai-sub">いま、この画面だけを操作する</h3>
-          <div class="sg-grid">
-            <label class="field"><span>1つのページだけを出し続ける</span><select id="sg-only"></select></label>
-            <label class="field"><span>何分間</span><input id="sg-only-min" type="number" min="1" max="600" inputmode="numeric"></label>
-          </div>
-          <div class="sg-grid">
-            <label class="field sg-wide"><span>画面の上に、お知らせの帯を出す（空欄で消す）</span><input id="sg-banner" maxlength="120" placeholder="例：この画面は、まもなく、ステージ前に移動します"></label>
-            <label class="field"><span>何分間</span><input id="sg-banner-min" type="number" min="1" max="600" inputmode="numeric"></label>
-          </div>
-          <label class="field"><span>メモ（本部だけに見えます）</span><input id="sg-note" maxlength="200" autocomplete="off"></label>
+          <section class="sg-grp" data-grp="where"><header><h3>設置する場所と、見る人の向き</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <div id="sg-where" class="sg-where"><p class="muted small">地図を読み込んでいます…</p></div></section>
+          <section class="sg-grp" data-grp="orient"><header><h3>画面の向き</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <select id="sg-orient"><option value="auto">自動（画面に合わせる）</option><option value="landscape">横</option><option value="portrait">縦</option></select></section>
+          <section class="sg-grp" data-grp="slides"><header><h3>出すページ（全部にチェック＝すべて出す）</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <div id="sg-slides" class="sg-slides"></div></section>
+          <section class="sg-grp" data-grp="only"><header><h3>いまだけ、1つのページを出し続ける</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <div class="sg-grid"><label class="field"><span>出すページ</span><select id="sg-only"></select></label><label class="field"><span>何分間</span><input id="sg-only-min" type="number" min="1" max="600" inputmode="numeric"></label></div></section>
+          <section class="sg-grp" data-grp="banner"><header><h3>画面の上に、お知らせの帯を出す（空欄で消す）</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <div class="sg-grid"><label class="field sg-wide"><span>帯の文</span><input id="sg-banner" maxlength="120" placeholder="例：この画面は、まもなく、ステージ前に移動します"></label><label class="field"><span>何分間</span><input id="sg-banner-min" type="number" min="1" max="600" inputmode="numeric"></label></div></section>
+          <section class="sg-grp" data-grp="note"><header><h3>メモ（本部だけに見えます）</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <input id="sg-note" maxlength="200" autocomplete="off"></section>
           <div class="ai-save"><button class="btn btn-primary" type="submit">保存する</button><button type="button" class="btn btn-ghost" id="sg-reload">いま、再読み込みさせる</button><button type="button" class="btn btn-ghost btn-danger" id="sg-del">登録をやめる</button></div>
         </form>
       </section>

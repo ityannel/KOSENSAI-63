@@ -878,3 +878,29 @@ h1, h2, h3 { font-weight: 400; }
 .sg-slides { display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .sg-chk { display: inline-flex; align-items: center; gap: 6px; }
 @media (max-width: 640px) { .sg-wide { grid-column: auto; } .sg-url-row { grid-template-columns: 1fr; } }
+.sg-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 10px; }
+.sg-bar .muted { flex: 1; }
+.sg-row { display: flex; align-items: stretch; gap: 8px; padding: 0; border: 0; outline: 0; }
+.sg-row .sg-sel { display: grid; place-items: center; width: 40px; flex: none; }
+.sg-row .sg-open { flex: 1; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid rgba(99, 74, 46, .25); border-radius: 12px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sg-row.is-on .sg-open { outline: 2px solid #C8323A; }
+.sg-grp { display: grid; gap: 8px; padding: 12px; border: 1px solid rgba(99, 74, 46, .25); border-radius: 12px; }
+.sg-grp > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sg-grp h3 { margin: 0; font-size: .95rem; }
+.sg-use { display: none; align-items: center; gap: 6px; font-size: .82rem; font-weight: 700; color: #C8323A; }
+.sg-form.is-bulk .sg-use { display: inline-flex; }
+.sg-single[hidden], #sg-bulk-note[hidden] { display: none; }
+.sg-where { display: grid; gap: 8px; }
+.sg-svg { display: block; width: 100%; height: auto; aspect-ratio: 1110 / 600; max-height: 420px; border: 1px solid rgba(99, 74, 46, .3); border-radius: 12px; background: #efe4c8; touch-action: none; cursor: crosshair; }
+.sg-svg .bd { fill: #e4cf9f; stroke: #c3a56c; stroke-width: .6; }
+.sg-svg .bd.c { fill: #eddcb4; }
+.sg-svg .ar { fill: #cfdcae; opacity: .7; }
+.sg-ghost { fill: rgba(99, 74, 46, .25); stroke: #634A2E; stroke-width: 2; pointer-events: none; }
+.sg-ghost.is-on { fill: rgba(200, 50, 58, .35); stroke: #C8323A; }
+.sg-pin { fill: #C8323A; stroke: #fff; stroke-width: 3; }
+.sg-pin-t { fill: #fff; font: 700 17px sans-serif; text-anchor: middle; pointer-events: none; }
+.sg-arrow { stroke: #C8323A; stroke-width: 8; stroke-linecap: round; }
+.sg-head { fill: #C8323A; }
+.sg-mapbar, .sg-compass, .sg-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sg-mapbar button, .sg-compass button, .sg-chips button { padding: 6px 12px; border: 1.5px solid #634A2E; border-radius: 999px; background: #FFFBF2; color: #634A2E; font: 700 .85rem inherit; cursor: pointer; }
+.sg-mapbar button[aria-pressed="true"] { background: #634A2E; color: #FEEBC4; }

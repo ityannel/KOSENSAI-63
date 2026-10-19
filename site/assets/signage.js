@@ -4,7 +4,7 @@ import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE,
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
 import { avatar, VERIFIED } from "./avatar.js";
-import { routeMap } from "./signage-map.js";
+import { routeMap, pointRoutes } from "./signage-map.js";
 import { watchSchedule, tStart, tEnd, tRange } from "./schedule.js";
 
 const params = new URLSearchParams(location.search);
@@ -706,12 +706,41 @@ function plan() {
   return allow.length ? allow : base;
 }
 const pageStart = Date.now();
+const DYN_DESTS = ["gym2", "hq", "zacros", "cafeteria", "library", "courtyard", "ground"];
+const DIRS = [["right", 0], ["downright", 45], ["down", 90], ["downleft", 135], ["left", 180], ["upleft", 225], ["up", 270], ["upright", 315]];
+const SAY = { up: "まっすぐ", upright: "右前へ", right: "右へ", downright: "右うしろへ", down: "うしろへ", downleft: "左うしろへ", left: "左へ", upleft: "左前へ" };
+const angDiff = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+function nearestSpotId(p) {
+  let best = "h-gate", bd = Infinity;
+  for (const s of MAP.spots) {
+    if (!s.at) continue;
+    const d = Math.hypot(s.at[0] - p.x, s.at[1] - p.y);
+    if (d < bd) { bd = d; best = s.id; }
+  }
+  return best;
+}
+async function dynSpot(place, heading, name) {
+  const rs = await pointRoutes(place, DYN_DESTS).catch(() => []);
+  if (!rs.length) return null;
+  const routes = rs.map((r) => {
+    const rel = (((r.ang - heading + 270) % 360) + 360) % 360;
+    const dir = DIRS.reduce((b, d) => (angDiff(rel, d[1]) < angDiff(rel, b[1]) ? d : b))[0];
+    return { to: r.to, dir, say: SAY[dir], min: r.minutes };
+  }).slice(0, 6);
+  return { name: name || "この場所", here: nearestSpotId(place), routes };
+}
+let spotSeq = 0;
 function applyDevice(c) {
   const before = JSON.stringify([devCfg?.slides, devCfg?.only, devCfg?.only_until]);
   devCfg = c;
   facing = [0, 90, 180, 270].includes(Number(c?.facing)) ? Number(c.facing) : 0;
-  if (!params.get("at") && c?.spot && SIGNAGE.spots[c.spot]) spot = SIGNAGE.spots[c.spot];
-  else if (!params.get("at")) spot = null;
+  if (!params.get("at")) {
+    const seq = ++spotSeq;
+    if (c?.spot && SIGNAGE.spots[c.spot]) spot = SIGNAGE.spots[c.spot];
+    else if (c?.place && typeof c.place.x === "number" && typeof c.place.y === "number") {
+      dynSpot(c.place, Number.isFinite(Number(c.heading)) ? Number(c.heading) : 270, c.name).then((s) => { if (seq === spotSeq && s) spot = s; });
+    } else spot = null;
+  }
   fit();
   paintSgNotice();
   const ra = c?.reload_at?.toMillis?.() ?? 0;
