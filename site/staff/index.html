@@ -42,6 +42,7 @@
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
         <a href="#hq" data-nav="hq"><svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg><span data-short="本部">本部チャット</span><b class="badge" id="nav-hq-badge" hidden></b></a>
         <a href="#ai" data-nav="ai"><svg viewBox="0 0 32 32"><path d="M16 4.6V8"/><circle cx="16" cy="3.4" r="1.5" fill="currentColor" stroke="none"/><path d="M2.6 14.2v4M29.4 14.2v4"/><rect x="5.5" y="8" width="21" height="17" rx="6.5"/><circle cx="11.8" cy="15.4" r="1.7" fill="currentColor" stroke="none"/><circle cx="20.2" cy="15.4" r="1.7" fill="currentColor" stroke="none"/><path d="M13.2 19.8c1.7 1.4 4.9 1.4 5.6 0"/></svg><span data-short="AI">AIくん</span></a>
+        <a href="#signage" data-nav="signage"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M9 21h6M12 17v4"/></svg><span data-short="画面">サイネージ</span></a>
         <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店</span></a>
         <a href="#schedule" data-nav="schedule"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span data-short="時間">スケジュール</span></a>
         <a href="#rally" data-nav="rally"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><path d="M12 9.5v5M9.5 12h5"/></svg><span data-short="スタンプ">スタンプラリー</span></a>
@@ -334,6 +335,41 @@
           <label class="desk-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="ai-logq" type="search" placeholder="質問や答えで、さがす"></label>
           <div class="ai-loglist" id="ai-loglist"></div>
         </article>
+      </section>
+
+      <section class="view" id="view-signage" data-title="サイネージ" data-eyebrow="SIGNAGE" hidden>
+        <article class="card">
+          <header class="card-head"><h2>画面の一覧</h2><button type="button" class="btn btn-primary btn-sm" id="sg-new">＋ 画面を登録</button></header>
+          <p class="muted small">会場のモニターごとに、場所・向き・出すページを決められます。登録しなくても、サイネージのページを開けば、そのまま表示されます（登録するまでは、標準の設定）。緑の点は、いま表示中の画面です。</p>
+          <div class="sg-list" id="sg-list"></div>
+        </article>
+        <form class="card sg-form" id="sg-form" hidden>
+          <header class="card-head"><h2 id="sg-form-title">画面の設定</h2><button type="button" class="btn btn-ghost btn-sm" id="sg-close">閉じる</button></header>
+          <label class="field"><span>画面の名前（例：玄関ホールの右壁）</span><input id="sg-name" maxlength="40" autocomplete="off"></label>
+          <div class="sg-url-row">
+            <label class="field"><span>この画面のURL（モニターのブラウザで開きます）</span><input id="sg-url" readonly></label>
+            <input id="sg-id" type="hidden">
+            <button type="button" class="btn btn-ghost btn-sm" id="sg-copy">コピー</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="sg-open">開く</button>
+          </div>
+          <div class="sg-grid">
+            <label class="field"><span>設置する場所（道案内の出発地）</span><select id="sg-spot"></select></label>
+            <label class="field"><span>画面の向き</span><select id="sg-orient"><option value="auto">自動（画面に合わせる）</option><option value="landscape">横</option><option value="portrait">縦</option></select></label>
+            <label class="field"><span>設置する壁面の向き（矢印をまわします）</span><select id="sg-facing"></select></label>
+          </div>
+          <fieldset class="sg-fs"><legend>出すページ（全部にチェック＝すべて出す）</legend><div id="sg-slides" class="sg-slides"></div></fieldset>
+          <h3 class="ai-sub">いま、この画面だけを操作する</h3>
+          <div class="sg-grid">
+            <label class="field"><span>1つのページだけを出し続ける</span><select id="sg-only"></select></label>
+            <label class="field"><span>何分間</span><input id="sg-only-min" type="number" min="1" max="600" inputmode="numeric"></label>
+          </div>
+          <div class="sg-grid">
+            <label class="field sg-wide"><span>画面の上に、お知らせの帯を出す（空欄で消す）</span><input id="sg-banner" maxlength="120" placeholder="例：この画面は、まもなく、ステージ前に移動します"></label>
+            <label class="field"><span>何分間</span><input id="sg-banner-min" type="number" min="1" max="600" inputmode="numeric"></label>
+          </div>
+          <label class="field"><span>メモ（本部だけに見えます）</span><input id="sg-note" maxlength="200" autocomplete="off"></label>
+          <div class="ai-save"><button class="btn btn-primary" type="submit">保存する</button><button type="button" class="btn btn-ghost" id="sg-reload">いま、再読み込みさせる</button><button type="button" class="btn btn-ghost btn-danger" id="sg-del">登録をやめる</button></div>
+        </form>
       </section>
 
       <section class="view" id="view-shops" data-title="模擬店" data-eyebrow="SHOPS" hidden>

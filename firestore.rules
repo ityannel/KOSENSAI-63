@@ -78,6 +78,29 @@ service cloud.firestore {
       allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]$') && data().keys().hasOnly(['n']) && data().n == 1;
       allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
     }
+    match /signage_devices/{id} {
+      allow read: if true;
+      allow create, update: if isStaff() && stamped() && id.size() >= 3 && id.size() <= 40
+        && data().keys().hasOnly(['name', 'spot', 'orient', 'facing', 'slides', 'only', 'only_until', 'banner', 'banner_until', 'reload_at', 'note', 'updated_at', 'updated_by'])
+        && data().name is string && data().name.size() <= 40
+        && data().spot is string && data().only is string
+        && data().orient in ['auto', 'landscape', 'portrait']
+        && data().facing in [0, 90, 180, 270]
+        && data().slides is list && data().slides.size() <= 8
+        && data().banner is string && data().banner.size() <= 120
+        && data().note is string && data().note.size() <= 200;
+      allow delete: if isStaff();
+    }
+    match /signage_seen/{id} {
+      allow read: if isStaff();
+      allow create, update: if isVisitor() && id.size() >= 3 && id.size() <= 40
+        && data().keys().hasOnly(['seen', 'w', 'h', 'o', 'path'])
+        && data().seen == request.time
+        && data().w is int && data().h is int
+        && data().o in ['landscape', 'portrait']
+        && data().path is string && data().path.size() <= 80;
+      allow delete: if isStaff();
+    }
     match /ai_config/{id} {
       allow read: if true;
       allow write: if isStaff() && id == 'current' && stamped()

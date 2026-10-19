@@ -270,6 +270,21 @@ await t("staff cannot change the push endpoint", assertFails(updateDoc(doc(staff
 await t("visitor cannot delete a chat", assertFails(deleteDoc(doc(anon, "hq_chats/anon1"))));
 await t("staff can delete a chat", assertSucceeds(deleteDoc(doc(staff, "hq_chats/anon1"))));
 
+const sgDev = (db, id = "sg-abc123", extra = {}) => setDoc(doc(db, `signage_devices/${id}`), { name: "玄関ホール", spot: "lecture1", orient: "auto", facing: 0, slides: [], only: "", only_until: 0, banner: "", banner_until: 0, note: "", updated_at: serverTimestamp(), updated_by: "honbu@example.com", ...extra });
+await t("anyone can read signage_devices", assertSucceeds(getDoc(doc(nobody, "signage_devices/sg-abc123"))));
+await t("staff can register a signage device", assertSucceeds(sgDev(staff)));
+await t("visitors cannot register a signage device", assertFails(sgDev(anon, "sg-zzz999")));
+await t("signage device with a bad orientation rejected", assertFails(sgDev(staff, "sg-bad001", { orient: "diagonal" })));
+await t("signage device with an unknown key rejected", assertFails(sgDev(staff, "sg-bad002", { admin: true })));
+await t("signage device with a long banner rejected", assertFails(sgDev(staff, "sg-bad003", { banner: "あ".repeat(121) })));
+const sgSeen = (db, id = "sg-abc123", extra = {}) => setDoc(doc(db, `signage_seen/${id}`), { seen: serverTimestamp(), w: 1920, h: 1080, o: "landscape", path: "/signage.html", ...extra });
+await t("a signage screen can report that it is alive", assertSucceeds(sgSeen(anon)));
+await t("a heartbeat with a fake time is rejected", assertFails(sgSeen(anon, "sg-abc123", { seen: new Date(2020, 0, 1) })));
+await t("a heartbeat with an extra field is rejected", assertFails(sgSeen(anon, "sg-abc123", { admin: true })));
+await t("visitors cannot read signage_seen", assertFails(getDoc(doc(anon, "signage_seen/sg-abc123"))));
+await t("staff can read signage_seen", assertSucceeds(getDoc(doc(staff, "signage_seen/sg-abc123"))));
+await t("staff can delete a signage device", assertSucceeds(deleteDoc(doc(staff, "signage_devices/sg-abc123"))));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

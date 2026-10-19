@@ -1,4 +1,5 @@
 import { noticeOf, paintNotice } from "./notice.js";
+import { watchDevice } from "./signage-device.js";
 import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE, RALLY } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
@@ -23,8 +24,9 @@ const ago = (ms) => { const m = Math.max(0, Math.round((Date.now() - ms) / 60000
 
 const stage = $("#stage");
 let SW = 1920, SH = 1080;
+let devCfg = null, facing = 0;
 const fit = () => {
-  const o = params.get("o"), portrait = o ? o === "portrait" : innerHeight > innerWidth;
+  const o = params.get("o") || (devCfg?.orient === "portrait" || devCfg?.orient === "landscape" ? devCfg.orient : null), portrait = o ? o === "portrait" : innerHeight > innerWidth;
   SW = portrait ? 1080 : 1920; SH = portrait ? 1920 : 1080;
   document.body.classList.toggle("portrait", portrait);
   stage.style.setProperty("--sw", `${SW}px`); stage.style.setProperty("--sh", `${SH}px`);
@@ -56,6 +58,17 @@ sgNotice.id = "sg-notice"; sgNotice.hidden = true;
 sgNotice.innerHTML = '<div class="sgn-in"></div>';
 document.getElementById("stage").append(sgNotice);
 function paintSgNotice() {
+  if (devCfg?.banner && Date.now() < (devCfg.banner_until ?? 0)) {
+    const key = `dev:${devCfg.banner}`;
+    if (sgNotice.dataset.ntKey !== key) {
+      sgNotice.dataset.ntKey = key;
+      sgNotice.hidden = false;
+      sgNotice.classList.remove("is-urgent");
+      sgNotice.firstElementChild.textContent = devCfg.banner;
+    }
+    return;
+  }
+  if ((sgNotice.dataset.ntKey ?? "").startsWith("dev:")) sgNotice.dataset.ntKey = "";
   const raw = noticeOf(liveNow, "signage", now());
   const n = raw?.urgent ? raw : null;
   if ((n?.key ?? "") === (sgNotice.dataset.ntKey ?? "")) return;
@@ -79,7 +92,7 @@ const placeName = (id) => {
 };
 
 const at = params.get("at");
-const spot = SIGNAGE.spots[at] ?? null;
+let spot = SIGNAGE.spots[at] ?? null;
 const IC = {
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
   building: '<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3"/>',
@@ -112,7 +125,7 @@ const chars = (text) => [...text].map((c, k) => (c === "\n" ? "<br>" : `<span cl
 const heart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8 3 4.5 6.5 4.5c2 0 3.6 1.1 4.5 2.7h2c.9-1.6 2.5-2.7 4.5-2.7 3.5 0 5.6 3.5 4.1 7.1C19.5 16.4 12 21 12 21z"/></svg>';
 const ARROW = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M12 50h66M52 22l28 28-28 28" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ROT = { right: 0, downright: 45, down: 90, downleft: 135, left: 180, upleft: 225, up: 270, upright: 315 };
-const arrow = (dir, cls = "ar") => `<span class="${cls}" style="--rot:${ROT[dir] ?? 0}deg">${ARROW}</span>`;
+const arrow = (dir, cls = "ar") => `<span class="${cls}" style="--rot:${((ROT[dir] ?? 0) + facing) % 360}deg">${ARROW}</span>`;
 const qr = (text, size = 440, colors = {}) => {
   if (!window.QRCode) return "";
   const box = document.createElement("div");
@@ -684,12 +697,37 @@ setInterval(syncFireworks, 2000); syncFireworks();
 
 const SLIDES = { stage: slideStage, closing: slideClosing, fireworks: slideFireworks, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare, stamp: slideStamp };
 function plan() {
+  if (devCfg?.only && Date.now() < (devCfg.only_until ?? 0) && SLIDES[devCfg.only]) return [devCfg.only];
   if (closedState(now())) return ["closing"];
   if (fireworksNow()) return ["fireworks"];
   const base = ["stage", "posts", "shop", "crowd", "popular", "stamp", "shop", "way", "shop", "share"];
   if (hurryItem(now())) base.splice(4, 0, "stage");
-  return base;
+  const allow = Array.isArray(devCfg?.slides) && devCfg.slides.length ? base.filter((k) => devCfg.slides.includes(k)) : base;
+  return allow.length ? allow : base;
 }
+const pageStart = Date.now();
+function applyDevice(c) {
+  const before = JSON.stringify([devCfg?.slides, devCfg?.only, devCfg?.only_until]);
+  devCfg = c;
+  facing = [0, 90, 180, 270].includes(Number(c?.facing)) ? Number(c.facing) : 0;
+  if (!params.get("at") && c?.spot && SIGNAGE.spots[c.spot]) spot = SIGNAGE.spots[c.spot];
+  else if (!params.get("at")) spot = null;
+  fit();
+  paintSgNotice();
+  const ra = c?.reload_at?.toMillis?.() ?? 0;
+  if (ra > pageStart) {
+    let done = "";
+    try { done = sessionStorage.getItem("kosen63-sg-reload") ?? ""; } catch {  }
+    if (done !== String(ra)) {
+      try { sessionStorage.setItem("kosen63-sg-reload", String(ra)); } catch {  }
+      location.reload();
+      return;
+    }
+  }
+  if (before !== JSON.stringify([devCfg?.slides, devCfg?.only, devCfg?.only_until])) order = [];
+}
+watchDevice(applyDevice);
+
 let order = [], idx = -1, timer = null, busy = false, dir = 1;
 const slide = $("#slide"), wipe = $("#wipe");
 
