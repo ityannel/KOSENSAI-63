@@ -446,7 +446,7 @@ function paintHurry() {
   const d = SIGNAGE.dests[h.venue], r = spot?.routes.find((x) => x.to === h.venue);
   const m = Math.max(0, Math.ceil((h.s - now()) / 60000));
   el.hidden = false;
-  el.innerHTML = `<span class="run">${ic("run")}</span><span class="big">急げ！</span>
+  el.innerHTML = `<span class="run"><i>🏃</i></span><span class="big">急げ！</span>
     <span class="txt"><b><span data-min>${m ? `あと${m}分` : "まもなく"}</span>で　<span class="nm">${esc(h.title)}</span></b></span>
     ${r ? arrow(r.dir, "arr") : ""}`;
   numify(el);
@@ -842,7 +842,7 @@ function centerSlide(el) {
 }
 function wrapPan(el, cls) {
   if (/(^| )(posts|popular|share|stamp|closing|fwslide)( |$)/.test(cls)) return;
-  if (extent(el).bottom - el.getBoundingClientRect().bottom < 10 * stageK()) return;
+  if (extent(el).bottom - el.getBoundingClientRect().bottom < 40 * stageK()) return;
   const body = [...el.children].filter((c) => !c.matches(".tag, .ttl, h1"));
   if (!body.length) return;
   const win = document.createElement("div"), inn = document.createElement("div");
@@ -856,7 +856,7 @@ function startPan(el, dur) {
     const win = el.querySelector(".pan-win"), inn = el.querySelector(".pan-in");
     if (!win || !el.isConnected) return;
     const dist = (extent(inn).bottom - win.getBoundingClientRect().bottom) / stageK();
-    if (dist < 8) { win.classList.add("no-fade"); return; }
+    if (dist < 40) { win.classList.add("no-fade"); return; }
     const run = Math.max(3500, dur - 7000);
     inn.animate([{ translate: "0 0" }, { translate: `0 ${-Math.ceil(dist + 8)}px` }], { duration: run, delay: 500, easing: "ease-in-out", fill: "forwards" });
     win.animate([{ "--ft": "0px", "--fb": "44px" }, { "--ft": "44px", "--fb": "44px", offset: 0.08 }, { "--ft": "44px", "--fb": "44px", offset: 0.9 }, { "--ft": "44px", "--fb": "0px" }], { duration: run + 500, delay: 500, fill: "forwards" });

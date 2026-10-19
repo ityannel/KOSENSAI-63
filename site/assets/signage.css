@@ -665,3 +665,11 @@ body.portrait:not(.no-sgqr) .sl { bottom: 230px; }
 #sg-setup .ss-id { font-size: clamp(13px, 1.7vmin, 18px); }
 #sg-setup .ss-id code { padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, .15); }
 #sg-setup .ss-close { justify-self: start; background: none; color: #FFF6E4; border-color: rgba(255, 246, 228, .5); padding: 10px 20px; }
+body:not(.portrait):not(.no-sgqr) #hurry { right: 440px; padding-right: 40px; }
+body.portrait:not(.no-sgqr) #hurry { bottom: 270px; }
+body.portrait.is-hurry:not(.no-sgqr) #slide { bottom: 190px; }
+#hurry .run { display: grid; place-items: center; line-height: 1; }
+#hurry .run i { display: block; font-style: normal; transform: scaleX(-1); }
+.way ul, .way li { min-width: 0; }
+.way li .nm { min-width: 0; overflow-wrap: anywhere; }
+.way li .nm small, .way li .sy { white-space: normal; }
