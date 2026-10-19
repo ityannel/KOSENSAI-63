@@ -647,3 +647,8 @@ body.portrait:not(.no-sgqr) .sl { bottom: 230px; }
 .pan-win { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; --ft: 0px; --fb: 44px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--ft), #000 calc(100% - var(--fb)), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 var(--ft), #000 calc(100% - var(--fb)), transparent 100%); }
 .pan-win.no-fade { -webkit-mask-image: none; mask-image: none; }
 .pan-in { flex: none; display: flex; flex-direction: column; }
+.way .body { align-content: center; }
+.way ul { align-content: center; }
+.shop h2 { white-space: nowrap; }
+.shop .body { flex: none; align-items: center; }
+.shop .body > :not(.ghost) { align-self: center; }

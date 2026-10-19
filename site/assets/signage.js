@@ -141,7 +141,7 @@ let sgQrUrl = "", sgQrLabel = "", sgQrKind = "", demoToken = 0;
 const waitMs = (ms) => new Promise((r) => setTimeout(r, ms));
 async function runDemo(frame, kind, token) {
   const alive = () => token === demoToken && frame.isConnected;
-  const doc = () => frame.contentDocument;
+  const doc = () => { try { return frame.contentDocument ?? null; } catch { return null; } };
   const until = async (fn, ms = 9000) => {
     const t0 = Date.now();
     while (alive() && Date.now() - t0 < ms) { try { const v = fn(); if (v) return v; } catch {  } await waitMs(150); }
@@ -166,6 +166,7 @@ async function runDemo(frame, kind, token) {
   });
   await until(() => doc()?.readyState === "complete" && !doc().querySelector("#m-loading"), 12000);
   if (!alive()) return;
+  if (!doc()) return;
   await waitMs(1600);
   if (kind === "place") {
     const btn = await until(() => doc().querySelector('.sh-btn[data-act="route"]'), 4000);
@@ -215,7 +216,7 @@ async function runDemo(frame, kind, token) {
     const list = await until(() => doc().querySelector("#m-feed-list"), 5000);
     if (list) for (const y of [300, 700, 1100]) { if (!alive()) return; await glide(list, y); await waitMs(900); }
   }
-  if (alive()) { await waitMs(2500); if (alive()) { frame.src = sgQrUrl; runDemo(frame, kind, token); } }
+  if (alive()) { await waitMs(2500); if (alive()) { frame.src = sgQrUrl; runDemo(frame, kind, token).catch(() => {}); } }
 }
 function setSgQr(url = siteUrl("./"), label = "サイトを見る", kind = "") {
   if (url === sgQrUrl && label === sgQrLabel && kind === sgQrKind && sgQr.dataset.ok) return;
@@ -732,10 +733,10 @@ function fitNow(el) {
     p.style.setProperty("--dur", `${Math.max(8, dist / 22 + 5)}s`);
   }
 }
-const FIT = ".plate b, .way li .nm, .nx b, .cv h3, .cv .lv";
+const FIT = ".plate b, .way li .nm, .nx b, .cv h3, .cv .lv, .shop h2";
 function fitText(root) {
   root.querySelectorAll(FIT).forEach((n) => {
-    n.style.whiteSpace = "nowrap"; n.style.minWidth = "0"; n.style.overflow = "hidden";
+    n.style.whiteSpace = "nowrap"; n.style.minWidth = "0";
     const smalls = [...n.querySelectorAll("small")].map((s) => [s, parseFloat(getComputedStyle(s).fontSize)]);
     const base = parseFloat(getComputedStyle(n).fontSize);
     let r = 1;
@@ -746,9 +747,31 @@ function fitText(root) {
     }
   });
 }
+const BOXES = ".plate, .mapbox, .now, .nx, .pc, .cv, .ls, .way li, .scan, .qrbox, .bubble, .how div";
+function extent(root) {
+  let top = Infinity, bottom = -Infinity;
+  root.querySelectorAll("*").forEach((n) => {
+    if (!n.matches(BOXES) && n.children.length && !n.matches("img, svg, canvas")) return;
+    const cs = getComputedStyle(n);
+    if (cs.position === "absolute" || cs.position === "fixed" || cs.display === "none" || cs.visibility === "hidden") return;
+    if (n.closest(".ghost, .eq, .rain, .float, .sc-confetti, .sc-rays")) return;
+    const b = n.getBoundingClientRect();
+    if (b.height < 6 || b.width < 6 || (!n.matches(BOXES) && !(n.textContent || "").trim() && !n.matches("img, svg, canvas"))) return;
+    top = Math.min(top, b.top); bottom = Math.max(bottom, b.bottom);
+  });
+  return { top, bottom };
+}
+const stageK = () => { const st = document.getElementById("stage"); return st.getBoundingClientRect().width / st.offsetWidth || 1; };
+function centerSlide(el) {
+  if (el.querySelector(".pan-win")) return;
+  const r0 = el.getBoundingClientRect(), { top, bottom } = extent(el);
+  if (!isFinite(top)) return;
+  const shift = (((r0.bottom - bottom) - (top - r0.top)) / 2) / stageK();
+  if (shift > 8) el.style.translate = `0 ${Math.round(shift)}px`;
+}
 function wrapPan(el, cls) {
   if (/(^| )(posts|popular|share|stamp|closing|fwslide)( |$)/.test(cls)) return;
-  if (el.scrollHeight - el.clientHeight < 10) return;
+  if (extent(el).bottom - el.getBoundingClientRect().bottom < 10 * stageK()) return;
   const body = [...el.children].filter((c) => !c.matches(".tag, .ttl, h1"));
   if (!body.length) return;
   const win = document.createElement("div"), inn = document.createElement("div");
@@ -761,7 +784,7 @@ function startPan(el, dur) {
   setTimeout(() => {
     const win = el.querySelector(".pan-win"), inn = el.querySelector(".pan-in");
     if (!win || !el.isConnected) return;
-    const dist = inn.scrollHeight - win.clientHeight;
+    const dist = (extent(inn).bottom - win.getBoundingClientRect().bottom) / stageK();
     if (dist < 8) { win.classList.add("no-fade"); return; }
     const run = Math.max(3500, dur - 7000);
     inn.animate([{ translate: "0 0" }, { translate: `0 ${-Math.ceil(dist + 8)}px` }], { duration: run, delay: 500, easing: "ease-in-out", fill: "forwards" });
@@ -790,10 +813,12 @@ async function show(i, first = false) {
     const [c1, c2] = BG[key] ?? BG.intro;
     stage.style.setProperty("--bg1", c1); stage.style.setProperty("--bg2", c2); stage.style.setProperty("--a", c1);
     const el = slide.firstElementChild;
+    await Promise.race([document.fonts.ready, sleep(1800)]);
     numify(el);
     fitNow(el);
     fitText(el);
     wrapPan(el, built.cls);
+    centerSlide(el);
     const bp = $("#bgphoto");
     if (!bp) {  } else if (built.bgPhoto) { bp.style.backgroundImage = `url("${built.bgPhoto}")`; bp.classList.add("on"); } else bp.classList.remove("on");
     idx = i;
