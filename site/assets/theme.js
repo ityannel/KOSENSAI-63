@@ -1,6 +1,16 @@
 (() => {
   const KEY = "kosen63-theme", TINT_KEY = "kosen63-tint";
   const root = document.documentElement;
+  const lite = (() => {
+    const q = new URLSearchParams(location.search).get("lite");
+    try { if (q === "1" || q === "0") localStorage.setItem("kosen63-lite", q); } catch {  }
+    let saved = null;
+    try { saved = localStorage.getItem("kosen63-lite"); } catch {  }
+    if (saved === "1" || saved === "0") return saved === "1";
+    const c = navigator.connection;
+    return (navigator.deviceMemory && navigator.deviceMemory <= 4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || !!c?.saveData || /(^|-)2g$|3g/.test(c?.effectiveType ?? "");
+  })();
+  if (lite) root.classList.add("lite");
   const mq = matchMedia("(prefers-color-scheme: dark)");
   const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
   const put = (k, v) => { try { localStorage.setItem(k, v); } catch {  } };

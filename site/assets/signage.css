@@ -5,7 +5,7 @@
   --txt: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
   --e-font: "DynaPuff", "Zen Kaku Gothic New", sans-serif;
   --e-grad: linear-gradient(135deg, #3d86f0 0%, #1361cc 35%, #0d5881 65%, #ff5253 100%);
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .34 0 0 0 0 .18 0 0 0 1.5 -.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain: url("/assets/img/grain.png");
   --ease: cubic-bezier(.2, .9, .2, 1);
   --spring: cubic-bezier(.34, 1.56, .64, 1);
 }

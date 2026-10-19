@@ -81,7 +81,7 @@ function renderStatic() {
 }
 
 const cdEls = Object.fromEntries([...document.querySelectorAll("[data-cd]")].map((el) => [el.dataset.cd, el]));
-const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 let lastSecond = -1;
 
 function tickCountdown() {
@@ -549,7 +549,7 @@ if (matchMedia("(min-width: 600px)").matches && "IntersectionObserver" in window
   shade();
 }
 
-if (!matchMedia("(prefers-reduced-motion: reduce)").matches && !params.has("preview")) {
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches && !document.documentElement.classList.contains("lite") && !params.has("preview")) {
   import("https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs").then(({ default: Lenis }) => {
     const lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 1, allowNestedScroll: true, anchors: false,
       prevent: (node) => !!node.closest?.(".panel, .detail, .ask, [data-lenis-prevent]") });
