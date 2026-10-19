@@ -891,16 +891,26 @@ h1, h2, h3 { font-weight: 400; }
 .sg-form.is-bulk .sg-use { display: inline-flex; }
 .sg-single[hidden], #sg-bulk-note[hidden] { display: none; }
 .sg-where { display: grid; gap: 8px; }
-.sg-svg { display: block; width: 100%; height: auto; aspect-ratio: 1110 / 600; max-height: 420px; border: 1px solid rgba(99, 74, 46, .3); border-radius: 12px; background: #efe4c8; touch-action: none; cursor: crosshair; }
+.sg-mapwrap { position: relative; }
+.sg-svg { display: block; width: 100%; height: auto; aspect-ratio: 1110 / 600; max-height: 480px; border: 1px solid rgba(99, 74, 46, .3); border-radius: 12px; background: #efe4c8; touch-action: none; cursor: crosshair; outline: none; user-select: none; }
+.sg-svg:focus-visible { outline: 2px solid #C8323A; }
 .sg-svg .bd { fill: #e4cf9f; stroke: #c3a56c; stroke-width: .6; }
 .sg-svg .bd.c { fill: #eddcb4; }
 .sg-svg .ar { fill: #cfdcae; opacity: .7; }
-.sg-ghost { fill: rgba(99, 74, 46, .25); stroke: #634A2E; stroke-width: 2; pointer-events: none; }
+.sg-zoom { position: absolute; right: 8px; top: 8px; display: grid; gap: 4px; }
+.sg-zoom button { min-width: 36px; padding: 6px 8px; border: 1.5px solid #634A2E; border-radius: 8px; background: #FFFBF2; color: #634A2E; font: 700 .85rem inherit; cursor: pointer; }
+.sg-ghost { fill: rgba(99, 74, 46, .22); stroke: #634A2E; stroke-width: 1.5; pointer-events: none; }
 .sg-ghost.is-on { fill: rgba(200, 50, 58, .35); stroke: #C8323A; }
-.sg-pin { fill: #C8323A; stroke: #fff; stroke-width: 3; }
-.sg-pin-t { fill: #fff; font: 700 17px sans-serif; text-anchor: middle; pointer-events: none; }
-.sg-arrow { stroke: #C8323A; stroke-width: 8; stroke-linecap: round; }
-.sg-head { fill: #C8323A; }
+.sg-cone { fill: rgba(200, 50, 58, .16); stroke: rgba(200, 50, 58, .45); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
+.sg-gaze { stroke: #C8323A; stroke-width: 3; stroke-linecap: round; pointer-events: none; }
+.sg-gazehead { fill: #C8323A; pointer-events: none; }
+.sg-hit { fill: transparent; cursor: move; }
+.sg-board-r { fill: #2b2a3d; stroke: #fff; stroke-width: 1.5; pointer-events: none; }
+.sg-face { fill: #FEEBC4; pointer-events: none; }
+.sg-stalk { stroke: #634A2E; stroke-width: 2; stroke-dasharray: 3 2; pointer-events: none; }
+.sg-rot { fill: #FFFBF2; stroke: #634A2E; stroke-width: 2; cursor: grab; }
+.sg-rot-t { fill: #634A2E; font: 700 13px sans-serif; text-anchor: middle; pointer-events: none; }
+.sg-chips .is-ghost { background: none; }
 .sg-mapbar, .sg-compass, .sg-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .sg-mapbar button, .sg-compass button, .sg-chips button { padding: 6px 12px; border: 1.5px solid #634A2E; border-radius: 999px; background: #FFFBF2; color: #634A2E; font: 700 .85rem inherit; cursor: pointer; }
 .sg-mapbar button[aria-pressed="true"] { background: #634A2E; color: #FEEBC4; }
