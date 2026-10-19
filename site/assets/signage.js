@@ -1,5 +1,6 @@
 import { noticeOf, paintNotice } from "./notice.js";
 import { watchDevice } from "./signage-device.js";
+import { pickedSpot, needSetup, openSetup, wireSetupTriggers } from "./signage-setup.js";
 import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE, RALLY } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
 import { subscribeCrowd, subscribeShops, subscribeLive } from "./live.js";
@@ -91,7 +92,7 @@ const placeName = (id) => {
   return /^pt-/.test(id) ? "校内" : id;
 };
 
-const at = params.get("at");
+const at = params.get("at") || pickedSpot();
 let spot = SIGNAGE.spots[at] ?? null;
 const IC = {
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
@@ -756,6 +757,8 @@ function applyDevice(c) {
   if (before !== JSON.stringify([devCfg?.slides, devCfg?.only, devCfg?.only_until])) order = [];
 }
 watchDevice(applyDevice);
+wireSetupTriggers();
+if (needSetup()) openSetup();
 
 let order = [], idx = -1, timer = null, busy = false, dir = 1;
 const slide = $("#slide"), wipe = $("#wipe");

@@ -652,3 +652,16 @@ body.portrait:not(.no-sgqr) .sl { bottom: 230px; }
 .shop h2 { white-space: nowrap; }
 .shop .body { flex: none; align-items: center; }
 .shop .body > :not(.ghost) { align-self: center; }
+#sg-setup { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; overflow-y: auto; padding: 4vmin; background: rgba(21, 23, 26, .94); color: #FFF6E4; font-family: var(--txt); }
+#sg-setup .ss-card { width: min(900px, 100%); display: grid; gap: 14px; }
+#sg-setup h1 { margin: 0; font: 400 clamp(28px, 4.4vmin, 56px) / 1.2 var(--hud); }
+#sg-setup h2 { margin: 8px 0 0; font: 400 clamp(20px, 2.6vmin, 30px) / 1.2 var(--hud); color: #FFE9A8; }
+#sg-setup p { margin: 0; font-size: clamp(15px, 2vmin, 22px); line-height: 1.6; opacity: .9; }
+#sg-setup .ss-list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+#sg-setup button { display: grid; gap: 4px; padding: 16px 18px; border: 3px solid #634A2E; border-radius: 18px; background: #FFFBF2; color: #634A2E; text-align: left; font: inherit; cursor: pointer; }
+#sg-setup button b { font: 400 clamp(20px, 2.8vmin, 32px) / 1.2 var(--hud); }
+#sg-setup button small { font-size: clamp(13px, 1.7vmin, 18px); opacity: .75; }
+#sg-setup button.is-on { background: #FEEBC4; border-color: #C8323A; }
+#sg-setup .ss-id { font-size: clamp(13px, 1.7vmin, 18px); }
+#sg-setup .ss-id code { padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, .15); }
+#sg-setup .ss-close { justify-self: start; background: none; color: #FFF6E4; border-color: rgba(255, 246, 228, .5); padding: 10px 20px; }

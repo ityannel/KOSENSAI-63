@@ -17,6 +17,13 @@ export const deviceId = (() => {
   return id;
 })();
 
+export async function listDevices(onList) {
+  let kit;
+  try { kit = await signedInKit(); } catch { onList([]); return; }
+  const { fs, db } = kit;
+  fs.onSnapshot(fs.collection(db, "signage_devices"), (s) => onList(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => onList([]));
+}
+
 export async function watchDevice(onConfig) {
   let kit;
   try { kit = await signedInKit(); } catch { return; }
