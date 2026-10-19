@@ -1,6 +1,6 @@
 import { createPicker } from "./sg-map.js";
 
-const SLIDES = [["stage", "ステージ"], ["posts", "みんなの投稿"], ["popular", "人気の投稿"], ["shop", "模擬店"], ["crowd", "混雑"], ["way", "道案内"], ["stamp", "スタンプ"], ["share", "シェア"]];
+const SLIDES = [["stage", "ステージ"], ["posts", "みんなの投稿"], ["popular", "人気の投稿"], ["shop", "模擬店"], ["crowd", "混雑"], ["stamp", "スタンプ"], ["share", "シェア"]];
 const GROUPS = ["where", "orient", "slides", "only", "banner", "note"];
 const DEFAULTS = { name: "", spot: "", place: null, heading: 270, orient: "auto", facing: 0, slides: [], only: "", only_until: 0, banner: "", banner_until: 0, note: "" };
 

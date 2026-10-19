@@ -470,22 +470,6 @@ function rebuildSchedule() {
 watchSchedule(rebuildSchedule);
 rebuildSchedule();
 
-const slideWay = {
-  async build() {
-    if (!spot) return null;
-    const url = siteUrl("map.html");
-    const t = now(), hot = hurryItem(t)?.venue;
-    const routes = [...spot.routes].sort((x, y) => (y.to === hot) - (x.to === hot)).slice(0, hot ? 4 : 5);
-    return { dur: 14000, cls: "way", qrUrl: url, qrLabel: "道案内をスマホで", html: `
-      <span class="tag slide-l"><i>${ic("compass")}</i>道案内</span>
-      <h1 class="ttl">${chars(`${spot.name}から`)}</h1>
-      <div class="body">
-        <ul>${routes.map((r, i) => { const d = SIGNAGE.dests[r.to]; return `<li class="slide-l ${r.to === hot ? "hot" : ""}" style="--i:${i}"><span class="mk">${ic(d?.mark)}</span>
-          <span class="nm">${esc(d?.name ?? r.to)}<small>${esc(d?.sub ?? "")}</small></span><span class="sy">${esc(r.say)}<small>歩いて${r.min}分</small></span>${arrow(r.dir)}</li>`; }).join("")}</ul>
-      </div>` };
-  },
-};
-
 const FACES = ["😀", "😃", "😄", "😁", "😆", "🥳", "😍", "🤩", "😎", "😊", "😋", "😜", "🤪", "😂", "🥰", "😇", "🤗", "😺", "😻", "🙌", "😆", "😄", "🤣", "😏", "🥹"];
 const OTHERS = ["📷", "🍡", "🎤", "✨", "❤️", "🎆", "🎵", "🎉", "⭐", "🎈"];
 function emojiRain(root) {
@@ -708,12 +692,12 @@ const fwStop = () => { fwOn = false; };
 function syncFireworks() { const on = fireworksNow(); document.body.classList.toggle("is-fw", on); on ? fwStart() : fwStop(); }
 setInterval(syncFireworks, 2000); syncFireworks();
 
-const SLIDES = { stage: slideStage, closing: slideClosing, fireworks: slideFireworks, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, way: slideWay, share: slideShare, stamp: slideStamp };
+const SLIDES = { stage: slideStage, closing: slideClosing, fireworks: slideFireworks, posts: slidePosts, popular: slidePopular, shop: slideShop, crowd: slideCrowd, share: slideShare, stamp: slideStamp };
 function plan() {
   if (devCfg?.only && Date.now() < (devCfg.only_until ?? 0) && SLIDES[devCfg.only]) return [devCfg.only];
   if (closedState(now())) return ["closing"];
   if (fireworksNow()) return ["fireworks"];
-  const base = ["stage", "posts", "shop", "crowd", "popular", "stamp", "shop", "way", "shop", "share"];
+  const base = ["stage", "posts", "shop", "crowd", "popular", "stamp", "shop", "shop", "share"];
   if (hurryItem(now())) base.splice(4, 0, "stage");
   const allow = Array.isArray(devCfg?.slides) && devCfg.slides.length ? base.filter((k) => devCfg.slides.includes(k)) : base;
   return allow.length ? allow : base;
@@ -796,7 +780,7 @@ async function cover() {
   };
 }
 const BG = { intro: ["#3f9f99", "#9BD7D0"], posts: ["#2f8fe0", "#9BD7D0"], popular: ["#d9669b", "#F2A96A"], shop: ["#ee7b30", "#efc696"], crowd: ["#3f9f99", "#F1D08A"],
-  stage: ["#ee7b30", "#B5655A"], way: ["#B5655A", "#F2A96A"], share: ["#a061c9", "#2f8fe0"], fireworks: ["#0b1030", "#3a1d5c"], closing: ["#3f9f99", "#9BD7D0"] };
+  stage: ["#ee7b30", "#B5655A"], share: ["#a061c9", "#2f8fe0"], fireworks: ["#0b1030", "#3a1d5c"], closing: ["#3f9f99", "#9BD7D0"] };
 function fitNow(el) {
   const limit = () => slide.getBoundingClientRect().bottom - 10;
   const nxs = [...el.querySelectorAll(".nx")];
