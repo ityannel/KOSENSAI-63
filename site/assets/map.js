@@ -1559,7 +1559,7 @@ function msgHtml(sh, s) {
   if (!d?.message) return "";
   return `<p class="sh-msg"><b>お店から</b>${esc(d.message)}${d.message_at ? `<small>${esc(s.agoText(d.message_at))}</small>` : ""}</p>`;
 }
-const statusPill = (x) => x ? `<span class="wait ${x.cls}${x.stale ? " is-stale" : ""}">${esc(x.label)}${x.ago ? `<small>${esc(x.ago)}</small>` : ""}</span>` : "";
+const statusPill = (x, pre = "") => x ? `<span class="wait ${x.cls}${x.stale ? " is-stale" : ""}">${pre}${esc(x.label)}${x.ago ? `<small>${esc(x.ago)}</small>` : ""}</span>` : "";
 const WAIT_COLOR = { normal: "#1e8e3e", "10min": "#e8a317", "20min": "#d93025", soldout: "#6b6b6b", closed: "#4b5a8a" };
 function roomWait(p, s) {
   let best = null;
@@ -1647,7 +1647,7 @@ function renderSheet() {
   const ban = placeRestricted(p);
   const html = `
     ${p.tentative || p.roomGuess ? `<p class="sh-kind">${p.tentative ? "【場所は仮】" : "【教室は仮】"}</p>` : ""}
-    <h2 class="sh-title">${esc(titleOf(p))}${statusPill(oneWait)}${statusPill(crowd)}</h2>
+    <h2 class="sh-title">${esc(titleOf(p))}${statusPill(oneWait)}${statusPill(crowd, "混み具合：")}</h2>
     <p class="sh-sub">${esc(subOf(p))}</p>
     ${one ? `<p class="sh-sub">${esc([one.group, one.food ? "食べもの" : ""].filter(Boolean).join("・"))}${genreTags(one)}</p>${msgHtml(one, s)}` : ""}
     <div class="sh-row">
@@ -1687,7 +1687,7 @@ function renderHome(body, s) {
     <div class="sh-venues">${venues.map((p) => {
       const c = crowdOf(p.id, s);
       const now = s.phase === "during" && s.running?.some((e) => e.venue === p.id);
-      return `<button type="button" class="sh-venue${now ? " is-now" : ""}" data-go="${p.id}"><b>${esc(p.name)}</b><small>${c ? statusPill(c) : esc(p.floor)}${now ? "・NOW" : ""}</small></button>`;
+      return `<button type="button" class="sh-venue${now ? " is-now" : ""}" data-go="${p.id}"><b>${esc(p.name)}</b><small>${c ? statusPill(c, "混み具合：") : esc(p.floor)}${now ? "・NOW" : ""}</small></button>`;
     }).join("")}</div>`;
 }
 
@@ -2055,7 +2055,7 @@ function renderNowSheet(body, s) {
     const p = place(e.venue);
     const c = p && crowdOf(p.id, s);
     return `<li><button type="button" class="m-item" ${p ? `data-go="${esc(p.id)}"` : "disabled"}><span class="ico k-venue">${now ? LIST_ICON.now : LIST_ICON.next}</span>
-      <span class="txt"><b>${esc(e.title)}</b><small>${e.internal ? "学内のみ・" : ""}${esc(p ? titleOf(p) : "")}${when ? `・${esc(when)}` : ""}${c ? `・${esc(c.label)}` : ""}</small></span>
+      <span class="txt"><b>${esc(e.title)}</b><small>${e.internal ? "学内のみ・" : ""}${esc(p ? titleOf(p) : "")}${when ? `・${esc(when)}` : ""}${c ? `・混み具合：${esc(c.label)}` : ""}</small></span>
       ${now ? '<span class="sh-badge is-now">NOW</span>' : ""}</button></li>`;
   };
   if (s.phase !== "during") {
