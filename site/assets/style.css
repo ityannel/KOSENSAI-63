@@ -2010,7 +2010,6 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
   :root { --app-w: 100vw; }
   .pc-bg, .pc-rig, .pc-fg { display: none; }
   html { background: linear-gradient(180deg, #2b2a3d, #14121b); }
-  :root[data-theme="light"] { background: #dcd6cb; }
 }
 
 .qa-chat { display: grid; gap: calc(16 * var(--u)); font-family: var(--text-font); font-weight: 700; color: #634A2E; }
@@ -2208,3 +2207,9 @@ input:focus-visible, textarea:focus-visible { box-shadow: none; }
 html.lite *, html.lite *::before, html.lite *::after { animation-duration: 0.001s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
 html.lite * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; text-shadow: none !important; }
 html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { display: none !important; }
+@media (min-width: 600px) {
+  html.lite, html.lite[data-theme="light"] { background: linear-gradient(180deg, #2b2a3d, #14121b) !important; }
+}
+@media (min-width: 600px) and (max-width: 999px) {
+  html, html[data-theme="light"] { background: linear-gradient(180deg, #2b2a3d, #14121b) !important; }
+}
