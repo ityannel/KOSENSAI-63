@@ -8,6 +8,7 @@ import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT,
 import { robotSvg } from "./ai-robot.js";
 import { OUTSIDE, OUTSIDE_BOUNDS, roadPath } from "./surroundings.js";
 import { MINOR_ROADS } from "./roads-out.js";
+import { PARKS, OUT_BLD_LABELS } from "./outside-extra.js";
 import { saveCtx, readTour, saveTour } from "./ai-core.js";
 import * as mapAi from "./map-ai.js";
 const REDUCED = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
@@ -959,6 +960,7 @@ function siteSvg() {
   for (const p of OUTSIDE.apron) out.push(`<polygon class="out-apron" points="${ptsOf(p)}"/>`);
   for (const t of OUTSIDE.taxi) out.push(`<polyline class="out-taxi" points="${ptsOf(t)}"/>`);
   for (const r of OUTSIDE.runway) out.push(`<polyline class="out-runway" points="${ptsOf(r)}"/><polyline class="out-runway-line" points="${ptsOf(r)}"/>`);
+  for (const [, pts] of PARKS) out.push(`<polygon class="out-park" points="${pts.join(" ")}"/>`);
   out.push(`<path class="road-back" d="${MINOR_ROADS.map((s) => `M${s[0]} ${s[1]}${s.slice(2).map((v, i) => (i % 2 ? " " : "L") + v).join("")}`).join("")}"/>`);
   for (const kind of ["t", "p"]) for (const r of OUTSIDE.roads) if (r.kind === kind) out.push(`<polyline class="road-out ${kind === "p" ? "is-major" : "is-minor"}" points="${ptsOf(r.pts)}"/>`);
   out.push(`<polyline class="road-out is-minor" points="345,1150 ${OUTSIDE.gateLink.join(",")}"/>`);
@@ -983,6 +985,9 @@ function siteSvg() {
   }
   for (const r of SITE.roadNames ?? []) flabels.push(roadText("", r.name, r.at, r.along, 1.3, `fill:${r.ink}`));
   for (const lb of OUTSIDE.labels) flabels.push(roadText("lb-out", lb.name, lb.at, lb.along, 0.12));
+  const kOfArea = (a) => (a > 1e6 ? 0.12 : a > 1.5e5 ? 0.22 : a > 4e4 ? 0.4 : a > 1e4 ? 0.7 : 1.1);
+  for (const [name, , [x, y], a] of PARKS) if (name) flabels.push(`<text class="lb-opark" x="${x}" y="${y}" data-k="${kOfArea(a)}">${esc(name)}</text>`);
+  for (const [name, x, y, tier, a] of OUT_BLD_LABELS) flabels.push(`<text class="lb-obld${tier ? " is-generic" : ""}" x="${x}" y="${y}" data-k="${tier ? 0.9 : Math.max(0.4, kOfArea(a))}">${esc(name)}</text>`);
   const labels = [];
   for (const a of SITE.areas) {
     const shape = a.poly ? `<polygon class="area k-${a.kind}" data-id="${a.id}" points="${a.poly.join(" ")}"/>` : rectEl(...a.rect, `area k-${a.kind}`, ` data-id="${a.id}"`);
