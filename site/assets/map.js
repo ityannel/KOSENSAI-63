@@ -493,7 +493,8 @@ function safeArea() {
   const top = ($(".m-top")?.getBoundingClientRect().bottom ?? 0) + 8;
   const shown = !$("#m-sheet").hidden;
   const sheet = $("#m-sheet").getBoundingClientRect();
-  const tabsTop = $("#m-tabs")?.getBoundingClientRect().top ?? screen.h;
+  const tabsEl = $("#m-tabs");
+  const tabsTop = tabsEl && tabsEl.offsetParent ? tabsEl.getBoundingClientRect().top : screen.h;
   const limit = tabsTop - 16;
   const sh = $("#m-sheet");
   const capTop = tabsTop - (sh.classList.contains("is-min") ? 30 : innerHeight * (sh.classList.contains("is-open") ? 0.78 : 0.42));
