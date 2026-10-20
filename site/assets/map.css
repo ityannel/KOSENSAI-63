@@ -1237,3 +1237,5 @@ body:has(#m-feed.is-composing) .m-tabs { display: none; }
 .ig-form .ig-pick { aspect-ratio: 16 / 10; }
 html.lite #m-tilt { display: none !important; }
 html.lite #map-svg * { filter: none !important; }
+
+#map-svg .road-back { fill: none; stroke: var(--m-road); stroke-width: 6px; stroke-linecap: round; stroke-linejoin: round; opacity: 0.42; vector-effect: none; }

@@ -7,6 +7,7 @@ import { findRoute, describe, centerOf, buildingAt, setBlockedRooms } from "./ro
 import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
 import { robotSvg } from "./ai-robot.js";
 import { OUTSIDE, OUTSIDE_BOUNDS, roadPath } from "./surroundings.js";
+import { MINOR_ROADS } from "./roads-out.js";
 import { saveCtx, readTour, saveTour } from "./ai-core.js";
 import * as mapAi from "./map-ai.js";
 const REDUCED = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
@@ -958,6 +959,7 @@ function siteSvg() {
   for (const p of OUTSIDE.apron) out.push(`<polygon class="out-apron" points="${ptsOf(p)}"/>`);
   for (const t of OUTSIDE.taxi) out.push(`<polyline class="out-taxi" points="${ptsOf(t)}"/>`);
   for (const r of OUTSIDE.runway) out.push(`<polyline class="out-runway" points="${ptsOf(r)}"/><polyline class="out-runway-line" points="${ptsOf(r)}"/>`);
+  out.push(`<path class="road-back" d="${MINOR_ROADS.map((s) => `M${s[0]} ${s[1]}${s.slice(2).map((v, i) => (i % 2 ? " " : "L") + v).join("")}`).join("")}"/>`);
   for (const kind of ["t", "p"]) for (const r of OUTSIDE.roads) if (r.kind === kind) out.push(`<polyline class="road-out ${kind === "p" ? "is-major" : "is-minor"}" points="${ptsOf(r.pts)}"/>`);
   out.push(`<polyline class="road-out is-minor" points="345,1150 ${OUTSIDE.gateLink.join(",")}"/>`);
   for (const b of OUTSIDE.big) out.push(`<polygon class="out-bldg" points="${ptsOf(b)}"/>`);
