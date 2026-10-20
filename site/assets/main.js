@@ -280,9 +280,11 @@ const runningEvents = (t = nowMs()) => (live?.now_events?.length
   : NOW_LIST.filter((e) => Date.parse(e.start) <= t && t < Date.parse(e.end)));
 
 let lastMido = null;
+const midoRank = new WeakMap();
+const midoOrder = (e) => (midoRank.has(e) ? midoRank.get(e) : (midoRank.set(e, Math.random()), midoRank.get(e)));
 wireDetails($("#mido-tickets"), nowMs);
 function renderMido(t = nowMs()) {
-  const list = upcomingTickets(t).slice(0, 3);
+  const list = upcomingTickets(t).sort((x, y) => midoOrder(x) - midoOrder(y)).slice(0, 3);
   const html = list.map((e, i) => ticketHtml(e, i, t)).join("");
   if (html === lastMido) return;
   lastMido = html;
