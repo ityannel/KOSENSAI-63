@@ -971,7 +971,7 @@ async function loadOutPoi() {
     const { OUT_ROAD_LABELS, OUT_POI } = await import("./outside-poi.js");
     const glyphs = { ...OUT_GLYPH, medical: POI_GLYPH.hospital, shop: POI_GLYPH.store };
     OUT_POI.forEach(([kind, name, x, y], i) => places.set(`ox-${i}`, { id: `ox-${i}`, kind: "outside", far: true, floor: "1F", at: [x, y], name, short: name, poiKind: kind, sub: `学校の外・${POI_JA[kind] ?? "ばしょ"}` }));
-    const shapes = OUT_POI.map(([kind, name, x, y], i) => `<g data-id="ox-${i}" data-k="${OUT_POI_K[kind] ?? 0.9}" class="is-hidden">${icon(x, y, `ic-poi ic-opoi k-${kind}`, `<rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyphs[kind] ?? POI_GLYPH[kind] ?? POI_GLYPH.landmark}</g><text x="10" y="0">${esc(name)}</text>`)}</g>`).join("");
+    const shapes = OUT_POI.map(([kind, name, x, y], i) => `<g data-id="ox-${i}" data-k="${OUT_POI_K[kind] ?? 0.9}" class="is-hidden">${icon(x, y, `ic-poi ic-opoi k-${kind}`, `<rect class="hit" x="-9" y="-9" width="${22 + 8.8 * [...name].length}" height="18"/><rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyphs[kind] ?? POI_GLYPH[kind] ?? POI_GLYPH.landmark}</g><text x="10" y="0">${esc(name)}</text>`)}</g>`).join("");
     const labels = OUT_ROAD_LABELS.map(([name, x, y, [x0, y0], [x1, y1], tier]) => `<text class="lb-road lb-out" x="${x}" y="${y}" data-k="${tier ? 0.5 : 0.25}" data-along="${((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI).toFixed(1)}">${esc(name)}</text>`).join("");
     outPoi = { shapes, labels };
     buildIndex();
@@ -1082,7 +1082,7 @@ const POI_GLYPH = {
 function poiHtml() {
   return OUTSIDE.pois.map((q) => {
     const glyph = POI_GLYPH[q.kind] ?? POI_GLYPH.landmark;
-    return `<g data-p="${q.p}" data-id="${esc(q.id)}">${icon(q.at[0], q.at[1], `ic-poi k-${q.kind}`, `<title>${esc(q.name)}</title><rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyph}</g><text x="10" y="0">${esc(q.short)}</text>`)}</g>`;
+    return `<g data-p="${q.p}" data-id="${esc(q.id)}">${icon(q.at[0], q.at[1], `ic-poi k-${q.kind}`, `<title>${esc(q.name)}</title><rect class="hit" x="-9" y="-9" width="${22 + 8.8 * [...q.short].length}" height="18"/><rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyph}</g><text x="10" y="0">${esc(q.short)}</text>`)}</g>`;
   }).join("");
 }
 function updatePoi() {
