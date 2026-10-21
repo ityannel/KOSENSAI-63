@@ -1251,5 +1251,16 @@ html.lite #map-svg * { filter: none !important; }
 :root[data-theme="dark"] #map-svg text.lb-out { fill: #aeb3ba; }
 :root[data-theme="dark"] #map-svg text.lb-opark { fill: #93c488; }
 :root[data-theme="dark"] #map-svg text.lb-obld { fill: #b0a590; }
-#map-svg text.lb-out { font-size: 9px; text-anchor: inherit; }
+#map-svg text.lb-out { font-size: calc(var(--u) * 9.5px); text-anchor: middle; fill: #7a6f60; letter-spacing: 0.14em; }
 #map-svg:not(.show-out) #m-out-detail, #map-svg:not(.show-out) text.lb-opark, #map-svg:not(.show-out) text.lb-obld { display: none; }
+#map-svg #m-out-poi > g.is-hidden { display: none; }
+#map-svg .ic-opoi text { font-size: 8.5px; font-weight: 700; stroke-width: 2.6px; }
+#map-svg .ic-opoi .bg { stroke-width: 1.2px; }
+#map-svg .ic-poi.k-hotel .bg { fill: #8a5a9e; }
+#map-svg .ic-poi.k-food .bg { fill: #d9692b; }
+#map-svg .ic-poi.k-medical .bg { fill: #c8323a; }
+#map-svg .ic-poi.k-bank .bg { fill: #5b6b80; }
+#map-svg .ic-poi.k-bath .bg { fill: #d9667a; }
+#map-svg .ic-poi.k-fuel .bg { fill: #6b6b6b; }
+#map-svg .ic-poi.k-shop .bg { fill: #7fb5a8; }
+#map-svg .ic-poi.k-landmark .bg { fill: #8a7a66; }

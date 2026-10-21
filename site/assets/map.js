@@ -457,6 +457,7 @@ function settleView() {
   if (k >= OUT_K_ON && !outDetail) loadOutDetail();
   updateLabels();
   updatePoi();
+  updateOutPoi();
 }
 const labelTop = new Map();
 const labelBottom = new Map();
@@ -954,6 +955,39 @@ function deptLabels(p) {
 }
 const festLabels = (p) => [p.shopList?.length ? shopLabels(p) : p.dept ? deptLabels(p) : roomLabel(p)];
 
+let outPoi = null, outPoiLoading = false;
+const OUT_GLYPH = {
+  hotel: '<path d="M4 18V7M4 13h16v5M4 16h16M8 11h5a2 2 0 0 1 2 2"/>',
+  food: '<path d="M8 4v6a2 2 0 0 0 2 2v8M6 4v5M10 4v5M16 20V4c-2 1-3 4-3 7h3"/>',
+  bank: '<path d="M4 9l8-4 8 4zM6.5 10.5v6M10 10.5v6M14 10.5v6M17.5 10.5v6M4 19h16"/>',
+  bath: '<path d="M4 13h16v2a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM9 4c-1 1.5 1 2.5 0 4M13 4c-1 1.5 1 2.5 0 4"/>',
+  fuel: '<path d="M6 20V5h8v15M6 11h8M14 8l3 2v7a1.5 1.5 0 0 0 3 0v-5"/>',
+};
+const OUT_POI_K = { bus: 0.3, store: 0.4, hotel: 0.45, food: 0.5, school: 0.5, post: 0.5, bath: 0.55, medical: 0.6, bank: 0.6, fuel: 0.6, temple: 0.5, shrine: 0.5, landmark: 0.5, shop: 0.85 };
+async function loadOutPoi() {
+  if (outPoi || outPoiLoading) return;
+  outPoiLoading = true;
+  try {
+    const { OUT_ROAD_LABELS, OUT_POI } = await import("./outside-poi.js");
+    const glyphs = { ...OUT_GLYPH, medical: POI_GLYPH.hospital, shop: POI_GLYPH.store };
+    const shapes = OUT_POI.map(([kind, name, x, y]) => `<g data-k="${OUT_POI_K[kind] ?? 0.9}" class="is-hidden">${icon(x, y, `ic-poi ic-opoi k-${kind}`, `<rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyphs[kind] ?? POI_GLYPH[kind] ?? POI_GLYPH.landmark}</g><text x="10" y="0">${esc(name)}</text>`)}</g>`).join("");
+    const labels = OUT_ROAD_LABELS.map(([name, x, y, [x0, y0], [x1, y1], tier]) => `<text class="lb-road lb-out" x="${x}" y="${y}" data-k="${tier ? 0.5 : 0.25}" data-along="${((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI).toFixed(1)}">${esc(name)}</text>`).join("");
+    outPoi = { shapes, labels };
+    document.getElementById("m-out-poi")?.insertAdjacentHTML("beforeend", shapes);
+    document.querySelector("#m-labels .site-labels")?.insertAdjacentHTML("beforeend", labels);
+    labelKey = "";
+    updateLabels();
+    updateOutPoi();
+  } catch (err) {
+    console.warn("[map] 外のお店・道路名を読めませんでした:", err);
+  } finally {
+    outPoiLoading = false;
+  }
+}
+function updateOutPoi() {
+  const k = view.k;
+  document.querySelectorAll("#m-out-poi > g").forEach((g) => g.classList.toggle("is-hidden", k < Number(g.dataset.k)));
+}
 let outDetail = null, outLoading = false;
 const OUT_K_ON = 1.3, OUT_K_OFF = 1.15;
 async function loadOutDetail() {
@@ -1008,6 +1042,7 @@ function siteSvg() {
   for (const r of SITE.roadNames ?? []) flabels.push(roadText("", r.name, r.at, r.along, 1.3, `fill:${r.ink}`));
   for (const lb of OUTSIDE.labels) flabels.push(roadText("lb-out", lb.name, lb.at, lb.along, 0.12));
   if (outDetail) flabels.push(outDetail.labels);
+  if (outPoi) flabels.push(outPoi.labels);
   const labels = [];
   for (const a of SITE.areas) {
     const shape = a.poly ? `<polygon class="area k-${a.kind}" data-id="${a.id}" points="${a.poly.join(" ")}"/>` : rectEl(...a.rect, `area k-${a.kind}`, ` data-id="${a.id}"`);
@@ -1140,6 +1175,7 @@ function drawFloor() {
     <g id="m-labels"><g class="site-labels${floor === "1F" ? "" : " is-dim"}">${site.labels}</g>${labels.join("")}${roomLabels.join("")}</g>
     <g id="m-icons">${icons.join("")}</g>
     <g id="m-poi">${poiHtml()}</g>
+    <g id="m-out-poi">${outPoi?.shapes ?? ""}</g>
     <g id="m-live"></g>
     <g id="m-deco">${[...places.values()].filter((p) => p.kind === "deco" && p.floor === floor).map((p) => `<g data-id="${p.id}" style="cursor:pointer">${icon(...p.at, `ic-deco g${p.grade}`, `<title>${esc(p.name)}</title>${ICON.deco}`)}</g>`).join("")}</g>
     <g id="m-vend">${(SITE.vending ?? []).filter((v) => v.floor === floor).map((v) => `<g data-id="${v.id}" style="cursor:pointer">${icon(...v.at, "ic-vend", `<title>${esc(v.name)}</title>${ICON.vend}`)}</g>`).join("")}</g>
@@ -2817,6 +2853,7 @@ export async function initMap(opts) {
   applyView();
   renderMap();
   renderSheet();
+  setTimeout(loadOutPoi, 2000);
   if (params.get("tab") === "feed") setTab("feed");
   addEventListener("pagehide", () => saveAiCtx(true));
   const tourIds = (params.get("tour") ?? "").split(">").map((x) => x.trim()).filter(Boolean).slice(0, 8);
