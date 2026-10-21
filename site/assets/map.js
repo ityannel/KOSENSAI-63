@@ -1080,7 +1080,7 @@ const POI_GLYPH = {
 function poiHtml() {
   return OUTSIDE.pois.map((q) => {
     const glyph = POI_GLYPH[q.kind] ?? POI_GLYPH.landmark;
-    return `<g data-p="${q.p}" data-id="${esc(q.id)}">${icon(q.at[0], q.at[1], `ic-poi k-${q.kind}`, `<title>${esc(q.name)}</title><rect class="bg" x="-8.5" y="-8.5" width="17" height="17" rx="3.5"/><g class="fg" transform="translate(-6 -6) scale(0.5)">${glyph}</g><text x="13" y="0">${esc(q.short)}</text>`)}</g>`;
+    return `<g data-p="${q.p}" data-id="${esc(q.id)}">${icon(q.at[0], q.at[1], `ic-poi k-${q.kind}`, `<title>${esc(q.name)}</title><rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyph}</g><text x="10" y="0">${esc(q.short)}</text>`)}</g>`;
   }).join("");
 }
 function updatePoi() {

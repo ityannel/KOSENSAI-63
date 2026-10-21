@@ -1210,7 +1210,7 @@ body.mapapp { --e-blue: #C8323A; --e-navy: #634A2E; --e-red: #C8323A; --e-grad: 
 #map-svg .ic-poi .bg { fill: #634A2E; stroke: #fff; stroke-width: 1.5px; vector-effect: none; }
 #map-svg .ic-poi .fg { fill: none; stroke: #fff; stroke-width: 2.6px; stroke-linecap: round; stroke-linejoin: round; }
 #map-svg .ic-poi .fg * { vector-effect: none; fill: none; }
-#map-svg .ic-poi text { fill: #3a2a1a; stroke: #fffbf2; stroke-width: 3px; paint-order: stroke; stroke-linejoin: round; font-size: 10px; font-weight: 800; text-anchor: start; dominant-baseline: central; }
+#map-svg .ic-poi text { fill: #3a2a1a; stroke: #fffbf2; stroke-width: 3px; paint-order: stroke; stroke-linejoin: round; font-size: 8.5px; font-weight: 700; text-anchor: start; dominant-baseline: central; }
 #map-svg .ic-poi.k-tram .bg { fill: #c8323a; }
 #map-svg .ic-poi.k-bus .bg { fill: #2f6a80; }
 #map-svg .ic-poi.k-store .bg { fill: #3e9a86; }
