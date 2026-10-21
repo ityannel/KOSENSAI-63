@@ -991,7 +991,7 @@ function updateOutPoi() {
   document.querySelectorAll("#m-out-poi > g").forEach((g) => g.classList.toggle("is-hidden", k < Number(g.dataset.k)));
 }
 let outDetail = null, outLoading = false;
-const OUT_K_ON = 1.3, OUT_K_OFF = 1.15;
+const OUT_K_ON = 0.55, OUT_K_OFF = 0.45;
 async function loadOutDetail() {
   if (outDetail || outLoading) return;
   outLoading = true;
