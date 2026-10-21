@@ -1238,7 +1238,7 @@ body:has(#m-feed.is-composing) .m-tabs { display: none; }
 html.lite #m-tilt { display: none !important; }
 html.lite #map-svg * { filter: none !important; }
 
-#map-svg .road-back { fill: none; stroke: var(--m-road); stroke-width: 6px; stroke-linecap: round; stroke-linejoin: round; opacity: 0.42; vector-effect: none; }
+#map-svg .road-back { fill: none; stroke: rgba(255, 255, 255, 0.42); stroke-width: 6px; stroke-linecap: butt; stroke-linejoin: round; vector-effect: none; shape-rendering: optimizeSpeed; }
 
 #map-svg .out-park { fill: #cfe3b4; stroke: #b3cf93; stroke-width: 2px; stroke-linejoin: round; vector-effect: none; opacity: 0.85; }
 #map-svg text.lb-out, #map-svg text.lb-opark, #map-svg text.lb-obld { font-size: calc(var(--u) * 9px); font-weight: 700; letter-spacing: 0.08em; stroke: #fbf5e6; stroke-width: 3px; paint-order: stroke; stroke-linejoin: round; text-anchor: middle; dominant-baseline: central; }
