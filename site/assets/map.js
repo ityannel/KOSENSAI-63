@@ -2413,7 +2413,6 @@ const CHIPS = [
   { id: "toilet", label: "トイレ", icon: LIST_ICON.toilet, match: (p) => isToilet(p) && !byRoom.has(p.id) && !placeRestricted(p) },
   { id: "food", label: "模擬店", icon: LIST_ICON.shop, match: (p) => p.shopList?.length > 0 },
   { id: "exhibit", label: "学科展示", icon: LIST_ICON.exhibit, match: (p) => p.fest && p.kind === "exhibit" },
-  { id: "venue", label: "会場", icon: LIST_ICON.venue, match: (p) => p.fest && p.kind === "venue" },
   { id: "stamp", label: "スタンプ", icon: LIST_ICON.stamp, match: (p) => p.shops?.length > 0 },
   { id: "hq", label: "本部", icon: LIST_ICON.hq, match: (p) => p.kind === "hq" },
   { id: "aed", label: "AED", icon: LIST_ICON.aed, match: (p) => p.kind === "aed" },
