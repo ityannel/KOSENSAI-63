@@ -264,7 +264,7 @@ function pointPlace(id) {
   return p;
 }
 
-const POI_JA = { tram: "市電の駅", bus: "バス停", store: "お店", temple: "お寺", shrine: "神社", school: "学校", park: "公園", airport: "空港", post: "郵便局", hospital: "病院", landmark: "目印" };
+const POI_JA = { tram: "市電の駅", bus: "バス停", hotel: "宿泊施設", food: "飲食店", medical: "病院・薬局", bank: "銀行", bath: "温泉・銭湯", fuel: "ガソリンスタンド", shop: "お店", store: "お店", temple: "お寺", shrine: "神社", school: "学校", park: "公園", airport: "空港", post: "郵便局", hospital: "病院", landmark: "目印" };
 const roadLen = (pts) => pts.reduce((s, p, i) => s + (i ? Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0), 0);
 function farRoute(from, to, opts) {
   const gate = places.get("gate");
@@ -970,9 +970,11 @@ async function loadOutPoi() {
   try {
     const { OUT_ROAD_LABELS, OUT_POI } = await import("./outside-poi.js");
     const glyphs = { ...OUT_GLYPH, medical: POI_GLYPH.hospital, shop: POI_GLYPH.store };
-    const shapes = OUT_POI.map(([kind, name, x, y]) => `<g data-k="${OUT_POI_K[kind] ?? 0.9}" class="is-hidden">${icon(x, y, `ic-poi ic-opoi k-${kind}`, `<rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyphs[kind] ?? POI_GLYPH[kind] ?? POI_GLYPH.landmark}</g><text x="10" y="0">${esc(name)}</text>`)}</g>`).join("");
+    OUT_POI.forEach(([kind, name, x, y], i) => places.set(`ox-${i}`, { id: `ox-${i}`, kind: "outside", far: true, floor: "1F", at: [x, y], name, short: name, poiKind: kind, sub: `学校の外・${POI_JA[kind] ?? "ばしょ"}` }));
+    const shapes = OUT_POI.map(([kind, name, x, y], i) => `<g data-id="ox-${i}" data-k="${OUT_POI_K[kind] ?? 0.9}" class="is-hidden">${icon(x, y, `ic-poi ic-opoi k-${kind}`, `<rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyphs[kind] ?? POI_GLYPH[kind] ?? POI_GLYPH.landmark}</g><text x="10" y="0">${esc(name)}</text>`)}</g>`).join("");
     const labels = OUT_ROAD_LABELS.map(([name, x, y, [x0, y0], [x1, y1], tier]) => `<text class="lb-road lb-out" x="${x}" y="${y}" data-k="${tier ? 0.5 : 0.25}" data-along="${((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI).toFixed(1)}">${esc(name)}</text>`).join("");
     outPoi = { shapes, labels };
+    buildIndex();
     document.getElementById("m-out-poi")?.insertAdjacentHTML("beforeend", shapes);
     document.querySelector("#m-labels .site-labels")?.insertAdjacentHTML("beforeend", labels);
     labelKey = "";

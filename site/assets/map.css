@@ -1264,3 +1264,4 @@ html.lite #map-svg * { filter: none !important; }
 #map-svg .ic-poi.k-fuel .bg { fill: #6b6b6b; }
 #map-svg .ic-poi.k-shop .bg { fill: #7fb5a8; }
 #map-svg .ic-poi.k-landmark .bg { fill: #8a7a66; }
+#map-svg #m-out-poi > g { cursor: pointer; }
