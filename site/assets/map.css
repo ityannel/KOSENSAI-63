@@ -1252,3 +1252,4 @@ html.lite #map-svg * { filter: none !important; }
 :root[data-theme="dark"] #map-svg text.lb-opark { fill: #93c488; }
 :root[data-theme="dark"] #map-svg text.lb-obld { fill: #b0a590; }
 #map-svg text.lb-out { font-size: 9px; text-anchor: inherit; }
+#map-svg:not(.show-out) #m-out-detail, #map-svg:not(.show-out) text.lb-opark, #map-svg:not(.show-out) text.lb-obld { display: none; }

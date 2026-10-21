@@ -7,10 +7,7 @@ import { findRoute, describe, centerOf, buildingAt, setBlockedRooms } from "./ro
 import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
 import { robotSvg } from "./ai-robot.js";
 import { OUTSIDE, OUTSIDE_BOUNDS, roadPath } from "./surroundings.js";
-import { MINOR_ROADS } from "./roads-out.js";
-import { PARKS, OUT_BLD_LABELS } from "./outside-extra.js";
 import { saveCtx, readTour, saveTour } from "./ai-core.js";
-import * as mapAi from "./map-ai.js";
 const REDUCED = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -455,6 +452,9 @@ function settleView() {
   svg().style.setProperty("--u", (1 / k).toFixed(5));
   const far = svg().classList.contains("is-far");
   svg().classList.toggle("is-far", k < (far ? 1.15 : 1.05));
+  const outOn = svg().classList.contains("show-out");
+  if (k >= (outOn ? OUT_K_OFF : OUT_K_ON) !== outOn) svg().classList.toggle("show-out", !outOn);
+  if (k >= OUT_K_ON && !outDetail) loadOutDetail();
   updateLabels();
   updatePoi();
 }
@@ -954,14 +954,36 @@ function deptLabels(p) {
 }
 const festLabels = (p) => [p.shopList?.length ? shopLabels(p) : p.dept ? deptLabels(p) : roomLabel(p)];
 
+let outDetail = null, outLoading = false;
+const OUT_K_ON = 1.3, OUT_K_OFF = 1.15;
+async function loadOutDetail() {
+  if (outDetail || outLoading) return;
+  outLoading = true;
+  try {
+    const [{ MINOR_ROADS }, { PARKS, OUT_BLD_LABELS }] = await Promise.all([import("./roads-out.js"), import("./outside-extra.js")]);
+    const kOfArea = (a) => (a > 1e6 ? 0.12 : a > 1.5e5 ? 0.22 : a > 4e4 ? 0.4 : a > 1e4 ? 0.7 : 1.1);
+    const shapes = PARKS.map(([, pts]) => `<polygon class="out-park" points="${pts.join(" ")}"/>`).join("")
+      + `<path class="road-back" d="${MINOR_ROADS.map((s) => `M${s[0]} ${s[1]}${s.slice(2).map((v, i) => (i % 2 ? " " : "L") + v).join("")}`).join("")}"/>`;
+    const labels = PARKS.filter(([name]) => name).map(([name, , [x, y], a]) => `<text class="lb-opark" x="${x}" y="${y}" data-k="${kOfArea(a)}">${esc(name)}</text>`).join("")
+      + OUT_BLD_LABELS.map(([name, x, y, tier, a]) => `<text class="lb-obld${tier ? " is-generic" : ""}" x="${x}" y="${y}" data-k="${tier ? 0.9 : Math.max(0.4, kOfArea(a))}">${esc(name)}</text>`).join("");
+    outDetail = { shapes, labels };
+    document.getElementById("m-out-detail")?.insertAdjacentHTML("beforeend", shapes);
+    document.querySelector("#m-labels .site-labels")?.insertAdjacentHTML("beforeend", labels);
+    labelKey = "";
+    updateLabels();
+  } catch (err) {
+    console.warn("[map] 外の道路・公園を読めませんでした:", err);
+  } finally {
+    outLoading = false;
+  }
+}
 function siteSvg() {
   const out = [`<polygon class="site-bound" points="${SITE.boundary.join(" ")}"/>`];
   const ptsOf = (a) => a.map((q) => q.join(",")).join(" ");
   for (const p of OUTSIDE.apron) out.push(`<polygon class="out-apron" points="${ptsOf(p)}"/>`);
   for (const t of OUTSIDE.taxi) out.push(`<polyline class="out-taxi" points="${ptsOf(t)}"/>`);
   for (const r of OUTSIDE.runway) out.push(`<polyline class="out-runway" points="${ptsOf(r)}"/><polyline class="out-runway-line" points="${ptsOf(r)}"/>`);
-  for (const [, pts] of PARKS) out.push(`<polygon class="out-park" points="${pts.join(" ")}"/>`);
-  out.push(`<path class="road-back" d="${MINOR_ROADS.map((s) => `M${s[0]} ${s[1]}${s.slice(2).map((v, i) => (i % 2 ? " " : "L") + v).join("")}`).join("")}"/>`);
+  out.push(`<g id="m-out-detail">${outDetail?.shapes ?? ""}</g>`);
   for (const kind of ["t", "p"]) for (const r of OUTSIDE.roads) if (r.kind === kind) out.push(`<polyline class="road-out ${kind === "p" ? "is-major" : "is-minor"}" points="${ptsOf(r.pts)}"/>`);
   out.push(`<polyline class="road-out is-minor" points="345,1150 ${OUTSIDE.gateLink.join(",")}"/>`);
   for (const b of OUTSIDE.big) out.push(`<polygon class="out-bldg" points="${ptsOf(b)}"/>`);
@@ -985,9 +1007,7 @@ function siteSvg() {
   }
   for (const r of SITE.roadNames ?? []) flabels.push(roadText("", r.name, r.at, r.along, 1.3, `fill:${r.ink}`));
   for (const lb of OUTSIDE.labels) flabels.push(roadText("lb-out", lb.name, lb.at, lb.along, 0.12));
-  const kOfArea = (a) => (a > 1e6 ? 0.12 : a > 1.5e5 ? 0.22 : a > 4e4 ? 0.4 : a > 1e4 ? 0.7 : 1.1);
-  for (const [name, , [x, y], a] of PARKS) if (name) flabels.push(`<text class="lb-opark" x="${x}" y="${y}" data-k="${kOfArea(a)}">${esc(name)}</text>`);
-  for (const [name, x, y, tier, a] of OUT_BLD_LABELS) flabels.push(`<text class="lb-obld${tier ? " is-generic" : ""}" x="${x}" y="${y}" data-k="${tier ? 0.9 : Math.max(0.4, kOfArea(a))}">${esc(name)}</text>`);
+  if (outDetail) flabels.push(outDetail.labels);
   const labels = [];
   for (const a of SITE.areas) {
     const shape = a.poly ? `<polygon class="area k-${a.kind}" data-id="${a.id}" points="${a.poly.join(" ")}"/>` : rectEl(...a.rect, `area k-${a.kind}`, ` data-id="${a.id}"`);
@@ -1461,7 +1481,27 @@ const aiHost = {
   repaint: () => { if (mode === "ai") renderSheet(); },
   sampleIds: (n) => [...places.values()].filter((p) => p.fest && p.name && !byRoom.has(p.id)).slice(0, n).map((p) => p.id),
 };
-mapAi.init(aiHost);
+let aiMod = null, aiLoading = null;
+function loadAi() {
+  aiLoading ??= import("./map-ai.js").then((m) => {
+    m.init(aiHost);
+    m.reload();
+    aiMod = m;
+    if (mode === "ai") renderSheet();
+    return m;
+  }).catch((err) => { aiLoading = null; console.warn("[map] AIくんを読めませんでした:", err); });
+  return aiLoading;
+}
+const mapAi = {
+  isBusy: () => aiMod?.isBusy() ?? false,
+  reload: () => aiMod?.reload(),
+  send: (q) => loadAi().then((m) => m?.send(q)),
+  render: (body) => {
+    if (aiMod) return aiMod.render(body);
+    body.innerHTML = '<p class="m-empty">AIくんを呼んでいます…</p>';
+    loadAi();
+  },
+};
 
 const markPoint = (p) => (p.at ? p.at : centerOf(p));
 let markedIds = new Set();

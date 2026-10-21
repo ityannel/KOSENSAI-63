@@ -1,6 +1,5 @@
 import { RALLY, FESTIVAL, ELECTION, SHOPS, EVENTS, VENUES, shopIdOf } from "./config.js";
 import { rallyReady, rallyLoaded, onRallyChange } from "./rally-data.js";
-import { openQrScanner } from "./qr-scan.js";
 
 const STORE_KEY = "kosen63-rally";
 const $ = (sel) => document.querySelector(sel);
@@ -343,7 +342,7 @@ export function initRallyPage(getNow = () => Date.now()) {
   takeQrParams();
 }
 
-const openScan = () => openQrScanner({
+const openScan = async () => (await import("./qr-scan.js")).openQrScanner({
   title: "QR を読む",
   hint: "校内に置いてある QR を枠に入れてください",
   wrong: "スタンプラリーの QR ではないようです",
