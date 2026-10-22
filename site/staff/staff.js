@@ -1216,15 +1216,16 @@ const kanjiNum = (n) => {
   const tens = Math.floor(n / 10), ones = n % 10;
   return `${tens > 1 ? d[tens] : ""}十${ones ? d[ones] : ""}`;
 };
-function rallyBody(s, place = "") {
+function rallyBody(s) {
   const shop = s.kind === "shop";
   const rally = !shop && isRallyShop(s.id) && keysOf(s.id)[FEST];
   const qr = shop ? qrDataUrl(siteUrl(""))
     : rally ? stampQrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
     : qrDataUrl(siteUrl("rally.html"));
-  const ribbon = shop ? "WELCOME" : "STAMP RALLY";
+  const wide = (str) => [...str].reduce((n, ch) => n + (ch.charCodeAt(0) < 128 ? 0.58 : 1), 0);
+  const len = wide(s.name).toFixed(1);
+  const ribbon = esc(s.name);
   const head = shop ? "高専祭の<br>サイトも、どうぞ。" : "スタンプ<br>ラリー";
-  const tag = shop ? "" : `<p class="rl-tag">はじめました！</p>`;
   const lead = shop ? "待ち時間や、<b>校内マップ</b>も<br>スマホで見られます。"
     : s.kind === "info" ? "まずはここで、<br><b>一個目</b>のスタンプ！"
     : rally ? "カメラでスキャンして、<br><b>ゲット</b>！" : "校内の数か所で、<br>実施中！";
@@ -1234,11 +1235,9 @@ function rallyBody(s, place = "") {
   const hanko = shop ? "" : `<i class="rl-hanko">縁</i><span class="rl-pon">ポンッ！</span>`;
   return `
           <div class="rl">
-            ${place}
             <div class="rl-txt">
-              <p class="rl-ribbon"><i>★</i>${ribbon}<i>★</i></p>
+              <p class="rl-ribbon" style="--len:${len}"><i>★</i><span>${ribbon}</span><i>★</i></p>
               <h3 class="rl-head">${head}</h3>
-              ${tag}
               <p class="rl-lead">${lead}</p>
             </div>
             <div class="rl-qr">
@@ -1260,7 +1259,7 @@ function linksHtml(s) {
 function buildWall(s) {
   return `
       <section class="sheet pw">
-        <div class="pw-rally">${rallyBody(s, `<div class="rl-place"><h2>${esc(s.name)}</h2>${s.group ? `<p>${esc(s.group)}</p>` : ""}</div>`)}</div>
+        <div class="pw-rally">${rallyBody(s)}</div>
       </section>`;
 }
 function buildTents(shops) {
