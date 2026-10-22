@@ -415,8 +415,8 @@ export const ROOM_NAMES = {
 
 export const RESTRICTED = {
   rooms: ["M111", "M101", "M108", "M109", "M110"],
-  zones: [{ b: "K" }, { b: "E", floors: ["2F", "3F"] }, { b: "C", floors: ["3F"] }, { b: "H", floors: ["3F", "4F"] }],
-  labels: ["東京水道アリーナ（第一体育館）", "武道場", "体育館の器具庫・ビデオ学習室・教員室", "専攻科棟（K棟）の全域", "物質環境（E棟）の2階・3階", "実験棟（C棟）の3階", "H棟の3階・4階"],
+  zones: [{ b: "K" }, { b: "E", floors: ["2F", "3F"] }, { b: "C", floors: ["3F"] }, { b: "H", floors: ["3F", "4F"] }, { b: "J", floors: ["1F", "2F"] }],
+  labels: ["東京水道アリーナ（第一体育館）", "武道場", "体育館の器具庫・ビデオ学習室・教員室", "専攻科棟（K棟）の全域", "物質環境（E棟）の2階・3階", "実験棟（C棟）の3階", "H棟の3階・4階", "J棟（地域共同テクノセンター）の1階・2階"],
 };
 export const zoneRestricted = (bid, floor) => RESTRICTED.zones.some((z) => z.b === bid && (!z.floors || z.floors.includes(floor)));
 export const codeRestricted = (code) => !!code && (RESTRICTED.rooms.includes(code) || zoneRestricted(code[0], `${code[1]}F`));
