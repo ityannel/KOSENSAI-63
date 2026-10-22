@@ -1012,7 +1012,7 @@ h1, h2, h3 { font-weight: 400; }
 .sheet.pw .rl-hanko { width: 28mm; font-size: 17mm; right: -12mm; top: -5mm; }
 .sheet.pw .rl-pon { font-size: 7mm; right: -10mm; top: 24mm; }
 .sheet.pw .rl-cap { font-size: 4.2mm; }
-.sheet.pw .rl-badge { left: calc(50% - 92mm); bottom: 8mm; width: 38mm; height: 38mm; }
+.sheet.pw .rl-badge { left: calc(50% - 79mm); bottom: 8mm; width: 38mm; height: 38mm; }
 .sheet.pw .rl-badge b { font-size: 19mm; }
 .sheet.pw .rl-badge > small { font-size: 5.6mm; }
 .sheet.pw .rl-badge b small { font-size: 5.6mm; }
