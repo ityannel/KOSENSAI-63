@@ -13,7 +13,8 @@ const logo = (s) => esc(s).replace(/Enistagram\s*/g, '<img class="vi-logo" src="
 
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const botBox = (body, mark = "#C8323A") => `<div class="qa-bubble" style="--mark:${mark}">${body}</div>`;
-const pick3 = () => FAQ.flatMap((g) => g.items).filter((it) => it.top).slice(0, 3);
+const shuffled = (list) => list.map((x) => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(([, x]) => x);
+const pick3 = () => shuffled(FAQ.flatMap((g) => g.items).filter((it) => it.top)).slice(0, 3);
 const pairs = () => pick3().map((it) => `<div class="qa-pair"><div class="qa-msg is-me" style="--mark:${MARKS[it.icon]}"><div class="qa-bubble"><p>${esc(it.q)}</p></div></div><div class="qa-msg is-bot">${botBox(answerBody(it), MARKS[it.icon])}</div></div>`).join("") + '<button type="button" class="mido-more" data-more><span>ほかの質問を見る</span></button>';
 
 const allQuestions = () => `<div class="qa-all">${FAQ.map((g, gi) => `<section class="qa-grp"><p class="qa-label">${esc(g.group)}</p><div class="qa-qs">${g.items.map((it, i) => `<button type="button" class="qa-q" data-gi="${gi}" data-i="${i}" aria-pressed="false">${esc(it.q)}</button>`).join("")}</div></section>`).join("")}</div>`;
