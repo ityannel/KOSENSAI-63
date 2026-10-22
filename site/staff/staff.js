@@ -953,6 +953,7 @@ function renderShops() {
   const shopsOnly = shops.filter((s) => s.kind === "shop");
   $("#pr-target-todo").textContent = `${shopsOnly.filter((s) => !handedAt(s)).length}店`;
   $("#pr-target-all").textContent = `${shopsOnly.length}店`;
+  renderPrintList();
   const q = $("#shop-q").value.trim();
   const list = visibleShops();
   $("#shop-hint").textContent = q ? `すべてのお店から「${q}」を探しています（${list.length}件）` : "";
@@ -1216,26 +1217,33 @@ const kanjiNum = (n) => {
   return `${tens > 1 ? d[tens] : ""}十${ones ? d[ones] : ""}`;
 };
 function rallyBody(s) {
-  if (s.kind === "shop") {
-    return `
-          <div class="pt-v pt-rally-text">
-            <h3>高専祭の<br>サイトも、<br>どうぞ。</h3>
-            <p class="pt-rally-lead">待ち時間や、<br><b>校内マップ</b>も<br>見られます。</p>
-          </div>
-          <figure class="pt-rally-qr"><img src="${qrDataUrl(siteUrl(""))}" alt=""><figcaption>↑読み込んで、サイトを見る</figcaption></figure>`;
-  }
-  const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
-  const qr = rally
-    ? stampQrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
+  const shop = s.kind === "shop";
+  const rally = !shop && isRallyShop(s.id) && keysOf(s.id)[FEST];
+  const qr = shop ? qrDataUrl(siteUrl(""))
+    : rally ? stampQrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
     : qrDataUrl(siteUrl("rally.html"));
+  const ribbon = shop ? "WELCOME" : "STAMP RALLY";
+  const head = shop ? "高専祭の<br>サイトも、どうぞ。" : "スタンプラリー、<br>はじめました。";
+  const lead = shop ? "待ち時間や、<b>校内マップ</b>も<br>スマホで見られます。"
+    : s.kind === "info" ? "まずはここで、<br><b>一個目</b>のスタンプ！"
+    : rally ? "ここのスタンプを、<br>スマホで<b>ゲット</b>！" : "校内の数か所で、<br>実施中！";
+  const say = shop ? "サイトを見る" : rally ? "ここを読む！" : "カードを見る";
+  const cap = shop ? "読み込んで、サイトへ" : rally ? "カメラで読むと、スタンプが押されます" : "読み込んで、スタンプカードを見る";
+  const badge = shop ? "" : `<div class="rl-badge"><small>スタンプ</small><b>${rallyGoal()}</b><small>個で景品！</small></div>`;
   return `
-          <div class="pt-v pt-rally-text">
-            <h3>スタンプラリー、<br>はじめました。</h3>
-            ${s.kind === "info"
-              ? `<p class="pt-rally-lead">まずはここで<b>一個目</b>！<br>スタンプ${kanjiNum(rallyGoal())}個で、景品と交換！</p>`
-              : rally ? `<p class="pt-rally-lead">スタンプ<b>${kanjiNum(rallyGoal())}個</b>で、景品と交換！</p>` : `<p class="pt-rally-lead">校内の数か所で、<br>実施中！</p>`}
-          </div>
-          <figure class="pt-rally-qr"><img src="${qr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>`;
+          <div class="rl">
+            <div class="rl-txt">
+              <p class="rl-ribbon"><i>★</i>${ribbon}<i>★</i></p>
+              <h3 class="rl-head">${head}</h3>
+              <p class="rl-lead">${lead}</p>
+            </div>
+            <div class="rl-qr">
+              <p class="rl-say">${say}</p>
+              <div class="rl-burst"><span class="rl-star"></span><img src="${qr}" alt=""></div>
+              <p class="rl-cap">${cap}</p>
+              ${badge}
+            </div>
+          </div>`;
 }
 const SITE_LINK = { shop: ["#ennichi", "で待ち時間をチェック"], exhibit: ["map.html?list=exhibit", "で学科展示を見る"], info: ["map.html", "で校内マップを見る"], venue: ["map.html", "で校内マップを見る"] };
 function linksHtml(s) {
@@ -1269,9 +1277,9 @@ function buildTents(shops) {
             ${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}
           </div>
         </div></div>
-        <div class="pt-panel pt-rally"><div class="pt-face">
+        <div class="pt-panel pt-rally"><div class="pt-face"><div class="rl-rot">
 ${rallyBody(s)}
-        </div></div>
+        </div></div></div>
         <div class="pt-panel"><div class="pt-face pt-links">
           <div class="pt-v pt-links-name"><h2 class="pt-shop">${esc(s.name)}</h2>${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}</div>
           ${linksHtml(s)}
@@ -1328,6 +1336,7 @@ async function showPrint() {
   $("#pr-format-box").hidden = !c.set;
   $("#print-area").innerHTML = await c.build();
   loadPrintFont($("#print-area").textContent);
+  await Promise.all([...$$("#print-area img")].map((i) => i.decode?.().catch(() => {})));
   const n = $$("#print-area .sheet").length;
   const staff = $$("#print-area .ps-staff").length;
   $("#pr-note").textContent = [c.sub, c.set ? `${FORMAT_LABEL[printFormat()]}${staff ? "・お店の人用の紙" : ""}` : "", `${n}枚`].filter(Boolean).join("　");
@@ -1351,6 +1360,43 @@ function closePrint() {
 $("#pr-close").addEventListener("click", closePrint);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#print-overlay").hidden) closePrint(); });
 const KIND_NAME = { shop: "模擬店", exhibit: "学科展示", info: "インフォメーション" };
+const PRINT_IMAGES = [
+  { id: "web", name: "ウェブサイトのQRポスター", note: "A4・たて・カラー（QRとURL）", src: "print/poster-web.jpg", land: false },
+  { id: "sign", name: "アオカン（案内の看板）", note: "A4・よこ・カラー（高専祭／春潮寮）", src: "print/sign-aokan.png", land: true },
+];
+function renderPrintList() {
+  const box = $("#pr-list");
+  if (!box) return;
+  const row = (id, name, note) => `<li><div><b>${esc(name)}</b><small>${esc(note)}</small></div><button class="btn btn-primary btn-sm" type="button" data-pr-one="${esc(id)}">印刷する</button></li>`;
+  box.innerHTML = [
+    ...rallySpots().map((s) => row(`stamp:${s.id}`, s.name, `スタンプラリーの紙${s.group ? `・${s.group}` : ""}`)),
+    ...PRINT_IMAGES.map((x) => row(`img:${x.id}`, x.name, x.note)),
+  ].join("");
+}
+$("#pr-list").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-pr-one]");
+  if (!b) return;
+  const [kind, id] = b.dataset.prOne.split(":");
+  b.disabled = true;
+  try {
+    if (kind === "img") {
+      const x = PRINT_IMAGES.find((v) => v.id === id);
+      current = { kindLabel: "ひとつずつ", title: x.name, sub: x.note, set: false,
+        build: () => `<section class="sheet pi ${x.land ? "pi-land" : "pi-port"}"><img src="${x.src}" alt=""></section>` };
+    } else {
+      const shop = rallySpots().find((v) => v.id === id);
+      if (!shop) return;
+      await ensureRally();
+      current = { kindLabel: "ひとつずつ：スタンプラリーの紙", title: shop.name, sub: [shop.group, shop.where].filter(Boolean).join("・"), set: true, build: () => buildShopSet([shop]) };
+    }
+    await showPrint();
+  } catch (err) {
+    console.warn(err);
+    toast(`作れませんでした（${err.message}）`, true);
+  } finally {
+    b.disabled = false;
+  }
+});
 async function printForDesk(shop) {
   toast(`${shop.name}の紙を作っています…`);
   try {

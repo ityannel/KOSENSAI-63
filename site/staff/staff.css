@@ -365,15 +365,52 @@ body.is-printing { overflow: hidden; }
 .pl-link figcaption b { font-size: 3.6mm; }
 .pl-link .pt-enista { height: 4.2mm; }
 .pt-enista { height: 7mm; width: auto; filter: brightness(0); }
-.pt-rally .pt-face { gap: 8mm; }
-.pt-rally .pt-face::before { content: ""; position: absolute; inset: 5mm 3mm; border: 1.2mm solid var(--ink); border-radius: 6mm; pointer-events: none; }
-.pt-rally-text { height: 100mm; }
-.pt-rally-text h3 { margin: 0 0 0 4mm; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 11mm; line-height: 1.2; }
-.pt-rally-lead { margin: 0; font-size: 6mm; line-height: 1.5; }
-.pt-rally-lead b { font-size: 8mm; font-weight: 900; }
-.pt-rally-qr { margin: 0; text-align: center; }
-.pt-rally-qr img { width: 52mm; height: 52mm; image-rendering: pixelated; }
-.pt-rally-qr figcaption { margin-top: 2mm; font-size: 4.4mm; }
+/* スタンプの紙（目立つ版） */
+.pt-rally .pt-face { padding: 0; }
+.rl-rot { position: absolute; width: 200mm; height: var(--ph); left: calc((var(--ph) - 200mm) / 2); top: calc((200mm - var(--ph)) / 2); transform: rotate(90deg); }
+.rl {
+  --star: polygon(50.0% 0.0%,55.6% 7.4%,62.9% 1.7%,66.5% 10.3%,75.0% 6.7%,76.2% 15.9%,85.4% 14.6%,84.1% 23.8%,93.3% 25.0%,89.7% 33.5%,98.3% 37.1%,92.6% 44.4%,100.0% 50.0%,92.6% 55.6%,98.3% 62.9%,89.7% 66.5%,93.3% 75.0%,84.1% 76.2%,85.4% 85.4%,76.2% 84.1%,75.0% 93.3%,66.5% 89.7%,62.9% 98.3%,55.6% 92.6%,50.0% 100.0%,44.4% 92.6%,37.1% 98.3%,33.5% 89.7%,25.0% 93.3%,23.8% 84.1%,14.6% 85.4%,15.9% 76.2%,6.7% 75.0%,10.3% 66.5%,1.7% 62.9%,7.4% 55.6%,0.0% 50.0%,7.4% 44.4%,1.7% 37.1%,10.3% 33.5%,6.7% 25.0%,15.9% 23.8%,14.6% 14.6%,23.8% 15.9%,25.0% 6.7%,33.5% 10.3%,37.1% 1.7%,44.4% 7.4%);
+  position: relative; box-sizing: border-box; width: 100%; height: 100%; padding: 7mm 9mm 6mm 11mm; border-radius: 8mm;
+  display: grid; grid-template-columns: 1fr 76mm; align-items: center; gap: 3mm; text-align: left;
+  background: radial-gradient(circle, #000 14%, transparent 16%) 0 0 / 2.6mm 2.6mm, #fff;
+  box-shadow: inset 0 0 0 1.8mm #000, inset 0 0 0 3mm #fff, inset 0 0 0 3.6mm #000;
+}
+.rl::before { content: ""; position: absolute; inset: 5.4mm; border-radius: 5mm; background: #fff; }
+.rl > * { position: relative; }
+.rl-ribbon { display: inline-flex; align-items: center; gap: 2mm; margin: 0 0 3.5mm; padding: 1.3mm 7mm 1.5mm; background: #000; color: #fff; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 6.4mm; letter-spacing: .16em; clip-path: polygon(0 0, 100% 0, calc(100% - 3mm) 50%, 100% 100%, 0 100%, 3mm 50%); }
+.rl-ribbon i { font-style: normal; font-size: 4.6mm; letter-spacing: 0; }
+.rl-head { margin: 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 13.6mm; line-height: 1.16; text-shadow: .8mm .8mm 0 #bdbdbd; word-break: auto-phrase; }
+.rl-lead { margin: 3.5mm 0 0; font-size: 5.6mm; line-height: 1.5; }
+.rl-lead b { font-size: 7mm; font-weight: 900; background: linear-gradient(transparent 62%, #d9d9d9 62%); }
+.rl-qr { display: flex; flex-direction: column; align-items: center; gap: 1.6mm; }
+.rl-say { position: relative; margin: 0; padding: 1mm 5mm 1.3mm; border: .8mm solid #000; border-radius: 99mm; background: #fff; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 5.6mm; transform: rotate(-2.5deg); }
+.rl-say::after { content: ""; position: absolute; left: 50%; bottom: -2.6mm; width: 3mm; height: 3mm; background: #fff; border-right: .8mm solid #000; border-bottom: .8mm solid #000; rotate: 45deg; translate: -50% 0; }
+.rl-burst { position: relative; display: grid; place-items: center; width: 60mm; height: 60mm; margin-top: 1mm; }
+.rl-star { position: absolute; inset: 0; background: #000; clip-path: var(--star); }
+.rl-star::after { content: ""; position: absolute; inset: 1.8mm; background: radial-gradient(circle, #000 24%, transparent 26%) 0 0 / 2.2mm 2.2mm, #fff; clip-path: var(--star); }
+.rl-burst img { position: relative; box-sizing: border-box; width: 40mm; height: 40mm; padding: 1.8mm; background: #fff; border: .7mm solid #000; border-radius: 2.4mm; image-rendering: pixelated; }
+.rl-cap { margin: 0; font-size: 3.6mm; line-height: 1.3; text-align: center; }
+.rl-badge { position: absolute; left: -15mm; bottom: 6mm; display: grid; place-items: center; align-content: center; width: 27mm; height: 27mm; border-radius: 50%; background: #000; color: #fff; text-align: center; transform: rotate(-9deg); box-shadow: 0 0 0 1mm #fff, 0 0 0 1.7mm #000; }
+.rl-badge::before { content: ""; position: absolute; inset: 1.7mm; border: .45mm dashed #fff; border-radius: 50%; }
+.rl-badge small { font-size: 3.5mm; line-height: 1.1; }
+.rl-badge b { font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 13mm; line-height: .95; }
+.sheet.pw .pw-rally { display: block; height: 100%; padding: 0; border: 0; }
+.sheet.pw .rl { height: 100%; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2mm; padding: 8mm 10mm 7mm; border-radius: 10mm; text-align: center; }
+.sheet.pw .rl::before { inset: 5.4mm; border-radius: 7mm; }
+.sheet.pw .rl-txt { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.sheet.pw .rl-ribbon { margin-bottom: 2.4mm; font-size: 7mm; padding: 1.4mm 8mm 1.6mm; }
+.sheet.pw .rl-head { font-size: 17mm; }
+.sheet.pw .rl-lead { margin-top: 2.4mm; font-size: 6mm; }
+.sheet.pw .rl-lead br { display: none; }
+.sheet.pw .rl-lead b { font-size: 7.6mm; }
+.sheet.pw .rl-qr { width: 100%; gap: 1.2mm; }
+.sheet.pw .rl-say { font-size: 6mm; }
+.sheet.pw .rl-burst { width: 80mm; height: 80mm; }
+.sheet.pw .rl-burst img { width: 53mm; height: 53mm; padding: 2.2mm; }
+.sheet.pw .rl-cap { font-size: 3.8mm; }
+.sheet.pw .rl-badge { left: calc(50% - 72mm); bottom: 5mm; width: 34mm; height: 34mm; }
+.sheet.pw .rl-badge small { font-size: 4mm; }
+.sheet.pw .rl-badge b { font-size: 15mm; }
 .pt-glue { display: grid; place-items: center; font-size: 3.2mm; letter-spacing: .4em; color: #666; }
 .sheet.pw { display: grid; grid-template-rows: auto 1fr auto auto; gap: 8mm; padding: 14mm 14mm 10mm; }
 .pw-name { display: flex; align-items: center; gap: 7mm; padding-bottom: 6mm; border-bottom: .6mm solid var(--ink); }
@@ -384,11 +421,6 @@ body.is-printing { overflow: hidden; }
 .pw-links .pl-qr { width: 30mm; height: 30mm; }
 .pw-links .pl-link { width: 44mm; }
 .pw-links .pl-link figcaption { font-size: 3.8mm; }
-.pw-rally { position: relative; display: flex; flex-direction: row-reverse; align-items: center; justify-content: center; gap: 18mm; padding: 6mm 10mm; border: 1.2mm solid var(--ink); border-radius: 6mm; }
-.pw-rally .pt-rally-text { height: 120mm; }
-.pw-rally .pt-rally-text h3 { font-size: 14mm; }
-.pw-rally .pt-rally-lead { font-size: 7.5mm; }
-.pw-rally .pt-rally-qr img { width: 64mm; height: 64mm; }
 .pw-foot { margin: 0; font-size: 3.6mm; text-align: center; color: #555; }
 
 @page { size: A4; margin: 0; }
@@ -926,3 +958,12 @@ h1, h2, h3 { font-weight: 400; }
 .sg-deg input { width: 4.5em; }
 .sg-form .ai-save { position: sticky; bottom: 0; padding: 10px 0; background: var(--card-bg, #fff); z-index: 2; }
 .sg-sub { margin: 10px 0 0; font-size: .82rem; font-weight: 700; color: #7a736c; }
+
+.pr-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.pr-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2, rgba(255, 255, 255, .06)); }
+.pr-list b { display: block; }
+.pr-list small { display: block; opacity: .7; }
+.sheet.pi { padding: 0; }
+.sheet.pi img { display: block; width: 100%; height: 100%; object-fit: fill; }
+.sheet.pi-land { width: 297mm; height: 210mm; page: land; }
+@page land { size: A4 landscape; margin: 0; }
