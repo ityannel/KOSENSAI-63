@@ -1000,7 +1000,7 @@ h1, h2, h3 { font-weight: 400; }
 .sheet.pt .rl-burst { width: 60mm; height: 60mm; }
 .sheet.pt .rl-burst img { width: 42mm; height: 42mm; }
 
-.rl-badge b small { margin-left: .06em; font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 900; font-size: .34em; line-height: 1; color: var(--cream); }
+.rl-badge b small { margin-left: .06em; font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 900; font-size: 4.2mm; line-height: 1; color: var(--cream); }
 .rl-badge > small { margin-top: 1mm; font-size: 4.2mm; font-weight: 900; line-height: 1.1; }
 .sheet.pw .rl-badge > small { font-size: 5mm; }
 .sheet.pw .rl::before { inset: 3mm; }
@@ -1023,3 +1023,4 @@ h1, h2, h3 { font-weight: 400; }
 .sheet.pw .rl-badge { left: calc(50% - 92mm); bottom: 8mm; width: 38mm; height: 38mm; }
 .sheet.pw .rl-badge b { font-size: 19mm; }
 .sheet.pw .rl-badge > small { font-size: 5.6mm; }
+.sheet.pw .rl-badge b small { font-size: 5.6mm; }
