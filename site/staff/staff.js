@@ -1231,7 +1231,7 @@ function rallyBody(s) {
   const say = shop ? "サイトを見る" : rally ? "ここを読む！" : "カードを見る";
   const cap = shop ? "読み込んで、サイトへ" : rally ? "カメラで読むと、スタンプが押されます" : "読み込んで、スタンプカードを見る";
   const goal = rallyGoal();
-  const badge = shop ? "" : `<div class="rl-badge"><small>スタンプ</small><b>${goal}</b><small>個で景品！</small></div>`;
+  const badge = shop ? "" : `<div class="rl-badge"><b>${goal}<small>コ</small></b><small>で景品！</small></div>`;
   const hanko = shop ? "" : `<i class="rl-hanko">縁</i><span class="rl-pon">ポンッ！</span>`;
   const rings = shop ? "" : `<ol class="rl-rings" style="--n:${goal}">${Array.from({ length: goal }, (_, i) => `<li${i === 0 ? ' class="is-on"' : ""}><b>${i + 1}</b>${i === 0 ? "<i>縁</i>" : ""}</li>`).join("")}</ol>`;
   return `
