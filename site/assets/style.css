@@ -2199,3 +2199,5 @@ html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { d
 }
 .dt-points { margin: 0 0 calc(12 * var(--u)); padding-left: 1.3em; font-family: var(--text-font); font-weight: 700; font-size: calc(13 * var(--u)); line-height: 1.7; }
 .dt-points li { margin: 0 0 calc(6 * var(--u)); }
+.dt-flyer-more { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8 * var(--u)); margin: calc(-4 * var(--u)) 0 calc(12 * var(--u)); }
+.dt-flyer-sub { display: block; width: 100%; height: auto; border-radius: calc(4 * var(--u)); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); cursor: zoom-in; }

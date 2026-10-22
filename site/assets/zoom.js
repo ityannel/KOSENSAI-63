@@ -1,5 +1,5 @@
 const MAX_ZOOM = 6;
-const ZOOMABLE = ".tk-photo:not(.is-back), .dt-photo-img, .dt-logo, .dt-flyer img, .sh-flyer, .k-msg-photo, .report-card img, #photo-grid img, .v-photo, .eh-photo img, .mm-card img, #secret-img";
+const ZOOMABLE = ".tk-photo:not(.is-back), .dt-photo-img, .dt-logo, .dt-flyer img, .dt-flyer-sub, .sh-flyer, .k-msg-photo, .report-card img, #photo-grid img, .v-photo, .eh-photo img, .mm-card img, #secret-img";
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const host = (() => { try { return top !== self && top.document ? top : self; } catch { return self; } })();
@@ -295,12 +295,12 @@ function openFrom(el) {
   const title = (el.getAttribute("alt") ?? "").replace(/の写真.*$/, "");
   const alt = title ? `${title}の写真` : "写真";
   const one = el.currentSrc || el.src;
-  const set = el.dataset.full
+  const set = list.length
+    ? list.map((src, i) => ({ src, big: /\/img\/stage\//.test(src) ? bigOf(src) : "", title, alt: `${alt}（${i + 1}枚目）` }))
+    : el.dataset.full
     ? [{ src: one, big: el.dataset.full, soft: true, title, alt }]
-    : list.length
-    ? list.map((src, i) => ({ src, big: bigOf(src), title, alt: `${alt}（${i + 1}枚目）` }))
     : [{ src: one, big: /\/img\/stage\//.test(one) ? bigOf(one) : "", title, alt }];
-  openZoom(set, 0, { opener: el.closest("button, a") ?? null });
+  openZoom(set, list.length ? Number(el.dataset.i ?? 0) || 0 : 0, { opener: el.closest("button, a") ?? null });
 }
 
 document.addEventListener("click", (e) => {

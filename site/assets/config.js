@@ -252,6 +252,7 @@ export const SHOPS = [
   { cls: "5C", bldg: "C", floor: "2F", group: "男子バレーボール部", name: "黄金バレー部の\n丑の刻参り", note: "函館高専初のお化け屋敷が始まります。\n17 年ぶりの全国を決めた男子バレー部が\n全国レベルの怖さをお届けします。", food: false },
   { cls: "5Z", bldg: "C", floor: "2F", group: "魚を釣って食べる会", name: "Restaurant.F.G.L", note: "食べて、見て、楽しめる！\n魚料理にこだわりのうどん、\nさらに手作りの革細工まで、\n個性あふれる商品を\n取り揃えています！\n高専祭の思い出に、\nResutaurant.F.G.L に\n寄っていってください", food: true, genre: ["しょっぱい系", "がっつり系"], flyer: "assets/img/flyer/5z.webp" },
   { room: "E101", group: "ロボット研究会", name: "ロボット研究会", note: "ロボットを操縦してみない？\nロボ研のリアルな活動風景の\n展示＆賞品がもらえる\n操縦体験ゲーム開催！\n操縦テクニックを磨いて\n景品を手に入れよう！\nみんなの挑戦待ってます！", food: false },
+  { room: "L401", group: "VR研究室 L'HAKO", name: "VR試着大会", note: "Apple Vision Pro、触覚スーツ、無限に走れるトレッドミル、VR電車を体験できます。", food: false, flyer: "assets/img/flyer/l401.webp", flyerMore: ["assets/img/flyer/l401-2.webp", "assets/img/flyer/l401-3.webp", "assets/img/flyer/l401-4.webp", "assets/img/flyer/l401-5.webp"] },
   { room: "B106", group: "函館自動車学校", name: "運転シミュレーター", note: "自動運転シミュレーターなど", food: false },
   { place: "courtyard-shop", group: "ラグビー部", name: "やきとり処清", note: "ラグビー魂で焼く、熱いやきとり！！\nやきとり弁当（精肉）、\nやきとり単品（精肉、鳥皮）を提供します！\n味は塩とタレをご用意しております！", food: true, genre: ["しょっぱい系", "がっつり系"] },
   { place: "cafeteria", group: "同窓会", name: "ホームカミングデー", note: "アルバム・写真の展示\n同窓会の活動紹介、同窓生との交流", food: false },

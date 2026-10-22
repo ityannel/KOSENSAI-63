@@ -121,7 +121,7 @@ export function openShop(s, now = Date.now()) {
   const color = (g) => GENRES.find((x) => x.id === g)?.color ?? "#4f7fa8";
   const vote = voteUrl(s, now);
   open(`
-    ${s.flyer ? `<a class="dt-flyer" href="${esc(s.flyer)}" target="_blank" rel="noopener"><img src="${esc(s.flyer.replace(/\.webp$/, "-m.webp"))}" data-full="${esc(s.flyer)}" alt="${esc(s.name)}のチラシ" decoding="async"></a>` : ""}
+    ${s.flyer ? (() => { const all = [s.flyer, ...(s.flyerMore ?? [])].join("|"); const pages = s.flyerMore?.length ? ` data-photos="${esc(all)}" data-i="0"` : ""; return `<a class="dt-flyer" href="${esc(s.flyer)}" target="_blank" rel="noopener"><img src="${esc(s.flyer.replace(/\.webp$/, "-m.webp"))}" data-full="${esc(s.flyer)}"${pages} alt="${esc(s.name)}のチラシ" decoding="async"></a>${s.flyerMore?.length ? `<div class="dt-flyer-more">${s.flyerMore.map((f, i) => `<img class="dt-flyer-sub" src="${esc(f.replace(/\.webp$/, "-s.webp"))}" data-photos="${esc(all)}" data-i="${i + 1}" alt="${esc(s.name)}のチラシ（${i + 2}枚目）" loading="lazy" decoding="async">`).join("")}</div>` : ""}`; })() : ""}
     <p class="dt-tags">${genres.map((g) => `<span style="--g:${color(g)}">${esc(g)}</span>`).join("")}</p>
     <h2 class="dt-title" id="dt-title">${esc(s.name)}</h2>
     <div class="dt-live" data-live-shop="${SHOPS.indexOf(s)}"></div>
