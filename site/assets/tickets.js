@@ -50,7 +50,7 @@ export function ticketHtml(e, i, t) {
           <span class="tk-place">@${esc(venueName(e.venue))}</span>
         </div>
       </div></div>
-      ${e.cancelled ? '<span class="tk-badge is-cancel">中止</span>' : on ? '<span class="tk-badge is-now">NOW</span>' : isPast(e, t) ? '<span class="tk-badge is-end">終了</span>' : e.live ? '<span class="tk-badge is-live">LIVE</span>' : ""}
+      ${e.cancelled ? '<span class="tk-badge is-cancel">キャンセル</span>' : on ? '<span class="tk-badge is-now">NOW</span>' : isPast(e, t) ? '<span class="tk-badge is-end">終了</span>' : e.live ? '<span class="tk-badge is-live">LIVE</span>' : ""}
       ${photoStack(e)}
     </a>`;
 }
@@ -62,6 +62,6 @@ export function rowHtml(e, t) {
     <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tl-row is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.cancelled ? " is-cancelled" : ""}" href="map.html#${esc(e.place ?? e.venue)}">
       <time>${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<small>〜${hhmm(e.end)}</small></b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<small>〜${hhmm(e.end)}</small>`}</time>
       <span class="tl-main"><b>${esc(e.title)}</b><small>${tags ? `${esc(tags)}　` : ""}@${esc(venueName(e.venue))}</small></span>
-      ${e.cancelled ? '<span class="tl-badge is-cancel">中止</span>' : on ? '<span class="tl-badge">NOW</span>' : ""}
+      ${e.cancelled ? '<span class="tl-badge is-cancel">キャンセル</span>' : on ? '<span class="tl-badge">NOW</span>' : ""}
     </a>`;
 }

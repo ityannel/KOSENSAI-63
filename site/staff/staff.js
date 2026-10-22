@@ -462,12 +462,12 @@ function renderSchedule() {
       const sub = added ? `${esc(it.item.kind || "")}${it.kind === "e" ? `　${esc(venueName(it.item.venue))}` : ""}　追加した予定` : `もとの時間 ${hmOf(it.item.o_start)}〜${hmOf(it.item.o_end)}${chg ? `　→　<b style="display:inline">${hmOf(c.start)}〜${hmOf(c.end)}</b>` : ""}`;
       return `<div class="sched-row${chg ? " is-chg" : ""}${del ? " is-del" : ""}${off ? " is-off" : ""}${added ? " is-added" : ""}">
         <span class="kind">${SCHED_KIND[it.kind]}</span>
-        <div><b>${esc(schedName(it))}${del ? " （削除済み）" : off ? " （中止）" : ""}</b><small>${sub}</small></div>
+        <div><b>${esc(schedName(it))}${del ? " （削除済み）" : off ? " （キャンセル）" : ""}</b><small>${sub}</small></div>
         <div class="times"><input type="time" value="${hmOf(c.start)}" data-sid="${sid}" data-end="0" aria-label="始まり"${del ? " disabled" : ""}> 〜 <input type="time" value="${hmOf(c.end)}" data-sid="${sid}" data-end="1" aria-label="終わり"${del ? " disabled" : ""}></div>
         <div class="acts">
           ${del ? `<button class="btn btn-ghost btn-sm" type="button" data-sched-reset="${sid}">もとにもどす</button>` : `
           ${added ? `<button class="btn btn-ghost btn-sm" type="button" data-sched-edit="${sid}">編集</button>` : `<button class="btn btn-ghost btn-sm" type="button" data-sched-reset="${sid}"${chg || state.schedule[it.item.sid] ? "" : " disabled"}>もとにもどす</button>`}
-          <button class="btn btn-ghost btn-sm" type="button" data-sched-cancel="${sid}">${off ? "中止をとりけす" : "中止にする"}</button>
+          <button class="btn btn-ghost btn-sm" type="button" data-sched-cancel="${sid}">${off ? "キャンセルをとりけす" : "キャンセルにする"}</button>
           <button class="btn btn-ghost btn-sm btn-danger" type="button" data-sched-del="${sid}">削除</button>`}
         </div>
       </div>`;
@@ -492,10 +492,10 @@ $("#sched-list").addEventListener("click", (e) => {
     const it = scheduleItems().find((x) => x.item.sid === cancel.dataset.schedCancel);
     if (!it) return;
     const off = isCancelled(it);
-    if (!off && !confirm(`「${schedName(it)}」を中止にしますか？（みどころには、色をうすくして、打ち消し線つきで残ります。ほかの画面からは、はずれます）`)) return;
+    if (!off && !confirm(`「${schedName(it)}」をキャンセルにしますか？（みどころには、色をうすくして、打ち消し線つきで残ります。ほかの画面からは、はずれます）`)) return;
     const changes = { ...state.schedule };
     changes[it.item.sid] = { ...(changes[it.item.sid] ?? { start: it.item.o_start, end: it.item.o_end }), cancelled: !off };
-    return saveSchedule(changes, off ? `${schedName(it)}の中止をとりけしました` : `${schedName(it)}を中止にしました`);
+    return saveSchedule(changes, off ? `${schedName(it)}のキャンセルをとりけしました` : `${schedName(it)}をキャンセルにしました`);
   }
   if (reset) {
     const changes = { ...state.schedule };
@@ -559,7 +559,7 @@ syncAddForm();
 $("#sched-reset").addEventListener("click", () => {
   const keep = Object.fromEntries(Object.entries(state.schedule).filter(([k]) => k.startsWith("+")));
   if (Object.keys(keep).length === Object.keys(state.schedule).length) return toast("変えたものはありません");
-  if (!confirm("もとからある予定の、変えた時間・中止・削除を、すべてもとにもどしますか？（追加した予定は残ります）")) return;
+  if (!confirm("もとからある予定の、変えた時間・キャンセル・削除を、すべてもとにもどしますか？（追加した予定は残ります）")) return;
   saveSchedule(keep, "すべてもとにもどしました");
 });
 $("#sched-shift").addEventListener("submit", (e) => {

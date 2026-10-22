@@ -2201,3 +2201,12 @@ html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { d
 .dt-points li { margin: 0 0 calc(6 * var(--u)); }
 .dt-flyer-more { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8 * var(--u)); margin: calc(-4 * var(--u)) 0 calc(12 * var(--u)); }
 .dt-flyer-sub { display: block; width: 100%; height: auto; border-radius: calc(4 * var(--u)); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); cursor: zoom-in; }
+.tk.is-cancelled .tk-shape { opacity: 0.58; filter: grayscale(0.6); }
+.tk.is-cancelled .tk-shape * { text-decoration: line-through; text-decoration-thickness: 0.1em; text-decoration-skip-ink: none; }
+.tk.is-cancelled .tk-photo { filter: grayscale(1); opacity: 0.7; }
+.tk.is-cancelled .tk-eq { display: none; }
+.tk-badge.is-cancel { padding: calc(4 * var(--u)) calc(14 * var(--u)); border-radius: calc(10 * var(--u)); background: #5b5b5b; color: #fff; box-shadow: calc(-3 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, 0.45); }
+.tl-row.is-cancelled { opacity: 0.58; filter: grayscale(0.6); }
+.tl-row.is-cancelled .tl-main *, .tl-row.is-cancelled time * { text-decoration: line-through; text-decoration-thickness: 0.1em; text-decoration-skip-ink: none; }
+.tl-row.is-cancelled .tl-main, .tl-row.is-cancelled time { text-decoration: line-through; text-decoration-thickness: 0.1em; }
+.tl-badge.is-cancel { padding: calc(2 * var(--u)) calc(10 * var(--u)); border-radius: calc(8 * var(--u)); background: #5b5b5b; color: #fff; }

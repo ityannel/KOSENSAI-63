@@ -66,7 +66,7 @@ const flyerBlock = (name, flyer, more = []) => {
 export function openEvent(e, t = Date.now()) {
   const on = isOn(e, t), past = isPast(e, t);
   const start = Date.parse(e.start);
-  const state = e.cancelled ? "出演・開催は、中止になりました" : on ? "" : past ? "終了しました" : start - t < 3 * 3600000 ? `あと${mins(start - t)}分で始まります` : "";
+  const state = e.cancelled ? "出演・開催は、キャンセルになりました" : on ? "" : past ? "終了しました" : start - t < 3 * 3600000 ? `あと${mins(start - t)}分で始まります` : "";
   open(`
     <div class="dt-ticket" aria-hidden="true">${ticketHtml(e, 0, t)}</div>
     ${e.logo ? `<img class="dt-logo" src="${esc(e.logo)}" alt="${esc(e.title)}" decoding="async">` : ""}
