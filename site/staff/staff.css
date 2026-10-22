@@ -1020,3 +1020,17 @@ h1, h2, h3 { font-weight: 400; }
 .rl-ribbon span { min-width: 0; line-height: 1.15; }
 .rl-ribbon small { margin-left: 2.4mm; font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 900; font-size: .42em; letter-spacing: .04em; }
 .sheet.pw .rl-ribbon { font-size: min(18mm, calc(150mm / var(--len, 8))); padding: 2.6mm 14mm 3mm; margin-bottom: 3mm; }
+.rl-hanko { right: -10mm; top: -9mm; width: 17mm; font-size: 10.5mm; }
+.rl-pon { right: -9mm; top: 9mm; }
+.rl-badge { left: -18mm; bottom: 3mm; width: 24mm; height: 24mm; }
+.rl-badge b { font-size: 11.5mm; }
+.sheet.pw .rl-hanko { right: -17mm; top: -13mm; width: 26mm; font-size: 16mm; }
+.sheet.pw .rl-pon { right: -17mm; top: 15mm; }
+.sheet.pw .rl-badge { left: calc(50% - 80mm); bottom: 4mm; width: 33mm; height: 33mm; }
+.sheet.pw .rl-badge b { font-size: 16mm; }
+.sheet.pw .rl-badge > small, .sheet.pw .rl-badge b small { font-size: 5mm; }
+.rl-hanko { right: -12mm; top: -10mm; }
+.sheet.pt .rl-burst img { width: 40mm; height: 40mm; }
+.sheet.pt .rl-hanko { right: -13mm; top: -6.5mm; width: 15mm; font-size: 9.5mm; }
+.sheet.pt .rl-pon { right: -10mm; top: 8mm; }
+.sheet.pt .rl-hanko { right: -10.5mm; top: -7mm; }
