@@ -119,7 +119,7 @@ export function openShop(s, now = Date.now()) {
   const color = (g) => GENRES.find((x) => x.id === g)?.color ?? "#4f7fa8";
   const vote = voteUrl(s, now);
   open(`
-    ${s.flyer ? `<a class="dt-flyer" href="${esc(s.flyer)}" target="_blank" rel="noopener"><img src="${esc(s.flyer)}" alt="${esc(s.name)}のチラシ"></a>` : ""}
+    ${s.flyer ? `<a class="dt-flyer" href="${esc(s.flyer)}" target="_blank" rel="noopener"><img src="${esc(s.flyer.replace(/\.webp$/, "-m.webp"))}" data-full="${esc(s.flyer)}" alt="${esc(s.name)}のチラシ" decoding="async"></a>` : ""}
     <p class="dt-tags">${genres.map((g) => `<span style="--g:${color(g)}">${esc(g)}</span>`).join("")}</p>
     <h2 class="dt-title" id="dt-title">${esc(s.name)}</h2>
     <div class="dt-live" data-live-shop="${SHOPS.indexOf(s)}"></div>

@@ -34,7 +34,7 @@ function card(s, i, copy = false) {
   return `<li${copy ? ' aria-hidden="true"' : ""}><a${copy ? ' tabindex="-1"' : ""} data-shop="${SHOPS.indexOf(s)}" class="en-card${s.flyer ? " has-flyer" : ""}" href="map.html#${esc(mapId(s))}" style="--tilt:${TILTS[i % TILTS.length]}deg; --g:${tint}; --paper:${paperOf(s.name)}">
     <i class="en-tape" aria-hidden="true"></i>
     ${s.flyer
-      ? `<img class="en-flyer" src="${esc(s.flyer)}" alt="${esc(s.name)}のチラシ" loading="lazy" decoding="async">`
+      ? `<img class="en-flyer" src="${esc(s.flyer.replace(/\.webp$/, "-s.webp"))}" data-full="${esc(s.flyer)}" alt="${esc(s.name)}のチラシ" loading="lazy" decoding="async">`
       : `<span class="en-paper">
           <b class="en-name" style="font-size:calc(${nameSize(s.name)} * var(--u))">${esc(s.name)}</b>
           <span class="en-tags">${g.map((x) => `<span style="--gc:${genreColor(x)}">${esc(x.replace(/系$/, ""))}</span>`).join("")}</span>

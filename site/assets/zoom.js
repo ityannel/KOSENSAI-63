@@ -132,10 +132,26 @@ function show(i) {
     img.src = first.src;
     fit();
     img.style.visibility = "";
+    if (it.soft && it.big) {
+      const big = new Image();
+      big.onload = () => {
+        if (token !== seq || !big.naturalWidth) return;
+        const k = NW / big.naturalWidth;
+        NW = big.naturalWidth;
+        NH = big.naturalHeight;
+        img.style.width = `${NW}px`;
+        img.style.height = `${NH}px`;
+        base *= k;
+        s *= k;
+        img.src = big.src;
+        paint();
+      };
+      big.src = it.big;
+    }
   };
   first.onerror = () => { if (token === seq && first.src !== new URL(it.src, location.href).href) { first.onerror = null; first.src = it.src; } };
-  first.src = it.big || it.src;
-  for (const j of [i - 1, i + 1]) if (items[j]) new Image().src = items[j].big || items[j].src;
+  first.src = it.soft ? it.src : it.big || it.src;
+  for (const j of [i - 1, i + 1]) if (items[j]) new Image().src = items[j].soft ? items[j].src : items[j].big || items[j].src;
 }
 
 function go(i) {
@@ -273,7 +289,9 @@ function openFrom(el) {
   const title = (el.getAttribute("alt") ?? "").replace(/の写真.*$/, "");
   const alt = title ? `${title}の写真` : "写真";
   const one = el.currentSrc || el.src;
-  const set = list.length
+  const set = el.dataset.full
+    ? [{ src: one, big: el.dataset.full, soft: true, title, alt }]
+    : list.length
     ? list.map((src, i) => ({ src, big: bigOf(src), title, alt: `${alt}（${i + 1}枚目）` }))
     : [{ src: one, big: /\/img\/stage\//.test(one) ? bigOf(one) : "", title, alt }];
   openZoom(set, 0, { opener: el.closest("button, a") ?? null });

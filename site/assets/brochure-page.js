@@ -36,7 +36,7 @@ syncChips();
 
 const items = figs.map((f, k) => {
   const title = titleOf(k + 1);
-  return { src: srcOf(k + 1), title, alt: `パンフレット ${k + 1}ページ目 ${title}` };
+  return { src: srcOf(k + 1).replace(".webp", "-s.webp"), big: srcOf(k + 1), soft: true, title, alt: `パンフレット ${k + 1}ページ目 ${title}` };
 });
 
 document.getElementById("bro-list").addEventListener("click", (e) => {
