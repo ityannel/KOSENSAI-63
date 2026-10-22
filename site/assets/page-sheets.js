@@ -1,7 +1,7 @@
 import { lockScroll, unlockScroll } from "./scroll-lock.js";
 import { barHtml } from "./help-bar.js";
 
-const NAMES = ["mido", "rally", "vote", "terms", "faq", "en", "ai", "hq"];
+const NAMES = ["mido", "rally", "vote", "terms", "faq", "en", "ai", "hq", "brochure"];
 const seg = (u) => u.pathname.split("/").pop().replace(/\.html$/, "");
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 

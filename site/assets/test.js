@@ -29,7 +29,7 @@ export const PANELS = [["日程・入口", "days"], ["みどころ", "pickup"], 
   ["（パネル）高専祭について", "about"], ["（パネル）タイムテーブル", "schedule"], ["（パネル）Enistagram", "enistagram"], ["（パネル）混雑状況", "crowd"],
   ["（パネル）企画案内", "guide"], ["（パネル）食レポ・写真", "report"], ["（パネル）隠し縁のごほうび", "secret"]];
 export const PAGES = [["トップページ", "./"], ["校内マップ", "map.html"], ["Enistagram", "map.html?tab=feed"], ["みどころ", "mido.html"], ["スタンプカード", "rally.html"],
-  ["模擬店総選挙", "vote.html"], ["模擬店用のページ", "shop.html"], ["ご利用にあたって", "terms.html"], ["会場ディスプレイ（サイネージ）", "signage.html"], ["本部コンソール", "staff/"]];
+  ["模擬店総選挙", "vote.html"], ["模擬店用のページ", "shop.html"], ["パンフレット", "brochure"], ["ご利用にあたって", "terms.html"], ["会場ディスプレイ（サイネージ）", "signage.html"], ["本部コンソール", "staff/"]];
 const local = ["localhost", "127.0.0.1"].includes(location.hostname);
 
 function reloadWith(changes) {

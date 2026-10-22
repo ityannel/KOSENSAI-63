@@ -72,6 +72,7 @@ const PC_LINKS = [
   ["https://www.instagram.com/hakodate.kosen_gakuseikai/", "インスタ", sv('<rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><path d="M16.8 7.2h.01"/>'), true],
   ["https://x.com/hnct_gakuseikai", "エックス", sv('<path d="M4 4h4.2l11.8 16h-4.2z"/><path d="M19.4 4l-6.2 7M4.6 20l6.2-7"/>'), true],
   ["en.html", "English", sv('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'), false],
+  ["brochure", "パンフレット", sv('<path d="M12 6.5C10 5 7 4.6 4 5v13c3-.4 6 0 8 1.5 2-1.5 5-1.9 8-1.5V5c-3-.4-6 0-8 1.5zM12 6.5v13"/>'), false],
   ["terms.html", "利用規約", sv('<path d="M6.5 3.5h8l3 3v14h-11z"/><path d="M14.5 3.5v3h3M9 11h6M9 14.5h6"/>'), false],
 ];
 const pcLinksHtml = PC_LINKS.map(([href, label, icon, ext]) => `<a href="${href}"${ext ? ' target="_blank" rel="noopener noreferrer"' : href === "en.html" ? ' lang="en" hreflang="en"' : ""}>${icon}<span>${label}</span></a>`).join("");

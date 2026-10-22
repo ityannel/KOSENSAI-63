@@ -1,6 +1,7 @@
 {
   "hosting": {
     "public": "site",
+    "rewrites": [{ "source": "/brochure", "destination": "/brochure.html" }],
     "ignore": [
       "firebase.json",
       "**/.*",
