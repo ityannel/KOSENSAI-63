@@ -2194,7 +2194,7 @@ html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { d
 .visit-duo .en-btn svg { width: calc(22 * var(--u)); height: calc(22 * var(--u)); }
 .visit-duo .en-btn b { font-size: calc(18 * var(--u)); }
 .visit-duo .mido-more span { display: grid; place-items: center; box-sizing: border-box; height: 100%; padding: 0 calc(12 * var(--u)); font-size: calc(18 * var(--u)); }
-.bro-btn { background: var(--grain), linear-gradient(110deg, #D9533B 0%, #E8803A 52%, #EDA93C 100%); rotate: 1deg; }
+.bro-btn { background: var(--grain), #FEEBC4; color: #634A2E; rotate: 1deg; }
 .tk.is-cancelled .tk-shape { opacity: 0.5; filter: grayscale(0.85); }
 .tk.is-cancelled .tk-shape *, .tl-row.is-cancelled .tl-main *, .tl-row.is-cancelled time * { text-decoration: line-through; text-decoration-thickness: 0.09em; text-decoration-skip-ink: none; }
 .tk.is-cancelled .tk-photo { filter: grayscale(1); opacity: 0.6; }
@@ -2203,3 +2203,8 @@ html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { d
 .tl-row.is-cancelled { opacity: 0.5; filter: grayscale(0.85); }
 .tl-row.is-cancelled .tl-main, .tl-row.is-cancelled time { text-decoration: line-through; text-decoration-thickness: 0.09em; }
 .tl-badge.is-cancel { background: #6b6b6b; color: #fff; }
+@media (min-width: 1000px) {
+  .pc-links a:nth-child(6), .pc-links a:nth-child(7) { box-sizing: border-box; flex: 1 1 calc(50% - 5px); width: auto; min-width: 0; justify-content: center; padding: 9px 6px; gap: 5px; font-size: 0.92rem; white-space: nowrap; }
+  .pc-links a:nth-child(6) { rotate: -1deg; }
+  .pc-links a:nth-child(7) { rotate: 1deg; }
+}
