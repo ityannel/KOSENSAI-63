@@ -132,15 +132,10 @@ function show(i) {
     img.src = first.src;
     fit();
     img.style.visibility = "";
-    if (it.big && it.big !== it.src) {
-      const big = new Image();
-      big.onload = () => { if (token === seq) img.src = big.src; };
-      big.src = it.big;
-    }
   };
-  first.onerror = () => { if (token === seq && it.big) { first.onerror = null; first.src = it.big; } };
-  first.src = it.src;
-  for (const j of [i - 1, i + 1]) if (items[j]) new Image().src = items[j].src;
+  first.onerror = () => { if (token === seq && first.src !== new URL(it.src, location.href).href) { first.onerror = null; first.src = it.src; } };
+  first.src = it.big || it.src;
+  for (const j of [i - 1, i + 1]) if (items[j]) new Image().src = items[j].big || items[j].src;
 }
 
 function go(i) {
