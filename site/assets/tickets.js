@@ -40,7 +40,7 @@ export function ticketHtml(e, i, t) {
   const tags = [e.internal && "学内のみ", e.kind, !e.stageAct && e.mood].filter(Boolean);
   const line = e.stageAct ? e.mood : e.copy;
   return `
-    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.cancelled ? " is-cancelled" : ""}${e.photo ? " has-photo" : ""}${e.more?.length ? " is-stack" : ""}" href="map.html#${esc(e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
+    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.cancelled ? " is-cancelled" : ""}${e.photo ? " has-photo" : ""}${e.more?.length ? " is-stack" : ""}" href="map.html#${esc(e.place ?? e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
       <div class="tk-shape"><div class="tk-body">${on ? `<span class="tk-eq" aria-hidden="true">${Array.from({ length: 22 }, (_, k) => `<i style="--k:${k};--h:${30 + ((k * 37) % 55)}%"></i>`).join("")}</span>` : ""}<i class="tk-hole" aria-hidden="true"></i>
         <p class="tk-stub is-${wd.toLowerCase()}"><span class="tk-wd">${wd}</span><b class="tk-day">${dayOf(e)}</b><span class="tk-time">${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}</b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}`}</span></p>
         <div class="tk-main">
@@ -59,7 +59,7 @@ export function rowHtml(e, t) {
   const on = isOn(e, t);
   const tags = [e.internal && "学内のみ", e.kind, e.mood].filter(Boolean).join("・");
   return `
-    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tl-row is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.cancelled ? " is-cancelled" : ""}" href="map.html#${esc(e.venue)}">
+    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tl-row is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.cancelled ? " is-cancelled" : ""}" href="map.html#${esc(e.place ?? e.venue)}">
       <time>${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<small>〜${hhmm(e.end)}</small></b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<small>〜${hhmm(e.end)}</small>`}</time>
       <span class="tl-main"><b>${esc(e.title)}</b><small>${tags ? `${esc(tags)}　` : ""}@${esc(venueName(e.venue))}</small></span>
       ${e.cancelled ? '<span class="tl-badge is-cancel">中止</span>' : on ? '<span class="tl-badge">NOW</span>' : ""}

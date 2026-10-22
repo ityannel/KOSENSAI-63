@@ -56,6 +56,13 @@ const links = (...items) => `<div class="dt-links">${items.filter(Boolean).join(
 const mapLink = (id) => `<a class="mido-more dt-go" href="map.html#${esc(id)}"><span>地図で場所を見る</span></a>`;
 const askLink = (q) => `<a class="mido-more dt-go dt-ask" href="ai.html?q=${encodeURIComponent(q)}"><span>AIくんに聞く</span></a>`;
 
+const flyerBlock = (name, flyer, more = []) => {
+  const all = [flyer, ...more].join("|");
+  const pages = more.length ? ` data-photos="${esc(all)}" data-i="0"` : "";
+  const subs = more.length ? `<div class="dt-flyer-more">${more.map((f, i) => `<img class="dt-flyer-sub" src="${esc(f.replace(/\.webp$/, "-s.webp"))}" data-photos="${esc(all)}" data-i="${i + 1}" alt="${esc(name)}のチラシ（${i + 2}枚目）" loading="lazy" decoding="async">`).join("")}</div>` : "";
+  return `<a class="dt-flyer" href="${esc(flyer)}" target="_blank" rel="noopener"><img src="${esc(flyer.replace(/\.webp$/, "-m.webp"))}" data-full="${esc(flyer)}"${pages} alt="${esc(name)}のチラシ" decoding="async"></a>${subs}`;
+};
+
 export function openEvent(e, t = Date.now()) {
   const on = isOn(e, t), past = isPast(e, t);
   const start = Date.parse(e.start);
@@ -64,6 +71,7 @@ export function openEvent(e, t = Date.now()) {
     <div class="dt-ticket" aria-hidden="true">${ticketHtml(e, 0, t)}</div>
     ${e.logo ? `<img class="dt-logo" src="${esc(e.logo)}" alt="${esc(e.title)}" decoding="async">` : ""}
     ${e.photo ? (() => { const all = photosOf(e); return `<figure class="dt-photo"><img class="dt-photo-img" data-photos="${esc(all.join("|"))}" src="${esc(e.photo.replace(/\.webp$/, "-l.webp"))}" alt="${esc(e.title)}の写真（押すと画面いっぱいに表示）" decoding="async"></figure>`; })() : ""}
+    ${e.flyer ? flyerBlock(e.title, e.flyer, e.flyerMore) : ""}
     <h2 class="dt-title" id="dt-title">${esc(e.title)}${on ? ' <span class="dt-now">NOW</span>' : ""}</h2>
     ${state ? `<p class="dt-state">${esc(state)}</p>` : ""}
     <dl class="dt-facts">
@@ -75,7 +83,7 @@ export function openEvent(e, t = Date.now()) {
     ${e.details?.length ? `<ul class="dt-points">${e.details.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
     ${e.note ? `<p class="dt-note">${esc(e.note)}</p>` : ""}
     ${e.live ? '<p class="dt-note">YouTube で生配信します（配信中はトップページに出ます）。</p>' : ""}
-    ${links(mapLink(e.venue), askLink(`${e.title}について教えて。いまから行ける？`))}`);
+    ${links(mapLink(e.place ?? e.venue), askLink(`${e.title}について教えて。いまから行ける？`))}`);
 }
 
 const where = (s) => {
@@ -121,7 +129,7 @@ export function openShop(s, now = Date.now()) {
   const color = (g) => GENRES.find((x) => x.id === g)?.color ?? "#4f7fa8";
   const vote = voteUrl(s, now);
   open(`
-    ${s.flyer ? (() => { const all = [s.flyer, ...(s.flyerMore ?? [])].join("|"); const pages = s.flyerMore?.length ? ` data-photos="${esc(all)}" data-i="0"` : ""; return `<a class="dt-flyer" href="${esc(s.flyer)}" target="_blank" rel="noopener"><img src="${esc(s.flyer.replace(/\.webp$/, "-m.webp"))}" data-full="${esc(s.flyer)}"${pages} alt="${esc(s.name)}のチラシ" decoding="async"></a>${s.flyerMore?.length ? `<div class="dt-flyer-more">${s.flyerMore.map((f, i) => `<img class="dt-flyer-sub" src="${esc(f.replace(/\.webp$/, "-s.webp"))}" data-photos="${esc(all)}" data-i="${i + 1}" alt="${esc(s.name)}のチラシ（${i + 2}枚目）" loading="lazy" decoding="async">`).join("")}</div>` : ""}`; })() : ""}
+    ${s.flyer ? flyerBlock(s.name, s.flyer, s.flyerMore) : ""}
     <p class="dt-tags">${genres.map((g) => `<span style="--g:${color(g)}">${esc(g)}</span>`).join("")}</p>
     <h2 class="dt-title" id="dt-title">${esc(s.name)}</h2>
     <div class="dt-live" data-live-shop="${SHOPS.indexOf(s)}"></div>

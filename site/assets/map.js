@@ -1725,7 +1725,7 @@ function renderSheet() {
   const p = mode === "place" && place(selected);
   if (!p) return renderHome(body, s);
   const crowd = crowdOf(p.id, s);
-  const events = [...EVENTS, ...LIST_EVENTS].filter((e) => e.venue === p.id).sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  const events = [...EVENTS, ...LIST_EVENTS].filter((e) => e.venue === p.id || e.place === p.id).sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
   const shops = (p.shops ?? []).map((id) => RALLY.shops.find((x) => x.id === id)).filter(Boolean);
   const picks = [...PICKUP_SHOPS, ...PICKUP_EVENTS].filter((x) => x.venue === p.id);
   const now = s.phase === "during" && s.running?.find((e) => e.venue === p.id);
@@ -1757,7 +1757,7 @@ function renderSheet() {
       const first = events.findIndex((x) => x.title === e.title) === i;
       const on = Date.parse(e.start) <= s.now && s.now < Date.parse(e.end);
       const past = Date.parse(e.end) <= s.now;
-      return `<li class="${past ? "is-past" : ""}"><time>${md(e.start)} ${tStart(e)}</time>${esc(e.title)}${e.internal ? "（学内のみ）" : ""}${on ? "<em>NOW</em>" : ""}${first && e.details?.length ? `<ul class="sh-points">${e.details.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${first && e.note ? `<p class="sh-pnote">${esc(e.note)}</p>` : ""}</li>`;
+      return `<li class="${past ? "is-past" : ""}"><time>${md(e.start)} ${tStart(e)}</time>${esc(e.title)}${e.internal ? "（学内のみ）" : ""}${on ? "<em>NOW</em>" : ""}${first && e.details?.length ? `<ul class="sh-points">${e.details.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${first && e.note ? `<p class="sh-pnote">${esc(e.note)}</p>` : ""}${first && e.flyer ? flyerHtml({ flyer: e.flyer, name: e.title }) : ""}</li>`;
     }).join("")}</ul>` : ""}
     ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` ${statusPill(w)}` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${msgHtml(x, s)}${x.note ? `<p>${esc(x.note)}</p>` : ""}${flyerHtml(x)}</li>`).join("")}</ul>` : ""}
     ${p.zone ? `<p class="sh-hint">この階の教室（${esc(p.codes.join("・"))}）のどれかです。どの教室かは、当日は教室の入口の看板を見てください。</p>` : ""}

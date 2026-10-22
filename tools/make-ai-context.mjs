@@ -32,7 +32,7 @@ const ctx = {
     acts: cfg.STAGE.acts.map((a) => ({ date: md(a.start), time: `${hm(a.start)}〜${hm(a.end)}`, name: a.name, kind: a.kind, mood: clean(a.mood) })),
   },
   events: [...cfg.EVENTS, ...cfg.LIST_EVENTS].filter((e) => !e.stage).map((e) => ({
-    date: md(e.start), time: `${hm(e.start)}〜${hm(e.end)}`, title: e.title, placeId: e.venue, place: place(e.venue), kind: e.kind ?? "", note: clean([e.copy, ...(e.details ?? []), e.note].filter(Boolean).join(" ")), onCampusOnly: !!e.internal,
+    date: md(e.start), time: `${hm(e.start)}〜${hm(e.end)}`, title: e.title, placeId: e.place ?? e.venue, place: place(e.venue), kind: e.kind ?? "", note: clean([e.copy, ...(e.details ?? []), e.note].filter(Boolean).join(" ")), onCampusOnly: !!e.internal,
   })),
   shops: cfg.SHOPS.map((s) => ({
     id: s.room ?? (s.place || cfg.HOMEROOMS[s.cls]) ?? `shops-${s.bldg}${s.floor}`, name: clean(s.name), group: s.group ?? "", where: s.place ?? (s.bldg ? `${s.bldg}棟${s.floor}` : (s.room ?? cfg.HOMEROOMS[s.cls] ?? "")), genre: s.food ? s.genre : ["あそび・体験"], note: clean(s.note),
