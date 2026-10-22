@@ -247,6 +247,7 @@ function up(e) {
   const quick = e.timeStamp - pan.t < 400;
   const moved = pan.moved;
   pan = null;
+  if (moved < 8 && !onImage(e.clientX, e.clientY)) { close(); return; }
   if (zoomed()) { clamp(); paint(); return; }
   ease();
   if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4 && (quick || Math.abs(dx) > 120) && items.length > 1) {
@@ -262,6 +263,11 @@ function up(e) {
       else { lastTap = e.timeStamp; lastTapAt = { x: e.clientX, y: e.clientY }; }
     }
   }
+}
+
+function onImage(x, y) {
+  const r = img.getBoundingClientRect();
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
 }
 
 function wheel(e) {
