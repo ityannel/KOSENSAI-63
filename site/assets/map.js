@@ -1,5 +1,5 @@
 import { paintNotice } from "./notice.js";
-import { MAP, EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION, DEPT_EXHIBITS } from "./config.js";
+import { MAP, EVENTS, LIST_EVENTS, STAGE, CROWD, RALLY, PICKUP_SHOPS, PICKUP_EVENTS, SHOPS, HOMEROOMS, HOMEROOMS_CONFIRMED, GENRES, DECOS, ELECTION, DEPT_EXHIBITS } from "./config.js";
 import { M_PER_PT, VIEW, HOME, NORTH, FLOORS, BUILDINGS, PATHS, LINKS, SITE, ROOM_FIX, ROOM_NAMES, ENTRANCES, RESTRICTED, placeRestricted, restrictedBuildingShapes } from "./campus.js";
 import { avatar, VERIFIED } from "./avatar.js";
 import { tStart, tPlain } from "./schedule.js";
@@ -1708,6 +1708,7 @@ const I = {
   access: '<svg viewBox="0 0 24 24"><circle cx="11" cy="4" r="1.7"/><path d="M11 7.5v5.5h5l2.5 5.5 1.8-.6M11 10h4.5M8.3 11.3A5 5 0 1 0 14.9 16.9"/></svg>',
 };
 
+const flyerHtml = (x) => (x.flyer ? `<img class="sh-flyer" src="${esc(x.flyer.replace(/\.webp$/, "-m.webp"))}" data-full="${esc(x.flyer)}" alt="${esc(x.name)}のチラシ" loading="lazy" decoding="async">` : "");
 let sheetKey = "";
 function renderSheet() {
   const body = $("#m-sheet-body");
@@ -1724,7 +1725,7 @@ function renderSheet() {
   const p = mode === "place" && place(selected);
   if (!p) return renderHome(body, s);
   const crowd = crowdOf(p.id, s);
-  const events = EVENTS.filter((e) => e.venue === p.id).sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  const events = [...EVENTS, ...LIST_EVENTS].filter((e) => e.venue === p.id).sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
   const shops = (p.shops ?? []).map((id) => RALLY.shops.find((x) => x.id === id)).filter(Boolean);
   const picks = [...PICKUP_SHOPS, ...PICKUP_EVENTS].filter((x) => x.venue === p.id);
   const now = s.phase === "during" && s.running?.find((e) => e.venue === p.id);
@@ -1735,7 +1736,7 @@ function renderSheet() {
     ${p.tentative || p.roomGuess ? `<p class="sh-kind">${p.tentative ? "【場所は仮】" : "【教室は仮】"}</p>` : ""}
     <h2 class="sh-title">${esc(titleOf(p))}${statusPill(oneWait)}${statusPill(crowd)}</h2>
     <p class="sh-sub">${esc(subOf(p))}</p>
-    ${one ? `<p class="sh-sub">${esc([one.group, one.food ? "食べもの" : ""].filter(Boolean).join("・"))}${genreTags(one)}</p>${msgHtml(one, s)}` : ""}
+    ${one ? `<p class="sh-sub">${esc([one.group, one.food ? "食べもの" : ""].filter(Boolean).join("・"))}${genreTags(one)}</p>${msgHtml(one, s)}${flyerHtml(one)}` : ""}
     <div class="sh-row">
       ${ban ? '<span class="sh-badge is-ban">入れません</span>' : ""}
       ${now ? `<span class="sh-badge is-now">NOW ${esc(now.title)}</span>` : ""}
@@ -1752,12 +1753,13 @@ function renderSheet() {
       ${one && voteUrl(one, s.now) ? `<a class="sh-btn vote" href="${esc(voteUrl(one, s.now))}" target="_blank" rel="noopener">${I.vote}模擬店総選挙に投票</a>` : ""}
       ${canPost(p) ? `<button type="button" class="sh-btn e-post" data-act="post"><img src="assets/img/enistagram.webp" width="640" height="114" alt="Enistagram">にポスト</button>` : ""}
     </div>
-    ${events.length ? `<h3 class="sh-h">企画</h3><ul class="sh-events">${events.map((e) => {
+    ${events.length ? `<h3 class="sh-h">企画</h3><ul class="sh-events">${events.map((e, i) => {
+      const first = events.findIndex((x) => x.title === e.title) === i;
       const on = Date.parse(e.start) <= s.now && s.now < Date.parse(e.end);
       const past = Date.parse(e.end) <= s.now;
-      return `<li class="${past ? "is-past" : ""}"><time>${md(e.start)} ${tStart(e)}</time>${esc(e.title)}${e.internal ? "（学内のみ）" : ""}${on ? "<em>NOW</em>" : ""}</li>`;
+      return `<li class="${past ? "is-past" : ""}"><time>${md(e.start)} ${tStart(e)}</time>${esc(e.title)}${e.internal ? "（学内のみ）" : ""}${on ? "<em>NOW</em>" : ""}${first && e.details?.length ? `<ul class="sh-points">${e.details.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${first && e.note ? `<p class="sh-pnote">${esc(e.note)}</p>` : ""}</li>`;
     }).join("")}</ul>` : ""}
-    ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` ${statusPill(w)}` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${msgHtml(x, s)}${x.note ? `<p>${esc(x.note)}</p>` : ""}</li>`).join("")}</ul>` : ""}
+    ${p.shopList?.length && !one ? `<h3 class="sh-h">模擬店${p.shopList.length > 1 ? `（${p.shopList.length}）` : ""}</h3><ul class="sh-shops">${p.shopList.map((x) => `<li>${voteUrl(x, s.now) ? `<a class="sh-vote" href="${esc(voteUrl(x, s.now))}" target="_blank" rel="noopener">${I.vote}投票</a>` : ""}<b>${esc(x.name)}</b>${(() => { const w = waitOf(x, s); return w ? ` ${statusPill(w)}` : ""; })()}<small>${esc(x.group)}${x.food ? "・食べもの" : ""}</small>${genreTags(x)}${msgHtml(x, s)}${x.note ? `<p>${esc(x.note)}</p>` : ""}${flyerHtml(x)}</li>`).join("")}</ul>` : ""}
     ${p.zone ? `<p class="sh-hint">この階の教室（${esc(p.codes.join("・"))}）のどれかです。どの教室かは、当日は教室の入口の看板を見てください。</p>` : ""}
     ${picks.length ? `<h3 class="sh-h">みどころ</h3><ul class="sh-events">${picks.map((x) => `<li>${esc(x.name)}${x.note ? `<small>　${esc(x.note)}</small>` : ""}</li>`).join("")}</ul>` : ""}
     ${voiceSection(p, s)}`;

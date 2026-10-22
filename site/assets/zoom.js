@@ -1,5 +1,5 @@
 const MAX_ZOOM = 6;
-const ZOOMABLE = ".tk-photo:not(.is-back), .dt-photo-img, .dt-logo, .dt-flyer img, .k-msg-photo, .report-card img, #photo-grid img, .v-photo, .eh-photo img, .mm-card img, #secret-img";
+const ZOOMABLE = ".tk-photo:not(.is-back), .dt-photo-img, .dt-logo, .dt-flyer img, .sh-flyer, .k-msg-photo, .report-card img, #photo-grid img, .v-photo, .eh-photo img, .mm-card img, #secret-img";
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const host = (() => { try { return top !== self && top.document ? top : self; } catch { return self; } })();
