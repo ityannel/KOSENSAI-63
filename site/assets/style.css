@@ -2189,20 +2189,9 @@ html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { d
   html, html[data-theme="light"] { background: linear-gradient(180deg, #2b2a3d, #14121b) !important; }
 }
 .visit-duo { display: grid; grid-template-columns: 1fr 1fr; gap: calc(14 * var(--u)); width: min(100%, calc(340 * var(--u))); margin: calc(18 * var(--u)) auto 0; }
-.visit-duo .en-btn, .visit-duo .mido-more { box-sizing: border-box; width: 100%; height: calc(56 * var(--u)); margin: 0; }
-.visit-duo .en-btn { padding: 0 calc(8 * var(--u)); gap: calc(6 * var(--u)); }
-.visit-duo .en-btn svg { width: calc(22 * var(--u)); height: calc(22 * var(--u)); }
-.visit-duo .en-btn b { font-size: calc(18 * var(--u)); }
-.visit-duo .mido-more span { display: grid; place-items: center; box-sizing: border-box; height: 100%; padding: 0 calc(12 * var(--u)); font-size: calc(18 * var(--u)); }
-.bro-btn { background: var(--grain), #FEEBC4; color: #634A2E; rotate: 1deg; }
-.tk.is-cancelled .tk-shape { opacity: 0.5; filter: grayscale(0.85); }
-.tk.is-cancelled .tk-shape *, .tl-row.is-cancelled .tl-main *, .tl-row.is-cancelled time * { text-decoration: line-through; text-decoration-thickness: 0.09em; text-decoration-skip-ink: none; }
-.tk.is-cancelled .tk-photo { filter: grayscale(1); opacity: 0.6; }
-.tk.is-cancelled .tk-eq { display: none; }
-.tk-badge.is-cancel { background: #6b6b6b; color: #fff; }
-.tl-row.is-cancelled { opacity: 0.5; filter: grayscale(0.85); }
-.tl-row.is-cancelled .tl-main, .tl-row.is-cancelled time { text-decoration: line-through; text-decoration-thickness: 0.09em; }
-.tl-badge.is-cancel { background: #6b6b6b; color: #fff; }
+.visit-duo .mido-more { box-sizing: border-box; width: 100%; height: calc(56 * var(--u)); margin: 0; }
+.visit-duo .mido-more span { display: flex; align-items: center; justify-content: center; gap: calc(6 * var(--u)); box-sizing: border-box; height: 100%; padding: 0 calc(12 * var(--u)); font-size: calc(18 * var(--u)); white-space: nowrap; }
+.visit-duo .mido-more svg { flex: none; width: calc(22 * var(--u)); height: calc(22 * var(--u)); fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 @media (min-width: 1000px) {
   .pc-links a:nth-child(6), .pc-links a:nth-child(7) { box-sizing: border-box; flex: 1 1 calc(50% - 5px); width: auto; min-width: 0; justify-content: center; padding: 9px 6px; gap: 5px; font-size: 0.92rem; white-space: nowrap; }
   .pc-links a:nth-child(6) { rotate: -1deg; }
