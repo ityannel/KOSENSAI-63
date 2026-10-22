@@ -14,8 +14,10 @@ chips.forEach((a) => a.addEventListener("click", (e) => {
 
 const marks = chips.map((a) => [a, document.getElementById(`sec-${a.dataset.sec}`)]).filter(([, el]) => el);
 let ticking = false;
+const bar = document.getElementById("bro-chips");
 function syncChips() {
   ticking = false;
+  bar.classList.toggle("is-stuck", bar.getBoundingClientRect().top <= 1);
   const line = innerHeight * 0.4;
   let cur = null;
   for (const [a, el] of marks) if (el.getBoundingClientRect().top < line) cur = a;
@@ -23,8 +25,8 @@ function syncChips() {
     if (a === cur) {
       if (a.getAttribute("aria-current") !== "true") {
         a.setAttribute("aria-current", "true");
-        const bar = a.parentElement;
-        bar.scrollTo({ left: a.offsetLeft - (bar.clientWidth - a.offsetWidth) / 2, behavior: calm ? "auto" : "smooth" });
+        const row = a.parentElement;
+        row.scrollTo({ left: a.offsetLeft - (row.clientWidth - a.offsetWidth) / 2, behavior: calm ? "auto" : "smooth" });
       }
     } else a.removeAttribute("aria-current");
   }
