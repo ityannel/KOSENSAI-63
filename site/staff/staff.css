@@ -390,8 +390,6 @@ body.is-printing { overflow: hidden; }
 .rl-rings li.is-on b { display: none; }
 .rl-rings li i { display: grid; place-items: center; width: 118%; aspect-ratio: 1; border: .9mm solid var(--red); border-radius: 50%; color: var(--red); font-family: "WDXL Lubrifont JP N", sans-serif; font-style: normal; font-size: 5.4mm; line-height: 1; rotate: -9deg; opacity: .92; }
 .rl-qr { display: flex; flex-direction: column; align-items: center; gap: 1.4mm; }
-.rl-say { position: relative; margin: 0; padding: 1mm 5mm 1.3mm; border: .8mm solid var(--red); border-radius: 99mm; background: var(--cream); font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 5.6mm; color: var(--red); transform: rotate(-2.5deg); }
-.rl-say::after { content: ""; position: absolute; left: 50%; bottom: -2.6mm; width: 3mm; height: 3mm; background: var(--cream); border-right: .8mm solid var(--red); border-bottom: .8mm solid var(--red); rotate: 45deg; translate: -50% 0; }
 .rl-burst { position: relative; display: grid; place-items: center; width: 56mm; height: 56mm; margin-top: 1mm; }
 .rl-star { position: absolute; inset: 0; background: linear-gradient(135deg, #e2622e, #e3a43a); clip-path: var(--star); }
 .rl-star::after { content: ""; position: absolute; inset: 1.7mm; background: radial-gradient(circle, rgba(226, 98, 46, .55) 24%, transparent 26%) 0 0 / 2.2mm 2.2mm, #FFF3C9; clip-path: var(--star); }
@@ -417,8 +415,7 @@ body.is-printing { overflow: hidden; }
 .sheet.pw .rl-rings { justify-content: center; margin-top: 2.4mm; }
 .sheet.pw .rl-rings li { width: min(12mm, calc(130mm / var(--n) - 2mm)); }
 .sheet.pw .rl-qr { width: 100%; gap: 1.2mm; }
-.sheet.pw .rl-say { font-size: 5.6mm; }
-.sheet.pw .rl-burst { width: 64mm; height: 64mm; }
+.sheet.pw .sheet.pw .rl-burst { width: 64mm; height: 64mm; }
 .sheet.pw .rl-burst img { width: 43mm; height: 43mm; padding: 2mm; }
 .sheet.pw .rl-hanko { width: 21mm; font-size: 13mm; right: -8mm; }
 .sheet.pw .rl-pon { font-size: 5.6mm; right: -7mm; top: 18mm; }
@@ -985,7 +982,7 @@ h1, h2, h3 { font-weight: 400; }
 
 /* 貼り紙・三角POP：全体をカラーに */
 .sheet.pw, .sheet.pt { color: #FFFBF2; background: url("../assets/img/grain-s.png") 0 0 / 180px, linear-gradient(180deg, #dc495e 0%, #d06260 24%, #d4714d 48%, #d27b4c 64%, #dab03b 82%, #dcc368 100%); }
-.sheet.pw { grid-template-rows: auto 1fr auto; }
+.sheet.pw { grid-template-rows: 1fr; gap: 0; padding: 9mm; }
 .sheet.pw .pw-name { border-bottom-color: rgba(255, 251, 242, .75); }
 .sheet.pw .pw-logo, .sheet.pt .pt-logo { filter: drop-shadow(-.8mm .6mm 0 rgba(99, 74, 46, .45)); }
 .sheet.pw .pw-shop, .sheet.pt .pt-shop { text-shadow: .8mm .7mm 0 rgba(99, 74, 46, .6); }
@@ -1006,3 +1003,23 @@ h1, h2, h3 { font-weight: 400; }
 .rl-badge b small { margin-left: .06em; font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 900; font-size: .34em; line-height: 1; color: var(--cream); }
 .rl-badge > small { margin-top: 1mm; font-size: 4.2mm; font-weight: 900; line-height: 1.1; }
 .sheet.pw .rl-badge > small { font-size: 5mm; }
+.sheet.pw .rl::before { inset: 3mm; }
+.sheet.pw .rl { padding: 9mm 12mm 8mm; gap: 3mm; }
+.rl-place { position: relative; width: 100%; padding: 0 0 3mm; border-bottom: .6mm dashed rgba(99, 74, 46, .4); text-align: center; }
+.rl-place h2 { margin: 0; font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: 15mm; line-height: 1.1; color: var(--ink); text-shadow: .7mm .7mm 0 #F3D9A0; word-break: auto-phrase; }
+.rl-place p { margin: 1.4mm 0 0; font-size: 6mm; font-weight: 900; opacity: .75; }
+.sheet.pw .rl-place h2 { font-size: 21mm; }
+.sheet.pw .rl-place p { font-size: 7mm; }
+.sheet.pw .rl-ribbon { font-size: 7.4mm; }
+.sheet.pw .rl-head { font-size: 24mm; }
+.sheet.pw .rl-tag { font-size: 8mm; }
+.sheet.pw .rl-lead { font-size: 6.4mm; }
+.sheet.pw .rl-lead b { font-size: 8mm; }
+.sheet.pw .rl-burst { width: 112mm; height: 112mm; }
+.sheet.pw .rl-burst img { width: 78mm; height: 78mm; padding: 2.8mm; }
+.sheet.pw .rl-hanko { width: 28mm; font-size: 17mm; right: -12mm; top: -5mm; }
+.sheet.pw .rl-pon { font-size: 7mm; right: -10mm; top: 24mm; }
+.sheet.pw .rl-cap { font-size: 4.2mm; }
+.sheet.pw .rl-badge { left: calc(50% - 92mm); bottom: 8mm; width: 38mm; height: 38mm; }
+.sheet.pw .rl-badge b { font-size: 19mm; }
+.sheet.pw .rl-badge > small { font-size: 5.6mm; }

@@ -1216,7 +1216,7 @@ const kanjiNum = (n) => {
   const tens = Math.floor(n / 10), ones = n % 10;
   return `${tens > 1 ? d[tens] : ""}十${ones ? d[ones] : ""}`;
 };
-function rallyBody(s) {
+function rallyBody(s, place = "") {
   const shop = s.kind === "shop";
   const rally = !shop && isRallyShop(s.id) && keysOf(s.id)[FEST];
   const qr = shop ? qrDataUrl(siteUrl(""))
@@ -1228,23 +1228,20 @@ function rallyBody(s) {
   const lead = shop ? "待ち時間や、<b>校内マップ</b>も<br>スマホで見られます。"
     : s.kind === "info" ? "まずはここで、<br><b>一個目</b>のスタンプ！"
     : rally ? "ここのスタンプを、<br>スマホで<b>ゲット</b>！" : "校内の数か所で、<br>実施中！";
-  const say = shop ? "サイトを見る" : rally ? "ここを読む！" : "カードを見る";
   const cap = shop ? "読み込んで、サイトへ" : rally ? "カメラで読むと、スタンプが押されます" : "読み込んで、スタンプカードを見る";
   const goal = rallyGoal();
   const badge = shop ? "" : `<div class="rl-badge"><b>${goal}<small>コ</small></b><small>で景品！</small></div>`;
   const hanko = shop ? "" : `<i class="rl-hanko">縁</i><span class="rl-pon">ポンッ！</span>`;
-  const rings = shop ? "" : `<ol class="rl-rings" style="--n:${goal}">${Array.from({ length: goal }, (_, i) => `<li${i === 0 ? ' class="is-on"' : ""}><b>${i + 1}</b>${i === 0 ? "<i>縁</i>" : ""}</li>`).join("")}</ol>`;
   return `
           <div class="rl">
+            ${place}
             <div class="rl-txt">
               <p class="rl-ribbon"><i>★</i>${ribbon}<i>★</i></p>
               <h3 class="rl-head">${head}</h3>
               ${tag}
               <p class="rl-lead">${lead}</p>
-              ${rings}
             </div>
             <div class="rl-qr">
-              <p class="rl-say">${say}</p>
               <div class="rl-burst"><span class="rl-star"></span><img src="${qr}" alt="">${hanko}</div>
               <p class="rl-cap">${cap}</p>
               ${badge}
@@ -1263,12 +1260,7 @@ function linksHtml(s) {
 function buildWall(s) {
   return `
       <section class="sheet pw">
-        <div class="pw-name">
-          <img class="pw-logo" src="${LOGO}" alt="">
-          <div><h2 class="pw-shop">${esc(s.name)}</h2>${s.group ? `<p class="pw-group">${esc(s.group)}</p>` : ""}</div>
-        </div>
-        <div class="pw-rally">${rallyBody(s)}</div>
-        <p class="pw-foot">第${FESTIVAL.edition}回 函館高専祭「${esc(FESTIVAL.theme)}」</p>
+        <div class="pw-rally">${rallyBody(s, `<div class="rl-place"><h2>${esc(s.name)}</h2>${s.group ? `<p>${esc(s.group)}</p>` : ""}</div>`)}</div>
       </section>`;
 }
 function buildTents(shops) {
@@ -1276,7 +1268,6 @@ function buildTents(shops) {
     return `
       <section class="sheet pt">
         <div class="pt-panel"><div class="pt-face pt-name">
-          <img class="pt-logo" src="${LOGO}" alt="">
           <div class="pt-v pt-name-v">
             <h2 class="pt-shop">${esc(s.name)}</h2>
             ${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}
