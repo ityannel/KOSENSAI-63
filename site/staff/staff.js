@@ -1223,23 +1223,29 @@ function rallyBody(s) {
     : rally ? stampQrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
     : qrDataUrl(siteUrl("rally.html"));
   const ribbon = shop ? "WELCOME" : "STAMP RALLY";
-  const head = shop ? "高専祭の<br>サイトも、どうぞ。" : "スタンプラリー、<br>はじめました。";
+  const head = shop ? "高専祭の<br>サイトも、どうぞ。" : "スタンプ<br>ラリー";
+  const tag = shop ? "" : `<p class="rl-tag">はじめました！</p>`;
   const lead = shop ? "待ち時間や、<b>校内マップ</b>も<br>スマホで見られます。"
     : s.kind === "info" ? "まずはここで、<br><b>一個目</b>のスタンプ！"
     : rally ? "ここのスタンプを、<br>スマホで<b>ゲット</b>！" : "校内の数か所で、<br>実施中！";
   const say = shop ? "サイトを見る" : rally ? "ここを読む！" : "カードを見る";
   const cap = shop ? "読み込んで、サイトへ" : rally ? "カメラで読むと、スタンプが押されます" : "読み込んで、スタンプカードを見る";
-  const badge = shop ? "" : `<div class="rl-badge"><small>スタンプ</small><b>${rallyGoal()}</b><small>個で景品！</small></div>`;
+  const goal = rallyGoal();
+  const badge = shop ? "" : `<div class="rl-badge"><small>スタンプ</small><b>${goal}</b><small>個で景品！</small></div>`;
+  const hanko = shop ? "" : `<i class="rl-hanko">縁</i><span class="rl-pon">ポンッ！</span>`;
+  const rings = shop ? "" : `<ol class="rl-rings" style="--n:${goal}">${Array.from({ length: goal }, (_, i) => `<li${i === 0 ? ' class="is-on"' : ""}><b>${i + 1}</b>${i === 0 ? "<i>縁</i>" : ""}</li>`).join("")}</ol>`;
   return `
           <div class="rl">
             <div class="rl-txt">
               <p class="rl-ribbon"><i>★</i>${ribbon}<i>★</i></p>
               <h3 class="rl-head">${head}</h3>
+              ${tag}
               <p class="rl-lead">${lead}</p>
+              ${rings}
             </div>
             <div class="rl-qr">
               <p class="rl-say">${say}</p>
-              <div class="rl-burst"><span class="rl-star"></span><img src="${qr}" alt=""></div>
+              <div class="rl-burst"><span class="rl-star"></span><img src="${qr}" alt="">${hanko}</div>
               <p class="rl-cap">${cap}</p>
               ${badge}
             </div>
