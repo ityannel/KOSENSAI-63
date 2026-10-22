@@ -72,6 +72,8 @@ export function openEvent(e, t = Date.now()) {
       ${[e.kind, e.mood].filter(Boolean).length ? `<div><dt>種類</dt><dd>${esc([e.kind, e.mood].filter(Boolean).join("・"))}</dd></div>` : ""}
     </dl>
     ${e.copy ? `<p class="dt-copy">${esc(e.copy).replace(/\n/g, "<br>")}</p>` : ""}
+    ${e.details?.length ? `<ul class="dt-points">${e.details.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    ${e.note ? `<p class="dt-note">${esc(e.note)}</p>` : ""}
     ${e.live ? '<p class="dt-note">YouTube で生配信します（配信中はトップページに出ます）。</p>' : ""}
     ${links(mapLink(e.venue), askLink(`${e.title}について教えて。いまから行ける？`))}`);
 }
