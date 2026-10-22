@@ -1,4 +1,4 @@
-import { EVENTS, LIST_EVENTS, STAGE, VENUES } from "./config.js";
+import { EVENTS, LIST_EVENTS, STAGE, VENUES, CANCELLED } from "./config.js";
 import { changed } from "./schedule.js";
 
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -10,14 +10,15 @@ export const venueName = (id) => {
 const fmt = (iso, o) => new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", ...o }).format(new Date(iso));
 
 const HUES = ["band", "acoustic", "comedy", "dance"];
-const ACTS = STAGE.acts.map((a, i) => ({ ...a, title: a.name, venue: STAGE.venue, stageAct: true, hue: HUES[i % HUES.length] }));
-export const ALL_TICKETS = [...EVENTS.filter((e) => !(ACTS.length && e.stage)), ...LIST_EVENTS, ...ACTS]
+const byStart = (a, b) => Date.parse(a.start) - Date.parse(b.start);
+const ACTS = [...STAGE.acts, ...CANCELLED.acts].sort(byStart).map((a, i) => ({ ...a, title: a.name, venue: STAGE.venue, stageAct: true, hue: HUES[i % HUES.length] }));
+export const ALL_TICKETS = [...EVENTS.filter((e) => !(ACTS.length && e.stage)), ...CANCELLED.events, ...LIST_EVENTS, ...ACTS]
   .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 export const TICKETS = ALL_TICKETS.filter((e) => !e.internal && !e.listOnly);
 
-export const isOn = (e, t) => Date.parse(e.start) <= t && t < Date.parse(e.end);
-export const isPast = (e, t) => Date.parse(e.end) <= t;
-export const upcomingTickets = (t) => [...TICKETS.filter((e) => isOn(e, t)), ...TICKETS.filter((e) => Date.parse(e.start) > t)];
+export const isOn = (e, t) => !e.cancelled && Date.parse(e.start) <= t && t < Date.parse(e.end);
+export const isPast = (e, t) => !e.cancelled && Date.parse(e.end) <= t;
+export const upcomingTickets = (t) => [...TICKETS.filter((e) => isOn(e, t)), ...TICKETS.filter((e) => !e.cancelled && Date.parse(e.start) > t)];
 export const dayOf = (e) => fmt(e.start, { day: "numeric" });
 
 const CATS = { band: ["ロック", "バンド", "パンク", "合同バンド"], acoustic: ["吹奏楽", "アカペラ", "弾き語り"], dance: ["ダンス"], comedy: ["漫才", "コント"] };
@@ -39,7 +40,7 @@ export function ticketHtml(e, i, t) {
   const tags = [e.internal && "学内のみ", e.kind, !e.stageAct && e.mood].filter(Boolean);
   const line = e.stageAct ? e.mood : e.copy;
   return `
-    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.photo ? " has-photo" : ""}${e.more?.length ? " is-stack" : ""}" href="map.html#${esc(e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
+    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tk is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.cancelled ? " is-cancelled" : ""}${e.photo ? " has-photo" : ""}${e.more?.length ? " is-stack" : ""}" href="map.html#${esc(e.venue)}" style="--tilt:${TILTS[i % TILTS.length]}deg">
       <div class="tk-shape"><div class="tk-body">${on ? `<span class="tk-eq" aria-hidden="true">${Array.from({ length: 22 }, (_, k) => `<i style="--k:${k};--h:${30 + ((k * 37) % 55)}%"></i>`).join("")}</span>` : ""}<i class="tk-hole" aria-hidden="true"></i>
         <p class="tk-stub is-${wd.toLowerCase()}"><span class="tk-wd">${wd}</span><b class="tk-day">${dayOf(e)}</b><span class="tk-time">${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}</b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<i aria-hidden="true"></i>${hhmm(e.end)}`}</span></p>
         <div class="tk-main">
@@ -49,7 +50,7 @@ export function ticketHtml(e, i, t) {
           <span class="tk-place">@${esc(venueName(e.venue))}</span>
         </div>
       </div></div>
-      ${on ? '<span class="tk-badge is-now">NOW</span>' : isPast(e, t) ? '<span class="tk-badge is-end">終了</span>' : e.live ? '<span class="tk-badge is-live">LIVE</span>' : ""}
+      ${e.cancelled ? '<span class="tk-badge is-cancel">中止</span>' : on ? '<span class="tk-badge is-now">NOW</span>' : isPast(e, t) ? '<span class="tk-badge is-end">終了</span>' : e.live ? '<span class="tk-badge is-live">LIVE</span>' : ""}
       ${photoStack(e)}
     </a>`;
 }
@@ -58,9 +59,9 @@ export function rowHtml(e, t) {
   const on = isOn(e, t);
   const tags = [e.internal && "学内のみ", e.kind, e.mood].filter(Boolean).join("・");
   return `
-    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tl-row is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}" href="map.html#${esc(e.venue)}">
+    <a data-tk="${ALL_TICKETS.indexOf(e)}" class="tl-row is-${catOf(e)}${on ? " is-now" : ""}${isPast(e, t) ? " is-past" : ""}${e.cancelled ? " is-cancelled" : ""}" href="map.html#${esc(e.venue)}">
       <time>${changed(e) ? `<span class="t-chg"><b class="t-new">${hhmm(e.start)}<small>〜${hhmm(e.end)}</small></b><s class="t-old">${hhmm(e.o_start)}〜${hhmm(e.o_end)}</s></span>` : `${hhmm(e.start)}<small>〜${hhmm(e.end)}</small>`}</time>
       <span class="tl-main"><b>${esc(e.title)}</b><small>${tags ? `${esc(tags)}　` : ""}@${esc(venueName(e.venue))}</small></span>
-      ${on ? '<span class="tl-badge">NOW</span>' : ""}
+      ${e.cancelled ? '<span class="tl-badge is-cancel">中止</span>' : on ? '<span class="tl-badge">NOW</span>' : ""}
     </a>`;
 }

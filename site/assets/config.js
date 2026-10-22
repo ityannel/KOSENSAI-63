@@ -159,10 +159,10 @@ export const LIST_EVENTS = [
 
 const SHOW_SETLIST = false;
 const SETLIST_HEAD = /^(?:セットリスト|💗せっとりすと💗)\n/;
-const act = (day, start, end, name, kind, mood, copy, photo = null, more = [], insta = "") => {
+const act = (day, start, end, name, kind, mood, copy, photo = null, more = [], insta = "", cancelled = false) => {
   const head = SETLIST_HEAD.exec(copy);
   const setlist = head ? copy.slice(head[0].length).split("\n").map((s) => s.trim()).filter(Boolean) : [];
-  return { name, kind, mood, copy: head && !SHOW_SETLIST ? "" : copy, copyNoSet: head ? "" : copy, setlist, photo, more, insta, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` };
+  return { name, kind, mood, copy: head && !SHOW_SETLIST ? "" : copy, copyNoSet: head ? "" : copy, setlist, photo, more, insta, o_cancelled: cancelled, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` };
 };
 export const STAGE = {
   venue: "gym2",
@@ -175,7 +175,7 @@ export const STAGE = {
     act("24", "15:15", "15:30", "Neo abyss", "ダンス", "とりあえずダンスします！！", "皆さんこんにちは！3人組ダンスチームのNeoAbyssと申します！一昨年、昨年に引き続き今年も高専祭の舞台でダンスパフォーマンスをさせていただきます！皆さんが聞いたがあるかもしれない曲に合わせてパフォーマンスします！気になった人は是非足を運んでくださるととても嬉しいです！会場で待ってます！", "assets/img/stage/neo-abyss.webp", [], "neo__abyss"),
     act("24", "15:35", "15:50", "LunaTi☪︎³", "ダンス", "盛り上がれる曲たくさんなので見に来てね〜‼︎💕", "💗せっとりすと💗\nツインテールは20歳まで♡\nくりてぃかる♡ぷりちー \nころころガール\nキスハグ侵略者！\nらぶきゅん♡うぉんてっど\nアイドルライフエクストラパック", "assets/img/stage/luna-ti.webp", ["assets/img/stage/luna-ti-poster.webp"], "luna.tic_idol"),
     act("25", "10:40", "11:10", "イイカンジ", "バンド", "", "こんにちは！ イイカンジです！ ステージパフォーマンス3年目の出演ということで、今回も超イイカンジに盛り上げて行きます！！ 是非見に来てください！", "assets/img/stage/iikanji.webp", [], "iika.nz"),
-    act("25", "11:20", "11:50", "Criminals", "バンド", "", "", "assets/img/stage/criminals.webp"),
+    act("25", "11:20", "11:50", "Criminals", "バンド", "", "", "assets/img/stage/criminals.webp", [], "", true),
     act("25", "12:00", "12:30", "ゴーストノート", "バンド", "オリジナル曲、あり", "🫵✨🫵✨これ🫵✨🫵✨が❗❗ブチ😡😡💢💢💣💣💥💥上がり☝️😁⤴️⤴️🕺✨🕺✨ゴースト👻💖👻💖たち🤪🤪のライブ🎤🎤🎸🎸🎶🎶だよ ❗❗😅😅💦💦🙏✨🙏✨", "assets/img/stage/ghost-note.webp", [], "gh0st_note4"),
     act("25", "12:40", "13:10", "疫病Jr.", "バンド", "ぼっち・ざ・ろっく！ 結束バンドのコピバンです", "Vo. 三上まひろ\nGt. 三上勇磨\nGt. 押切絢汰\nBa. 福田利空\nDr. 所旺嘉", "assets/img/stage/yakubyo-jr.webp"),
     act("25", "13:30", "13:45", "Untitled", "ダンス", "解釈を光に、ステージへ。", "ヲタク文化への偏見を少しでも減らすために活動しています。\n去年同様、アニソン・ボカロを中心にヲタ芸をしていきます。\nヲタ芸以外の照明、演出等もご注目ください！！", "assets/img/stage/untitled.webp", [], "untitled_lightdance"),
@@ -350,12 +350,13 @@ export const RALLY = {
 };
 
 export const STAMP_PLACES = [
-  { id: "gym-n", kind: "venue", name: "体育館入り口", group: "体育館", place: "gym-n" },
-  { id: "hq", kind: "info", name: "インフォメーション", group: "本部", place: "hq", where: "玄関ホール" },
   { id: "library", kind: "venue", name: "TSKEライブラリー", group: "図書館", place: "library" },
+  { id: "gym-n", kind: "venue", name: "アリーナ入り口", group: "体育館", place: "gym-n" },
+  { id: "l-4f", kind: "venue", name: "低学年講義棟4階", group: "L棟", where: "L棟 4階" },
+  { id: "c-back", kind: "venue", name: "実験棟奥", group: "C棟", where: "C棟の奥" },
+  { id: "zacros", kind: "venue", name: "ZACROS Hall", group: "第1講義室", place: "zacros" },
+  { id: "b-3f", kind: "venue", name: "講義棟3階", group: "B棟", where: "B棟 3階" },
   { id: "gate", kind: "venue", name: "正門", group: "入口", place: "gate" },
-  { id: "zacros", kind: "venue", name: "ZACROS hall前", group: "第1講義室", place: "zacros" },
-  { id: "noto-lab", kind: "venue", name: "能登研究室前", group: "研究室" },
 ];
 export const SIGNAGE = {
   spots: {
@@ -422,6 +423,7 @@ const origItems = () => [["a", ORIG_ACTS], ["e", ORIG_EVENTS]].flatMap(([k, list
   }
 }
 let ADDED = [];
+export const CANCELLED = { acts: [], events: [] };
 export const scheduleItems = () => [...origItems().map(([kind, item]) => ({ kind, item })), ...ADDED];
 const okIso = (s) => typeof s === "string" && Number.isFinite(Date.parse(s));
 const clip = (s, n) => String(s ?? "").slice(0, n);
@@ -429,7 +431,7 @@ export function applySchedule(changes) {
   const added = [];
   for (const [key, c] of Object.entries(changes ?? {})) {
     if (!key.startsWith("+") || !c || typeof c !== "object" || !okIso(c.start) || !okIso(c.end) || Date.parse(c.end) <= Date.parse(c.start) || !clip(c.title, 1)) continue;
-    const base = { sid: key, start: c.start, end: c.end, o_start: c.start, o_end: c.end, added: true };
+    const base = { sid: key, start: c.start, end: c.end, o_start: c.start, o_end: c.end, added: true, cancelled: !!c.cancelled };
     if (c.k === "a") added.push({ kind: "a", item: { ...base, name: clip(c.title, 40), kind: clip(c.tag, 12), mood: clip(c.text, 200), copy: "", photo: null, more: [], insta: "" } });
     else added.push({ kind: "e", item: { ...base, title: clip(c.title, 40), venue: VENUES.some((v) => v.id === c.venue) ? c.venue : STAGE.venue, kind: clip(c.tag, 12), copy: clip(c.text, 200) } });
   }
@@ -437,13 +439,20 @@ export function applySchedule(changes) {
   for (const [, x] of origItems()) {
     const c = changes?.[x.sid];
     x.start = c?.start ?? x.o_start; x.end = c?.end ?? x.o_end; x.deleted = !!c?.deleted;
+    x.cancelled = c && "cancelled" in c ? !!c.cancelled : !!x.o_cancelled;
   }
   const byStart = (a, b) => Date.parse(a.start) - Date.parse(b.start);
   const addedActs = added.filter((x) => x.kind === "a").map((x) => x.item), addedEvents = added.filter((x) => x.kind === "e").map((x) => x.item);
-  const acts = [...ORIG_ACTS.filter((x) => !x.deleted), ...addedActs], events = [...ORIG_EVENTS.filter((x) => !x.deleted), ...addedEvents];
+  const live = (x) => !x.deleted && !x.cancelled;
+  const acts = [...ORIG_ACTS.filter(live), ...addedActs.filter(live)], events = [...ORIG_EVENTS.filter(live), ...addedEvents.filter(live)];
   if (addedActs.length) acts.sort(byStart);
   if (addedEvents.length) events.sort(byStart);
+  const off = (x) => !x.deleted && x.cancelled;
+  CANCELLED.acts.splice(0, CANCELLED.acts.length, ...[...ORIG_ACTS, ...addedActs].filter(off));
+  CANCELLED.events.splice(0, CANCELLED.events.length, ...[...ORIG_EVENTS, ...addedEvents].filter(off));
   STAGE.acts.splice(0, STAGE.acts.length, ...acts);
   EVENTS.splice(0, EVENTS.length, ...events);
 }
-try { applySchedule(JSON.parse(localStorage.getItem(SCHEDULE_KEY) ?? "{}")); } catch {  }
+let savedSchedule = {};
+try { savedSchedule = JSON.parse(localStorage.getItem(SCHEDULE_KEY) ?? "{}"); } catch {  }
+applySchedule(savedSchedule);

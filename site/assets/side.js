@@ -1,3 +1,4 @@
+import "./zoom.js";
 import { FESTIVAL } from "./config.js";
 import { robotSvg } from "./ai-robot.js";
 

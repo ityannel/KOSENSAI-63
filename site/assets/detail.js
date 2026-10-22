@@ -59,7 +59,7 @@ const askLink = (q) => `<a class="mido-more dt-go dt-ask" href="ai.html?q=${enco
 export function openEvent(e, t = Date.now()) {
   const on = isOn(e, t), past = isPast(e, t);
   const start = Date.parse(e.start);
-  const state = on ? "" : past ? "終了しました" : start - t < 3 * 3600000 ? `あと${mins(start - t)}分で始まります` : "";
+  const state = e.cancelled ? "出演・開催は、中止になりました" : on ? "" : past ? "終了しました" : start - t < 3 * 3600000 ? `あと${mins(start - t)}分で始まります` : "";
   open(`
     <div class="dt-ticket" aria-hidden="true">${ticketHtml(e, 0, t)}</div>
     ${e.logo ? `<img class="dt-logo" src="${esc(e.logo)}" alt="${esc(e.title)}" decoding="async">` : ""}
@@ -148,81 +148,3 @@ export function wireDetails(container, getNow = () => Date.now()) {
     else if (sh) { ev.preventDefault(); openShop(SHOPS[+sh.dataset.shop], getNow()); }
   });
 }
-
-let zoom, zoomImg, zoomLast, zList = [], zIdx = 0, zName = "";
-const bigOf = (src) => src.replace(/(-l)?\.webp$/, "-l.webp");
-function zoomBuild() {
-  if (zoom) return;
-  document.body.insertAdjacentHTML("beforeend", `
-    <div class="pz" id="pz" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="写真を大きく表示">
-      <button type="button" class="mido-close pz-close" data-pz-close aria-label="とじる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></button>
-      <button type="button" class="pz-nav pz-prev" aria-label="前の写真"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <button type="button" class="pz-nav pz-next" aria-label="次の写真"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-      <figure class="pz-fig"><img class="pz-img" alt="" decoding="async"><figcaption class="pz-cap"></figcaption></figure>
-    </div>`);
-  zoom = document.getElementById("pz");
-  zoomImg = zoom.querySelector(".pz-img");
-  zoom.addEventListener("click", (e) => {
-    if (e.target.closest(".pz-prev")) return zoomGo(-1, e);
-    if (e.target.closest(".pz-next")) return zoomGo(1, e);
-    zoomClose();
-  });
-  addEventListener("keydown", (e) => {
-    if (zoom.hidden) return;
-    if (e.key === "Escape") { e.stopPropagation(); zoomClose(); }
-    else if (e.key === "ArrowLeft") zoomGo(-1, e);
-    else if (e.key === "ArrowRight") zoomGo(1, e);
-  }, true);
-  let x0 = null;
-  zoom.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; }, { passive: true });
-  zoom.addEventListener("touchend", (e) => {
-    if (x0 == null) return;
-    const dx = e.changedTouches[0].clientX - x0; x0 = null;
-    if (Math.abs(dx) > 40) { zoomGo(dx < 0 ? 1 : -1, e); zoom.dataset.swiped = "1"; setTimeout(() => delete zoom.dataset.swiped, 350); }
-  });
-}
-function zoomShow() {
-  const src = zList[zIdx];
-  zoomImg.src = src;
-  const big = new Image();
-  big.onload = () => { if (!zoom.hidden && zList[zIdx] === src) zoomImg.src = big.src; };
-  big.src = bigOf(src);
-  zoomImg.alt = zName ? `${zName}の写真（${zIdx + 1}枚目）` : "写真";
-  zoom.querySelector(".pz-cap").textContent = zName;
-  zoom.classList.toggle("is-multi", zList.length > 1);
-}
-function zoomGo(d, e) {
-  e?.preventDefault?.(); e?.stopPropagation?.();
-  if (zList.length < 2) return;
-  zIdx = (zIdx + d + zList.length) % zList.length;
-  zoomImg.classList.remove("is-slide-l", "is-slide-r"); void zoomImg.offsetWidth;
-  zoomImg.classList.add(d > 0 ? "is-slide-l" : "is-slide-r");
-  zoomShow();
-}
-function zoomOpen(thumb) {
-  zoomBuild();
-  zoomLast = document.activeElement;
-  zList = (thumb.dataset.photos || thumb.getAttribute("src")).split("|").filter(Boolean);
-  zIdx = 0;
-  zName = thumb.alt.replace(/の写真.*$/, "");
-  zoomImg.classList.remove("is-slide-l", "is-slide-r");
-  zoomShow();
-  zoom.classList.remove("is-closing");
-  zoom.hidden = false;
-  zoom.focus({ preventScroll: true });
-}
-function zoomClose() {
-  if (!zoom || zoom.hidden) return;
-  if (zoom.dataset.swiped) return;
-  const done = () => { zoom.hidden = true; zoomLast?.focus?.({ preventScroll: true }); };
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return done();
-  zoom.classList.add("is-closing");
-  setTimeout(done, 220);
-}
-document.addEventListener("click", (e) => {
-  const img = e.target.closest?.(".tk-photo:not(.is-back), .dt-photo-img");
-  if (!img) return;
-  e.preventDefault();
-  e.stopPropagation();
-  zoomOpen(img);
-}, true);

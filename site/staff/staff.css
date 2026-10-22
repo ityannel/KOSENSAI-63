@@ -807,6 +807,8 @@ h1, h2, h3 { font-weight: 400; }
 .sched-row .acts { display: flex; gap: 6px; }
 .sched-row.is-del { opacity: .55; }
 .sched-row.is-del b { text-decoration: line-through; }
+.sched-row.is-off { opacity: .7; }
+.sched-row.is-off b { text-decoration: line-through; }
 .sched-row.is-added { border-color: var(--teal, #3F9F99); box-shadow: inset 4px 0 0 var(--teal, #3F9F99); }
 .btn-danger { color: #c0392b; }
 .sched-add { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end; margin-top: 12px; }
