@@ -982,3 +982,23 @@ h1, h2, h3 { font-weight: 400; }
 .sheet.pi img { display: block; width: 100%; height: 100%; object-fit: fill; }
 .sheet.pi-land { width: 297mm; height: 210mm; page: land; }
 @page land { size: A4 landscape; margin: 0; }
+
+/* 貼り紙・三角POP：全体をカラーに */
+.sheet.pw, .sheet.pt { color: #FFFBF2; background: url("../assets/img/grain-s.png") 0 0 / 180px, linear-gradient(180deg, #dc495e 0%, #d06260 24%, #d4714d 48%, #d27b4c 64%, #dab03b 82%, #dcc368 100%); }
+.sheet.pw { grid-template-rows: auto 1fr auto; }
+.sheet.pw .pw-name { border-bottom-color: rgba(255, 251, 242, .75); }
+.sheet.pw .pw-logo, .sheet.pt .pt-logo { filter: drop-shadow(-.8mm .6mm 0 rgba(99, 74, 46, .45)); }
+.sheet.pw .pw-shop, .sheet.pt .pt-shop { text-shadow: .8mm .7mm 0 rgba(99, 74, 46, .6); }
+.sheet.pw .pw-group, .sheet.pt .pt-group { text-shadow: .5mm .4mm 0 rgba(99, 74, 46, .5); }
+.sheet.pw .pw-foot { color: #FFFBF2; text-shadow: .4mm .3mm 0 rgba(99, 74, 46, .5); }
+.sheet.pt .pt-panel { border-bottom-color: rgba(255, 251, 242, .7); }
+.sheet.pt .pt-glue { color: rgba(255, 251, 242, .85); }
+.sheet.pw .rl { background: none; }
+.sheet.pw .rl-burst { width: 92mm; height: 92mm; }
+.sheet.pw .rl-burst img { width: 64mm; height: 64mm; padding: 2.4mm; }
+.sheet.pw .rl-hanko { width: 24mm; font-size: 15mm; right: -9mm; top: -4mm; }
+.sheet.pw .rl-pon { font-size: 6mm; right: -8mm; top: 20mm; }
+.sheet.pw .rl-badge { left: calc(50% - 78mm); bottom: 6mm; width: 33mm; height: 33mm; }
+.sheet.pw .rl-badge b { font-size: 16mm; }
+.sheet.pt .rl-burst { width: 60mm; height: 60mm; }
+.sheet.pt .rl-burst img { width: 42mm; height: 42mm; }

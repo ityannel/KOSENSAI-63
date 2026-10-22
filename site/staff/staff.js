@@ -1133,19 +1133,19 @@ function qrDataUrl(text, size = 480) {
 function stampQrDataUrl(text, size = 480) {
   if (!window.QRCode) throw new Error("QR を作る部品を読みこめませんでした");
   const box = document.createElement("div");
-  new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.H });
+  new window.QRCode(box, { text, width: size, height: size, colorDark: "#3b2a16", correctLevel: window.QRCode.CorrectLevel.H });
   const c = document.createElement("canvas");
   c.width = c.height = size;
   const g = c.getContext("2d");
   g.drawImage(box.querySelector("canvas"), 0, 0);
   const m = size / 2;
-  g.fillStyle = "#fff";
+  g.fillStyle = "#fffbf2";
   g.beginPath(); g.arc(m, m, size * 0.15, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = "#000";
+  g.strokeStyle = "#C8323A";
   g.lineWidth = size * 0.02;
   g.beginPath(); g.arc(m, m, size * 0.122, 0, Math.PI * 2); g.stroke();
-  g.fillStyle = "#000";
-  g.font = `900 ${Math.round(size * 0.15)}px "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif`;
+  g.fillStyle = "#C8323A";
+  g.font = `400 ${Math.round(size * 0.17)}px "WDXL Lubrifont JP N", "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif`;
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.fillText("縁", m, m + size * 0.008);
@@ -1268,7 +1268,6 @@ function buildWall(s) {
           <div><h2 class="pw-shop">${esc(s.name)}</h2>${s.group ? `<p class="pw-group">${esc(s.group)}</p>` : ""}</div>
         </div>
         <div class="pw-rally">${rallyBody(s)}</div>
-        <div class="pw-links">${linksHtml(s)}</div>
         <p class="pw-foot">第${FESTIVAL.edition}回 函館高専祭「${esc(FESTIVAL.theme)}」</p>
       </section>`;
 }
@@ -1288,7 +1287,6 @@ ${rallyBody(s)}
         </div></div></div>
         <div class="pt-panel"><div class="pt-face pt-links">
           <div class="pt-v pt-links-name"><h2 class="pt-shop">${esc(s.name)}</h2>${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}</div>
-          ${linksHtml(s)}
         </div></div>
         <div class="pt-glue">の り し ろ</div>
       </section>`;
@@ -1334,12 +1332,24 @@ function printFormat() {
 $$('[name="pr-format"]').forEach((r) => { r.checked = r.value === printFormat(); });
 let current = null;
 let deskShop = null;
+async function ensureQrFont() {
+  let link = document.getElementById("qr-font");
+  if (!link) {
+    link = document.createElement("link");
+    link.id = "qr-font";
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap&text=${encodeURIComponent("縁")}`;
+    document.head.append(link);
+  }
+  try { await document.fonts.load('400 40px "WDXL Lubrifont JP N"', "縁"); } catch {  }
+}
 async function showPrint() {
   const c = current;
   deskShop = c.shop ?? null;
   $("#pr-kind-label").textContent = c.kindLabel;
   $("#pr-title").textContent = c.title;
   $("#pr-format-box").hidden = !c.set;
+  await ensureQrFont();
   $("#print-area").innerHTML = await c.build();
   loadPrintFont($("#print-area").textContent);
   await Promise.all([...$$("#print-area img")].map((i) => i.decode?.().catch(() => {})));
