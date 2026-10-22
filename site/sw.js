@@ -1,4 +1,4 @@
-const VERSION = "kosen63-v614";
+const VERSION = "kosen63-v615";
 const CORE = [
   "./", "index.html", "map.html", "mido.html", "rally.html", "vote.html", "terms.html", "faq.html", "en.html", "brochure.html", "assets/brochure-page.js", "assets/brochure.css", "assets/zoom.js", "assets/zoom.css", "assets/sheet-page.js", "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js", "assets/faq-page.js", "assets/faq-chat.js", "assets/page-sheets.js", "assets/help-bar.js", "assets/scroll-lock.js", "assets/faq-text.js", "assets/faq-icons.js", "favicon.svg", "manifest.webmanifest",
   "assets/style.css", "assets/map.css", "assets/ai.css", "assets/intro.js", "assets/map-wide.js", "assets/test-loader.js",
