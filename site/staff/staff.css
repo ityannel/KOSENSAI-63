@@ -1034,3 +1034,7 @@ h1, h2, h3 { font-weight: 400; }
 .sheet.pt .rl-hanko { right: -13mm; top: -6.5mm; width: 15mm; font-size: 9.5mm; }
 .sheet.pt .rl-pon { right: -10mm; top: 8mm; }
 .sheet.pt .rl-hanko { right: -10.5mm; top: -7mm; }
+.gate-forgot { margin-top: 10px; }
+.gate-msg.is-ok { color: var(--green); }
+#rally-spots { margin-top: 12px; }
+.pr-list li > .btn, .pr-list li > .tag { flex: none; white-space: nowrap; }

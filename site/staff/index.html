@@ -24,6 +24,7 @@
         <label class="field"><span>パスワード</span><input id="password" type="password" autocomplete="current-password" required></label>
         <button class="btn btn-primary btn-block" type="submit">ログイン</button>
       </form>
+      <button class="btn btn-ghost btn-block gate-forgot" type="button" id="forgot">パスワードを忘れたとき</button>
       <p class="gate-msg" id="login-msg" role="status"></p>
     </div>
   </section>
@@ -235,7 +236,9 @@
         </article>
         <div class="tabs" role="tablist" id="post-tabs">
           <button role="tab" data-f="all" aria-selected="true">すべて <b id="count-all-posts">0</b></button>
+          <button role="tab" data-f="pending" aria-selected="false">写真の確認待ち <b id="count-pending">0</b></button>
           <button role="tab" data-f="reported" aria-selected="false">報告あり <b id="count-reported">0</b></button>
+          <button role="tab" data-f="hidden" aria-selected="false">非表示 <b id="count-hidden">0</b></button>
         </div>
         <label class="switch"><input type="checkbox" id="photo-review"><span class="switch-ui" aria-hidden="true"></span><span>写真を確認してから出す<small>ふだんはオフ（写真は、そのまま公開）</small></span></label>
         <div class="tl" id="post-list"></div>
@@ -423,6 +426,11 @@
           </article>
 
         </div>
+        <article class="card">
+          <header class="card-head"><h2>スタンプの場所（いまサイトで使っているもの）</h2><span class="pill" id="rally-spots-state"></span></header>
+          <p class="muted small">来場者のスタンプカードに出る場所です。QR が破れた・なくなったときは、ここから1枚だけ刷り直せます（刷り直しても、QR は前と同じなので、貼ってある紙もそのまま使えます）。</p>
+          <ul class="pr-list" id="rally-spots"></ul>
+        </article>
       </section>
 
       <section class="view" id="view-print" data-title="印刷" data-eyebrow="PRINT" hidden>
@@ -431,7 +439,7 @@
               <header class="card-head"><h2>まとめて印刷</h2></header>
               <div class="stack">
                 <div class="seg seg-col" role="radiogroup" aria-label="印刷するもの">
-                  <label><input type="radio" name="pr-kind" value="stamp" checked><span>スタンプラリーの紙<small>スタンプの場所（6か所）に貼る</small></span></label>
+                  <label><input type="radio" name="pr-kind" value="stamp" checked><span>スタンプラリーの紙<small id="pr-stamp-count">スタンプの場所に貼る</small></span></label>
                   <label><input type="radio" name="pr-kind" value="shopstaff"><span>お店の人に渡す紙<small>待ち時間を変える QR（店頭には貼らない）</small></span></label>
                 </div>
                 <div class="seg seg-col" role="radiogroup" aria-label="どのお店の分" id="pr-target-box">
@@ -487,6 +495,20 @@
             <div class="stack">
               <button class="btn btn-danger" type="button" id="cache-reset">全員のキャッシュを削除</button>
             </div>
+          </article>
+
+          <article class="card">
+            <header class="card-head"><h2>自分のパスワード</h2><span class="pill" id="mypw-who"></span></header>
+            <form id="mypw-form" class="stack">
+              <p class="muted small">変えると、同じアカウントでログインしているほかの端末は、しばらくしてログインし直しになります。みんなで使っているアカウントなら、変える前に知らせてください。</p>
+              <label class="field"><span>いまのパスワード</span><input id="mypw-cur" type="password" autocomplete="current-password" required></label>
+              <label class="field"><span>新しいパスワード（8文字以上）</span><input id="mypw-new" type="password" autocomplete="new-password" minlength="8" required></label>
+              <label class="field"><span>新しいパスワード（もう一度）</span><input id="mypw-new2" type="password" autocomplete="new-password" minlength="8" required></label>
+              <div class="row row-wrap">
+                <button class="btn btn-primary" type="submit">変える</button>
+                <button class="btn btn-ghost" type="button" id="mypw-mail">決め直すメールを送る</button>
+              </div>
+            </form>
           </article>
 
         </div>

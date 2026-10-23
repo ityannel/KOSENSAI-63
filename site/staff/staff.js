@@ -15,6 +15,7 @@ const [appMod, auth, fs] = await Promise.all([
 ]);
 const app = appMod.getApps().find((a) => a.name === "[DEFAULT]") ?? appMod.initializeApp(firebaseConfig);
 const a = auth.getAuth(app);
+a.languageCode = "ja";
 const db = fs.getFirestore(app);
 connectEmulators({ fs, db, auth, a });
 
@@ -216,7 +217,7 @@ function startListening() {
     snap.forEach((d) => state.shops.push({ id: d.id, ...d.data() }));
     renderShops(); renderRally(); renderOverview();
   });
-  listen(fs.doc(db, "rally", "current"), (snap) => { state.rally = snap.data() ?? null; renderShops(); renderRally(); });
+  listen(fs.doc(db, "rally", "current"), (snap) => { state.rally = snap.data() ?? null; state.rallyLoaded = true; renderShops(); renderRally(); });
   listen(fs.collection(db, "rally_keys"), (snap) => {
     state.rallyKeys = {};
     snap.forEach((d) => { state.rallyKeys[d.id] = d.data(); });
@@ -245,7 +246,7 @@ function renderOverview() {
   const devPct = (n) => Math.round((n / devAll) * 100);
   const deviceShare = devAll ? `${devPct(dev.phone)}% / ${devPct(dev.pc)}%` : "—";
   const deviceSub = `スマホ ${dev.phone}・PC ${dev.pc}・タブレット ${dev.tablet}（計 ${devAll} 台）`;
-  const kpi = (label, value, sub, color, href) => `<a class="kpi" href="${href}" style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
+  const kpi = (label, value, sub, color, href, pf = "") => `<a class="kpi" href="${href}"${pf ? ` data-pf="${pf}"` : ""} style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
   const SECRET_NAMES = { window: "窓の猫", cover: "黄色いカバー", dhouse: "Dの家", antenna: "アンテナ", sun: "夕焼け" };
   const sc = state.secret ?? {};
   const secretSub = Object.entries(SECRET_NAMES).map(([k, n]) => `${n} ${sc[k] ?? 0}`).join("・");
@@ -254,8 +255,8 @@ function renderOverview() {
     kpi("これまでの閲覧者", visitsAll, "のべ", "var(--sun)", "#overview"),
     kpi("スマホ／PC の割合", deviceShare, deviceSub, "var(--teal)", "#overview"),
     kpi("隠し縁 ぜんぶ見つけた人", sc.all ?? 0, secretSub, "var(--rose)", "#overview"),
-    kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts"),
-    kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts"),
+    kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts", "pending"),
+    kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts", "reported"),
     kpi("入場制限の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),
     kpi("完売の模擬店", soldout, `${allShops().length}店のうち`, "var(--amber)", "#shops"),
   ].join("");
@@ -698,13 +699,18 @@ async function aiCheck(id) {
 function renderPosts() {
   if (document.activeElement?.closest?.(".post-reply")) return;
   const reportedIds = new Set(state.posts.filter((p) => p.reports > 0 && !p.hidden).map((p) => p.id));
+  const pendingIds = new Set(state.posts.filter((p) => p.photo_status === "pending" && !p.hidden).map((p) => p.id));
+  const hiddenIds = new Set(state.posts.filter(isOff).map((p) => p.id));
   $("#count-all-posts").textContent = state.posts.length;
   $("#count-reported").textContent = reportedIds.size;
+  $("#count-pending").textContent = pendingIds.size;
+  $("#count-hidden").textContent = hiddenIds.size;
   const ids = new Set(state.posts.map((p) => p.id));
   const kids = new Map();
   state.posts.filter((p) => p.reply_to && ids.has(p.reply_to)).forEach((p) => kids.set(p.reply_to, [...(kids.get(p.reply_to) ?? []), p]));
   let threads = state.posts.filter((p) => !p.reply_to || !ids.has(p.reply_to)).sort((x, y) => y.created_at - x.created_at);
-  if (postFilter === "reported") threads = threads.filter((p) => reportedIds.has(p.id) || (kids.get(p.id) ?? []).some((c) => reportedIds.has(c.id)));
+  const want = { reported: reportedIds, pending: pendingIds, hidden: hiddenIds }[postFilter];
+  if (want) threads = threads.filter((p) => want.has(p.id) || (kids.get(p.id) ?? []).some((c) => want.has(c.id)));
   $("#post-list").innerHTML = threads.length ? threads.map((p) => {
     const comments = (kids.get(p.id) ?? []).sort((x, y) => x.created_at - y.created_at);
     const photo = p.has_photo ? `<div class="tl-photo"><img data-photo="${esc(p.id)}" alt="投稿の写真"${photos.get(p.id) ? ` src="${photos.get(p.id)}"` : ""}>${PHOTO_FLAG[p.photo_status] ?? ""}</div>` : "";
@@ -729,7 +735,7 @@ function renderPosts() {
           <div class="tl-replybar">${avatarHtml({ official: true }, true)}<textarea rows="1" maxlength="140" placeholder="公式（enishi）として返信…" aria-label="公式の返信"></textarea><button class="btn btn-primary btn-sm" type="submit">送る</button></div>
         </form>
       </article>`;
-  }).join("") : `<p class="empty">${{ reported: "報告された投稿はありません", all: "投稿はまだありません" }[postFilter]}</p>`;
+  }).join("") : `<p class="empty">${{ reported: "報告された投稿はありません", pending: "確認待ちの写真はありません", hidden: "非表示の投稿はありません", all: "投稿はまだありません" }[postFilter]}</p>`;
   $$("#post-list img[data-photo]:not([src])").forEach(async (img) => {
     try {
       const snap = await fs.getDoc(fs.doc(db, "post_photos", img.dataset.photo));
@@ -739,12 +745,18 @@ function renderPosts() {
     } catch { img.remove(); }
   });
 }
+function setPostFilter(f) {
+  postFilter = f;
+  $$("#post-tabs [data-f]").forEach((x) => x.setAttribute("aria-selected", String(x.dataset.f === f)));
+  renderPosts();
+}
 $("#post-tabs").addEventListener("click", (e) => {
   const b = e.target.closest("[data-f]");
-  if (!b) return;
-  postFilter = b.dataset.f;
-  $$("#post-tabs [data-f]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
-  renderPosts();
+  if (b) setPostFilter(b.dataset.f);
+});
+$("#kpis").addEventListener("click", (e) => {
+  const k = e.target.closest("[data-pf]");
+  if (k) setPostFilter(k.dataset.pf);
 });
 $("#post-list").addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]");
@@ -1072,17 +1084,20 @@ const isRallyShop = (id) => rallyShopIds().includes(id);
 const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 
 const rallySpots = () => allSpots().filter((x) => STAMP_PLACES.some((p) => p.id === x.id));
-function rallyMissing() {
-  const cur = new Map((state.rally?.shops ?? []).map((s) => [s.id, s]));
-  const spots = rallySpots();
-  const extra = [...cur.keys()].filter((id) => !spots.some((s) => s.id === id));
-  return [...spots.filter((s) => !cur.has(s.id) || !keysOf(s.id)[FEST]), ...extra.map((id) => ({ id }))];
+const spotWhere = (s) => (s.place ? MAP.places.find((p) => p.id === s.place)?.name ?? MAP.spots.find((p) => p.id === s.place)?.name ?? s.place : s.room ?? "");
+function liveSpots() {
+  const cfg = new Map(rallySpots().map((s) => [s.id, s]));
+  return (state.rally?.shops ?? []).map((r) => ({ kind: "venue", group: "", ...(cfg.get(r.id) ?? {}), id: r.id, name: r.name ?? r.id, place: r.place, room: r.room, live: true }));
 }
-async function ensureRally() {
-  if (!rallyMissing().length) return false;
+const rallyMissing = () => (state.rallyLoaded ? rallySpots().filter((s) => !isRallyShop(s.id)) : []);
+async function ensureRally(only = rallySpots()) {
+  if (!state.rallyLoaded) throw new Error("スタンプの情報を読みこんでいます。少し待ってから、もう一度");
+  const cur = state.rally?.shops ?? [];
+  const add = only.filter((s) => !cur.some((r) => r.id === s.id));
+  if (!add.length) return false;
   const batch = fs.writeBatch(db);
-  const shops = [];
-  for (const shop of rallySpots()) {
+  const shops = [...cur];
+  for (const shop of add) {
     const keys = { ...keysOf(shop.id) };
     if (!keys[FEST]) {
       keys[FEST] = randomKey();
@@ -1100,15 +1115,31 @@ async function ensureRally() {
   return true;
 }
 function renderRally() {
-  const total = rallySpots().length;
-  const missing = rallyMissing().length;
+  const live = liveSpots(), missing = rallyMissing().length;
+  const ready = live.filter((s) => keysOf(s.id)[FEST]).length;
   const st = $("#rally-state");
-  st.className = `pill ${!missing ? "is-on" : ""}`;
-  st.textContent = `QR ${total - missing}/${total}`;
+  st.className = `pill ${live.length && ready === live.length ? "is-on" : ""}`;
+  st.textContent = `${live.length}か所・QR ${ready}/${live.length}`;
   $("#rally-all").disabled = !missing;
-  $("#rally-all").textContent = missing ? `${missing}か所の QR を整える` : "全部のお店の QR を用意済み";
+  $("#rally-all").textContent = missing ? `まだ入っていない ${missing}か所を足す` : "場所は、すべてそろっています";
+  renderRallySpots();
+  renderPrintList();
 }
-$("#rally-all").addEventListener("click", () => write("全部の場所のスタンプの QR を用意しました", ensureRally));
+function renderRallySpots() {
+  const live = liveSpots();
+  $("#rally-spots-state").textContent = state.rallyLoaded ? `${live.length}か所・${rallyGoal()}個で達成` : "読みこみ中";
+  $("#rally-spots").innerHTML = live.length ? live.map((s) => {
+    const key = !!keysOf(s.id)[FEST], where = spotWhere(s);
+    const note = [where ? `地図：${where}` : "地図に場所がありません（来場者の地図で、この場所を押せません）", key ? "" : "QR の鍵がないので、ここからは刷れません"].filter(Boolean).join("・");
+    return `<li><div><b>${esc(s.name)}</b><small>${esc(note)}</small></div>${key ? `<button class="btn btn-primary btn-sm" type="button" data-pr-one="stamp:${esc(s.id)}">印刷する</button>` : '<span class="tag tag-warn">刷れない</span>'}</li>`;
+  }).join("") : `<li><div><b>${state.rallyLoaded ? "まだ、スタンプの場所がありません" : "読みこんでいます…"}</b></div></li>`;
+}
+$("#rally-all").addEventListener("click", () => {
+  const missing = rallyMissing();
+  if (!missing.length) return;
+  if (!confirm(`次の${missing.length}か所を、スタンプの場所に足しますか？\n${missing.map((s) => `・${s.name}`).join("\n")}\n（いまある場所と QR は、そのまま残ります）`)) return;
+  write(`${missing.length}か所を、スタンプの場所に足しました`, () => ensureRally(missing));
+});
 $("#prize-out").addEventListener("change", (e) => {
   const on = e.target.checked;
   if (!confirm(on ? "「景品はすべてなくなりました」と、スタンプカードのページにおわびを出しますか？" : "景品の受け付けを再開しますか？（おわびを消します）")) { e.target.checked = !on; return; }
@@ -1121,7 +1152,7 @@ $("#cache-reset").addEventListener("click", () => {
   if (!confirm("全員のキャッシュを削除しますか？（いま開いている人の画面は、読みこみなおされます）")) return;
   saveLive("全員のキャッシュ削除を指示しました", { cache_reset_at: fs.serverTimestamp() });
 });
-const rallyGoal = () => { return Math.min(RALLY.goal, rallySpots().length || RALLY.goal); };
+const rallyGoal = () => { return Math.min(RALLY.goal, state.rally?.shops?.length || rallySpots().length || RALLY.goal); };
 
 const siteUrl = (path = "") => new URL(`../${path}`, location.href).href;
 function qrDataUrl(text, size = 480) {
@@ -1374,12 +1405,23 @@ function renderPrintList() {
   const box = $("#pr-list");
   if (!box) return;
   const row = (id, name, note) => `<li><div><b>${esc(name)}</b><small>${esc(note)}</small></div><button class="btn btn-primary btn-sm" type="button" data-pr-one="${esc(id)}">印刷する</button></li>`;
+  const ready = liveSpots().filter((s) => keysOf(s.id)[FEST]);
+  $("#pr-stamp-count").textContent = `スタンプの場所（${ready.length}か所）に貼る`;
   box.innerHTML = [
-    ...rallySpots().map((s) => row(`stamp:${s.id}`, s.name, `スタンプラリーの紙${s.group ? `・${s.group}` : ""}`)),
+    ...ready.map((s) => row(`stamp:${s.id}`, s.name, `スタンプラリーの紙${spotWhere(s) ? `・${spotWhere(s)}` : ""}`)),
+    ...rallyMissing().map((s) => row(`stamp:${s.id}`, s.name, "スタンプラリーの紙・まだスタンプの場所に入っていない（刷ると、足します）")),
     ...PRINT_IMAGES.map((x) => row(`img:${x.id}`, x.name, x.note)),
   ].join("");
 }
-$("#pr-list").addEventListener("click", async (e) => {
+async function stampSpotForPrint(id) {
+  const live = liveSpots().find((v) => v.id === id);
+  if (live) return live;
+  const cfg = rallySpots().find((v) => v.id === id);
+  if (!cfg || !confirm(`「${cfg.name}」は、まだスタンプの場所に入っていません。足してから印刷しますか？`)) return null;
+  await ensureRally([cfg]);
+  return liveSpots().find((v) => v.id === id) ?? cfg;
+}
+async function printOne(e) {
   const b = e.target.closest("[data-pr-one]");
   if (!b) return;
   const [kind, id] = b.dataset.prOne.split(":");
@@ -1390,10 +1432,9 @@ $("#pr-list").addEventListener("click", async (e) => {
       current = { kindLabel: "ひとつずつ", title: x.name, sub: x.note, set: false,
         build: () => `<section class="sheet pi ${x.land ? "pi-land" : "pi-port"}"><img src="${x.src}" alt=""></section>` };
     } else {
-      const shop = rallySpots().find((v) => v.id === id);
-      if (!shop) return;
-      await ensureRally();
-      current = { kindLabel: "ひとつずつ：スタンプラリーの紙", title: shop.name, sub: [shop.group, shop.where].filter(Boolean).join("・"), set: true, build: () => buildShopSet([shop]) };
+      const spot = await stampSpotForPrint(id);
+      if (!spot) return;
+      current = { kindLabel: "ひとつずつ：スタンプラリーの紙", title: spot.name, sub: spotWhere(spot), set: true, build: () => buildShopSet([spot]) };
     }
     await showPrint();
   } catch (err) {
@@ -1402,14 +1443,17 @@ $("#pr-list").addEventListener("click", async (e) => {
   } finally {
     b.disabled = false;
   }
-});
+}
+$("#pr-list").addEventListener("click", printOne);
+$("#rally-spots").addEventListener("click", printOne);
 async function printForDesk(shop) {
   toast(`${shop.name}の紙を作っています…`);
   try {
     const stamp = STAMP_PLACES.some((p) => p.id === shop.id);
-    if (stamp) await ensureRally();
-    current = { kindLabel: `受付：${KIND_NAME[shop.kind] ?? "模擬店"}`, title: shop.name, sub: [shop.group, shop.where].filter(Boolean).join("・"),
-      build: stamp ? () => buildShopSet([shop]) : () => buildStaffPapers([shop]), shop, set: stamp };
+    const spot = stamp ? await stampSpotForPrint(shop.id) : shop;
+    if (!spot) return;
+    current = { kindLabel: `受付：${KIND_NAME[shop.kind] ?? "模擬店"}`, title: spot.name, sub: [shop.group, shop.where].filter(Boolean).join("・"),
+      build: stamp ? () => buildShopSet([spot]) : () => buildStaffPapers([shop]), shop, set: stamp };
     await showPrint();
   } catch (err) {
     console.warn(err);
@@ -1439,11 +1483,10 @@ $("#pr-given").addEventListener("click", async () => {
 $("#pr-make").addEventListener("click", async () => {
   const kind = printKind();
   const target = $('[name="pr-target"]:checked').value;
-  const list = kind === "stamp" ? rallySpots() : allShops().filter((x) => target === "all" || !handedAt(x));
+  const list = kind === "stamp" ? liveSpots().filter((s) => keysOf(s.id)[FEST]) : allShops().filter((x) => target === "all" || !handedAt(x));
   if (!list.length) return toast("刷る場所がありません", true);
   $("#pr-make").disabled = true;
   try {
-    if (kind === "stamp") await ensureRally();
     current = {
       kindLabel: kind === "stamp" ? "まとめて：スタンプラリーの紙" : "まとめて：お店の人に渡す紙（待ち時間の変更）",
       title: kind === "stamp" ? `スタンプの場所（${list.length}か所）` : `${target === "all" ? "すべてのお店" : "まだ渡していないお店"}（${list.length}店）`,
@@ -1669,6 +1712,7 @@ $("#rally-all-reset").addEventListener("click", async () => {
 $("#login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("#login-msg").textContent = "";
+  $("#login-msg").classList.remove("is-ok");
   try {
     await auth.signInWithEmailAndPassword(a, $("#email").value, $("#password").value);
   } catch {
@@ -1678,6 +1722,56 @@ $("#login-form").addEventListener("submit", async (e) => {
 const logout = async () => { await auth.signOut(a); location.reload(); };
 $("#logout").addEventListener("click", logout);
 $("#logout-top").addEventListener("click", logout);
+
+const AUTH_MSG = {
+  "auth/invalid-email": "メールアドレスの形が、ちがいます",
+  "auth/wrong-password": "いまのパスワードが、ちがいます",
+  "auth/invalid-credential": "いまのパスワードが、ちがいます",
+  "auth/weak-password": "新しいパスワードが、短すぎます",
+  "auth/too-many-requests": "回数が多すぎます。少し待ってから、もう一度",
+  "auth/network-request-failed": "つながりませんでした。電波のよい所で、もう一度",
+};
+const authMsg = (err, fallback) => AUTH_MSG[err?.code] ?? `${fallback}（${err?.code ?? err?.message}）`;
+$("#forgot").addEventListener("click", async () => {
+  const msg = $("#login-msg"), email = $("#email").value.trim();
+  msg.classList.remove("is-ok");
+  if (!email) { msg.textContent = "上の欄にメールアドレスを入れてから、押してください。"; $("#email").focus(); return; }
+  try {
+    await auth.sendPasswordResetEmail(a, email);
+    msg.classList.add("is-ok");
+    msg.textContent = `${email} に、パスワードを決め直すメールを送りました。届かないときは、迷惑メールのフォルダも見てください。`;
+  } catch (err) {
+    msg.textContent = authMsg(err, "メールを送れませんでした");
+  }
+});
+$("#mypw-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const user = a.currentUser, cur = $("#mypw-cur").value, next = $("#mypw-new").value;
+  if (!user?.email) return;
+  if (next.length < 8) return toast("新しいパスワードは、8文字以上にしてください", true);
+  if (next !== $("#mypw-new2").value) return toast("新しいパスワードが、1回目と2回目でちがいます", true);
+  if (next === cur) return toast("いまと同じパスワードです", true);
+  if (!confirm(`${user.email} のパスワードを変えますか？\n同じアカウントでログインしているほかの端末は、ログインし直しになります。`)) return;
+  try {
+    await auth.reauthenticateWithCredential(user, auth.EmailAuthProvider.credential(user.email, cur));
+    await auth.updatePassword(user, next);
+    e.target.reset();
+    toast("パスワードを変えました");
+  } catch (err) {
+    console.warn(err);
+    toast(authMsg(err, "変えられませんでした"), true);
+  }
+});
+$("#mypw-mail").addEventListener("click", async () => {
+  const email = a.currentUser?.email;
+  if (!email || !confirm(`${email} に、パスワードを決め直すメールを送りますか？`)) return;
+  try {
+    await auth.sendPasswordResetEmail(a, email);
+    toast("メールを送りました。メールのリンクから、新しいパスワードを決めてください");
+  } catch (err) {
+    toast(authMsg(err, "メールを送れませんでした"), true);
+  }
+});
 
 auth.onAuthStateChanged(a, async (user) => {
   unsubs.splice(0).forEach((u) => u());
@@ -1696,6 +1790,7 @@ auth.onAuthStateChanged(a, async (user) => {
   $("#shell").hidden = !staffUser;
   if (!staffUser) return;
   $("#who").textContent = staffUser.email;
+  $("#mypw-who").textContent = staffUser.email;
   broadcastFilled = false;
   chatterFilled = false;
   route();
