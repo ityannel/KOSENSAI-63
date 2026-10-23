@@ -42,6 +42,20 @@ await t("prize_out must be a boolean", assertFails(setDoc(doc(staff, "site_live/
 await t("visitors cannot mark prizes out", assertFails(setDoc(doc(anon, "site_live/current"), { prize_out: true, updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
 await t("anyone can read site_live", assertSucceeds(getDoc(doc(nobody, "site_live/current"))));
 await t("stranger cannot read staff list", assertFails(getDoc(doc(stranger, "staff/honbu@example.com"))));
+const member = (extra = {}) => ({ name: "実行委員", added_by: "honbu@example.com", added_at: serverTimestamp(), ...extra });
+await t("staff can add a member", assertSucceeds(setDoc(doc(staff, "staff/new1@example.com"), member())));
+await t("stranger cannot add themselves as staff", assertFails(setDoc(doc(stranger, "staff/evil@example.com"), member({ added_by: "evil@example.com" }))));
+await t("anonymous cannot add staff", assertFails(setDoc(doc(anon, "staff/anon@example.com"), member({ added_by: null }))));
+await t("added_by must be the adder", assertFails(setDoc(doc(staff, "staff/new2@example.com"), member({ added_by: "someone@else.com" }))));
+await t("member id must be lowercase", assertFails(setDoc(doc(staff, "staff/New3@Example.com"), member())));
+await t("member id must look like an email", assertFails(setDoc(doc(staff, "staff/not-an-email"), member())));
+await t("member doc cannot have extra fields", assertFails(setDoc(doc(staff, "staff/new4@example.com"), member({ admin: true }))));
+await t("member name is required", assertFails(setDoc(doc(staff, "staff/new5@example.com"), member({ name: "" }))));
+await t("added_at must be server time", assertFails(setDoc(doc(staff, "staff/new6@example.com"), member({ added_at: new Date(2020, 0, 1) }))));
+await t("existing member cannot be overwritten", assertFails(setDoc(doc(staff, "staff/new1@example.com"), member({ name: "上書き" }))));
+await t("stranger cannot remove a member", assertFails(deleteDoc(doc(stranger, "staff/new1@example.com"))));
+await t("staff cannot remove themselves", assertFails(deleteDoc(doc(staff, "staff/honbu@example.com"))));
+await t("staff can remove another member", assertSucceeds(deleteDoc(doc(staff, "staff/new1@example.com"))));
 await t("staff can write crowd", assertSucceeds(setDoc(doc(staff, "crowd/gym2"), { level: 2, updated_at: serverTimestamp() })));
 await t("anonymous cannot write crowd", assertFails(setDoc(doc(anon, "crowd/gym2"), { level: 2, updated_at: serverTimestamp() })));
 

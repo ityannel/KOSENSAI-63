@@ -22,7 +22,13 @@ service cloud.firestore {
 
     match /staff/{email} {
       allow read: if isStaff();
-      allow write: if false;
+      allow create: if isStaff()
+        && email == email.lower() && email.size() <= 120 && email.matches('^[^@\\s/]+@[^@\\s/]+[.][^@\\s/]+$')
+        && data().keys().hasOnly(['name', 'added_by', 'added_at'])
+        && data().name is string && data().name.size() >= 1 && data().name.size() <= 40
+        && data().added_by == request.auth.token.email && data().added_at == request.time;
+      allow delete: if isStaff() && email != request.auth.token.email;
+      allow update: if false;
     }
 
     function noticeStyleOk(s) {

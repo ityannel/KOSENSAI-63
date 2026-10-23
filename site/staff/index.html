@@ -497,6 +497,25 @@
             </div>
           </article>
 
+          <article class="card mb-card">
+            <header class="card-head"><h2>本部のメンバー</h2><span class="pill" id="mb-state"></span></header>
+            <p class="muted small">ここにのっている人だけが、本部コンソールで変更できます。足すと、ログイン用のアカウントもいっしょに作ります。外しても、アカウントは残りますが、何も変えられなくなります。</p>
+            <ul class="pr-list mb-list" id="mb-list"></ul>
+            <form id="mb-form" class="stack mb-form">
+              <h3>メンバーを足す</h3>
+              <label class="field"><span>名前（例：実行委員 山田）</span><input id="mb-name" maxlength="40" autocomplete="off" required></label>
+              <label class="field"><span>メールアドレス</span><input id="mb-email" type="email" maxlength="120" autocomplete="off" required></label>
+              <div class="field"><span>最初のパスワード（8文字以上。本人に伝えて、あとで変えてもらう）</span>
+                <div class="row"><input id="mb-pw" type="text" minlength="8" maxlength="64" autocomplete="new-password" spellcheck="false" required><button class="btn btn-ghost btn-sm" type="button" id="mb-gen">作る</button></div></div>
+              <div class="row"><button class="btn btn-primary" type="submit" id="mb-submit">足す</button></div>
+            </form>
+            <div class="mb-done" id="mb-done" hidden>
+              <p><b>足しました。</b>次の3つを、本人だけに伝えてください（LINE のグループなどには貼らない）。</p>
+              <pre id="mb-done-text"></pre>
+              <div class="row"><button class="btn btn-ghost btn-sm" type="button" id="mb-copy">コピー</button><button class="btn btn-ghost btn-sm" type="button" id="mb-done-close">閉じる</button></div>
+            </div>
+          </article>
+
           <article class="card">
             <header class="card-head"><h2>自分のパスワード</h2><span class="pill" id="mypw-who"></span></header>
             <form id="mypw-form" class="stack">

@@ -5,6 +5,7 @@ import { noticeOf, paintNotice, FONTS as NT_FONTS, SIZES as NT_SIZES, COLORS as 
 import { initAiAdmin } from "./ai-admin.js";
 import { initHq } from "./hq-admin.js";
 import { initSgAdmin } from "./sg-admin.js";
+import { initMembers } from "./members.js";
 import { renderStats, wireStats, dayKey as statDay, WIN as STAT_WIN } from "./stats.js";
 
 const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
@@ -161,6 +162,7 @@ function startListening() {
     initAiAdmin(kit);
     initHq(kit);
     initSgAdmin(kit);
+    initMembers({ ...kit, auth, appMod, firebaseConfig, connectEmulators });
   }
   listen(fs.collection(db, "visit_counts"), (snap) => {
     state.visits = {};
@@ -1781,7 +1783,7 @@ auth.onAuthStateChanged(a, async (user) => {
       const me = await fs.getDoc(fs.doc(db, "staff", staffUser.email));
       if (!me.exists()) throw new Error("not staff");
     } catch {
-      $("#login-msg").textContent = `${staffUser.email} は本部の名簿にありません。Firebase コンソールの Firestore の staff に、このメールアドレスを名前にしたドキュメントを足してください。`;
+      $("#login-msg").textContent = `${staffUser.email} は本部の名簿にありません。本部の人に、コンソールの「サイトの設定」→「本部のメンバー」で足してもらってください。`;
       await auth.signOut(a);
       return;
     }

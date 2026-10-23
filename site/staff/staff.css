@@ -1038,3 +1038,10 @@ h1, h2, h3 { font-weight: 400; }
 .gate-msg.is-ok { color: var(--green); }
 #rally-spots { margin-top: 12px; }
 .pr-list li > .btn, .pr-list li > .tag { flex: none; white-space: nowrap; }
+.mb-form { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line-2); }
+.mb-form h3 { margin: 0; }
+.mb-acts { flex: none; gap: 6px; }
+.mb-done { margin-top: 14px; padding: 12px 14px; border: 2px solid var(--green); border-radius: 12px; }
+.mb-done[hidden] { display: none; }
+.mb-done pre { margin: 8px 0; white-space: pre-wrap; word-break: break-all; font: inherit; font-weight: 700; user-select: all; }
+#mb-gen { flex: none; white-space: nowrap; }
