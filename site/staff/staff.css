@@ -1127,7 +1127,4 @@ h1, h2, h3 { font-weight: 400; }
 .rp-route .rp-steps, .rp-route .rp-head, .rp-route .rp-foot { flex: none; }
 @page a3land { size: A3 landscape; margin: 0; }
 .sheet.pi-a3 { width: 420mm; height: 297mm; page: a3land; }
-.sheet.pi-a3 img { position: absolute; left: 0; top: 0; width: 840mm; height: 594mm; max-width: none; }
-.sheet.pi-t1 img { left: -420mm; }
-.sheet.pi-t2 img { top: -297mm; }
-.sheet.pi-t3 img { left: -420mm; top: -297mm; }
+.sheet.pi-a3 img { position: absolute; max-width: none; width: calc(var(--cols) * 420mm); height: calc(var(--rows) * 297mm); left: calc(var(--c) * -420mm); top: calc(var(--r) * -297mm); }
