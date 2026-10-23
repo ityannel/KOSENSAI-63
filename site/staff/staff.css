@@ -434,12 +434,16 @@ body.is-printing { overflow: hidden; }
 .pw-foot { margin: 0; font-size: 3.6mm; text-align: center; color: #555; }
 
 @page { size: A4; margin: 0; }
+@page a3 { size: A3; margin: 0; }
+.sheet.pw { page: a3; }
+.print-area .sheet.pw { zoom: .7777; }
 @media print {
   body { background: #fff !important; }
   body > *:not(#print-overlay), .pr-bar { display: none !important; }
   body.is-printing { overflow: visible; }
   .pr-overlay, .pr-stage, .print-area { position: static !important; display: block !important; padding: 0 !important; margin: 0 !important; border: 0 !important; overflow: visible !important; background: none !important; backdrop-filter: none !important; box-shadow: none !important; }
   .print-area .sheet { zoom: 1; margin: 0; box-shadow: none; break-after: page; }
+  .print-area .sheet.pw { zoom: 1.4142; }
   .print-area .empty { display: none; }
 }
 
