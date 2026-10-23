@@ -29,7 +29,7 @@ const ctx = {
   places: cfg.MAP.places.filter((p) => p.name).map((p) => ({ id: p.id, name: p.name, sub: p.sub ?? "", room: p.room ?? "", kind: p.kind ?? "", desc: clean(p.desc) })),
   stage: {
     venue: place(cfg.STAGE.venue), venueId: cfg.STAGE.venue,
-    acts: cfg.STAGE.acts.map((a) => ({ date: md(a.start), time: `${hm(a.start)}〜${hm(a.end)}`, name: a.name, kind: a.kind, mood: clean(a.mood) })),
+    acts: cfg.STAGE.acts.map((a) => ({ date: md(a.start), time: `${hm(a.start)}〜${hm(a.end)}`, name: a.cancelled ? `${a.name}（演奏キャンセル）` : a.name, kind: a.kind, mood: clean(a.mood) })),
   },
   events: [...cfg.EVENTS, ...cfg.LIST_EVENTS].filter((e) => !e.stage).map((e) => ({
     date: md(e.start), time: `${hm(e.start)}〜${hm(e.end)}`, title: e.title, placeId: e.venue, place: place(e.venue), kind: e.kind ?? "", note: clean(e.copy), onCampusOnly: !!e.internal,

@@ -2207,3 +2207,12 @@ input:focus-visible, textarea:focus-visible { box-shadow: none; }
 .rally-sorry b { font-family: var(--hud-font); font-weight: 400; font-size: 1.2rem; letter-spacing: 0.03em; line-height: 1.4; }
 
 .en-live { background: color-mix(in srgb, var(--c) 72%, #000); color: #fff; border-color: #fff; mix-blend-mode: normal; box-shadow: 0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.35); }
+
+.tk.is-cancel .tk-shape { opacity: 0.45; }
+.tk.is-cancel .tk-shape * { text-decoration: line-through; text-decoration-thickness: calc(2 * var(--u)); }
+.tk.is-cancel .tk-photo { opacity: 0.45; filter: grayscale(1); }
+.tk-badge.is-cancel { background: #d9334f; color: #fff; }
+.tl-row.is-cancel > :not(.tl-badge) { opacity: 0.5; text-decoration: line-through; }
+.tl-badge.is-cancel { background: #d9334f; color: #fff; }
+.acts li.is-cancel :is(time, b, small) { text-decoration: line-through; opacity: 0.5; }
+.acts li.is-cancel .cancel-tag { text-decoration: none; opacity: 1; color: #d9334f; font-weight: 700; }

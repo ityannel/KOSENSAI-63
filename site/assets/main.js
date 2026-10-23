@@ -31,7 +31,7 @@ const hhmm = (iso) => HHMM.format(new Date(iso));
 
 const OPEN = Date.parse(FESTIVAL.days[0].open);
 const ACTS = STAGE.acts.map((a) => ({ ...a, title: a.name, venue: STAGE.venue }));
-const NOW_LIST = ACTS.length ? [...EVENTS.filter((e) => !e.stage), ...ACTS] : EVENTS;
+const NOW_LIST = ACTS.length ? [...EVENTS.filter((e) => !e.stage), ...ACTS.filter((a) => !a.cancelled)] : EVENTS;
 const upcoming = (t) => NOW_LIST.filter((e) => Date.parse(e.start) > t).sort((a, b) => Date.parse(a.start) - Date.parse(b.start))[0];
 const CLOSE = Date.parse(FESTIVAL.days.at(-1).close);
 
@@ -296,9 +296,9 @@ function actsOf(day, t) {
   const acts = ACTS.filter((a) => a.start.startsWith(day));
   if (!acts.length) return "";
   return `<ol class="acts">${acts.map((a) => {
-    const now = Date.parse(a.start) <= t && t < Date.parse(a.end);
-    const past = Date.parse(a.end) <= t;
-    return `<li class="${now ? "is-now" : ""}${past ? " is-past" : ""}"><time>${tStart(a)}</time><span><b>${esc(a.name)}</b>${a.kind ? `<small>${esc(a.kind)}</small>` : ""}</span></li>`;
+    const now = !a.cancelled && Date.parse(a.start) <= t && t < Date.parse(a.end);
+    const past = !a.cancelled && Date.parse(a.end) <= t;
+    return `<li class="${now ? "is-now" : ""}${past ? " is-past" : ""}${a.cancelled ? " is-cancel" : ""}"><time>${tStart(a)}</time><span><b>${esc(a.name)}</b>${a.kind ? `<small>${esc(a.kind)}</small>` : ""}${a.cancelled ? '<small class="cancel-tag">キャンセル</small>' : ""}</span></li>`;
   }).join("")}</ol>${STAGE.tentative ? '<p class="acts-note">【仮】出演者と時間は仮のものです</p>' : ""}`;
 }
 

@@ -2123,7 +2123,7 @@ function renderNowSheet(body, s) {
     return;
   }
   const t = s.now;
-  const soonList = STAGE.acts.length ? [...EVENTS.filter((e) => !e.stage), ...STAGE.acts.map((a) => ({ ...a, title: a.name, venue: STAGE.venue }))] : EVENTS;
+  const soonList = STAGE.acts.length ? [...EVENTS.filter((e) => !e.stage), ...STAGE.acts.filter((a) => !a.cancelled).map((a) => ({ ...a, title: a.name, venue: STAGE.venue }))] : EVENTS;
   const soon = soonList.filter((e) => Date.parse(e.start) > t && Date.parse(e.start) - t <= 3600000).sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
   const busy = [...places.values()].filter((p) => p.shopList?.length).map((p) => ({ p, w: worstWait(p, s) })).filter((x) => x.w && x.w.rank >= 2)
     .sort((a, b) => b.w.rank - a.w.rank);
@@ -2589,7 +2589,7 @@ function buildIndex() {
     if (p) addItem({ p, kind: "event", label: e.title, sub: `${md(e.start)} ${tPlain(e)}〜・${titleOf(p)}${e.internal ? "・学内のみ" : ""}`, rank: 0.6 }, e.title, titleOf(p), "企画 ステージ イベント");
   }
   const sp = place(STAGE.venue);
-  if (sp) for (const a of STAGE.acts) addItem({ p: sp, kind: "event", label: a.name, sub: `${md(a.start)} ${tPlain(a)}〜・ステージ${a.kind ? `・${a.kind}` : ""}`, rank: 0.6 }, a.name, titleOf(sp), `ステージ 出演 ${a.kind ?? ""}`);
+  if (sp) for (const a of STAGE.acts) addItem({ p: sp, kind: "event", label: a.name, sub: `${md(a.start)} ${tPlain(a)}〜・ステージ${a.kind ? `・${a.kind}` : ""}${a.cancelled ? "・キャンセル" : ""}`, rank: 0.6 }, a.name, titleOf(sp), `ステージ 出演 ${a.kind ?? ""}`);
 }
 const bigrams = (s) => { const out = new Set(); for (let i = 0; i < s.length - 1; i++) out.add(s.slice(i, i + 2)); return out; };
 function similar(a, b) {

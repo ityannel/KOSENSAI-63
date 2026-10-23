@@ -21,7 +21,7 @@ const running = () => {
   if (live?.now_events?.length) return live.now_events;
   const t = nowMs();
   return EVENTS.filter((e) => within(e, t)).map((e) => {
-    const a = e.stage && STAGE.acts.find((x) => within(x, t));
+    const a = e.stage && STAGE.acts.find((x) => !x.cancelled && within(x, t));
     return a ? { ...e, title: a.name, start: a.start, end: a.end } : e;
   });
 };

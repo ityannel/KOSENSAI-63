@@ -197,7 +197,7 @@ const POOL = (() => {
     for (const t of ["は、いま混んでる？", "はどこ？", "の待ち時間は？", "は何が売ってる？", "はまだやってる？", "のおすすめは？", "に行きたい", "は売り切れてない？", "の団体を教えて", "の場所を教えて", "を食べたい"]) add(`${n}${t}`);
     if (s.group) add(`${clean(s.group)}のお店はどこ？`);
   }
-  for (const a of STAGE.acts) {
+  for (const a of STAGE.acts.filter((x) => !x.cancelled)) {
     const n = short(clean(a.name));
     for (const t of ["は何時から？", "は何時まで？", "はどこでやる？", "ってどんなステージ？", "の次は誰？", "を見に行きたい", "の紹介を教えて"]) add(`${n}${t}`);
   }

@@ -243,7 +243,7 @@ const slideCrowd = {
   },
 };
 
-let ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
+let ACTS = STAGE.acts.filter((a) => !a.cancelled).map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
 let EVS = EVENTS.filter((e) => !e.stage).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
 function stageState(t) {
   const cur = ACTS.find((a) => t >= a.s && t < a.e) ?? null;
@@ -317,7 +317,7 @@ function paintHurry() {
 }
 
 function rebuildSchedule() {
-  ACTS = STAGE.acts.map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
+  ACTS = STAGE.acts.filter((a) => !a.cancelled).map((a) => ({ ...a, s: Date.parse(a.start), e: Date.parse(a.end) }));
   EVS = EVENTS.filter((e) => !e.stage).map((e) => ({ ...e, s: Date.parse(e.start), e: Date.parse(e.end) }));
 }
 watchSchedule(rebuildSchedule);

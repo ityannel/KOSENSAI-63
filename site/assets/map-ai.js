@@ -27,7 +27,7 @@ const venue = (id) => VENUES.find((v) => v.id === id)?.name ?? id;
 
 function liveInfo() {
   const items = [
-    ...STAGE.acts.map((a) => ({ n: a.name, d: day(a.start), t: `${hm(a.start)}〜${hm(a.end)}`, w: venue(STAGE.venue), k: a.kind ?? "ステージ" })),
+    ...STAGE.acts.map((a) => ({ n: a.cancelled ? `${a.name}（演奏キャンセル）` : a.name, d: day(a.start), t: `${hm(a.start)}〜${hm(a.end)}`, w: venue(STAGE.venue), k: a.kind ?? "ステージ" })),
     ...EVENTS.filter((e) => !e.stage).map((e) => ({ n: e.title, d: day(e.start), t: `${hm(e.start)}〜${hm(e.end)}`, w: venue(e.venue), k: e.kind ?? "企画" })),
   ];
   return {
