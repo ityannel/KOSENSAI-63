@@ -26,6 +26,7 @@ The source code is under the [MIT License](LICENSE). The materials below are **n
 | [Lenis](https://github.com/darkroomengineering/lenis) | なめらかなスクロール | MIT |
 | [jsQR](https://github.com/cozmo/jsQR) | QR コードの読み取り | Apache-2.0 |
 | [Google Fonts](https://fonts.google.com/)：WDXL Lubrifont JP N / Zen Kaku Gothic New / Noto Sans JP / DynaPuff / Roboto Mono | 書体（配信を利用） | SIL Open Font License 1.1 |
+| 07鉄瓶ゴシック（フォントな）。L'HAKO 予約ページの見出しだけ。使う字にしぼって `site/assets/fonts/` に置いている | 書体（このサイトから配信） | Apache-2.0（同じ場所の `07tetsubin-gothic-LICENSE.txt`） |
 
 上のものは、それぞれのライセンスにしたがいます。
 
