@@ -289,7 +289,9 @@ await t("lhako: visitor reads own reservation", assertSucceeds(getDoc(doc(anon, 
 await t("lhako: visitor cannot read another reservation", assertFails(getDoc(doc(anon2, "lhako_res/anon1-0"))));
 await t("lhako: taken seat cannot be booked again", assertFails(lhBook(anon2, "anon2", 0, "d1-1400", [1, 2])));
 await t("lhako: last free seat can be booked", assertSucceeds(lhBook(anon2, "anon2", 0, "d1-1400", [2])));
-await t("lhako: slot outside hours rejected (d1 17:00)", assertFails(lhBook(anon, "anon1", 1, "d1-1700", [0])));
+await t("lhako: slot outside hours rejected (d1 16:00)", assertFails(lhBook(anon, "anon1", 1, "d1-1600", [0])));
+await t("lhako: d1 last slot 15:40 is allowed", assertSucceeds(lhBook(anon, "anon1", 1, "d1-1540", [0])));
+await t("lhako: cleanup d1 15:40", assertSucceeds(lhCancel(anon, "anon1", 1, "d1-1540", [0])));
 await t("lhako: slot outside hours rejected (d2 09:40)", assertFails(lhBook(anon, "anon1", 1, "d2-0940", [0])));
 await t("lhako: slot off the 20-minute grid rejected", assertFails(lhBook(anon, "anon1", 1, "d1-1410", [0])));
 await t("lhako: d2 last slot 15:40 is allowed", assertSucceeds(lhBook(anon, "anon1", 1, "d2-1540", [0])));

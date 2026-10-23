@@ -296,7 +296,7 @@ service cloud.firestore {
     }
 
     function lhakoSlot(id) {
-      return id.matches('^(d1-(14|15|16)|d2-(1[0-5]))(00|20|40)$');
+      return id.matches('^(d1-(14|15)|d2-(1[0-5]))(00|20|40)$');
     }
     function lhakoSeatId(slot, n) {
       return /databases/$(database)/documents/lhako_seats/$(slot + '-' + string(n));
@@ -325,7 +325,7 @@ service cloud.firestore {
     }
     match /lhako_seats/{sid} {
       allow read: if true;
-      allow create: if isVisitor() && sid.matches('^(d1-(14|15|16)|d2-(1[0-5]))(00|20|40)-[0-2]$')
+      allow create: if isVisitor() && sid.matches('^(d1-(14|15)|d2-(1[0-5]))(00|20|40)-[0-2]$')
         && data().keys().hasOnly(['res', 'at'])
         && data().res is string && data().at == request.time
         && getAfter(/databases/$(database)/documents/lhako_res/$(data().res)).data.uid == request.auth.uid

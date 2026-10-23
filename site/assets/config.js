@@ -348,7 +348,7 @@ export const LHAKO = {
     "Haptic Suits",
   ],
   days: [
-    { id: "d1", label: "10月24日(土)", date: "2026-10-24", start: "14:00", end: "17:00" },
+    { id: "d1", label: "10月24日(土)", date: "2026-10-24", start: "14:00", end: "16:00" },
     { id: "d2", label: "10月25日(日)", date: "2026-10-25", start: "10:00", end: "16:00" },
   ],
 };
