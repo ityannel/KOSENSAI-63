@@ -2210,3 +2210,4 @@ html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { d
 .tl-row.is-cancelled .tl-main *, .tl-row.is-cancelled time * { text-decoration: line-through; text-decoration-thickness: 0.1em; text-decoration-skip-ink: none; }
 .tl-row.is-cancelled .tl-main, .tl-row.is-cancelled time { text-decoration: line-through; text-decoration-thickness: 0.1em; }
 .tl-badge.is-cancel { padding: calc(2 * var(--u)) calc(10 * var(--u)); border-radius: calc(8 * var(--u)); background: #5b5b5b; color: #fff; }
+.en-live { background: color-mix(in srgb, var(--c) 72%, #000); color: #fff; border-color: #fff; outline-color: color-mix(in srgb, var(--c) 72%, #000); outline-offset: 0; mix-blend-mode: normal; box-shadow: calc(-2 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, .35); }

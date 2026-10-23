@@ -24,6 +24,7 @@
         <label class="field"><span>パスワード</span><input id="password" type="password" autocomplete="current-password" required></label>
         <button class="btn btn-primary btn-block" type="submit">ログイン</button>
       </form>
+      <button class="btn btn-ghost btn-block gate-forgot" type="button" id="forgot">パスワードを忘れたとき</button>
       <p class="gate-msg" id="login-msg" role="status"></p>
     </div>
   </section>
@@ -46,6 +47,7 @@
         <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店</span></a>
         <a href="#schedule" data-nav="schedule"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span data-short="時間">スケジュール</span></a>
         <a href="#rally" data-nav="rally"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><path d="M12 9.5v5M9.5 12h5"/></svg><span data-short="スタンプ">スタンプラリー</span></a>
+        <a href="#route" data-nav="route"><svg viewBox="0 0 24 24"><path d="M6 20a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM8.5 17.5H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></svg><span data-short="道案内">道案内</span></a>
         <a href="#print" data-nav="print"><svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 9h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 19 17h-2M7 14h10v6H7z"/></svg><span data-short="印刷">印刷</span></a>
         <a href="#settings" data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span data-short="設定">サイトの設定</span></a>
       </nav>
@@ -91,7 +93,7 @@
         <div class="st" id="stats"><p class="muted">読みこんでいます…</p></div>
         <article class="card">
           <header class="card-head"><h2>数え方</h2></header>
-          <p class="muted st-note">トップページか地図を開いた端末を数えます。同じ端末は、1日・1時間・5分の区切りごとに、1回だけ。この本部コンソールと、手元の確認用のページ（localhost）は、数えません。</p>
+          <p class="muted st-note">トップページか地図が開かれるたびに、「開かれた回数」を1回数えます（読み込み直しも数えます）。それとは別に、開いた端末を数えます。同じ端末は、1日・1時間・5分の区切りごとに、1回だけ。この本部コンソールと、手元の確認用のページ（localhost）は、数えません。</p>
           <label class="switch"><input type="checkbox" id="stats-live-off"><span class="switch-ui" aria-hidden="true"></span><span>「いまのようす」（5分ごと）の集計を止める</span></label>
           <p class="muted st-note">止めると、見ている人の端末からの書きこみが減ります（混んできて、Firebase の上限が心配なときに）。「時間ごと」「日ごと」は、止めても数えます。</p>
         </article>
@@ -235,7 +237,9 @@
         </article>
         <div class="tabs" role="tablist" id="post-tabs">
           <button role="tab" data-f="all" aria-selected="true">すべて <b id="count-all-posts">0</b></button>
+          <button role="tab" data-f="pending" aria-selected="false">写真の確認待ち <b id="count-pending">0</b></button>
           <button role="tab" data-f="reported" aria-selected="false">報告あり <b id="count-reported">0</b></button>
+          <button role="tab" data-f="hidden" aria-selected="false">非表示 <b id="count-hidden">0</b></button>
         </div>
         <label class="switch"><input type="checkbox" id="photo-review"><span class="switch-ui" aria-hidden="true"></span><span>写真を確認してから出す<small>ふだんはオフ（写真は、そのまま公開）</small></span></label>
         <div class="tl" id="post-list"></div>
@@ -423,6 +427,37 @@
           </article>
 
         </div>
+        <article class="card">
+          <header class="card-head"><h2>スタンプの場所（いまサイトで使っているもの）</h2><span class="pill" id="rally-spots-state"></span></header>
+          <p class="muted small">来場者のスタンプカードに出る場所です。QR が破れた・なくなったときは、ここから1枚だけ刷り直せます（刷り直しても、QR は前と同じなので、貼ってある紙もそのまま使えます）。</p>
+          <ul class="pr-list" id="rally-spots"></ul>
+        </article>
+      </section>
+
+      <section class="view" id="view-route" data-title="道案内" data-eyebrow="ROUTE GUIDE" hidden>
+        <div class="rp-layout">
+          <article class="card rp-mapcard">
+            <header class="card-head"><h2>校内マップ（全部）</h2><div class="seg" id="rp-floors" role="radiogroup" aria-label="階"></div></header>
+            <p class="muted small">数字は右の一覧の番号です。番号や WC を押すと、行き先にえらべます。</p>
+            <div class="rp-screen" id="rp-screen"><p class="muted small">地図を読み込んでいます…</p></div>
+          </article>
+          <article class="card rp-panel">
+            <header class="card-head"><h2>道案内の紙（白黒）</h2></header>
+            <p class="muted small">スマホを持っていない人に、行き先までの道を、A4 1枚に印刷して渡せます。</p>
+            <form id="rp-form" class="stack">
+              <label class="field"><span>出発</span><select id="rp-from"></select></label>
+              <label class="field"><span>行き先</span><input id="rp-q" type="search" placeholder="名前・団体・番号で探す" autocomplete="off"></label>
+              <div class="rp-pick" id="rp-pick"></div>
+              <p class="rp-chosen" id="rp-chosen">行き先：まだ選んでいません</p>
+              <label class="switch"><input type="checkbox" id="rp-nostairs"><span class="switch-ui" aria-hidden="true"></span><span>階段を使わない（車いす・ベビーカー）</span></label>
+              <button class="btn btn-primary" type="submit" id="rp-make">道案内を作って確かめる</button>
+            </form>
+            <div class="rp-all-box">
+              <p class="muted small">全部の場所に番号をつけた地図です。本部に貼る・手渡す用に。</p>
+              <button class="btn btn-ghost" type="button" id="rp-all">全体マップを印刷する（階ごとに A4 横1枚）</button>
+            </div>
+          </article>
+        </div>
       </section>
 
       <section class="view" id="view-print" data-title="印刷" data-eyebrow="PRINT" hidden>
@@ -431,7 +466,7 @@
               <header class="card-head"><h2>まとめて印刷</h2></header>
               <div class="stack">
                 <div class="seg seg-col" role="radiogroup" aria-label="印刷するもの">
-                  <label><input type="radio" name="pr-kind" value="stamp" checked><span>スタンプラリーの紙<small>スタンプの場所（6か所）に貼る</small></span></label>
+                  <label><input type="radio" name="pr-kind" value="stamp" checked><span>スタンプラリーの紙<small id="pr-stamp-count">スタンプの場所に貼る</small></span></label>
                   <label><input type="radio" name="pr-kind" value="shopstaff"><span>お店の人に渡す紙<small>待ち時間を変える QR（店頭には貼らない）</small></span></label>
                 </div>
                 <div class="seg seg-col" role="radiogroup" aria-label="どのお店の分" id="pr-target-box">
@@ -487,6 +522,39 @@
             <div class="stack">
               <button class="btn btn-danger" type="button" id="cache-reset">全員のキャッシュを削除</button>
             </div>
+          </article>
+
+          <article class="card mb-card">
+            <header class="card-head"><h2>本部のメンバー</h2><span class="pill" id="mb-state"></span></header>
+            <p class="muted small">ここにのっている人だけが、本部コンソールで変更できます。足すと、ログイン用のアカウントもいっしょに作ります。外しても、アカウントは残りますが、何も変えられなくなります。</p>
+            <ul class="pr-list mb-list" id="mb-list"></ul>
+            <form id="mb-form" class="stack mb-form">
+              <h3>メンバーを足す</h3>
+              <label class="field"><span>名前（例：実行委員 山田）</span><input id="mb-name" maxlength="40" autocomplete="off" required></label>
+              <label class="field"><span>メールアドレス</span><input id="mb-email" type="email" maxlength="120" autocomplete="off" required></label>
+              <div class="field"><span>最初のパスワード（8文字以上。本人に伝えて、あとで変えてもらう）</span>
+                <div class="row"><input id="mb-pw" type="text" minlength="8" maxlength="64" autocomplete="new-password" spellcheck="false" required><button class="btn btn-ghost btn-sm" type="button" id="mb-gen">作る</button></div></div>
+              <div class="row"><button class="btn btn-primary" type="submit" id="mb-submit">足す</button></div>
+            </form>
+            <div class="mb-done" id="mb-done" hidden>
+              <p><b>足しました。</b>次の3つを、本人だけに伝えてください（LINE のグループなどには貼らない）。</p>
+              <pre id="mb-done-text"></pre>
+              <div class="row"><button class="btn btn-ghost btn-sm" type="button" id="mb-copy">コピー</button><button class="btn btn-ghost btn-sm" type="button" id="mb-done-close">閉じる</button></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <header class="card-head"><h2>自分のパスワード</h2><span class="pill" id="mypw-who"></span></header>
+            <form id="mypw-form" class="stack">
+              <p class="muted small">変えると、同じアカウントでログインしているほかの端末は、しばらくしてログインし直しになります。みんなで使っているアカウントなら、変える前に知らせてください。</p>
+              <label class="field"><span>いまのパスワード</span><input id="mypw-cur" type="password" autocomplete="current-password" required></label>
+              <label class="field"><span>新しいパスワード（8文字以上）</span><input id="mypw-new" type="password" autocomplete="new-password" minlength="8" required></label>
+              <label class="field"><span>新しいパスワード（もう一度）</span><input id="mypw-new2" type="password" autocomplete="new-password" minlength="8" required></label>
+              <div class="row row-wrap">
+                <button class="btn btn-primary" type="submit">変える</button>
+                <button class="btn btn-ghost" type="button" id="mypw-mail">決め直すメールを送る</button>
+              </div>
+            </form>
           </article>
 
         </div>
