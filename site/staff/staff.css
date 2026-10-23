@@ -443,7 +443,8 @@ body.is-printing { overflow: hidden; }
   body.is-printing { overflow: visible; }
   .pr-overlay, .pr-stage, .print-area { position: static !important; display: block !important; padding: 0 !important; margin: 0 !important; border: 0 !important; overflow: visible !important; background: none !important; backdrop-filter: none !important; box-shadow: none !important; }
   .print-area .sheet { zoom: 1; margin: 0; box-shadow: none; break-after: page; }
-  .print-area .sheet.pw { zoom: 1.4142; }
+  .print-area .sheet.pw { zoom: 1.4138; }
+  .print-area .sheet:last-child { break-after: auto; }
   .print-area .empty { display: none; }
 }
 
