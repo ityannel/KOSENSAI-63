@@ -1,5 +1,6 @@
 import { noticeOf, paintNotice } from "./notice.js";
 import { watchDevice } from "./signage-device.js";
+import { startKeepAwake, resumeKeepAwake } from "./keep-awake.js";
 import { needSetup, openSetup, offerSetup, wireSetupTriggers } from "./signage-setup.js";
 import { FESTIVAL, STAGE, EVENTS, CROWD, VENUES, MAP, SHOPS, HOMEROOMS, SIGNAGE, RALLY } from "./config.js";
 import { subscribePosts, loadPhoto } from "./posts.js";
@@ -27,7 +28,7 @@ const stage = $("#stage");
 let SW = 1920, SH = 1080;
 let devCfg = null, facing = 0;
 const fit = () => {
-  const o = params.get("o") || (devCfg?.orient === "portrait" || devCfg?.orient === "landscape" ? devCfg.orient : null), portrait = o ? o === "portrait" : true;
+  const o = params.get("o") || (devCfg?.orient === "portrait" || devCfg?.orient === "landscape" ? devCfg.orient : null), portrait = o ? o === "portrait" : false;
   SW = portrait ? 1080 : 1920; SH = portrait ? 1920 : 1080;
   document.body.classList.toggle("portrait", portrait);
   stage.style.setProperty("--sw", `${SW}px`); stage.style.setProperty("--sh", `${SH}px`);
@@ -41,24 +42,14 @@ const goFull = () => {
   if (fullOn()) return;
   try { (root.requestFullscreen ?? root.webkitRequestFullscreen)?.call(root)?.catch?.(() => {}); } catch {  }
 };
-let sleepLock = null;
-const keepAwake = () => {
-  try {
-    sleepLock ??= typeof NoSleep === "function" ? new NoSleep() : null;
-    const p = sleepLock?.enable?.();
-    p?.catch?.(() => { startBtn.hidden = false; });
-  } catch {  }
-  navigator.wakeLock?.request?.("screen").catch(() => {});
-};
 const startBtn = $("#sg-start");
 startBtn.hidden = standalone || fullOn();
-const onTap = () => { goFull(); keepAwake(); startBtn.hidden = true; };
+const onTap = () => { goFull(); resumeKeepAwake(); startBtn.hidden = true; };
 addEventListener("click", onTap);
 addEventListener("touchend", onTap, { passive: true });
 document.addEventListener("fullscreenchange", () => { fit(); });
 document.addEventListener("webkitfullscreenchange", () => { fit(); });
-document.addEventListener("visibilitychange", () => { if (!document.hidden) keepAwake(); });
-addEventListener("load", () => setTimeout(keepAwake, 500));
+startKeepAwake({ onBlocked: () => { startBtn.hidden = false; } });
 addEventListener("orientationchange", () => setTimeout(fit, 300));
 setTimeout(() => location.reload(), 3 * 3600 * 1000);
 
