@@ -46,9 +46,12 @@ function drawMine() {
   if (!list.length) return;
   box.innerHTML = `<h2 class="lh-sub">あなたの予約</h2><ul class="lh-mine-list">${list.map((r) => {
     const s = byId.get(r.slot), done = isDone(r), asking = state.confirm === r.id;
-    return `<li class="lh-mine-row${done ? " is-done" : ""}">
-      <div><b>${esc(dayLabel(s.day))} ${s.hm}–${s.endHm}</b><small>${esc(r.name)}さん・${r.seats.length}人${done ? "・おわりました" : ""}</small></div>
-      <button type="button" class="lh-x${asking ? " is-ask" : ""}" data-cancel="${esc(r.id)}">${done ? "消す" : asking ? "本当に取り消す" : "取り消す"}</button>
+    const act = asking
+      ? `<div class="lh-ask" role="alertdialog" aria-label="予約を取り消しますか"><p>この予約を取り消しますか？<small>席は、ほかの人が予約できるようになります。</small></p><div class="lh-ask-btns"><button type="button" class="lh-x-no" data-cancel-no>やめる</button><button type="button" class="lh-x-yes" data-cancel-yes="${esc(r.id)}">取り消す</button></div></div>`
+      : `<button type="button" class="lh-x" data-cancel="${esc(r.id)}">${done ? "消す" : "予約を取り消す"}</button>`;
+    return `<li class="lh-mine-row${done ? " is-done" : ""}${asking ? " is-asking" : ""}">
+      <div class="lh-mine-info"><b>${esc(dayLabel(s.day))} ${s.hm}–${s.endHm}</b><small>${esc(r.name)}さん・${r.seats.length}人${done ? "・おわりました" : ""}</small></div>
+      ${act}
     </li>`;
   }).join("")}</ul>`;
 }
@@ -70,11 +73,12 @@ function draw() {
   const mineSlots = new Set(state.mine.map((r) => r.slot));
   list.innerHTML = rows.map((s) => {
     const left = freeSeats(state.taken, s.id).length, had = mineSlots.has(s.id);
-    const label = had ? "予約ずみ" : left ? "予約する" : "満席";
+    const label = left ? "予約する" : "満席";
+    const mineRes = had ? state.mine.find((r) => r.slot === s.id) : null;
     return `<li class="lh-row${left ? "" : " is-full"}" data-slot="${s.id}">
       <div class="lh-time"><b>${s.hm}</b><span>–${s.endHm}</span></div>
       <div class="lh-info">${seatDots(left)}</div>
-      <button type="button" class="lh-go" data-slot="${s.id}" ${had || !left ? "disabled" : ""}>${label}</button>
+      ${mineRes ? `<span class="lh-had"><b><i aria-hidden="true">✓</i>予約ずみ</b><button type="button" class="lh-x lh-x-sm" data-ask="${esc(mineRes.id)}">取り消す</button></span>` : `<button type="button" class="lh-go" data-slot="${s.id}" ${left ? "" : "disabled"}>${label}</button>`}
     </li>`;
   }).join("");
   if (state.open) {
@@ -113,22 +117,33 @@ $("#lh-days").addEventListener("click", (e) => {
   state.day = b.dataset.day; state.open = null; closeForm(); drawTabs(); draw();
 });
 $("#lh-list").addEventListener("click", (e) => {
+  const ask = e.target.closest("[data-ask]");
+  if (ask) {
+    state.confirm = ask.dataset.ask;
+    drawMine();
+    $("#lh-mine").scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    $("#lh-mine .lh-x-no")?.focus({ preventScroll: true });
+    return;
+  }
   const b = e.target.closest(".lh-go");
   if (b && !b.disabled) openForm(b.dataset.slot);
 });
 $("#lh-cancel").addEventListener("click", () => { closeForm(); draw(); });
 
 $("#lh-mine").addEventListener("click", async (e) => {
-  const b = e.target.closest("[data-cancel]");
+  if (e.target.closest("[data-cancel-no]")) { state.confirm = null; drawMine(); return; }
+  const b = e.target.closest("[data-cancel], [data-cancel-yes]");
   if (!b || state.busy) return;
-  const r = state.mine.find((x) => x.id === b.dataset.cancel);
+  const r = state.mine.find((x) => x.id === (b.dataset.cancel ?? b.dataset.cancelYes));
   if (!r) return;
-  if (!isDone(r) && state.confirm !== r.id) {
+  if (!isDone(r) && b.dataset.cancelYes === undefined) {
     state.confirm = r.id; drawMine();
-    setTimeout(() => { if (state.confirm === r.id) { state.confirm = null; drawMine(); } }, 4000);
+    $("#lh-mine .lh-x-no")?.focus({ preventScroll: true });
     return;
   }
   state.confirm = null; state.busy = true;
+  b.disabled = true;
+  b.textContent = "取り消し中…";
   try {
     await store.cancel({ rid: r.id, slot: r.slot, seats: r.seats });
     message(isDone(r) ? "" : "予約を取り消しました。", "ok");
