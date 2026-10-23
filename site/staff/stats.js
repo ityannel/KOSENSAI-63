@@ -56,15 +56,19 @@ function deviceRow(name, d) {
 }
 
 export function renderStats(root, data) {
-  const { visits, devices, hours, presence, now } = data;
+  const { views = {}, visits, devices, hours, presence, now } = data;
   const today = dayKey(now);
-  const days = [...new Set([...Object.keys(visits), today])].sort();
+  const days = [...new Set([...Object.keys(visits), ...Object.keys(views), today])].sort();
+  const vSum = (d) => Object.values(views[d] ?? {}).reduce((a, b) => a + b, 0);
   const day = days.includes(data.day) ? data.day : today;
+  const VH = views[day] ?? {};
   const H = hours[day] ?? {}, hNow = hourOf(now);
   const total = Object.values(visits).reduce((a, b) => a + b, 0);
   const series = nowSeries(presence, now);
 
   const tiles = [
+    ["きょう開かれた回数", num(vSum(today)), "回（開くたびに1回）"],
+    ["これまで開かれた回数", num(days.reduce((a, d) => a + vSum(d), 0)), "回"],
     ["いま見ている", num(nowCount(presence, now)), "台（直近5分）"],
     ["この1時間", num(hours[today]?.[hNow] ?? 0), `台（${Number(hNow)}時台）`],
     ["きょう", num(visits[today] ?? 0), "台（1日1回まで）"],
@@ -73,6 +77,10 @@ export function renderStats(root, data) {
 
   const hourMax = Math.max(0, ...Object.values(H));
   const hourItems = Array.from({ length: 24 }, (_, h) => { const k = String(h).padStart(2, "0"), v = H[k] ?? 0; const cur = day === today && k === hNow; return { label: `${h}時`, tip: `${md(day)} ${h}時台`, value: v, now: cur, mark: v > 0 && (v === hourMax || cur) }; });
+  const vhMax = Math.max(0, ...Object.values(VH));
+  const viewHourItems = Array.from({ length: 24 }, (_, h) => { const k = String(h).padStart(2, "0"), v = VH[k] ?? 0; const cur = day === today && k === hNow; return { label: `${h}時`, tip: `${md(day)} ${h}時台`, value: v, now: cur, mark: v > 0 && (v === vhMax || cur) }; });
+  const vdMax = Math.max(0, ...days.map(vSum));
+  const viewDayItems = days.map((d) => { const v = vSum(d); return { label: md(d), tip: mdw(d), value: v, now: d === today, mark: v > 0 && (v === vdMax || d === today) }; });
   const dayMax = Math.max(0, ...days.map((d) => visits[d] ?? 0));
   const dayItems = days.map((d) => { const v = visits[d] ?? 0; return { label: md(d), tip: mdw(d), value: v, now: d === today, mark: v > 0 && (v === dayMax || d === today) }; });
   const devAll = { phone: 0, tablet: 0, pc: 0 };
@@ -86,6 +94,18 @@ export function renderStats(root, data) {
       ${table(["時間", "台"], series.map((p) => [`${hm(p.from)}〜${hm(p.from + WIN)}`, num(p.n)]).reverse())}
     </article>
     <div class="st-filter"><label for="stats-day">くわしく見る日</label><select id="stats-day">${[...days].reverse().map((d) => `<option value="${d}"${d === day ? " selected" : ""}>${mdw(d)}${d === today ? "・きょう" : ""}</option>`).join("")}</select></div>
+    <div class="grid-2">
+      <article class="card">
+        <header class="card-head"><h2>開かれた回数（時間ごと）</h2><small class="muted">${mdw(day)}・開くたびに1回（同じ端末でも、開き直すと数える）</small></header>
+        ${columns(viewHourItems, { unit: "回", every: 3, label: `${md(day)} の、1時間ごとの開かれた回数` })}
+        ${table(["時間", "回"], viewHourItems.map((x) => [x.label, num(x.value)]))}
+      </article>
+      <article class="card">
+        <header class="card-head"><h2>開かれた回数（日ごと）</h2><small class="muted">1日ごとの合計</small></header>
+        ${columns(viewDayItems, { unit: "回", every: Math.ceil(days.length / 12), label: "1日ごとの開かれた回数" })}
+        ${table(["日", "回"], [...viewDayItems].reverse().map((x) => [x.tip, num(x.value)]))}
+      </article>
+    </div>
     <div class="grid-2">
       <article class="card">
         <header class="card-head"><h2>時間ごと</h2><small class="muted">${mdw(day)}・1時間ごとの端末の数（同じ端末は、1時間に1回）</small></header>

@@ -167,6 +167,14 @@ await t("staff reads device counters", assertSucceeds(getDoc(doc(staff, "visit_d
 await t("anyone starts an hour counter at 1", assertSucceeds(setDoc(doc(nobody, "visit_hours/2026-10-24-13-1"), { n: 1 })));
 await t("hour counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "visit_hours/2026-10-24-13-1"), { n: increment(1) }, { merge: true })));
 await t("hour counter cannot jump", assertFails(setDoc(doc(nobody, "visit_hours/2026-10-24-13-1"), { n: 50 }, { merge: true })));
+await t("anyone starts a page-view counter at 1", assertSucceeds(setDoc(doc(nobody, "view_counts/2026-10-24-13-7"), { n: 1 })));
+await t("page-view counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "view_counts/2026-10-24-13-7"), { n: increment(1) }, { merge: true })));
+await t("page-view counter cannot jump", assertFails(setDoc(doc(nobody, "view_counts/2026-10-24-13-7"), { n: 99 }, { merge: true })));
+await t("page-view counter cannot start above 1", assertFails(setDoc(doc(nobody, "view_counts/2026-10-24-14-0"), { n: 5 })));
+await t("page-view counter id must be date-hour-shard", assertFails(setDoc(doc(nobody, "view_counts/2026-10-24-25-0"), { n: 1 })));
+await t("page-view counter has only n", assertFails(setDoc(doc(nobody, "view_counts/2026-10-24-15-0"), { n: 1, x: 1 })));
+await t("visitors cannot read page-view counters", assertFails(getDoc(doc(anon, "view_counts/2026-10-24-13-7"))));
+await t("staff reads page-view counters", assertSucceeds(getDoc(doc(staff, "view_counts/2026-10-24-13-7"))));
 await t("hour counter id must be date-hour-shard", assertFails(setDoc(doc(nobody, "visit_hours/2026-10-24-25-1"), { n: 1 })));
 await t("hour counter shard is 0-2", assertFails(setDoc(doc(nobody, "visit_hours/2026-10-24-13-7"), { n: 1 })));
 await t("visitors cannot read hour counters", assertFails(getDoc(doc(anon, "visit_hours/2026-10-24-13-1"))));

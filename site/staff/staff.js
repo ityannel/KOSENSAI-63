@@ -145,12 +145,12 @@ function drawStats() {
   if (!statsListening || $("#view-stats").hidden) return;
   const today = statDay(Date.now());
   watchHours(today);
-  renderStats($("#stats"), { visits: state.visits, devices: state.devices, hours: state.hours, presence: state.presence, day: state.statsDay ?? today, now: Date.now() });
+  renderStats($("#stats"), { views: state.views, visits: state.visits, devices: state.devices, hours: state.hours, presence: state.presence, day: state.statsDay ?? today, now: Date.now() });
 }
 
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
-const state = { schedule: {}, myLikes: new Set(), visits: {}, devices: {}, hours: {}, presence: {}, statsDay: null, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
+const state = { schedule: {}, myLikes: new Set(), views: {}, visits: {}, devices: {}, hours: {}, presence: {}, statsDay: null, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
@@ -169,6 +169,11 @@ function startListening() {
   listen(fs.collection(db, "visit_counts"), (snap) => {
     state.visits = {};
     snap.forEach((d) => { const day = d.id.slice(0, 10); state.visits[day] = (state.visits[day] ?? 0) + (d.data().n ?? 0); });
+    renderOverview(); drawStats();
+  });
+  listen(fs.collection(db, "view_counts"), (snap) => {
+    state.views = {};
+    snap.forEach((d) => { const day = d.id.slice(0, 10), h = d.id.slice(11, 13); (state.views[day] ??= {})[h] = (state.views[day][h] ?? 0) + (d.data().n ?? 0); });
     renderOverview(); drawStats();
   });
   listen(fs.collection(db, "secret_counts"), (snap) => {
@@ -244,6 +249,8 @@ function renderOverview() {
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
   const visitsToday = state.visits[today] ?? 0;
   const visitsAll = Object.values(state.visits).reduce((a, b) => a + b, 0);
+  const daySum = (h) => Object.values(h ?? {}).reduce((a, b) => a + b, 0);
+  const viewsToday = daySum(state.views[today]), viewsAll = Object.values(state.views).reduce((a, h) => a + daySum(h), 0);
   const dev = { phone: 0, tablet: 0, pc: 0 };
   for (const d of Object.values(state.devices ?? {})) for (const k of Object.keys(dev)) dev[k] += d[k] ?? 0;
   const devAll = dev.phone + dev.tablet + dev.pc;
@@ -255,6 +262,7 @@ function renderOverview() {
   const sc = state.secret ?? {};
   const secretSub = Object.entries(SECRET_NAMES).map(([k, n]) => `${n} ${sc[k] ?? 0}`).join("・");
   $("#kpis").innerHTML = [
+    kpi("きょう開かれた回数", viewsToday, `回（これまで ${viewsAll}回）`, "var(--teal)", "#stats"),
     kpi("きょうの閲覧者", visitsToday, "台（1日1回まで）", "var(--teal)", "#overview"),
     kpi("これまでの閲覧者", visitsAll, "のべ", "var(--sun)", "#overview"),
     kpi("スマホ／PC の割合", deviceShare, deviceSub, "var(--teal)", "#overview"),
