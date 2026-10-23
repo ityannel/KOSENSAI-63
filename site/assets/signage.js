@@ -27,11 +27,8 @@ const stage = $("#stage");
 let SW = 1920, SH = 1080;
 let devCfg = null, facing = 0;
 const fit = () => {
-  const o = params.get("o") || (devCfg?.orient === "portrait" || devCfg?.orient === "landscape" ? devCfg.orient : null), portrait = o ? o === "portrait" : innerHeight > innerWidth;
+  const o = params.get("o") || (devCfg?.orient === "portrait" || devCfg?.orient === "landscape" ? devCfg.orient : null), portrait = o ? o === "portrait" : true;
   SW = portrait ? 1080 : 1920; SH = portrait ? 1920 : 1080;
-  const aspect = innerWidth / Math.max(1, innerHeight);
-  if (!portrait && aspect < 1.7) SH = Math.min(1440, Math.round(SW / aspect));
-  else if (portrait && aspect > 0.6) SW = Math.min(1440, Math.round(SH * aspect));
   document.body.classList.toggle("portrait", portrait);
   stage.style.setProperty("--sw", `${SW}px`); stage.style.setProperty("--sh", `${SH}px`);
   stage.style.transform = `translate(-50%, -50%) scale(${Math.min(innerWidth / SW, innerHeight / SH)})`;
