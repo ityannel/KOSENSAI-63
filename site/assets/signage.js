@@ -29,13 +29,40 @@ let devCfg = null, facing = 0;
 const fit = () => {
   const o = params.get("o") || (devCfg?.orient === "portrait" || devCfg?.orient === "landscape" ? devCfg.orient : null), portrait = o ? o === "portrait" : innerHeight > innerWidth;
   SW = portrait ? 1080 : 1920; SH = portrait ? 1920 : 1080;
+  const aspect = innerWidth / Math.max(1, innerHeight);
+  if (!portrait && aspect < 1.7) SH = Math.min(1440, Math.round(SW / aspect));
+  else if (portrait && aspect > 0.6) SW = Math.min(1440, Math.round(SH * aspect));
   document.body.classList.toggle("portrait", portrait);
   stage.style.setProperty("--sw", `${SW}px`); stage.style.setProperty("--sh", `${SH}px`);
   stage.style.transform = `translate(-50%, -50%) scale(${Math.min(innerWidth / SW, innerHeight / SH)})`;
 };
 addEventListener("resize", fit); fit();
-addEventListener("click", () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); });
-navigator.wakeLock?.request?.("screen").catch(() => {});
+const standalone = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches || matchMedia("(display-mode: fullscreen)").matches;
+const root = document.documentElement;
+const fullOn = () => !!(document.fullscreenElement ?? document.webkitFullscreenElement);
+const goFull = () => {
+  if (fullOn()) return;
+  try { (root.requestFullscreen ?? root.webkitRequestFullscreen)?.call(root)?.catch?.(() => {}); } catch {  }
+};
+let sleepLock = null;
+const keepAwake = () => {
+  try {
+    sleepLock ??= typeof NoSleep === "function" ? new NoSleep() : null;
+    const p = sleepLock?.enable?.();
+    p?.catch?.(() => { startBtn.hidden = false; });
+  } catch {  }
+  navigator.wakeLock?.request?.("screen").catch(() => {});
+};
+const startBtn = $("#sg-start");
+startBtn.hidden = standalone || fullOn();
+const onTap = () => { goFull(); keepAwake(); startBtn.hidden = true; };
+addEventListener("click", onTap);
+addEventListener("touchend", onTap, { passive: true });
+document.addEventListener("fullscreenchange", () => { fit(); });
+document.addEventListener("webkitfullscreenchange", () => { fit(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) keepAwake(); });
+addEventListener("load", () => setTimeout(keepAwake, 500));
+addEventListener("orientationchange", () => setTimeout(fit, 300));
 setTimeout(() => location.reload(), 3 * 3600 * 1000);
 
 const tick = () => { $("#clock-t").textContent = hm(now()); $("#clock-d").textContent = dateEn(now()); };
@@ -897,7 +924,7 @@ function go(i) { const el = slide.firstElementChild; if (el) el.classList.add("o
 addEventListener("keydown", (e) => {
   if (e.key === " " || e.key === "ArrowRight") { dir = 1; go(idx + 1); }
   else if (e.key === "ArrowLeft") { dir = -1; go(idx - 1); }
-  else if (e.key === "f") document.documentElement.requestFullscreen?.().catch(() => {});
+  else if (e.key === "f") goFull();
 });
 setInterval(paintHurry, 15000);
 
