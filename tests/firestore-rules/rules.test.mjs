@@ -1,6 +1,6 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
 import { readFileSync } from "node:fs";
-import { doc, setDoc, getDoc, updateDoc, writeBatch, serverTimestamp, deleteDoc, increment } from "firebase/firestore";
+import { doc, collection, getDocs, setDoc, getDoc, updateDoc, writeBatch, serverTimestamp, deleteDoc, increment } from "firebase/firestore";
 
 const env = await initializeTestEnvironment({
   projectId: "enishi-test",
@@ -269,6 +269,50 @@ await t("another visitor cannot set a push endpoint", assertFails(updateDoc(doc(
 await t("staff cannot change the push endpoint", assertFails(updateDoc(doc(staff, "hq_chats/anon1"), { push: "https://fcm.googleapis.com/y" })));
 await t("visitor cannot delete a chat", assertFails(deleteDoc(doc(anon, "hq_chats/anon1"))));
 await t("staff can delete a chat", assertSucceeds(deleteDoc(doc(staff, "hq_chats/anon1"))));
+
+const anon2 = env.authenticatedContext("anon2", anonTok).firestore();
+const lhBook = (db, uid, k, slot, seats, extra = {}, seatExtra = {}) => {
+  const b = writeBatch(db);
+  b.set(doc(db, `lhako_res/${uid}-${k}`), { uid, slot, seats, name: "ゆうた", at: serverTimestamp(), ...extra });
+  for (const n of seats) b.set(doc(db, `lhako_seats/${slot}-${n}`), { res: `${uid}-${k}`, at: serverTimestamp(), ...seatExtra });
+  return b.commit();
+};
+const lhCancel = (db, uid, k, slot, seats) => {
+  const b = writeBatch(db);
+  b.delete(doc(db, `lhako_res/${uid}-${k}`));
+  for (const n of seats) b.delete(doc(db, `lhako_seats/${slot}-${n}`));
+  return b.commit();
+};
+await t("lhako: visitor books 2 seats", assertSucceeds(lhBook(anon, "anon1", 0, "d1-1400", [0, 1])));
+await t("lhako: anyone can read seats", assertSucceeds(getDoc(doc(nobody, "lhako_seats/d1-1400-0"))));
+await t("lhako: visitor reads own reservation", assertSucceeds(getDoc(doc(anon, "lhako_res/anon1-0"))));
+await t("lhako: visitor cannot read another reservation", assertFails(getDoc(doc(anon2, "lhako_res/anon1-0"))));
+await t("lhako: taken seat cannot be booked again", assertFails(lhBook(anon2, "anon2", 0, "d1-1400", [1, 2])));
+await t("lhako: last free seat can be booked", assertSucceeds(lhBook(anon2, "anon2", 0, "d1-1400", [2])));
+await t("lhako: slot outside hours rejected (d1 17:00)", assertFails(lhBook(anon, "anon1", 1, "d1-1700", [0])));
+await t("lhako: slot outside hours rejected (d2 09:40)", assertFails(lhBook(anon, "anon1", 1, "d2-0940", [0])));
+await t("lhako: slot off the 20-minute grid rejected", assertFails(lhBook(anon, "anon1", 1, "d1-1410", [0])));
+await t("lhako: d2 last slot 15:40 is allowed", assertSucceeds(lhBook(anon, "anon1", 1, "d2-1540", [0])));
+await t("lhako: reservation id must belong to the uid", assertFails((() => { const b = writeBatch(anon); b.set(doc(anon, "lhako_res/anon2-1"), { uid: "anon1", slot: "d1-1420", seats: [0], name: "x", at: serverTimestamp() }); b.set(doc(anon, "lhako_seats/d1-1420-0"), { res: "anon2-1", at: serverTimestamp() }); return b.commit(); })()));
+await t("lhako: fourth reservation id rejected", assertFails(lhBook(anon, "anon1", 3, "d1-1420", [0])));
+await t("lhako: duplicate seat numbers rejected", assertFails(lhBook(anon, "anon1", 2, "d1-1420", [0, 0])));
+await t("lhako: seat number out of range rejected", assertFails(lhBook(anon, "anon1", 2, "d1-1420", [3])));
+await t("lhako: empty name rejected", assertFails(lhBook(anon, "anon1", 2, "d1-1420", [0], { name: "" })));
+await t("lhako: name over 20 chars rejected", assertFails(lhBook(anon, "anon1", 2, "d1-1420", [0], { name: "あ".repeat(21) })));
+await t("lhako: reservation claiming a seat it did not take is rejected", assertFails((() => { const b = writeBatch(anon); b.set(doc(anon, "lhako_res/anon1-2"), { uid: "anon1", slot: "d1-1420", seats: [0, 1], name: "x", at: serverTimestamp() }); b.set(doc(anon, "lhako_seats/d1-1420-0"), { res: "anon1-2", at: serverTimestamp() }); return b.commit(); })()));
+await t("lhako: seat without a reservation is rejected", assertFails(setDoc(doc(anon, "lhako_seats/d1-1440-0"), { res: "anon1-2", at: serverTimestamp() })));
+await t("lhako: seat for someone else's reservation is rejected", assertFails(setDoc(doc(anon2, "lhako_seats/d1-1440-0"), { res: "anon1-0", at: serverTimestamp() })));
+await t("lhako: reservation cannot be edited", assertFails(updateDoc(doc(anon, "lhako_res/anon1-0"), { name: "べつ" })));
+await t("lhako: seat cannot be edited", assertFails(updateDoc(doc(anon, "lhako_seats/d1-1400-0"), { res: "anon2-0" })));
+await t("lhako: deleting only the reservation (keeping seats) is rejected", assertFails(deleteDoc(doc(anon, "lhako_res/anon1-0"))));
+await t("lhako: deleting only a seat (keeping the reservation) is rejected", assertFails(deleteDoc(doc(anon, "lhako_seats/d1-1400-0"))));
+await t("lhako: visitor cannot cancel another's reservation", assertFails(lhCancel(anon2, "anon1", 0, "d1-1400", [0, 1])));
+await t("lhako: visitor cancels own reservation with its seats", assertSucceeds(lhCancel(anon, "anon1", 0, "d1-1400", [0, 1])));
+await t("lhako: freed seat can be booked again", assertSucceeds(lhBook(anon2, "anon2", 1, "d1-1400", [0, 1])));
+await t("lhako: staff reads all reservations", assertSucceeds(getDocs(collection(staff, "lhako_res"))));
+await t("lhako: visitor cannot list all reservations", assertFails(getDocs(collection(anon, "lhako_res"))));
+await t("lhako: staff cancels a visitor's reservation", assertSucceeds(lhCancel(staff, "anon2", 1, "d1-1400", [0, 1])));
+await t("lhako: unsigned visitor cannot book", assertFails(lhBook(nobody, "anon3", 0, "d1-1440", [0])));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();

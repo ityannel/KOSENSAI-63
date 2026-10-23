@@ -289,6 +289,49 @@ service cloud.firestore {
       allow write: if isVisitor() && request.auth.uid == uid && data().keys().hasOnly(['last_post']) && data().last_post == request.time;
     }
 
+    function lhakoSlot(id) {
+      return id.matches('^(d1-(14|15|16)|d2-(1[0-5]))(00|20|40)$');
+    }
+    function lhakoSeatId(slot, n) {
+      return /databases/$(database)/documents/lhako_seats/$(slot + '-' + string(n));
+    }
+    function lhakoSeatMade(slot, seats, i) {
+      return seats.size() <= i || existsAfter(lhakoSeatId(slot, seats[i]));
+    }
+    function lhakoSeatGone(slot, seats, i) {
+      return seats.size() <= i || !existsAfter(lhakoSeatId(slot, seats[i]));
+    }
+    match /lhako_res/{rid} {
+      allow read: if isStaff() || (isVisitor() && resource.data.uid == request.auth.uid);
+      allow create: if isVisitor() && data().keys().hasOnly(['uid', 'slot', 'seats', 'name', 'at'])
+        && data().uid == request.auth.uid
+        && rid in [request.auth.uid + '-0', request.auth.uid + '-1', request.auth.uid + '-2']
+        && data().slot is string && lhakoSlot(data().slot)
+        && data().seats is list && data().seats.size() >= 1 && data().seats.size() <= 3
+        && data().seats.hasOnly([0, 1, 2]) && data().seats.toSet().size() == data().seats.size()
+        && data().name is string && data().name.size() >= 1 && data().name.size() <= 20
+        && data().at == request.time
+        && lhakoSeatMade(data().slot, data().seats, 0) && lhakoSeatMade(data().slot, data().seats, 1) && lhakoSeatMade(data().slot, data().seats, 2);
+      allow update: if false;
+      allow delete: if isStaff()
+        || (isVisitor() && resource.data.uid == request.auth.uid
+            && lhakoSeatGone(resource.data.slot, resource.data.seats, 0) && lhakoSeatGone(resource.data.slot, resource.data.seats, 1) && lhakoSeatGone(resource.data.slot, resource.data.seats, 2));
+    }
+    match /lhako_seats/{sid} {
+      allow read: if true;
+      allow create: if isVisitor() && sid.matches('^(d1-(14|15|16)|d2-(1[0-5]))(00|20|40)-[0-2]$')
+        && data().keys().hasOnly(['res', 'at'])
+        && data().res is string && data().at == request.time
+        && getAfter(/databases/$(database)/documents/lhako_res/$(data().res)).data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/lhako_res/$(data().res)).data.at == request.time
+        && getAfter(/databases/$(database)/documents/lhako_res/$(data().res)).data.slot == sid.split('-')[0] + '-' + sid.split('-')[1]
+        && int(sid.split('-')[2]) in getAfter(/databases/$(database)/documents/lhako_res/$(data().res)).data.seats;
+      allow update: if false;
+      allow delete: if isStaff()
+        || (isVisitor() && get(/databases/$(database)/documents/lhako_res/$(resource.data.res)).data.uid == request.auth.uid
+            && !existsAfter(/databases/$(database)/documents/lhako_res/$(resource.data.res)));
+    }
+
     match /quiz_control/{id} {
       allow read: if true;
       allow write: if isStaff();

@@ -367,15 +367,6 @@ function takeQrParams() {
   }
 }
 
-export function initVotePage(getNow = () => Date.now()) {
-  nowMs = getNow;
-  const s = new URLSearchParams(location.search).get("s");
-  const shop = s && voteShops().find((v) => v.id === s);
-  if (shop && voteState() === "open" && ELECTION.prefill) { location.replace(voteUrl(shop)); return; }
-  render();
-  changeFns.add(render);
-}
-
 export function renderVoteEntry(el) {
   if (!el) return;
   const phase = voteState();

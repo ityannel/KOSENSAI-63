@@ -862,3 +862,12 @@ h1, h2, h3 { font-weight: 400; }
   .rail::-webkit-scrollbar { display: none; }
   .nav { grid-auto-columns: minmax(66px, 1fr); width: max-content; min-width: 100%; }
 }
+
+.lhako-box { display: grid; gap: 8px; margin-top: 12px; }
+.lhako-row { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2, rgba(128, 128, 128, .08)); }
+.lhako-row.is-full { opacity: .85; }
+.lhako-slot { display: grid; gap: 2px; }
+.lhako-slot em { font-style: normal; font-weight: 700; }
+.lhako-res { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.lhako-res li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+@media (max-width: 640px) { .lhako-row { grid-template-columns: 1fr; } }
