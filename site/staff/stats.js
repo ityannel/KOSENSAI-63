@@ -1,5 +1,7 @@
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const WIN = 5 * 60000;
+const VIEWS_FROM = "2026-10-24";
+const unitOf = (day) => (day >= VIEWS_FROM ? "回" : "台");
 const JST = "Asia/Tokyo";
 const dayKey = (ms) => new Intl.DateTimeFormat("sv-SE", { timeZone: JST }).format(new Date(ms));
 const hourOf = (ms) => new Intl.DateTimeFormat("en-GB", { timeZone: JST, hour: "2-digit", hourCycle: "h23" }).format(new Date(ms)).slice(0, 2);
@@ -21,7 +23,7 @@ const table = (head, rows) => `<details class="st-table"><summary>表で見る</
 
 function columns(items, { unit, every = 1, label }) {
   const s = scale(Math.max(0, ...items.map((x) => x.value)));
-  const cols = items.map((x, i) => `<button type="button" class="st-col${x.now ? " is-now" : ""}" data-tip="${esc(x.tip)}" data-val="${esc(num(x.value))}${esc(unit)}" style="--h:${(x.value / s.top) * 100}%" aria-label="${esc(x.tip)} ${esc(num(x.value))}${esc(unit)}">
+  const cols = items.map((x, i) => `<button type="button" class="st-col${x.now ? " is-now" : ""}" data-tip="${esc(x.tip)}" data-val="${esc(num(x.value))}${esc(x.unit ?? unit)}" style="--h:${(x.value / s.top) * 100}%" aria-label="${esc(x.tip)} ${esc(num(x.value))}${esc(x.unit ?? unit)}">
       <i class="st-bar">${x.mark && x.value ? `<b>${esc(num(x.value))}</b>` : ""}</i><small${i % every ? " hidden" : ""}>${esc(x.label)}</small></button>`).join("");
   return `<div class="st-chart" role="group" aria-label="${esc(label)}">${yAxis(s)}<div class="st-plot">${grid(s)}<div class="st-cols" style="--n:${items.length}">${cols}</div></div></div>`;
 }
@@ -48,11 +50,11 @@ function nowChart(series) {
 }
 
 const DEVICES = [["phone", "スマホ"], ["pc", "パソコン"], ["tablet", "タブレット"]];
-function deviceRow(name, d) {
+function deviceRow(name, d, unit = "台") {
   const all = DEVICES.reduce((a, [k]) => a + (d?.[k] ?? 0), 0);
   if (!all) return `<div class="st-dev"><span class="st-dev-name">${esc(name)}</span><p class="muted st-none">まだ数えていません</p></div>`;
-  const segs = DEVICES.map(([k, ja]) => { const n = d[k] ?? 0, p = (n / all) * 100; return n ? `<button type="button" class="st-seg is-${k}" style="flex:${n}" data-tip="${esc(name)}・${ja}" data-val="${num(n)}台（${Math.round(p)}%）" aria-label="${esc(name)} ${ja} ${num(n)}台 ${Math.round(p)}%">${p >= 14 ? `<b>${Math.round(p)}%</b>` : ""}</button>` : ""; }).join("");
-  return `<div class="st-dev"><span class="st-dev-name">${esc(name)}</span><div class="st-stack">${segs}</div><span class="st-dev-sum">${num(all)}台</span></div>`;
+  const segs = DEVICES.map(([k, ja]) => { const n = d[k] ?? 0, p = (n / all) * 100; return n ? `<button type="button" class="st-seg is-${k}" style="flex:${n}" data-tip="${esc(name)}・${ja}" data-val="${num(n)}${unit}（${Math.round(p)}%）" aria-label="${esc(name)} ${ja} ${num(n)}台 ${Math.round(p)}%">${p >= 14 ? `<b>${Math.round(p)}%</b>` : ""}</button>` : ""; }).join("");
+  return `<div class="st-dev"><span class="st-dev-name">${esc(name)}</span><div class="st-stack">${segs}</div><span class="st-dev-sum">${num(all)}${unit}</span></div>`;
 }
 
 export function renderStats(root, data) {
@@ -67,14 +69,14 @@ export function renderStats(root, data) {
   const tiles = [
     ["いま見ている", num(nowCount(presence, now)), "台（直近5分）"],
     ["この1時間", num(hours[today]?.[hNow] ?? 0), `台（${Number(hNow)}時台）`],
-    ["きょう", num(visits[today] ?? 0), "台（1日1回まで）"],
-    ["これまで", num(total), "台（のべ）"],
+    ["きょう", num(visits[today] ?? 0), today >= VIEWS_FROM ? "回（閲覧数）" : "台（1日1回まで）"],
+    ["これまで", num(total), "（のべ。10/24 からは閲覧数）"],
   ].map(([l, v, s]) => `<div class="kpi is-static"><small>${l}</small><b>${v}</b><span>${s}</span></div>`).join("");
 
   const hourMax = Math.max(0, ...Object.values(H));
   const hourItems = Array.from({ length: 24 }, (_, h) => { const k = String(h).padStart(2, "0"), v = H[k] ?? 0; const cur = day === today && k === hNow; return { label: `${h}時`, tip: `${md(day)} ${h}時台`, value: v, now: cur, mark: v > 0 && (v === hourMax || cur) }; });
   const dayMax = Math.max(0, ...days.map((d) => visits[d] ?? 0));
-  const dayItems = days.map((d) => { const v = visits[d] ?? 0; return { label: md(d), tip: mdw(d), value: v, now: d === today, mark: v > 0 && (v === dayMax || d === today) }; });
+  const dayItems = days.map((d) => { const v = visits[d] ?? 0; return { label: md(d), tip: mdw(d), unit: unitOf(d), value: v, now: d === today, mark: v > 0 && (v === dayMax || d === today) }; });
   const devAll = { phone: 0, tablet: 0, pc: 0 };
   for (const d of Object.values(devices)) for (const k of Object.keys(devAll)) devAll[k] += d[k] ?? 0;
 
@@ -95,16 +97,16 @@ export function renderStats(root, data) {
       <article class="card">
         <header class="card-head"><h2>端末</h2><small class="muted">スマホ・パソコン・タブレットの割合</small></header>
         <ul class="st-legend">${DEVICES.map(([k, ja]) => `<li><i class="is-${k}"></i>${ja}</li>`).join("")}</ul>
-        ${deviceRow(md(day), devices[day])}
-        ${deviceRow("これまで", devAll)}
+        ${deviceRow(md(day), devices[day], unitOf(day))}
+        ${deviceRow("これまで", devAll, "")}
         ${table(["", ...DEVICES.map(([, ja]) => ja)], [[md(day), ...DEVICES.map(([k]) => num(devices[day]?.[k] ?? 0))], ["これまで", ...DEVICES.map(([k]) => num(devAll[k]))]])}
-        <p class="muted st-note">端末の種類は、10/7 から数えています。それより前の閲覧は、入っていません。</p>
+        <p class="muted st-note">端末の種類は、10/7 から数えています。それより前の閲覧は、入っていません。10/24 からは、開くたびに1回の閲覧数の内訳です。</p>
       </article>
     </div>
     <article class="card">
-      <header class="card-head"><h2>日ごと</h2><small class="muted">1日ごとの端末の数（同じ端末は、1日に1回）</small></header>
-      ${columns(dayItems, { unit: "台", every: Math.ceil(days.length / 12), label: "1日ごとの端末の数" })}
-      ${table(["日", "台"], [...dayItems].reverse().map((x) => [x.tip, num(x.value)]))}
+      <header class="card-head"><h2>日ごと</h2><small class="muted">10/23 までは端末の数（同じ端末は、1日に1回）。10/24 からは閲覧数（ページを開くたびに1回）</small></header>
+      ${columns(dayItems, { unit: "台", every: Math.ceil(days.length / 12), label: "1日ごとの端末の数・閲覧数" })}
+      ${table(["日", "数"], [...dayItems].reverse().map((x) => [x.tip, `${num(x.value)}${x.unit}`]))}
     </article>`;
   if (root._html === html) return;
   if (root.contains(document.activeElement) && document.activeElement.tagName === "SELECT") return;

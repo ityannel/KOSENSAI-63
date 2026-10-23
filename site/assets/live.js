@@ -237,10 +237,10 @@ export async function countSecret(key) {
 
 export function countVisit({ isOff = () => false } = {}) {
   if (params.has("demo") || params.has("preview") || ["localhost", "127.0.0.1"].includes(location.hostname)) return;
-  const KEY = "kosen63-beat", DAY_KEY = "kosen63-visit", WIN = 5 * 60000;
+  const KEY = "kosen63-beat", DAY_KEY = "kosen63-visit", WIN = 5 * 60000, VIEWS_FROM = "2026-10-24";
   try { localStorage.setItem("kosen63-t", "1"); localStorage.removeItem("kosen63-t"); } catch { return; }
   const inc = { n: fs.increment(1) }, merge = { merge: true }, pick = (n) => Math.floor(Math.random() * n);
-  let busy = false;
+  let busy = false, viewed = false;
   const beat = async () => {
     if (busy || document.hidden) return;
     busy = true;
@@ -252,21 +252,23 @@ export function countVisit({ isOff = () => false } = {}) {
       let last = {};
       try { last = JSON.parse(localStorage.getItem(KEY) ?? "{}") ?? {}; } catch {  }
       const done = (patch) => { Object.assign(last, patch); localStorage.setItem(KEY, JSON.stringify(last)); };
-      const needDay = localStorage.getItem(DAY_KEY) !== day;
-      const needDevice = needDay || last.dev === "";
+      const views = day >= VIEWS_FROM;
+      const needView = views && !viewed;
+      const needDay = views ? needView : localStorage.getItem(DAY_KEY) !== day;
+      const needDevice = views ? needView : needDay || last.dev === "";
       const needHour = last.hour !== hour, needNow = last.win !== win && !isOff();
       if (!needDay && !needDevice && !needHour && !needNow) return;
       const db = await getDb();
       if (needDay) {
         await fs.setDoc(fs.doc(db, "visit_counts", `${day}-${pick(10)}`), inc, merge);
-        localStorage.setItem(DAY_KEY, day);
-        done({ dev: "" });
+        if (views) viewed = true;
+        else { localStorage.setItem(DAY_KEY, day); done({ dev: "" }); }
       }
       if (needDevice) {
         const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1 && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
         const device = !touch ? "pc" : Math.min(screen.width, screen.height) >= 600 ? "tablet" : "phone";
         await fs.setDoc(fs.doc(db, "visit_devices", `${day}-${device}-${pick(10)}`), inc, merge);
-        done({ dev: day });
+        if (!views) done({ dev: day });
       }
       if (needHour) { await fs.setDoc(fs.doc(db, "visit_hours", `${hour}-${pick(3)}`), inc, merge); done({ hour }); }
       if (needNow) { await fs.setDoc(fs.doc(db, "presence", win), inc, merge); done({ win }); }
