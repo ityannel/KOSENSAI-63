@@ -33,7 +33,11 @@ function message(text, kind = "info") {
 }
 
 $("#lh-acts").innerHTML = LHAKO.acts.map((a) => `<li>${esc(a)}</li>`).join("");
-$("#lhako-lead").textContent = `${LHAKO.place}　1回${LHAKO.minutes}分・1枠${LHAKO.seats}人まで`;
+$("#lhako-lead").textContent = [
+  "函館随一のXRラボ、L'HAKOへ、ようこそいらっしゃい！函館の人は、Tokyoまで行かないと触れやしない、あの「Apple Vision Pro」が体験できたり、あとは、トレッドミルっていって、VR空間でいくら走っても落ちないような奴が体験できたり、振動を感じるスーツと手袋をつけて没入感マックス！",
+  "四階にあるので、多少来るのが大変ですが、何とか、予約して、ぜひ来てね！",
+  `ひとわくは${LHAKO.minutes}分で、${LHAKO.seats}人までです！`,
+].join("\n");
 
 function drawTabs() {
   $("#lh-days").innerHTML = LHAKO.days.map((d) => `<button type="button" role="tab" class="lh-tab" data-day="${d.id}" aria-selected="${d.id === state.day}">${esc(d.label)}<small>${d.start}〜${d.end}</small></button>`).join("");
