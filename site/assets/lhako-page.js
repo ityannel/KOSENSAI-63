@@ -1,5 +1,4 @@
 import { LHAKO } from "./config.js";
-import { pullDown } from "./pulldown.js";
 import { lhakoSlots, freeSeats, freeResId, firestoreStore, demoStore, MAX_RES } from "./lhako.js";
 
 const params = new URLSearchParams(location.search);
@@ -33,7 +32,8 @@ function message(text, kind = "info") {
   if (text) msgTimer = setTimeout(() => { m.textContent = ""; }, 7000);
 }
 
-$("#lhako-lead").innerHTML = `${esc(LHAKO.place)}で、${LHAKO.acts.map((a) => `<b>${esc(a)}</b>`).join("・")}が体験できます。<br>1回${LHAKO.minutes}分、1回に${LHAKO.seats}人まで。時間を選んで、予約してください。`;
+$("#lh-acts").innerHTML = LHAKO.acts.map((a) => `<li>${esc(a)}</li>`).join("");
+$("#lhako-lead").textContent = `${LHAKO.place}　1回${LHAKO.minutes}分・1枠${LHAKO.seats}人まで`;
 
 function drawTabs() {
   $("#lh-days").innerHTML = LHAKO.days.map((d) => `<button type="button" role="tab" class="lh-tab" data-day="${d.id}" aria-selected="${d.id === state.day}">${esc(d.label)}<small>${d.start}〜${d.end}</small></button>`).join("");
@@ -54,7 +54,7 @@ function drawMine() {
 }
 
 function seatDots(n) {
-  return `<span class="lh-seats" role="img" aria-label="あと${n}人">${[...Array(LHAKO.seats).keys()].map((i) => `<i class="${i < n ? "is-free" : ""}"></i>`).join("")}<em>${n ? `あと${n}人` : "満席"}</em></span>`;
+  return `<span class="lh-seats" role="img" aria-label="残り${n}席">${[...Array(LHAKO.seats).keys()].map((i) => `<i class="${i < n ? "is-free" : ""}"></i>`).join("")}${n ? `<em data-left="${n}">残り${n}席</em>` : ""}</span>`;
 }
 
 function draw() {
@@ -166,7 +166,7 @@ $("#lh-form").addEventListener("submit", async (e) => {
     saveName(name);
     closeForm();
     message(`予約しました！ ${dayLabel(s.day)} ${s.hm} に、${LHAKO.place}へ来てください。`, "ok");
-    $("#lh-msg").scrollIntoView({ block: "center", behavior: "smooth" });
+    $("#lh-mine").scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   } catch (err) {
     console.warn("[lhako]", err?.code ?? err);
     if (err?.code === "limit") message(`予約は${MAX_RES}件までです。いらない予約を取り消してください。`, "warn");
@@ -189,20 +189,3 @@ store.watch({
 setInterval(draw, 30000);
 drawTabs();
 draw();
-
-const sheet = document.querySelector(".mido-full");
-const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const fromSite = document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1;
-let gone = false;
-const go = () => { if (gone) return; gone = true; fromSite ? history.back() : location.assign("./"); };
-function close(e) {
-  e?.preventDefault();
-  if (calm) return go();
-  sheet.classList.add("is-closing");
-  sheet.addEventListener("animationend", go, { once: true });
-  setTimeout(go, 600);
-}
-pullDown(sheet, go, { page: true });
-document.querySelector(".mido-close").addEventListener("click", close);
-addEventListener("keydown", (e) => { if (e.key === "Escape" && !e.target.closest?.("input")) close(e); });
-addEventListener("pageshow", () => sheet.classList.remove("is-closing"));

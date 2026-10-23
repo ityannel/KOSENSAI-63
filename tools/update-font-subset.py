@@ -47,7 +47,7 @@ titles += ["思い出", "Enistagram で見る"]  # 終了後の「思い出」�
 chars = "".join(dict.fromkeys(FIXED + "".join(titles) + "".join(venues) + SIDE_FIXED + "".join(a + b for a, b in side_words)))
 url = "https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap"  # 字をしぼらない：字が足りないと、その字だけ別の書体になって崩れて見えるため（Google が字ごとに分けて配信する）
 
-for page in ["index.html", "mido.html", "rally.html", "lhako.html"]:  # map.html は字をしぼらずに読みこむ（場所の名前・投稿はどんな字も出るので）
+for page in ["index.html", "mido.html", "rally.html"]:  # map.html は字をしぼらずに読みこむ（場所の名前・投稿はどんな字も出るので）
     path = SITE / page
     html = path.read_text(encoding="utf-8")
     html, n = re.subn(r'href="https://fonts\.googleapis\.com/css2\?family=WDXL\+Lubrifont\+JP\+N[^"]*"',
@@ -81,7 +81,7 @@ zen = "https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900
 # 字をしぼらない（Google が使う字の分だけ配信する）：しぼると、足りない字だけ別の書体になって崩れて見えるため。
 # index.html・mido.html は、とくに出演団体の紹介など、どんな字も出る
 zen_all = "https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&display=swap"
-for page in ["index.html", "mido.html", "rally.html", "lhako.html"]:
+for page in ["index.html", "mido.html", "rally.html"]:
     path = SITE / page
     html = path.read_text(encoding="utf-8")
     html, n = re.subn(r'href="https://fonts\.googleapis\.com/css2\?family=Zen\+Kaku\+Gothic\+New[^"]*"', 'href="' + zen_all.replace("&", "&amp;") + '"', html)

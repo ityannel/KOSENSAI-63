@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <title>L'HAKO 予約｜第63回 函館高専祭「縁」</title>
   <meta name="description" content="第63回 函館高専祭「縁」の L'HAKO（VR研究室）の体験予約。Apple Vision Pro・Treadmill・Haptic Suits。">
   <meta property="og:title" content="L'HAKO 予約｜第63回 函館高専祭「縁」">
@@ -18,47 +21,35 @@
   <meta name="twitter:title" content="L'HAKO 予約｜第63回 函館高専祭「縁」">
   <meta name="twitter:description" content="第63回 函館高専祭「縁」の L'HAKO（VR研究室）の体験予約。Apple Vision Pro・Treadmill・Haptic Suits。">
   <meta name="twitter:image" content="https://hakodate-kosensai.pages.dev/assets/img/ogp.jpg?v=2">
-  <meta name="theme-color" content="#d97638">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="assets/img/icon-180.png">
-  <meta name="apple-mobile-web-app-title" content="高専祭">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;700&amp;display=swap&amp;text=Enistagram" rel="stylesheet" media="print" onload="this.media='all'">
-  <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/lhako.css">
-  <script src="assets/theme.js"></script></head>
-<body class="mido-page rally-page lhako-page" data-page="lhako">
-  <main class="mido mido-full rally-full" id="rally" aria-labelledby="lhako-title">
-    <div class="mido-in">
-      <a class="mido-close" href="./" aria-label="とじる"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></a>
-      <h1 class="mido-title" id="lhako-title">L'HAKO 予約</h1>
-      <p class="rally-lead" id="lhako-lead"></p>
-      <p class="rally-msg lh-msg" id="lh-msg" role="status"></p>
-      <section class="lh-mine" id="lh-mine" hidden></section>
-      <div class="lh-tabs" id="lh-days" role="tablist" aria-label="日にち"></div>
-      <ul class="lh-list" id="lh-list"></ul>
-      <form class="lh-form" id="lh-form" hidden>
-        <h2 class="lh-form-title" id="lh-form-title"></h2>
-        <label class="lh-field"><span>お名前（ニックネームでOK）</span><input id="lh-name" name="name" maxlength="20" autocomplete="off" required></label>
-        <fieldset class="lh-field"><legend>人数</legend><div class="lh-count" id="lh-count"></div></fieldset>
-        <div class="lh-actions"><button type="button" class="lh-btn lh-btn-ghost" id="lh-cancel">やめる</button><button type="submit" class="lh-btn" id="lh-submit">予約する</button></div>
-      </form>
-    </div>
+</head>
+<body data-page="lhako">
+  <main class="lh" id="lh">
+    <header class="lh-hero">
+      <p class="lh-eyebrow">第63回 函館高専祭「縁」</p>
+      <h1 class="lh-title" id="lhako-title">L'HAKO</h1>
+      <p class="lh-tagline">VR研究室の体験を、予約しよう。</p>
+      <ul class="lh-acts" id="lh-acts"></ul>
+      <p class="lh-lead" id="lhako-lead"></p>
+    </header>
+
+    <p class="lh-msg" id="lh-msg" role="status"></p>
+    <section class="lh-mine" id="lh-mine" hidden></section>
+
+    <div class="lh-tabs" id="lh-days" role="tablist" aria-label="日にち"></div>
+    <ul class="lh-list" id="lh-list"></ul>
+
+    <form class="lh-form" id="lh-form" hidden>
+      <h2 class="lh-form-title" id="lh-form-title"></h2>
+      <label class="lh-field"><span>お名前（ニックネームでOK）</span><input id="lh-name" name="name" maxlength="20" autocomplete="off" required></label>
+      <fieldset class="lh-field"><legend>人数</legend><div class="lh-count" id="lh-count"></div></fieldset>
+      <div class="lh-actions"><button type="button" class="lh-btn lh-btn-ghost" id="lh-cancel">やめる</button><button type="submit" class="lh-btn" id="lh-submit">予約する</button></div>
+    </form>
+
+    <footer class="lh-foot"><a href="./">函館高専祭 公式サイト</a></footer>
   </main>
 
-  <nav class="site-tabs" id="site-tabs" aria-label="切りかえ">
-    <a href="./" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg>サイト</a>
-    <a href="map.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20"/></svg>地図</a>
-    <a href="map.html?tab=feed"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 5.2A9 9 0 1 0 16.6 18.8L9.5 12z"/><circle cx="9" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="13.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="17.3" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="21.3" cy="12" r="1.35" fill="currentColor" stroke="none"/></svg><span class="e-word">Enistagram</span></a>
-  </nav>
-
   <script type="module" src="assets/lhako-page.js"></script>
-  <script type="module" src="assets/side.js"></script>
-  <script type="module" src="assets/offline.js"></script>
-  <script type="module" src="assets/test-loader.js"></script></body>
+</body>
 </html>
