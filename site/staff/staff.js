@@ -6,6 +6,7 @@ import { initAiAdmin } from "./ai-admin.js";
 import { initHq } from "./hq-admin.js";
 import { initSgAdmin } from "./sg-admin.js";
 import { initMembers } from "./members.js";
+import { catalog as rpCatalog, planRoute, routeSheetHtml, overviewSheetsHtml, overviewSvg, whereOf as rpWhere, GROUPS as RP_GROUPS } from "./route-print.js";
 import { renderStats, wireStats, dayKey as statDay, WIN as STAT_WIN } from "./stats.js";
 
 const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
@@ -91,7 +92,7 @@ async function write(label, fn) {
 }
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
-const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "hq", "ai", "signage", "shops", "schedule", "rally", "print", "settings"];
+const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "hq", "ai", "signage", "shops", "schedule", "rally", "route", "print", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
@@ -102,6 +103,7 @@ function route() {
   document.title = `${view.dataset.title}｜本部コンソール`;
   scrollTo({ top: 0 });
   if (name === "stats") openStats();
+  if (name === "route") rpOpen();
 }
 addEventListener("hashchange", route);
 
@@ -1502,6 +1504,74 @@ $("#pr-make").addEventListener("click", async () => {
     toast(`作れませんでした（${err.message}）`, true);
   } finally {
     $("#pr-make").disabled = false;
+  }
+});
+const rp = { floor: "1F", to: null, list: null };
+async function rpOpen() {
+  if (rp.list) return;
+  try { rp.list = (await rpCatalog()).list; } catch (err) { console.warn(err); $("#rp-screen").innerHTML = '<p class="muted small">地図を読み込めませんでした。開き直してください。</p>'; return; }
+  const hq = rp.list.find((p) => p.id === "hq");
+  const starts = [hq, ...rp.list.filter((p) => p.kind === "spot"), ...rp.list.filter((p) => p.no && p !== hq)].filter(Boolean);
+  $("#rp-from").innerHTML = starts.map((p) => `<option value="${esc(p.id)}">${p.no ? `${p.no} ` : ""}${esc(p.name)}${p === hq ? "（インフォメーション）" : ""}</option>`).join("");
+  rpFloors();
+  rpList();
+  rpMap();
+}
+function rpFloors() {
+  $("#rp-floors").innerHTML = ["1F", "2F", "3F", "4F"].map((f) => `<label><input type="radio" name="rp-floor" value="${f}"${f === rp.floor ? " checked" : ""}><span>${parseInt(f)}階</span></label>`).join("");
+}
+async function rpMap() {
+  $("#rp-screen").innerHTML = await overviewSvg(rp.floor, rp.to);
+}
+function rpList() {
+  const q = kana($("#rp-q").value);
+  const items = rp.list.filter((p) => (p.no || p.virtual || p.group === "出入口・屋外") && (!q || kana(`${p.no ?? ""} ${p.name} ${p.sub ?? ""}`).includes(q)));
+  $("#rp-pick").innerHTML = RP_GROUPS.map((g) => {
+    const xs = items.filter((p) => p.group === g).sort((x, y) => (x.no ?? 1e4) - (y.no ?? 1e4));
+    return xs.length ? `<p class="rp-pick-h">${esc(g)}</p>${xs.map((p) => `<button type="button" data-rp-pick="${esc(p.id)}" aria-pressed="${p.id === rp.to}">${p.no ? `<i>${p.no}</i>` : ""}<b>${esc(p.name)}</b><small>${esc(p.virtual ? "出発の場所から、いちばん近いところ" : [p.group === "模擬店" ? p.sub : "", rpWhere(p)].filter(Boolean).join("・"))}</small></button>`).join("")}` : "";
+  }).join("") || '<p class="muted small">見つかりません</p>';
+}
+function rpPick(id) {
+  const p = rp.list.find((x) => x.id === id);
+  if (!p) return;
+  rp.to = id;
+  if (p.floor && p.floor !== rp.floor) { rp.floor = p.floor; rpFloors(); }
+  $("#rp-chosen").innerHTML = `行き先：<b>${p.no ? `${p.no} ` : ""}${esc(p.name)}</b>${p.virtual ? "" : `（${esc(rpWhere(p))}）`}`;
+  rpList();
+  rpMap();
+}
+$("#rp-floors").addEventListener("change", (e) => { if (e.target.name === "rp-floor") { rp.floor = e.target.value; rpMap(); } });
+$("#rp-q").addEventListener("input", rpList);
+$("#rp-pick").addEventListener("click", (e) => { const b = e.target.closest("[data-rp-pick]"); if (b) rpPick(b.dataset.rpPick); });
+$("#rp-screen").addEventListener("click", (e) => { const b = e.target.closest("[data-rp-pick]"); if (b) rpPick(b.dataset.rpPick); });
+$("#rp-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!rp.to) return toast("行き先を選んでください", true);
+  const noStairs = $("#rp-nostairs").checked;
+  $("#rp-make").disabled = true;
+  try {
+    const plan = await planRoute($("#rp-from").value, rp.to, { noStairs });
+    if (!plan) return toast(noStairs ? "階段を使わない道が見つかりませんでした" : "道が見つかりませんでした（入れない場所かもしれません）", true);
+    if (plan.from.id === plan.to.id) return toast("出発と行き先が同じです", true);
+    current = { kindLabel: "道案内（白黒）", title: `${plan.to.name}への行き方`, sub: `出発：${plan.from.name}・歩いて約${plan.route.minutes}分`, set: false, build: () => routeSheetHtml(plan, { noStairs }) };
+    await showPrint();
+  } catch (err) {
+    console.warn(err);
+    toast(`作れませんでした（${err.message}）`, true);
+  } finally {
+    $("#rp-make").disabled = false;
+  }
+});
+$("#rp-all").addEventListener("click", async () => {
+  $("#rp-all").disabled = true;
+  try {
+    current = { kindLabel: "全体マップ（白黒）", title: "校内マップ（階ごと）", sub: "A4 横", set: false, build: overviewSheetsHtml };
+    await showPrint();
+  } catch (err) {
+    console.warn(err);
+    toast(`作れませんでした（${err.message}）`, true);
+  } finally {
+    $("#rp-all").disabled = false;
   }
 });
 function loadPrintFont(text) {
