@@ -86,7 +86,7 @@ python tools/make-here-qr.py
 
 ## L'HAKO の予約（lhako.html）
 
-トップなどからはリンクしていない、独立したページ（URL を直接配る）。VR研究室 L'HAKO（L401）の体験を、時間の枠で予約する。体験（Vision Pro・Treadmill・Haptic Suits）では分けない。
+トップなどからはリンクしていない、独立したページ（URL を直接配る）。サイトの CSS・書体は使わず、`assets/lhako.css` だけで、Apple 風のデザイン（書体は Google Fonts の LINE Seed JP）。VR研究室 L'HAKO（L401）の体験を、時間の枠で予約する。体験（Vision Pro・Treadmill・Haptic Suits）では分けない。
 
 - 日にちと時間・1枠の長さ・定員は `config.js` の `LHAKO`（1日目 14:00〜17:00、2日目 10:00〜16:00、20分、3人）
 - 来場者は匿名ログインで、1枠に1〜3人まで予約できる。1台で、予約は3件まで。名前（ニックネーム）だけを書く
