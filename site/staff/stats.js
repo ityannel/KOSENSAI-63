@@ -104,7 +104,7 @@ export function renderStats(root, data) {
       </article>
     </div>
     <article class="card">
-      <header class="card-head"><h2>日ごと</h2><small class="muted">10/23 までは端末の数（同じ端末は、1日に1回）。10/24 からは閲覧数（ページを開くたびに1回）</small></header>
+      <header class="card-head"><h2>日ごと</h2><small class="muted">10/23 までは端末の数（同じ端末は、1日に1回）。10/24 からは閲覧数（ページを開くたびに1回。端末から1時間ごとにまとめて受け取る）</small></header>
       ${columns(dayItems, { unit: "台", every: Math.ceil(days.length / 12), label: "1日ごとの端末の数・閲覧数" })}
       ${table(["日", "数"], [...dayItems].reverse().map((x) => [x.tip, `${num(x.value)}${x.unit}`]))}
     </article>`;

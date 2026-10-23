@@ -237,9 +237,50 @@ export async function countSecret(key) {
 
 export function countVisit({ isOff = () => false } = {}) {
   if (params.has("demo") || params.has("preview") || ["localhost", "127.0.0.1"].includes(location.hostname)) return;
-  const KEY = "kosen63-beat", DAY_KEY = "kosen63-visit", WIN = 5 * 60000, VIEWS_FROM = "2026-10-24";
+  const KEY = "kosen63-beat", DAY_KEY = "kosen63-visit", VIEWS_KEY = "kosen63-views", WIN = 5 * 60000, VIEWS_FROM = "2026-10-24", SEND_EVERY = 60 * 60000, SEND_MAX = 500;
   try { localStorage.setItem("kosen63-t", "1"); localStorage.removeItem("kosen63-t"); } catch { return; }
   const inc = { n: fs.increment(1) }, merge = { merge: true }, pick = (n) => Math.floor(Math.random() * n);
+  const readViews = () => { try { const v = JSON.parse(localStorage.getItem(VIEWS_KEY) ?? "{}") ?? {}; return { sent: Number(v.sent) || 0, p: v.p && typeof v.p === "object" ? v.p : {} }; } catch { return { sent: 0, p: {} }; } };
+  const saveViews = (v) => { try { localStorage.setItem(VIEWS_KEY, JSON.stringify(v)); } catch {  } };
+  const deviceOf = () => {
+    const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1 && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    return !touch ? "pc" : Math.min(screen.width, screen.height) >= 600 ? "tablet" : "phone";
+  };
+  const pending = (v) => Object.values(v.p).reduce((a, d) => a + (d.all ?? 0), 0);
+  const addView = (day) => {
+    const v = readViews(), d = (v.p[day] ??= { all: 0, phone: 0, tablet: 0, pc: 0 });
+    d.all += 1; d[deviceOf()] += 1;
+    saveViews(v);
+  };
+  let sending = false;
+  const sendViews = async (force = false) => {
+    const v0 = readViews();
+    if (sending || !pending(v0) || (!force && Date.now() - v0.sent < SEND_EVERY)) return;
+    sending = true;
+    try {
+      const db = await getDb();
+      for (const day of Object.keys(v0.p)) {
+        for (const key of ["phone", "tablet", "pc", "all"]) {
+          for (;;) {
+            const v = readViews(), d = v.p[day], n = Math.min(d?.[key] ?? 0, SEND_MAX);
+            if (!n) break;
+            const ref = key === "all" ? fs.doc(db, "visit_counts", `${day}-${pick(10)}`) : fs.doc(db, "visit_devices", `${day}-${key}-${pick(10)}`);
+            await fs.setDoc(ref, { n: fs.increment(n) }, merge);
+            const w = readViews();
+            if (w.p[day]) { w.p[day][key] -= n; if (!w.p[day].all && !w.p[day].phone && !w.p[day].tablet && !w.p[day].pc) delete w.p[day]; }
+            saveViews(w);
+          }
+        }
+      }
+      const done = readViews();
+      done.sent = Date.now();
+      saveViews(done);
+    } catch (err) {
+      console.warn("[visit] 数えられませんでした:", err?.code ?? err);
+    } finally {
+      sending = false;
+    }
+  };
   let busy = false, viewed = false;
   const beat = async () => {
     if (busy || document.hidden) return;
@@ -253,25 +294,24 @@ export function countVisit({ isOff = () => false } = {}) {
       try { last = JSON.parse(localStorage.getItem(KEY) ?? "{}") ?? {}; } catch {  }
       const done = (patch) => { Object.assign(last, patch); localStorage.setItem(KEY, JSON.stringify(last)); };
       const views = day >= VIEWS_FROM;
-      const needView = views && !viewed;
-      const needDay = views ? needView : localStorage.getItem(DAY_KEY) !== day;
-      const needDevice = views ? needView : needDay || last.dev === "";
+      if (views && !viewed) { viewed = true; addView(day); }
+      const needDay = !views && localStorage.getItem(DAY_KEY) !== day;
+      const needDevice = !views && (needDay || last.dev === "");
       const needHour = last.hour !== hour, needNow = last.win !== win && !isOff();
-      if (!needDay && !needDevice && !needHour && !needNow) return;
+      if (!needDay && !needDevice && !needHour && !needNow) { if (views) await sendViews(); return; }
       const db = await getDb();
       if (needDay) {
         await fs.setDoc(fs.doc(db, "visit_counts", `${day}-${pick(10)}`), inc, merge);
-        if (views) viewed = true;
-        else { localStorage.setItem(DAY_KEY, day); done({ dev: "" }); }
+        localStorage.setItem(DAY_KEY, day);
+        done({ dev: "" });
       }
       if (needDevice) {
-        const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 1 && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-        const device = !touch ? "pc" : Math.min(screen.width, screen.height) >= 600 ? "tablet" : "phone";
-        await fs.setDoc(fs.doc(db, "visit_devices", `${day}-${device}-${pick(10)}`), inc, merge);
-        if (!views) done({ dev: day });
+        await fs.setDoc(fs.doc(db, "visit_devices", `${day}-${deviceOf()}-${pick(10)}`), inc, merge);
+        done({ dev: day });
       }
       if (needHour) { await fs.setDoc(fs.doc(db, "visit_hours", `${hour}-${pick(3)}`), inc, merge); done({ hour }); }
       if (needNow) { await fs.setDoc(fs.doc(db, "presence", win), inc, merge); done({ win }); }
+      if (views) await sendViews();
     } catch (err) {
       console.warn("[visit] 数えられませんでした:", err?.code ?? err);
     } finally {
@@ -280,5 +320,5 @@ export function countVisit({ isOff = () => false } = {}) {
   };
   beat();
   setInterval(beat, 30000 + Math.random() * 10000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) beat(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) sendViews(); else beat(); });
 }

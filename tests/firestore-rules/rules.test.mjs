@@ -334,6 +334,14 @@ await t("staff: a member can be removed by another staff", assertSucceeds(delete
 await t("staff: staff cannot remove themselves", assertFails(deleteDoc(doc(staff, "staff/honbu@example.com"))));
 await t("staff: stranger cannot remove a member", assertFails(deleteDoc(doc(stranger, "staff/honbu@example.com"))));
 
+await t("visits: a batch of views can be added", assertSucceeds(setDoc(doc(anon, "visit_counts/2026-10-24-3"), { n: increment(120) }, { merge: true })));
+await t("visits: a batch can be added again", assertSucceeds(setDoc(doc(anon, "visit_counts/2026-10-24-3"), { n: increment(40) }, { merge: true })));
+await t("visits: more than 500 at once is refused", assertFails(setDoc(doc(anon, "visit_counts/2026-10-24-3"), { n: increment(501) }, { merge: true })));
+await t("visits: a count cannot go down", assertFails(setDoc(doc(anon, "visit_counts/2026-10-24-3"), { n: 5 })));
+await t("visits: device batch is allowed", assertSucceeds(setDoc(doc(anon, "visit_devices/2026-10-24-phone-1"), { n: increment(30) }, { merge: true })));
+await t("visits: device batch over 500 is refused", assertFails(setDoc(doc(anon, "visit_devices/2026-10-24-pc-1"), { n: 501 })));
+await t("visits: only staff can read counts", assertFails(getDoc(doc(anon, "visit_counts/2026-10-24-3"))));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
