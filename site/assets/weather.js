@@ -1,6 +1,6 @@
 import { FX } from "./config.js";
 
-const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 const params = new URLSearchParams(location.search);
 
 function classify(code) {

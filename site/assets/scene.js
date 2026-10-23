@@ -213,7 +213,7 @@ export function setAwake(on) {
   document.body.classList.toggle("awake", on);
 }
 
-const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 function initIntro(onDone) {
   const body = document.body;
   const done = () => {

@@ -1,4 +1,4 @@
-import { BUILDINGS, ROOM_FIX } from "./campus.js";
+import { BUILDINGS, ROOM_FIX, SITE } from "./campus.js";
 import { findRoute } from "./route.js";
 import { MAP } from "./config.js";
 
@@ -112,4 +112,40 @@ export async function routeMap(fromKey, toRoom) {
     requestAnimationFrame(frame);
   }
   return { html, play, minutes: route.minutes };
+}
+
+const bboxOf = (rects) => {
+  const x0 = Math.min(...rects.map((r) => r[0])), y0 = Math.min(...rects.map((r) => r[1]));
+  const x1 = Math.max(...rects.map((r) => r[0] + r[2])), y1 = Math.max(...rects.map((r) => r[1] + r[3]));
+  return [x0, y0, x1 - x0, y1 - y0];
+};
+function destPlace(id, R) {
+  const p = MAP.places.find((x) => x.id === id);
+  if (p) {
+    const codes = [p.room ?? []].flat(), rs = codes.map((c) => roomPlace(c, R)).filter(Boolean);
+    const rects = [...(p.area ? [p.area] : rs.map((r) => r.rect).filter(Boolean)), ...(p.extra ?? [])];
+    if (rects.length) return { id, code: codes[0] ?? null, codes, floor: p.floor ?? rs[0]?.floor ?? "1F", rect: bboxOf(rects), kind: "venue" };
+  }
+  const a = SITE.areas.find((x) => x.id === id);
+  if (a) return { id, floor: "1F", rect: a.rect ?? bboxOf(a.poly.map(([x, y]) => [x, y, 0, 0])), outdoor: true, kind: "outdoor" };
+  return roomPlace(id, R);
+}
+export async function pointRoutes(point, ids) {
+  const R = await loadRooms();
+  const from = { id: "sg-here", kind: "spot", floor: point.floor ?? "1F", at: [point.x, point.y] };
+  const out = [];
+  for (const id of ids) {
+    const to = destPlace(id, R);
+    if (!to) continue;
+    let r = null;
+    try { r = findRoute(from, to); } catch {  }
+    if (!r?.legs?.length) continue;
+    const pts = r.legs.filter((l) => l.floor === from.floor).flatMap((l) => l.pts);
+    let acc = 0, k = 1;
+    while (k < pts.length - 1 && acc < 60) { acc += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); k++; }
+    const total = pts.reduce((s, q, i) => (i ? s + Math.hypot(q[0] - pts[i - 1][0], q[1] - pts[i - 1][1]) : 0), 0);
+    if (!pts[k] || total < 25 || r.minutes <= 1) continue;
+    out.push({ to: id, minutes: r.minutes, ang: (Math.atan2(pts[k][1] - pts[0][1], pts[k][0] - pts[0][0]) * 180) / Math.PI });
+  }
+  return out;
 }

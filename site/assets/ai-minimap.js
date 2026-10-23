@@ -58,6 +58,9 @@ function areasSvg() {
     : a.rect ? `<rect class="ar" x="${a.rect[0]}" y="${a.rect[1]}" width="${a.rect[2]}" height="${a.rect[3]}"/>` : "")).join("");
 }
 
+export const locatePoint = (id) => { const l = locate(id); return l ? centerOf(l) : null; };
+export const baseMapSvg = () => `${areasSvg()}${buildingsSvg()}`;
+
 export function miniMapHtml(items) {
   if (!rooms) return "";
   const pins = items.map((it) => ({ ...it, loc: locate(it.id) })).filter((p) => p.loc).map((p) => ({ ...p, c: centerOf(p.loc) }));

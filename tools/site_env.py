@@ -1,7 +1,7 @@
 """site.config.json から、サイトを置く場所（URL）を読む。tools/ の道具で共通に使う。
 
     --env local / --env preview / --env production で選ぶ（書かなければ site.config.json の default）
-    URL を直接書いてもよい（例：python tools/make-here-qr.py http://192.168.1.14:5173/）
+    URL を直接書いてもよい（例：python tools/make-rally-qr.py http://192.168.1.14:5173/）
 """
 import json
 import sys

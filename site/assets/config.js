@@ -126,10 +126,9 @@ export const CROWD = {
   venues: ["gym2", "entrance", "zacros"],
   short: { gym2: "体育館", entrance: "玄関", zacros: "講義室" },
   levels: [
-    { label: "空いています", color: "#6CBAB5" },
-    { label: "ふつう", color: "#F1D08A" },
-    { label: "混雑しています", color: "#F2A96A" },
-    { label: "入場制限中", color: "#E0655A" },
+    { label: "空いてる", color: "#6CBAB5" },
+    { label: "混んでる", color: "#F2A96A" },
+    { label: "入場制限", color: "#E0655A" },
   ],
   staleMinutes: 30,
 };
@@ -163,7 +162,7 @@ const SETLIST_HEAD = /^(?:セットリスト|💗せっとりすと💗)\n/;
 const act = (day, start, end, name, kind, mood, copy, photo = null, more = [], insta = "") => {
   const head = SETLIST_HEAD.exec(copy);
   const setlist = head ? copy.slice(head[0].length).split("\n").map((s) => s.trim()).filter(Boolean) : [];
-  return { name, kind, mood, copy: head && !SHOW_SETLIST ? "" : copy, setlist, photo, more, insta, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` };
+  return { name, kind, mood, copy: head && !SHOW_SETLIST ? "" : copy, copyNoSet: head ? "" : copy, setlist, photo, more, insta, start: `2026-10-${day}T${start}:00+09:00`, end: `2026-10-${day}T${end}:00+09:00` };
 };
 export const STAGE = {
   venue: "gym2",
@@ -175,8 +174,8 @@ export const STAGE = {
     act("24", "14:35", "14:55", "+10せんち！", "バンド", "おまえら全員5Cこい", "", "assets/img/stage/plus10.webp"),
     act("24", "15:15", "15:30", "Neo abyss", "ダンス", "とりあえずダンスします！！", "皆さんこんにちは！3人組ダンスチームのNeoAbyssと申します！一昨年、昨年に引き続き今年も高専祭の舞台でダンスパフォーマンスをさせていただきます！皆さんが聞いたがあるかもしれない曲に合わせてパフォーマンスします！気になった人は是非足を運んでくださるととても嬉しいです！会場で待ってます！", "assets/img/stage/neo-abyss.webp", [], "neo__abyss"),
     act("24", "15:35", "15:50", "LunaTi☪︎³", "ダンス", "盛り上がれる曲たくさんなので見に来てね〜‼︎💕", "💗せっとりすと💗\nツインテールは20歳まで♡\nくりてぃかる♡ぷりちー \nころころガール\nキスハグ侵略者！\nらぶきゅん♡うぉんてっど\nアイドルライフエクストラパック", "assets/img/stage/luna-ti.webp", ["assets/img/stage/luna-ti-poster.webp"], "luna.tic_idol"),
-    act("25", "10:40", "11:10", "イイカンジ", "", "", "こんにちは！ イイカンジです！ ステージパフォーマンス3年目の出演ということで、今回も超イイカンジに盛り上げて行きます！！ 是非見に来てください！", "assets/img/stage/iikanji.webp", [], "iika.nz"),
-    act("25", "11:20", "11:50", "Criminals", "", "", ""),
+    act("25", "10:40", "11:10", "イイカンジ", "バンド", "", "こんにちは！ イイカンジです！ ステージパフォーマンス3年目の出演ということで、今回も超イイカンジに盛り上げて行きます！！ 是非見に来てください！", "assets/img/stage/iikanji.webp", [], "iika.nz"),
+    act("25", "11:20", "11:50", "Criminals", "バンド", "", "", "assets/img/stage/criminals.webp"),
     act("25", "12:00", "12:30", "ゴーストノート", "バンド", "オリジナル曲、あり", "🫵✨🫵✨これ🫵✨🫵✨が❗❗ブチ😡😡💢💢💣💣💥💥上がり☝️😁⤴️⤴️🕺✨🕺✨ゴースト👻💖👻💖たち🤪🤪のライブ🎤🎤🎸🎸🎶🎶だよ ❗❗😅😅💦💦🙏✨🙏✨", "assets/img/stage/ghost-note.webp", [], "gh0st_note4"),
     act("25", "12:40", "13:10", "疫病Jr.", "バンド", "ぼっち・ざ・ろっく！ 結束バンドのコピバンです", "Vo. 三上まひろ\nGt. 三上勇磨\nGt. 押切絢汰\nBa. 福田利空\nDr. 所旺嘉", "assets/img/stage/yakubyo-jr.webp"),
     act("25", "13:30", "13:45", "Untitled", "ダンス", "解釈を光に、ステージへ。", "ヲタク文化への偏見を少しでも減らすために活動しています。\n去年同様、アニソン・ボカロを中心にヲタ芸をしていきます。\nヲタ芸以外の照明、演出等もご注目ください！！", "assets/img/stage/untitled.webp", [], "untitled_lightdance"),

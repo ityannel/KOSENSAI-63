@@ -29,18 +29,10 @@ export function saveChat(messages) {
   try { sessionStorage.setItem(CHAT_KEY, JSON.stringify(messages.slice(-30))); } catch {  }
 }
 
-export const HERE_KEY = "kosen63-here", HERE_SEC = 40;
 const CTX_KEY = "kosen63-map-ctx", TOUR_KEY = "kosen63-tour";
 const CTX_KEEP_MIN = 10, TOUR_KEEP_MIN = 90;
 const fresh = (t, min) => Number.isFinite(t) && Date.now() - t < min * 60000;
 
-export function readHere() {
-  try {
-    const s = JSON.parse(sessionStorage.getItem(HERE_KEY) ?? "null");
-    const id = s?.id ?? s?.room;
-    return id && Date.now() - s.t < HERE_SEC * 1000 ? id : null;
-  } catch { return null; }
-}
 export function readCtx() {
   try {
     const c = JSON.parse(sessionStorage.getItem(CTX_KEY) ?? "null");

@@ -7,8 +7,8 @@ import { findRoute, describe, centerOf, buildingAt, setBlockedRooms } from "./ro
 import { submitPost, reportPost, reported, observePhotos, cachedPhoto, MAX_TEXT, cooldownLeft, liked, toggleLike } from "./posts.js";
 import { robotSvg } from "./ai-robot.js";
 import { OUTSIDE, OUTSIDE_BOUNDS, roadPath } from "./surroundings.js";
-import { HERE_KEY, HERE_SEC, saveCtx, readTour, saveTour } from "./ai-core.js";
-import * as mapAi from "./map-ai.js";
+import { saveCtx, readTour, saveTour } from "./ai-core.js";
+const REDUCED = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
@@ -21,26 +21,6 @@ const places = new Map();
 const byRoom = new Map();
 let floor = "1F";
 let selected = null;
-let here = null;
-let hereAt = 0;
-let hereT = 0;
-function forgetHere() {
-  if (!here) return;
-  here = null;
-  clearTimeout(hereT);
-  try { sessionStorage.removeItem(HERE_KEY); } catch {  }
-  $("#m-locate").classList.remove("has-here");
-  renderMap();
-  if (mode !== "route") renderSheet();
-}
-function setHere(id, at = Date.now()) {
-  here = id;
-  hereAt = at;
-  try { sessionStorage.setItem(HERE_KEY, JSON.stringify({ id, t: at })); } catch {  }
-  clearTimeout(hereT);
-  hereT = setTimeout(forgetHere, Math.max(0, at + HERE_SEC * 1000 - Date.now()));
-  $("#m-locate").classList.add("has-here");
-}
 const ROUTE_KEY = "kosen63-route";
 const ROUTE_KEEP_MIN = 30;
 function saveRoute() {
@@ -284,7 +264,7 @@ function pointPlace(id) {
   return p;
 }
 
-const POI_JA = { tram: "市電の駅", bus: "バス停", store: "お店", temple: "お寺", shrine: "神社", school: "学校", park: "公園", airport: "空港", post: "郵便局", hospital: "病院", landmark: "目印" };
+const POI_JA = { tram: "市電の駅", bus: "バス停", hotel: "宿泊施設", food: "飲食店", medical: "病院・薬局", bank: "銀行", bath: "温泉・銭湯", fuel: "ガソリンスタンド", shop: "お店", store: "お店", temple: "お寺", shrine: "神社", school: "学校", park: "公園", airport: "空港", post: "郵便局", hospital: "病院", landmark: "目印" };
 const roadLen = (pts) => pts.reduce((s, p, i) => s + (i ? Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0), 0);
 function farRoute(from, to, opts) {
   const gate = places.get("gate");
@@ -404,7 +384,7 @@ function setCam(bearing, tilt) {
 let camAnim = 0;
 function animateCam(b1, t1, ms = 380) {
   cancelAnimationFrame(camAnim);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) ms = 1;
+  if (REDUCED()) ms = 1;
   const b0 = cam.bearing, t0 = cam.tilt, db = normDeg(b1 - b0), s0 = performance.now();
   const step = (now) => {
     const t = Math.min(1, (now - s0) / ms), e = 1 - Math.pow(1 - t, 3);
@@ -430,13 +410,9 @@ function onOrient(e) {
   if (headingRaf) return;
   headingRaf = requestAnimationFrame(() => {
     headingRaf = 0;
-    const cone = document.querySelector("#m-marks .mk-cone");
-    if (cone) cone.style.transform = coneTransform(cone.dataset.x, cone.dataset.y);
-    else if (here && place(here)?.floor === floor) drawMarks();
     if (follow && !camAnim && Math.abs(normDeg(bearingFor(heading) - cam.bearing)) > 1.5) setCam(bearingFor(heading), cam.tilt);
   });
 }
-const coneTransform = (x, y) => `translate(${x}px, ${y}px) scale(var(--u)) rotate(${NORTH + heading}deg)`;
 async function startHeading() {
   if (headingOn) return true;
   const DOE = window.DeviceOrientationEvent;
@@ -476,8 +452,12 @@ function settleView() {
   svg().style.setProperty("--u", (1 / k).toFixed(5));
   const far = svg().classList.contains("is-far");
   svg().classList.toggle("is-far", k < (far ? 1.15 : 1.05));
+  const outOn = svg().classList.contains("show-out");
+  if (k >= (outOn ? OUT_K_OFF : OUT_K_ON) !== outOn) svg().classList.toggle("show-out", !outOn);
+  if (k >= OUT_K_ON && !outDetail) loadOutDetail();
   updateLabels();
   updatePoi();
+  updateOutPoi();
 }
 const labelTop = new Map();
 const labelBottom = new Map();
@@ -516,7 +496,8 @@ function safeArea() {
   const top = ($(".m-top")?.getBoundingClientRect().bottom ?? 0) + 8;
   const shown = !$("#m-sheet").hidden;
   const sheet = $("#m-sheet").getBoundingClientRect();
-  const tabsTop = $("#m-tabs")?.getBoundingClientRect().top ?? screen.h;
+  const tabsEl = $("#m-tabs");
+  const tabsTop = tabsEl && tabsEl.offsetParent ? tabsEl.getBoundingClientRect().top : screen.h;
   const limit = tabsTop - 16;
   const sh = $("#m-sheet");
   const capTop = tabsTop - (sh.classList.contains("is-min") ? 30 : innerHeight * (sh.classList.contains("is-open") ? 0.78 : 0.42));
@@ -547,7 +528,7 @@ function relayout(change) {
 let anim = 0;
 function animateTo(target, ms = 420) {
   cancelAnimationFrame(anim);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) ms = 0;
+  if (REDUCED()) ms = 0;
   const from = { ...view }, t0 = performance.now();
   if (ms) ms = Math.min(700, Math.max(300, ms * (0.7 + 0.25 * Math.abs(Math.log(target.k / from.k)))));
   const c0 = { x: from.x + size.w / from.k / 2, y: from.y + size.h / from.k / 2 };
@@ -574,7 +555,7 @@ function zoomAt(sx, sy, f) {
 }
 function animateZoomAt(sx, sy, f, ms = 260) {
   cancelAnimationFrame(anim);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { zoomAt(sx, sy, f); return; }
+  if (REDUCED()) { zoomAt(sx, sy, f); return; }
   const v0 = { ...view }, t0 = performance.now(), k1 = Math.max(kMin, Math.min(K_MAX, v0.k * f));
   const wx = v0.x + sx / v0.k, wy = v0.y + sy / v0.k;
   const step = (now) => {
@@ -588,7 +569,7 @@ function animateZoomAt(sx, sy, f, ms = 260) {
 }
 function fling(vx, vy) {
   cancelAnimationFrame(anim);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (REDUCED()) return;
   let last = performance.now();
   const step = (now) => {
     const dt = Math.min(32, now - last);
@@ -974,12 +955,71 @@ function deptLabels(p) {
 }
 const festLabels = (p) => [p.shopList?.length ? shopLabels(p) : p.dept ? deptLabels(p) : roomLabel(p)];
 
+let outPoi = null, outPoiLoading = false;
+const OUT_GLYPH = {
+  hotel: '<path d="M4 18V7M4 13h16v5M4 16h16M8 11h5a2 2 0 0 1 2 2"/>',
+  food: '<path d="M8 4v6a2 2 0 0 0 2 2v8M6 4v5M10 4v5M16 20V4c-2 1-3 4-3 7h3"/>',
+  bank: '<path d="M4 9l8-4 8 4zM6.5 10.5v6M10 10.5v6M14 10.5v6M17.5 10.5v6M4 19h16"/>',
+  bath: '<path d="M4 13h16v2a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM9 4c-1 1.5 1 2.5 0 4M13 4c-1 1.5 1 2.5 0 4"/>',
+  fuel: '<path d="M6 20V5h8v15M6 11h8M14 8l3 2v7a1.5 1.5 0 0 0 3 0v-5"/>',
+};
+const OUT_POI_K = { bus: 0.3, store: 0.4, hotel: 0.45, food: 0.5, school: 0.5, post: 0.5, bath: 0.55, medical: 0.6, bank: 0.6, fuel: 0.6, temple: 0.5, shrine: 0.5, landmark: 0.5, shop: 0.85 };
+async function loadOutPoi() {
+  if (outPoi || outPoiLoading) return;
+  outPoiLoading = true;
+  try {
+    const { OUT_ROAD_LABELS, OUT_POI } = await import("./outside-poi.js");
+    const glyphs = { ...OUT_GLYPH, medical: POI_GLYPH.hospital, shop: POI_GLYPH.store };
+    OUT_POI.forEach(([kind, name, x, y], i) => places.set(`ox-${i}`, { id: `ox-${i}`, kind: "outside", far: true, floor: "1F", at: [x, y], name, short: name, poiKind: kind, sub: `学校の外・${POI_JA[kind] ?? "ばしょ"}` }));
+    const shapes = OUT_POI.map(([kind, name, x, y], i) => `<g data-id="ox-${i}" data-k="${OUT_POI_K[kind] ?? 0.9}" class="is-hidden">${icon(x, y, `ic-poi ic-opoi k-${kind}`, `<rect class="hit" x="-9" y="-9" width="${22 + 8.8 * [...name].length}" height="18"/><rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyphs[kind] ?? POI_GLYPH[kind] ?? POI_GLYPH.landmark}</g><text x="10" y="0">${esc(name)}</text>`)}</g>`).join("");
+    const labels = OUT_ROAD_LABELS.map(([name, x, y, [x0, y0], [x1, y1], tier]) => `<text class="lb-road lb-out" x="${x}" y="${y}" data-k="${tier ? 0.5 : 0.25}" data-along="${((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI).toFixed(1)}">${esc(name)}</text>`).join("");
+    outPoi = { shapes, labels };
+    buildIndex();
+    document.getElementById("m-out-poi")?.insertAdjacentHTML("beforeend", shapes);
+    document.querySelector("#m-labels .site-labels")?.insertAdjacentHTML("beforeend", labels);
+    labelKey = "";
+    updateLabels();
+    updateOutPoi();
+  } catch (err) {
+    console.warn("[map] 外のお店・道路名を読めませんでした:", err);
+  } finally {
+    outPoiLoading = false;
+  }
+}
+function updateOutPoi() {
+  const k = view.k;
+  document.querySelectorAll("#m-out-poi > g").forEach((g) => g.classList.toggle("is-hidden", k < Number(g.dataset.k)));
+}
+let outDetail = null, outLoading = false;
+const OUT_K_ON = 0.55, OUT_K_OFF = 0.45;
+async function loadOutDetail() {
+  if (outDetail || outLoading) return;
+  outLoading = true;
+  try {
+    const [{ MINOR_ROADS }, { PARKS, OUT_BLD_LABELS }] = await Promise.all([import("./roads-out.js"), import("./outside-extra.js")]);
+    const kOfArea = (a) => (a > 1e6 ? 0.12 : a > 1.5e5 ? 0.22 : a > 4e4 ? 0.4 : a > 1e4 ? 0.7 : 1.1);
+    const shapes = PARKS.map(([, pts]) => `<polygon class="out-park" points="${pts.join(" ")}"/>`).join("")
+      + `<path class="road-back" d="${MINOR_ROADS.map((s) => `M${s[0]} ${s[1]}${s.slice(2).map((v, i) => (i % 2 ? " " : "L") + v).join("")}`).join("")}"/>`;
+    const labels = PARKS.filter(([name]) => name).map(([name, , [x, y], a]) => `<text class="lb-opark" x="${x}" y="${y}" data-k="${kOfArea(a)}">${esc(name)}</text>`).join("")
+      + OUT_BLD_LABELS.map(([name, x, y, tier, a]) => `<text class="lb-obld${tier ? " is-generic" : ""}" x="${x}" y="${y}" data-k="${tier ? 0.9 : Math.max(0.4, kOfArea(a))}">${esc(name)}</text>`).join("");
+    outDetail = { shapes, labels };
+    document.getElementById("m-out-detail")?.insertAdjacentHTML("beforeend", shapes);
+    document.querySelector("#m-labels .site-labels")?.insertAdjacentHTML("beforeend", labels);
+    labelKey = "";
+    updateLabels();
+  } catch (err) {
+    console.warn("[map] 外の道路・公園を読めませんでした:", err);
+  } finally {
+    outLoading = false;
+  }
+}
 function siteSvg() {
   const out = [`<polygon class="site-bound" points="${SITE.boundary.join(" ")}"/>`];
   const ptsOf = (a) => a.map((q) => q.join(",")).join(" ");
   for (const p of OUTSIDE.apron) out.push(`<polygon class="out-apron" points="${ptsOf(p)}"/>`);
   for (const t of OUTSIDE.taxi) out.push(`<polyline class="out-taxi" points="${ptsOf(t)}"/>`);
   for (const r of OUTSIDE.runway) out.push(`<polyline class="out-runway" points="${ptsOf(r)}"/><polyline class="out-runway-line" points="${ptsOf(r)}"/>`);
+  out.push(`<g id="m-out-detail">${outDetail?.shapes ?? ""}</g>`);
   for (const kind of ["t", "p"]) for (const r of OUTSIDE.roads) if (r.kind === kind) out.push(`<polyline class="road-out ${kind === "p" ? "is-major" : "is-minor"}" points="${ptsOf(r.pts)}"/>`);
   out.push(`<polyline class="road-out is-minor" points="345,1150 ${OUTSIDE.gateLink.join(",")}"/>`);
   for (const b of OUTSIDE.big) out.push(`<polygon class="out-bldg" points="${ptsOf(b)}"/>`);
@@ -1003,6 +1043,8 @@ function siteSvg() {
   }
   for (const r of SITE.roadNames ?? []) flabels.push(roadText("", r.name, r.at, r.along, 1.3, `fill:${r.ink}`));
   for (const lb of OUTSIDE.labels) flabels.push(roadText("lb-out", lb.name, lb.at, lb.along, 0.12));
+  if (outDetail) flabels.push(outDetail.labels);
+  if (outPoi) flabels.push(outPoi.labels);
   const labels = [];
   for (const a of SITE.areas) {
     const shape = a.poly ? `<polygon class="area k-${a.kind}" data-id="${a.id}" points="${a.poly.join(" ")}"/>` : rectEl(...a.rect, `area k-${a.kind}`, ` data-id="${a.id}"`);
@@ -1040,7 +1082,7 @@ const POI_GLYPH = {
 function poiHtml() {
   return OUTSIDE.pois.map((q) => {
     const glyph = POI_GLYPH[q.kind] ?? POI_GLYPH.landmark;
-    return `<g data-p="${q.p}" data-id="${esc(q.id)}">${icon(q.at[0], q.at[1], `ic-poi k-${q.kind}`, `<title>${esc(q.name)}</title><rect class="bg" x="-8.5" y="-8.5" width="17" height="17" rx="3.5"/><g class="fg" transform="translate(-6 -6) scale(0.5)">${glyph}</g><text x="13" y="0">${esc(q.short)}</text>`)}</g>`;
+    return `<g data-p="${q.p}" data-id="${esc(q.id)}">${icon(q.at[0], q.at[1], `ic-poi k-${q.kind}`, `<title>${esc(q.name)}</title><rect class="hit" x="-9" y="-9" width="${22 + 8.8 * [...q.short].length}" height="18"/><rect class="bg" x="-7" y="-7" width="14" height="14" rx="3"/><g class="fg" transform="translate(-5 -5) scale(0.42)">${glyph}</g><text x="10" y="0">${esc(q.short)}</text>`)}</g>`;
   }).join("");
 }
 function updatePoi() {
@@ -1135,6 +1177,7 @@ function drawFloor() {
     <g id="m-labels"><g class="site-labels${floor === "1F" ? "" : " is-dim"}">${site.labels}</g>${labels.join("")}${roomLabels.join("")}</g>
     <g id="m-icons">${icons.join("")}</g>
     <g id="m-poi">${poiHtml()}</g>
+    <g id="m-out-poi">${outPoi?.shapes ?? ""}</g>
     <g id="m-live"></g>
     <g id="m-deco">${[...places.values()].filter((p) => p.kind === "deco" && p.floor === floor).map((p) => `<g data-id="${p.id}" style="cursor:pointer">${icon(...p.at, `ic-deco g${p.grade}`, `<title>${esc(p.name)}</title>${ICON.deco}`)}</g>`).join("")}</g>
     <g id="m-vend">${(SITE.vending ?? []).filter((v) => v.floor === floor).map((v) => `<g data-id="${v.id}" style="cursor:pointer">${icon(...v.at, "ic-vend", `<title>${esc(v.name)}</title>${ICON.vend}`)}</g>`).join("")}</g>
@@ -1267,7 +1310,6 @@ function drawRoute() {
 const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
 let overlay = { pins: [], tour: null };
 const pairCache = new Map();
-const hereId = () => (here && place(here) ? place(here).id : null);
 function legBetween(a, b) {
   const k = `${a}>${b}`;
   if (!pairCache.has(k)) pairCache.set(k, bestRoute(place(a), place(b), {}));
@@ -1279,12 +1321,6 @@ function normalizeStops(ids, isRoute) {
     const p = place(raw);
     if (p && !out.includes(p.id)) out.push(p.id);
   }
-  const h = hereId();
-  if (!isRoute && h && out[0] !== h) {
-    const i = out.indexOf(h);
-    if (i > 0) out.splice(i, 1);
-    out.unshift(h);
-  }
   return out;
 }
 function buildTour(ids, isRoute) {
@@ -1292,12 +1328,12 @@ function buildTour(ids, isRoute) {
   if (stops.length < 2) return null;
   const legs = stops.slice(1).map((to, i) => ({ from: stops[i], to, result: legBetween(stops[i], to) }));
   return {
-    ids: stops, legs, route: !!isRoute, fromHere: !isRoute && stops[0] === hereId(),
+    ids: stops, legs, route: !!isRoute, 
     minutes: legs.reduce((s, l) => s + (l.result?.minutes ?? 0), 0),
     meters: legs.reduce((s, l) => s + (l.result?.meters ?? 0), 0),
   };
 }
-const stopLabel = (t, i) => (t.fromHere ? (i === 0 ? "★" : String(i)) : String(i + 1));
+const stopLabel = (t, i) => String(i + 1);
 
 function drawAiOverlay() {
   const lines = [], marks = [];
@@ -1312,7 +1348,7 @@ function drawAiOverlay() {
     }
     t.ids.forEach((id, i) => {
       const p = place(id);
-      if (!p || p.floor !== floor || (i === 0 && t.fromHere)) return;
+      if (!p || p.floor !== floor) return;
       marks.push(icon(...markPoint(p), "mk-tour", `<circle r="10"/><text>${stopLabel(t, i)}</text>`));
     });
   }
@@ -1414,29 +1450,6 @@ function aiRef(id) {
   return p ? { id: p.id, name: oneLine(titleOf(p)) } : null;
 }
 const FACILITY = { "toilet-m": "男子トイレ", "toilet-f": "女子トイレ", "toilet-hc": "多目的トイレ", toilet: "トイレ", aed: "AED", vending: "自販機" };
-let nearCache = { key: "", list: [] };
-function nearList(h) {
-  if (nearCache.key === h) return nearCache.list;
-  const hp = place(h);
-  if (!hp) return [];
-  const c0 = centerOf(hp);
-  const euclid = (p) => { const c = centerOf(p); return Math.hypot(c[0] - c0[0], c[1] - c0[1]) + (p.floor === hp.floor ? 0 : 120); };
-  const make = (p, k) => {
-    const r = legBetween(h, p.id);
-    return r ? { id: p.id, name: oneLine(p.fest ? titleOf(p) : `${titleOf(p)}（${subOf(p)}）`), k, min: r.minutes, m: r.meters } : null;
-  };
-  const fest = [...places.values()].filter((p) => p.fest && p.id !== h && !byRoom.has(p.id)).sort((a, b) => euclid(a) - euclid(b)).slice(0, 30)
-    .map((p) => make(p, p.kind === "venue" ? "会場" : p.kind === "exhibit" ? "学科展示" : p.kind === "hq" ? "本部" : p.shopList?.length ? "模擬店" : "")).filter(Boolean)
-    .sort((a, b) => a.min - b.min).slice(0, 14);
-  const fac = [];
-  for (const [kind, label] of Object.entries(FACILITY)) {
-    const list = [...places.values()].filter((p) => p.kind === kind && !p.fest && p.id !== h && !byRoom.has(p.id)).sort((a, b) => euclid(a) - euclid(b)).slice(0, 4);
-    fac.push(...list.map((p) => make(p, label)).filter(Boolean).sort((a, b) => a.min - b.min).slice(0, 2));
-  }
-  const list = [...fest, ...fac];
-  nearCache = { key: h, list };
-  return list;
-}
 let lastNotice = null;
 function aiLive() {
   const s = getState();
@@ -1463,16 +1476,13 @@ function aiLive() {
   return out;
 }
 function aiContext() {
-  const h = hereId();
   const r = rt.result && rt.from && rt.to ? { from: aiRef(rt.from), to: aiRef(rt.to), minutes: rt.result.minutes, meters: rt.result.meters } : null;
-  return { here: aiRef(h), selected: aiRef(selected), floor, route: r, near: h ? nearList(h) : [], tour: overlay.tour?.ids ?? null };
+  return { selected: aiRef(selected), floor, route: r, tour: overlay.tour?.ids ?? null };
 }
 function saveAiCtx(withNear) {
-  const h = hereId();
   const r = rt.result && rt.from && rt.to;
   saveCtx({
-    here: h, selected, floor, from: r ? rt.from : null, to: r ? rt.to : null, minutes: r ? rt.result.minutes : null, meters: r ? rt.result.meters : null,
-    near: h && (withNear || nearCache.key === h) ? nearList(h) : [],
+    selected, floor, from: r ? rt.from : null, to: r ? rt.to : null, minutes: r ? rt.result.minutes : null, meters: r ? rt.result.meters : null,
   });
 }
 function enterAi() {
@@ -1497,7 +1507,7 @@ const aiHost = {
     const t = buildTour(ids, isRoute);
     if (!t) return null;
     return {
-      ids: t.ids, fromHere: t.fromHere, minutes: t.minutes, meters: t.meters,
+      ids: t.ids, minutes: t.minutes, meters: t.meters,
       stops: t.ids.map((id) => { const p = place(id); return { id, title: oneLine(titleOf(p)), sub: oneLine(subOf(p)) }; }),
       legs: t.legs.map((l) => ({ ok: !!l.result, minutes: l.result?.minutes ?? 0, meters: l.result?.meters ?? 0 })),
     };
@@ -1509,7 +1519,27 @@ const aiHost = {
   repaint: () => { if (mode === "ai") renderSheet(); },
   sampleIds: (n) => [...places.values()].filter((p) => p.fest && p.name && !byRoom.has(p.id)).slice(0, n).map((p) => p.id),
 };
-mapAi.init(aiHost);
+let aiMod = null, aiLoading = null;
+function loadAi() {
+  aiLoading ??= import("./map-ai.js").then((m) => {
+    m.init(aiHost);
+    m.reload();
+    aiMod = m;
+    if (mode === "ai") renderSheet();
+    return m;
+  }).catch((err) => { aiLoading = null; console.warn("[map] AIくんを読めませんでした:", err); });
+  return aiLoading;
+}
+const mapAi = {
+  isBusy: () => aiMod?.isBusy() ?? false,
+  reload: () => aiMod?.reload(),
+  send: (q) => loadAi().then((m) => m?.send(q)),
+  render: (body) => {
+    if (aiMod) return aiMod.render(body);
+    body.innerHTML = '<p class="m-empty">AIくんを呼んでいます…</p>';
+    loadAi();
+  },
+};
 
 const markPoint = (p) => (p.at ? p.at : centerOf(p));
 let markedIds = new Set();
@@ -1517,15 +1547,8 @@ const hasShape = (p) => !p.at && !p.line;
 function drawMarks() {
   const out = [], hl = [], shapes = new Map();
   markedIds = new Set();
-  const hp = here && place(here);
-  if (hp && hp.floor === floor) {
-    const [x, y] = markPoint(hp);
-    if (heading != null) out.push(`<g class="ic mk-cone" data-x="${x}" data-y="${y}" style="transform: ${coneTransform(x, y)}"><path d="M0 0L-15-38A41 41 0 0 1 15-38Z"/></g>`);
-    if (hasShape(hp)) shapes.set(hp.id, "is-here");
-    else out.push(icon(x, y, "mk-here", '<circle class="halo" r="16"/><circle class="dot" r="7"/>'));
-  }
   const from = rt.result?.from;
-  if (from && from.id !== hp?.id && from.floor === floor) {
+  if (from && from.floor === floor) {
     if (hasShape(from)) shapes.set(from.id, "is-start");
     else out.push(icon(...markPoint(from), "mk-start", '<circle class="dot" r="6"/>'));
   }
@@ -1541,7 +1564,7 @@ function drawMarks() {
   const hlHtml = hl.join(""), mkHtml = out.join(""), hlEl = $("#m-hl"), mkEl = $("#m-marks");
   if (hlEl._html !== hlHtml) hlEl.innerHTML = hlEl._html = hlHtml;
   if (mkEl._html !== mkHtml) mkEl.innerHTML = mkEl._html = mkHtml;
-  document.querySelectorAll("#map-svg :is(.is-here, .is-start, .is-dest)").forEach((el) => el.classList.remove("is-here", "is-start", "is-dest"));
+  document.querySelectorAll("#map-svg :is(.is-start, .is-dest)").forEach((el) => el.classList.remove("is-start", "is-dest"));
   for (const [id, cls] of shapes) document.querySelectorAll(`#map-svg :is(.room, .area, .obldg)[data-id="${CSS.escape(id)}"]`).forEach((el) => el.classList.add(cls));
   drawSelection([...shapes].filter(([, cls]) => cls === "is-dest").map(([id]) => id));
   updateLabels();
@@ -1575,7 +1598,7 @@ const sheet = () => $("#m-sheet");
 function setSheet(open) {
   sheet().classList.remove("is-min");
   sheet().classList.toggle("is-open", open);
-  if (!open) $("#m-sheet-body").scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  if (!open) $("#m-sheet-body").scrollTo({ top: 0, behavior: REDUCED() ? "auto" : "smooth" });
   $("#m-grip").setAttribute("aria-label", open ? "たたむ" : "広げる");
 }
 function minimizeSheet() {
@@ -1622,7 +1645,7 @@ function msgHtml(sh, s) {
   if (!d?.message) return "";
   return `<p class="sh-msg"><b>お店から</b>${esc(d.message)}${d.message_at ? `<small>${esc(s.agoText(d.message_at))}</small>` : ""}</p>`;
 }
-const statusPill = (x) => x ? `<span class="wait ${x.cls}${x.stale ? " is-stale" : ""}">${esc(x.label)}${x.ago ? `<small>${esc(x.ago)}</small>` : ""}</span>` : "";
+const statusPill = (x, pre = "") => x ? `<span class="wait ${x.cls}${x.stale ? " is-stale" : ""}">${pre}${esc(x.label)}${x.ago ? `<small>${esc(x.ago)}</small>` : ""}</span>` : "";
 const WAIT_COLOR = { normal: "#1e8e3e", "10min": "#e8a317", "20min": "#d93025", soldout: "#6b6b6b", closed: "#4b5a8a" };
 function roomWait(p, s) {
   let best = null;
@@ -1705,9 +1728,6 @@ function renderSheet() {
   const shops = (p.shops ?? []).map((id) => RALLY.shops.find((x) => x.id === id)).filter(Boolean);
   const picks = [...PICKUP_SHOPS, ...PICKUP_EVENTS].filter((x) => x.venue === p.id);
   const now = s.phase === "during" && s.running?.find((e) => e.venue === p.id);
-  const hp = here && place(here);
-  const isHere = hp?.id === p.id;
-  const dist = hp && !isHere ? bestRoute(hp, p) : null;
   const one = p.shopList?.length === 1 && p.shopList[0].name === p.name ? p.shopList[0] : null;
   const oneWait = one && waitOf(one, s);
   const ban = placeRestricted(p);
@@ -1718,16 +1738,14 @@ function renderSheet() {
     ${one ? `<p class="sh-sub">${esc([one.group, one.food ? "食べもの" : ""].filter(Boolean).join("・"))}${genreTags(one)}</p>${msgHtml(one, s)}` : ""}
     <div class="sh-row">
       ${ban ? '<span class="sh-badge is-ban">入れません</span>' : ""}
-      ${isHere ? `<span class="sh-badge is-here">${I.pin}いまここ</span>` : ""}
       ${now ? `<span class="sh-badge is-now">NOW ${esc(now.title)}</span>` : ""}
-      ${dist ? `<span class="sh-badge">${I.walk}${dist.minutes}分・${dist.meters}m</span>` : ""}
       ${p.kind === "toilet-hc" ? '<span class="sh-badge">車いす・おむつ替え</span>' : ""}
     </div>
     ${ban ? '<p class="sh-hint">この場所は、入れません。</p>' : ""}
     ${p.desc || one?.note ? `<p class="sh-desc">${esc(p.desc || one.note)}</p>` : ""}
     <div class="sh-actions">
-      ${isHere || ban ? "" : `<button type="button" class="sh-btn primary" data-act="route">${I.route}経路</button>`}
-      ${isHere || ban ? "" : `<button type="button" class="sh-btn" data-act="from">${I.start}ここから</button>`}
+      ${ban ? "" : `<button type="button" class="sh-btn primary" data-act="route">${I.route}経路</button>`}
+      ${ban ? "" : `<button type="button" class="sh-btn" data-act="from">${I.start}ここから</button>`}
       ${ban ? "" : '<button type="button" class="sh-btn" data-act="ask">いま混んでる？</button>'}
       <button type="button" class="sh-btn is-icon" data-act="share" aria-label="共有" title="共有">${I.share}</button>
       ${p.kind === "deco" && DECOS.vote?.[p.grade] ? `<a class="sh-btn" href="${esc(DECOS.vote[p.grade])}" target="_blank" rel="noopener">投票する</a>` : ""}
@@ -1749,11 +1767,9 @@ function renderSheet() {
 }
 
 function renderHome(body, s) {
-  const hp = here && place(here);
   const venues = MAP.places.map((v) => place(v.id)).filter((p) => p && (p.kind === "venue" || p.kind === "hq"));
   body.innerHTML = `
-    ${hp ? `<p class="sh-kind">いまここ</p><h2 class="sh-title">${esc(titleOf(hp))}</h2><p class="sh-sub">${esc(subOf(hp))}</p>`
-      : `<h2 class="sh-title">どこへ行く？</h2><p class="sh-hint">校内の入口や廊下にある「いまここ」QR をスマホのカメラで読むと、いまいる場所から道案内できます。</p>`}
+    <h2 class="sh-title">どこへ行く？</h2>
     <div class="sh-venues">${venues.map((p) => {
       const c = crowdOf(p.id, s);
       const now = s.phase === "during" && s.running?.some((e) => e.venue === p.id);
@@ -1771,13 +1787,11 @@ function renderListSheet(body) {
   if (listKind === "now") return renderNowSheet(body, getState());
   if (listKind === "stamp") return renderStampSheet(body, getState());
   const chip = CHIPS.find((c) => c.id === listKind);
-  const hp = here && place(here);
   const items = [...places.values()].filter(chip.match).filter((p) => listKind !== "toilet" || toiletOk(p))
     .filter((p) => listKind !== "food" || genreFilter === "all" || p.shopList.some((x) => x.genre?.includes(genreFilter)))
-    .map((p) => ({ p, r: hp && hp.id !== p.id ? bestRoute(hp, p) : null }))
+    .map((p) => ({ p, r: null }))
     .sort((a, b) => (a.r?.cost ?? (a.p.floor === floor ? 0 : 1e6)) - (b.r?.cost ?? (b.p.floor === floor ? 0 : 1e6)));
   body.innerHTML = `
-    ${hp ? '<p class="sh-kind">いまここから近い順</p>' : ""}
     <h2 class="sh-title">${esc(chip.label)}</h2>
     ${listKind === "food" ? `<div class="rt-opts g-filter">${[["all", "すべて"], ...GENRES.map((g) => [g.id, g.id])].map(([id, l]) => `<button type="button" class="rt-opt" data-gf="${esc(id)}" aria-pressed="${genreFilter === id}"${id === "all" ? "" : ` style="--g:${genreColor(id)}"`}>${esc(l)}</button>`).join("")}</div>` : ""}
     ${listKind === "toilet" ? `<div class="rt-opts">${TOILET_FILTERS.map(([id, l]) => `<button type="button" class="rt-opt" data-tf="${id}" aria-pressed="${toiletFilter === id}">${id === "hc" ? I.access : ""}${l}</button>`).join("")}</div>` : ""}
@@ -1849,19 +1863,18 @@ function voiceSection(p, s) {
 function fillPhotos(root) {
   observePhotos(root, (img) => img.closest(".f-cell")?.remove() ?? img.remove());
 }
-function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, draft = null, onPickPlace, onDone, onCancel }) {
+function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, draft = null, chrome = false, onPickPlace, onDone, onCancel }) {
   const parent = replyTo && (getState().posts ?? []).find((x) => x.id === replyTo);
   let pid = draft?.place ?? placeId ?? parent?.place ?? "";
   let starsVal = 0, file = null;
-  const hp = here && place(here);
   if (replyTo) {
     root.innerHTML = `<form class="v-form ig-cform">${avatar("enishi_me", true)}
       <textarea name="text" maxlength="${MAX_TEXT}" rows="1" placeholder="${esc(parent?.author ?? "")} さんにコメントを追加…"></textarea>
       <button type="submit" class="ig-post-btn" value="send">投稿する</button>
       <p class="v-msg" role="status"></p></form>`;
   } else {
-    root.innerHTML = `<form class="v-form ig-form">
-      <header class="ig-fhead"><button type="button" class="ig-fbtn is-icon" data-cancel aria-label="キャンセル">${I.close}</button><b>新規投稿</b><button type="submit" class="ig-fbtn is-share is-icon" value="send" aria-label="シェア">${I.send}</button></header>
+    root.innerHTML = `${chrome ? `<i class="ig-grip" aria-hidden="true"></i><button type="button" class="m-sheet-x" data-cancel aria-label="閉じる">${I.close}</button>` : ""}<form class="v-form ig-form">
+      <h2 class="ig-title">新規投稿</h2>
       <label class="ig-pick"><input type="file" name="photo" accept="image/*">
         <span class="ig-pick-empty">${I.camera}<b>写真を追加</b></span>
         <img class="v-preview" alt="えらんだ写真" hidden></label>
@@ -1872,9 +1885,14 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
         : `<p class="ig-row">${I.pin}<span>${esc(titleOf(place(pid)))}</span></p>`}
       <div class="v-shopbox"></div>
       <p class="v-rule">顔や名札が写らないように。悪口・個人情報は書かないでください。すぐ公開され、本部が消すことがあります。<a href="terms.html" target="_blank" rel="noopener">ご利用にあたって</a></p>
-      <p class="v-msg" role="status"></p>
+      <p class="v-msg" role="alert"></p>
+      <div class="ig-actions"><button type="button" class="sh-btn" data-cancel>やめる</button><button type="submit" class="sh-btn primary" value="send">${I.send}投稿する</button></div>
     </form>`;
   }
+  const born = Date.now();
+  root.addEventListener("click", (e) => {
+    if (draft && Date.now() - born < 700) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
   const f = root.querySelector("form"), msg = root.querySelector(".v-msg"), box = root.querySelector(".v-shopbox");
   const drawShops = () => {
     if (!box) return;
@@ -1919,16 +1937,23 @@ function composeForm(root, { placeId = null, replyTo = null, pickPlace = false, 
   f.addEventListener("submit", async (e) => {
     e.preventDefault();
     const send = f.querySelector('[value="send"]'), cancel = root.querySelector("[data-cancel]");
+    const sendHtml = send.innerHTML;
     send.disabled = true;
+    send.textContent = "送信中…";
     if (cancel) cancel.disabled = true;
-    msg.textContent = "送っています…";
+    msg.textContent = "送っています…（数秒かかります。このままお待ちください）";
+    msg.scrollIntoView({ block: "nearest" });
     const shops = place(pid)?.shopList ?? [];
     try {
       await submitPost({ kind: starsVal ? "review" : "post", place: pid, shop: starsVal ? (f.shop?.value ?? shops[0]?.name ?? null) : null,
         stars: starsVal || null, text: f.text.value, file, replyTo });
       if (f.isConnected) onDone?.(); else toast("公開しました");
     } catch (err) {
-      msg.textContent = err.message;
+      const why = err?.message || "送れませんでした。もう一度ためしてください";
+      msg.textContent = why;
+      msg.scrollIntoView({ block: "center", behavior: "smooth" });
+      toast(why);
+      send.innerHTML = sendHtml;
       send.disabled = false;
       if (cancel) cancel.disabled = false;
     }
@@ -2068,10 +2093,11 @@ function renderFeed(force = false) {
 }
 function openFeedCompose(draft = null) {
   const box = $("#m-feed-compose");
-  const close = () => { box.hidden = true; box.innerHTML = ""; $("#m-feed-post").hidden = false; };
+  const close = () => { box.hidden = true; box.innerHTML = ""; $("#m-feed-post").hidden = false; $("#m-feed").classList.remove("is-composing"); };
   box.hidden = false;
   $("#m-feed-post").hidden = true;
-  composeForm(box, { pickPlace: true, draft, onPickPlace: (d, o) => (o?.reopen ? (close(), openFeedCompose(d)) : startPostPick(d)), onDone: () => { close(); feedView = "timeline"; renderFeed(true); toast("ありがとう！公開しました"); }, onCancel: close });
+  $("#m-feed").classList.add("is-composing");
+  composeForm(box, { pickPlace: true, draft, chrome: true, onPickPlace: (d, o) => (o?.reopen ? (close(), openFeedCompose(d)) : startPostPick(d)), onDone: () => { close(); feedView = "timeline"; renderFeed(true); toast("ありがとう！公開しました"); }, onCancel: close });
   box.scrollTop = 0;
 }
 
@@ -2080,6 +2106,7 @@ function startPostPick(draft) {
   postPick = { draft };
   const box = $("#m-feed-compose");
   box.hidden = true; box.innerHTML = ""; $("#m-feed-post").hidden = false;
+  $("#m-feed").classList.remove("is-composing");
   setTab("map");
   let bar = $("#m-postpick");
   if (!bar) {
@@ -2188,24 +2215,21 @@ function renderRouteSheet(body, s) {
   const r = rt.result;
   const floors = r ? [...new Set(r.legs.map((l) => l.floor))] : [];
   const crowd = to && crowdOf(to.id, s);
-  const hp = here && place(here);
   body.innerHTML = `
     <div class="rt-ends">
       <span class="rail" aria-hidden="true"></span>
-      <button type="button" class="rt-end${from ? "" : " is-empty"}" data-pick="from">${from ? esc(titleOf(from)) + (from.id === hp?.id ? "（いまここ）" : "") : "出発地を選ぶ"}</button>
+      <button type="button" class="rt-end${from ? "" : " is-empty"}" data-pick="from">${from ? esc(titleOf(from)) : "出発地を選ぶ"}</button>
       <button type="button" class="rt-swap" data-act="swap" aria-label="出発地と目的地を入れかえる">${I.swap}</button>
       <button type="button" class="rt-end${to ? "" : " is-empty"}" data-pick="to">${to ? esc(titleOf(to)) : "目的地を選ぶ"}</button>
     </div>
-    ${!from ? `<p class="sh-hint">地図で出発地をタップするか、近くの「いまここ」QR を読んでください。</p>
-      <div class="sh-actions"><button type="button" class="sh-btn qr-btn" data-act="scan">${I.qr}「いまここ」QRを読む</button></div>
+    ${!from ? `<p class="sh-hint">地図で出発地をタップしてください。</p>
       <ul class="m-list">${MAP.spots.map((sp) => itemHtml({ p: place(sp.id), kind: "spot" })).join("")}</ul>` : ""}
     ${from && to && from.id !== to.id ? `<div class="rt-sum"><button type="button" class="rt-bf" data-act="nostairs" aria-pressed="${rt.noStairs}"
         aria-label="バリアフリー（階段を使わず、エレベーターで行く）" title="バリアフリー">${I.access}</button>
       ${r ? `<b>${r.minutes}分</b><span>${r.meters}m・${floors.map((f) => f.replace("F", "階")).join(" → ")}</span>`
         : '<span class="rt-warn">道が見つかりませんでした。</span>'}</div>`
       : from && to ? '<p class="rt-sum"><b>ここ</b><span>出発地と目的地が同じ場所です</span></p>' : ""}
-    ${r ? `<div class="rt-opts"><button type="button" class="rt-opt qr-btn" data-act="scan">${I.qr}「いまここ」QRを読む</button>
-      <button type="button" class="rt-opt is-icon" data-act="share" aria-label="道順を共有" title="道順を共有">${I.share}</button></div>` : ""}
+    ${r ? `<div class="rt-opts"><button type="button" class="rt-opt is-icon" data-act="share" aria-label="道順を共有" title="道順を共有">${I.share}</button></div>` : ""}
     ${crowd && crowd.label !== CROWD.levels[0].label ? `<p class="rt-warn">${esc(to.name)}はいま「${esc(crowd.label)}」です${crowd.ago ? `（${esc(crowd.ago)}）` : ""}</p>` : ""}
     ${r ? `<ol class="rt-steps">${rt.steps.map((st, i) => `<li class="${["up", "down", "ev"].includes(st.icon) ? "is-floor" : ""}${st.icon === "goal" ? " is-goal" : ""}${i === rt.active ? " is-active" : ""}">
       <button type="button" data-step="${i}"><span class="si">${I[st.icon] ?? I.start2}</span><span><b>${esc(st.text)}</b><small>${esc(st.sub ?? "")}・${st.floor}</small></span></button></li>`).join("")}</ol>` : ""}`;
@@ -2271,7 +2295,7 @@ function startRoute(toId, fromId) {
   if ([toId, fromId].some((id) => id && placeRestricted(place(id)))) { toast("ここは、入れません"); return; }
   pushSheet();
   rt.to = toId ?? rt.to;
-  rt.from = fromId ?? (here && place(here) ? place(here).id : rt.from);
+  rt.from = fromId ?? rt.from;
   mode = "route";
   listKind = null;
   updateChips();
@@ -2316,7 +2340,7 @@ function focusStep(i) {
   renderMap();
   renderSheet();
   setSheet(false);
-  document.querySelector(`#m-sheet [data-step="${i}"]`)?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  document.querySelector(`#m-sheet [data-step="${i}"]`)?.scrollIntoView({ block: "nearest", behavior: REDUCED() ? "auto" : "smooth" });
   afterSheet(() => animateTo(viewFor([st.at[0] - 25, st.at[1] - 25, 50, 50], 4.5)));
   if (changed) {
     toast(`${parseInt(st.floor)}階の地図に切りかえました`);
@@ -2384,118 +2408,11 @@ function toast(msg) {
   toastT = setTimeout(() => t.classList.add("is-off"), 2600);
 }
 
-let scan = null;
-let jsqrP = null;
-const loadJsQR = () => (jsqrP ??= new Promise((ok, ng) => {
-  const s = document.createElement("script");
-  s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
-  s.onload = () => (window.jsQR ? ok(window.jsQR) : ng(new Error("jsQR")));
-  s.onerror = () => { jsqrP = null; ng(new Error("jsQR")); };
-  document.head.append(s);
-}));
-function hereFromText(text) {
-  try {
-    const id = new URL(text, location.href).searchParams.get("here");
-    return id && place(id) ? place(id).id : null;
-  } catch { return null; }
-}
-const NO_CAMERA = "スマホのカメラアプリで QR を読んでも大丈夫です（道案内は続きから出ます）";
-async function openScanner() {
-  const dlg = $("#m-scan"), video = dlg.querySelector("video"), msg = dlg.querySelector(".scan-msg");
-  msg.textContent = "カメラを準備しています…";
-  dlg.querySelector(".scan-frame").classList.remove("is-ok");
-  dlg.showModal();
-  if (!navigator.mediaDevices?.getUserMedia) { msg.textContent = `このブラウザではカメラが使えません。${NO_CAMERA}`; return; }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
-    if (!dlg.open) { stream.getTracks().forEach((t) => t.stop()); return; }
-    scan = { stream, timer: 0 };
-    video.srcObject = stream;
-    await video.play();
-  } catch {
-    msg.textContent = `カメラを使えませんでした。カメラを許可するか、${NO_CAMERA}`;
-    return;
-  }
-  let detect;
-  try {
-    if ("BarcodeDetector" in window && (await BarcodeDetector.getSupportedFormats()).includes("qr_code")) {
-      const bd = new BarcodeDetector({ formats: ["qr_code"] });
-      detect = async () => (await bd.detect(video))[0]?.rawValue ?? null;
-    } else {
-      const jsQR = await loadJsQR();
-      const c = document.createElement("canvas"), ctx = c.getContext("2d", { willReadFrequently: true });
-      detect = async () => {
-        const w = video.videoWidth, h = video.videoHeight;
-        if (!w) return null;
-        const s = Math.min(1, 640 / Math.max(w, h));
-        c.width = Math.round(w * s);
-        c.height = Math.round(h * s);
-        ctx.drawImage(video, 0, 0, c.width, c.height);
-        return jsQR(ctx.getImageData(0, 0, c.width, c.height).data, c.width, c.height, { inversionAttempts: "dontInvert" })?.data ?? null;
-      };
-    }
-  } catch {
-    msg.textContent = `QR を読む準備ができませんでした。${NO_CAMERA}`;
-    return;
-  }
-  const tick = async () => {
-    if (!scan) return;
-    let text = null;
-    try { text = await detect(); } catch {  }
-    if (!scan) return;
-    if (text) {
-      const id = hereFromText(text);
-      if (id) {
-        navigator.vibrate?.(40);
-        $("#m-scan .scan-frame").classList.add("is-ok");
-        msg.textContent = "読めました";
-        scan.timer = setTimeout(() => { closeScanner(); arriveHere(id); }, 300);
-        return;
-      }
-      msg.textContent = "校内の「いまここ」QR ではないようです";
-      clearTimeout(scan.msgT);
-      scan.msgT = setTimeout(() => { if (scan) msg.textContent = "近くの「いまここ」QR を枠に入れてください"; }, 2000);
-    }
-    scan.timer = setTimeout(tick, 180);
-  };
-  tick();
-}
-function closeScanner() {
-  if (scan) { clearTimeout(scan.timer); scan.stream.getTracks().forEach((t) => t.stop()); scan = null; }
-  const dlg = $("#m-scan");
-  dlg.querySelector("video").srcObject = null;
-  if (dlg.open) dlg.close();
-}
-function arriveHere(id) {
-  setHere(id);
-  const p = place(id);
-  if (mode === "route" && rt.to === id) {
-    rt = { ...rt, from: null, to: null, result: null, steps: [], active: -1 };
-    closeSheet();
-    select(id);
-    toast("目的地に着きました");
-    return;
-  }
-  if (mode === "route" && rt.to) {
-    rt.from = id;
-    computeRoute();
-    toast(`現在地：${titleOf(p)}。ここから案内します`);
-    return;
-  }
-  if (p.floor !== floor) setFloor(p.floor);
-  renderMap();
-  if (mode !== "home") renderSheet();
-  const [x, y] = markPoint(p);
-  animateTo(viewFor([x - 60, y - 60, 120, 120], 3));
-  toast(`いまここ：${titleOf(p)}`);
-}
-
 const CHIPS = [
   { id: "now", label: "開催中", icon: LIST_ICON.now, match: (p) => getState().running?.some((e) => e.venue === p.id) },
   { id: "toilet", label: "トイレ", icon: LIST_ICON.toilet, match: (p) => isToilet(p) && !byRoom.has(p.id) && !placeRestricted(p) },
   { id: "food", label: "模擬店", icon: LIST_ICON.shop, match: (p) => p.shopList?.length > 0 },
   { id: "exhibit", label: "学科展示", icon: LIST_ICON.exhibit, match: (p) => p.fest && p.kind === "exhibit" },
-  { id: "venue", label: "会場", icon: LIST_ICON.venue, match: (p) => p.fest && p.kind === "venue" },
   { id: "stamp", label: "スタンプ", icon: LIST_ICON.stamp, match: (p) => p.shops?.length > 0 },
   { id: "hq", label: "本部", icon: LIST_ICON.hq, match: (p) => p.kind === "hq" },
   { id: "aed", label: "AED", icon: LIST_ICON.aed, match: (p) => p.kind === "aed" },
@@ -2560,7 +2477,7 @@ function buildIndex() {
       p.kind === "stairs" ? "階段 かいだん" : p.kind === "ev" ? "エレベーター えれべーたー ev 車いす バリアフリー" : p.kind === "door" ? "出入口 入口 いりぐち 出口 でぐち 玄関" : "",
       p.kind === "deco" ? `装飾 そうしょく 校内装飾 撮影 さつえい 撮影スポット フォト 写真 映え モニュメント 顔はめ ${DECOS.themes[p.grade]}` : "",
       p.id === "bike-parking" ? "駐輪場 ちゅうりんじょう 自転車 じてんしゃ バイク" : "", p.zone ? "模擬店 お店" : "", p.kind === "exhibit" ? "学科展示" : "",
-      p.kind === "venue" ? "会場" : "", p.kind === "spot" ? "入口 目印 いまここ" : "",
+      p.kind === "venue" ? "会場" : "", p.kind === "spot" ? "入口 目印" : "",
       (p.shopList ?? []).flatMap((x) => x.genre ?? []).map((g) => `${g} ${g.replace("系", "")} ${GENRE_YOMI[g] ?? ""}`).join(" "),
     ].join(" ");
     addItem({ p, rank: p.fest || ["aed", "vending", "deco"].includes(p.kind) ? 0 : p.kind === "spot" || p.outdoor ? 1 : isToilet(p) ? 2 : 3 },
@@ -2661,10 +2578,8 @@ function renderResults() {
   const box = $("#m-results");
   if (!q.trim()) {
     const fest = MAP.places.map((v) => place(v.id)).filter(Boolean);
-    const hp = here && place(here);
     box.innerHTML = `
       ${picking ? `<button type="button" class="m-mappick" data-mappick>${I.map}地図で選ぶ</button>` : ""}
-      ${picking === "from" && hp ? `<h3>いまここ</h3><ul class="m-list">${itemHtml({ p: hp, kind: "spot" })}</ul>` : ""}
       ${picking === "from" ? `<h3>入口・目印</h3><ul class="m-list">${MAP.spots.map((sp) => itemHtml({ p: place(sp.id), kind: "spot" })).join("")}</ul>` : ""}
       <h3>お祭りの会場</h3><ul class="m-list">${fest.map((p) => itemHtml({ p })).join("")}</ul>`;
     return;
@@ -2694,7 +2609,7 @@ function syncUrl() {
   url.hash = "";
   if (mode === "route" && rt.to) {
     url.searchParams.set("to", rt.to);
-    if (rt.from && rt.from !== here) url.searchParams.set("from", rt.from);
+    if (rt.from) url.searchParams.set("from", rt.from);
   } else if (mode === "place" && selected) url.hash = selected;
   history.replaceState(null, "", url);
   saveRoute();
@@ -2717,26 +2632,8 @@ export async function initMap(opts) {
   buildIndex();
 
   const params = new URLSearchParams(location.search);
-  const fromQr = params.has("here") && !!place(params.get("here"));
-  try {
-    if (fromQr) sessionStorage.setItem(HERE_KEY, JSON.stringify({ id: place(params.get("here")).id, t: Date.now() }));
-    const saved = JSON.parse(sessionStorage.getItem(HERE_KEY) ?? "null");
-    const id = saved?.id ?? saved?.room;
-    if (saved && Date.now() - saved.t < HERE_SEC * 1000 && place(id)) { here = place(id).id; hereAt = saved.t; }
-  } catch {  }
-  if (fromQr) {
-    if (!here) { here = place(params.get("here")).id; hereAt = Date.now(); }
-    params.delete("here");
-    history.replaceState(null, "", `${location.pathname}${params.size ? `?${params}` : ""}${location.hash}`);
-  }
-  if (here) {
-    floor = place(here).floor;
-    hereT = setTimeout(forgetHere, Math.max(0, hereAt + HERE_SEC * 1000 - Date.now()));
-  }
-
   $("#m-floors").innerHTML = [...FLOORS].reverse().map((f) => `<button type="button" class="m-floor" role="radio" data-floor="${f}" aria-checked="false">${f}<span class="dot" hidden></span></button>`).join("");
   $("#m-chips").innerHTML = CHIPS.map((c) => `<button type="button" class="m-chip" data-chip="${c.id}" aria-pressed="false"><i aria-hidden="true">${c.icon}</i>${esc(c.label)}</button>`).join("");
-  $("#m-locate").classList.toggle("has-here", !!here);
 
   $("#m-floors").addEventListener("click", (e) => { const b = e.target.closest(".m-floor"); if (b) setFloor(b.dataset.floor); });
   $("#m-chips").addEventListener("click", (e) => {
@@ -2764,7 +2661,6 @@ export async function initMap(opts) {
       });
     });
   });
-  $("#m-locate").addEventListener("click", openScanner);
   $("#m-fit").addEventListener("click", fitAll);
   const setWide = (on) => {
     relayout(() => {
@@ -2786,12 +2682,11 @@ export async function initMap(opts) {
   });
   $("#m-compass").addEventListener("click", () => { setFollow(false); animateCam(Math.abs(normDeg(NORTH + cam.bearing)) < 1 ? 0 : -NORTH, 0); });
   $("#m-heading").addEventListener("click", toggleFollow);
-  $("#m-scan").addEventListener("close", closeScanner);
-  $("#m-scan-x").addEventListener("click", closeScanner);
   $("#m-help").addEventListener("click", openLegend);
   $("#m-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
-  $("#m-feed-post").addEventListener("click", openFeedCompose);
+  $("#m-feed-post").addEventListener("click", () => openFeedCompose());
   $("#m-feed").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget && e.currentTarget.classList.contains("is-composing")) { $("#m-feed-compose [data-cancel]")?.click(); return; }
     const fv = e.target.closest("[data-fv]");
     if (fv) { feedView = fv.dataset.fv; renderFeed(true); return; }
     const op = e.target.closest("[data-open]");
@@ -2926,7 +2821,6 @@ export async function initMap(opts) {
     if (act === "share") share();
     if (act === "swap") { [rt.from, rt.to] = [rt.to, rt.from]; computeRoute(); }
     if (act === "nostairs") { rt.noStairs = !rt.noStairs; computeRoute(); toast(rt.noStairs ? "階段を使わない道順にしました" : "いちばん近い道順にしました"); }
-    if (act === "scan") openScanner();
   });
   const q = $("#m-q");
   q.addEventListener("focus", () => { if ($("#m-results").hidden) openResults(); });
@@ -2960,6 +2854,7 @@ export async function initMap(opts) {
   applyView();
   renderMap();
   renderSheet();
+  setTimeout(loadOutPoi, 2000);
   if (params.get("tab") === "feed") setTab("feed");
   addEventListener("pagehide", () => saveAiCtx(true));
   const tourIds = (params.get("tour") ?? "").split(">").map((x) => x.trim()).filter(Boolean).slice(0, 8);
@@ -2978,18 +2873,6 @@ export async function initMap(opts) {
   const list = params.get("list");
   if (list && CHIPS.some((c) => c.id === list)) { $(`.m-chip[data-chip="${list}"]`)?.click(); return; }
   if (fromUrl()) return;
-  const saved = fromQr && here ? savedRoute() : null;
-  if (saved && saved.to !== here) {
-    rt.noStairs = !!saved.noStairs;
-    startRoute(saved.to, here);
-    toast(`現在地：${titleOf(place(here))}。ここから案内します`);
-    return;
-  }
-  if (here) {
-    const [x, y] = markPoint(place(here));
-    animateTo(viewFor([x - 60, y - 60, 120, 120], 3));
-    if (fromQr) toast(`いまここ：${titleOf(place(here))}`);
-  }
 }
 
 const NOTICE_KEY = "kosen63-notice-closed";
@@ -3041,7 +2924,6 @@ function openLegend() {
       [ic('<g class="ic-voice"><circle class="bg" r="8"/><text>2</text></g>'), "Enistagram の投稿の数"],
       [ic('<g class="ic-stamp"><circle class="bg" r="8"/><text>縁</text></g>'), "スタンプラリーの場所（押したら「縁」）"],
       ...CROWD.levels.map((lv) => [`<svg viewBox="0 0 28 18" aria-hidden="true"><rect x="1" y="1" width="26" height="16" rx="3" style="fill:color-mix(in srgb, ${lv.color} 35%, #fff);stroke:${lv.color};stroke-width:2.5"/></svg>`, `会場の混みぐあい：${esc(lv.label)}`]),
-      [ic('<g class="mk-here"><circle class="dot" r="6"/></g>'), "いまここ（「いまここ」QR を読んだ場所）"],
       [ic('<g class="mk-pin"><path d="M0 8C-2 3-7 0-7-5a7 7 0 0 1 14 0c0 5-5 8-7 13z"/><circle cy="-5" r="2.5"/></g>'), "選んだ場所・目的地"],
     ]],
   ];

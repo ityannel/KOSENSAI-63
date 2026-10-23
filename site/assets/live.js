@@ -112,7 +112,7 @@ export async function subscribeCrowd(callback) {
         const data = {};
         snap.forEach((d) => {
           const v = d.data();
-          data[d.id] = { level: v.level, updated_at: v.updated_at?.toMillis?.() ?? null };
+          data[d.id] = { level: Math.min(v.level, 2), updated_at: v.updated_at?.toMillis?.() ?? null };
         });
         callback(data);
       },
@@ -240,6 +240,13 @@ export function countVisit({ isOff = () => false } = {}) {
   const KEY = "kosen63-beat", DAY_KEY = "kosen63-visit", WIN = 5 * 60000;
   try { localStorage.setItem("kosen63-t", "1"); localStorage.removeItem("kosen63-t"); } catch { return; }
   const inc = { n: fs.increment(1) }, merge = { merge: true }, pick = (n) => Math.floor(Math.random() * n);
+  const hourNow = () => {
+    const now = new Date();
+    const day = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(now);
+    return `${day}-${new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tokyo", hour: "2-digit", hourCycle: "h23" }).format(now).slice(0, 2)}`;
+  };
+  getDb().then((db) => fs.setDoc(fs.doc(db, "view_counts", `${hourNow()}-${pick(10)}`), inc, merge))
+    .catch((err) => console.warn("[view] 数えられませんでした:", err?.code ?? err));
   let busy = false;
   const beat = async () => {
     if (busy || document.hidden) return;

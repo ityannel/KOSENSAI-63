@@ -24,6 +24,7 @@
         <label class="field"><span>パスワード</span><input id="password" type="password" autocomplete="current-password" required></label>
         <button class="btn btn-primary btn-block" type="submit">ログイン</button>
       </form>
+      <button class="btn btn-ghost btn-block gate-forgot" type="button" id="forgot">パスワードを忘れたとき</button>
       <p class="gate-msg" id="login-msg" role="status"></p>
     </div>
   </section>
@@ -42,9 +43,11 @@
         <a href="#posts" data-nav="posts"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8 8.5"/></svg><span data-short="投稿">投稿の管理</span><b class="badge" id="nav-posts-badge" hidden></b></a>
         <a href="#hq" data-nav="hq"><svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 10h8M8 13h5"/></svg><span data-short="本部">本部チャット</span><b class="badge" id="nav-hq-badge" hidden></b></a>
         <a href="#ai" data-nav="ai"><svg viewBox="0 0 32 32"><path d="M16 4.6V8"/><circle cx="16" cy="3.4" r="1.5" fill="currentColor" stroke="none"/><path d="M2.6 14.2v4M29.4 14.2v4"/><rect x="5.5" y="8" width="21" height="17" rx="6.5"/><circle cx="11.8" cy="15.4" r="1.7" fill="currentColor" stroke="none"/><circle cx="20.2" cy="15.4" r="1.7" fill="currentColor" stroke="none"/><path d="M13.2 19.8c1.7 1.4 4.9 1.4 5.6 0"/></svg><span data-short="AI">AIくん</span></a>
+        <a href="#signage" data-nav="signage"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M9 21h6M12 17v4"/></svg><span data-short="画面">サイネージ</span></a>
         <a href="#shops" data-nav="shops"><svg viewBox="0 0 24 24"><path d="M4 10v9.5h16V10M3 10l2-5.5h14L21 10zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 19.5v-5h4v5"/></svg><span data-short="模擬店">模擬店</span></a>
         <a href="#schedule" data-nav="schedule"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span data-short="時間">スケジュール</span></a>
         <a href="#rally" data-nav="rally"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><path d="M12 9.5v5M9.5 12h5"/></svg><span data-short="スタンプ">スタンプラリー</span></a>
+        <a href="#route" data-nav="route"><svg viewBox="0 0 24 24"><path d="M6 20a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM8.5 17.5H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></svg><span data-short="道案内">道案内</span></a>
         <a href="#print" data-nav="print"><svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 9h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 19 17h-2M7 14h10v6H7z"/></svg><span data-short="印刷">印刷</span></a>
         <a href="#settings" data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span data-short="設定">サイトの設定</span></a>
       </nav>
@@ -90,7 +93,7 @@
         <div class="st" id="stats"><p class="muted">読みこんでいます…</p></div>
         <article class="card">
           <header class="card-head"><h2>数え方</h2></header>
-          <p class="muted st-note">トップページか地図を開いた端末を数えます。同じ端末は、1日・1時間・5分の区切りごとに、1回だけ。この本部コンソールと、手元の確認用のページ（localhost）は、数えません。</p>
+          <p class="muted st-note">トップページか地図が開かれるたびに、「開かれた回数」を1回数えます（読み込み直しも数えます）。それとは別に、開いた端末を数えます。同じ端末は、1日・1時間・5分の区切りごとに、1回だけ。この本部コンソールと、手元の確認用のページ（localhost）は、数えません。</p>
           <label class="switch"><input type="checkbox" id="stats-live-off"><span class="switch-ui" aria-hidden="true"></span><span>「いまのようす」（5分ごと）の集計を止める</span></label>
           <p class="muted st-note">止めると、見ている人の端末からの書きこみが減ります（混んできて、Firebase の上限が心配なときに）。「時間ごと」「日ごと」は、止めても数えます。</p>
         </article>
@@ -194,7 +197,7 @@
       <section class="view" id="view-crowd" data-title="混雑・実況" data-eyebrow="CROWD" hidden>
         <article class="card bulk" id="crowd-bulk">
           <header class="card-head"><h2>すべての会場を、一斉に変える</h2></header>
-          <div class="levels bulk-levels"><button type="button" data-bulk="0" style="--c:#6CBAB5">すべて「空いています」</button><button type="button" data-bulk="1" style="--c:#F1D08A">すべて「ふつう」</button><button type="button" data-bulk="2" style="--c:#F2A96A">すべて「混雑しています」</button><button type="button" data-bulk="3" style="--c:#E0655A">すべて「入場制限中」</button><button type="button" class="clear" data-bulk="none" style="--c:#9AA0A6">すべて設定しない</button></div>
+          <div class="levels bulk-levels"><button type="button" data-bulk="0" style="--c:#6CBAB5">すべて「空いてる」</button><button type="button" data-bulk="1" style="--c:#F2A96A">すべて「混んでる」</button><button type="button" data-bulk="2" style="--c:#E0655A">すべて「入場制限」</button><button type="button" class="clear" data-bulk="none" style="--c:#9AA0A6">すべて設定しない</button></div>
         </article>
         <div class="crowd-grid" id="venues"></div>
         <details class="card side-details cshops" id="cshops-box">
@@ -234,7 +237,9 @@
         </article>
         <div class="tabs" role="tablist" id="post-tabs">
           <button role="tab" data-f="all" aria-selected="true">すべて <b id="count-all-posts">0</b></button>
+          <button role="tab" data-f="pending" aria-selected="false">写真の確認待ち <b id="count-pending">0</b></button>
           <button role="tab" data-f="reported" aria-selected="false">報告あり <b id="count-reported">0</b></button>
+          <button role="tab" data-f="hidden" aria-selected="false">非表示 <b id="count-hidden">0</b></button>
         </div>
         <label class="switch"><input type="checkbox" id="photo-review"><span class="switch-ui" aria-hidden="true"></span><span>写真を確認してから出す<small>ふだんはオフ（写真は、そのまま公開）</small></span></label>
         <div class="tl" id="post-list"></div>
@@ -336,6 +341,45 @@
         </article>
       </section>
 
+      <section class="view" id="view-signage" data-title="サイネージ" data-eyebrow="SIGNAGE" hidden>
+        <article class="card">
+          <header class="card-head"><h2>画面の一覧</h2><button type="button" class="btn btn-primary btn-sm" id="sg-new">＋ 画面を登録</button></header>
+          <p class="muted small">会場のモニターごとに、場所・向き・出すページを決められます。登録しなくても、サイネージのページを開けば、そのまま表示されます（登録するまでは、標準の設定）。緑の点は、いま表示中の画面です。</p>
+          <div class="sg-bar"><label class="sg-chk"><input type="checkbox" id="sg-all"><span>すべて選ぶ</span></label><span class="muted small" id="sg-count"></span><button type="button" class="btn btn-ghost btn-sm" id="sg-bulk" disabled>選んだ画面を、まとめて編集</button></div>
+          <div class="sg-list" id="sg-list"></div>
+        </article>
+        <form class="card sg-form" id="sg-form" hidden>
+          <header class="card-head"><h2 id="sg-form-title">画面の設定</h2><button type="button" class="btn btn-ghost btn-sm" id="sg-close">閉じる</button></header>
+          <p class="muted small" id="sg-bulk-note" hidden>選んだ画面を、まとめて変えます。変えたい項目だけ、「変更する」にチェックを入れてください（チェックのない項目は、今のまま残ります）。</p>
+          <div id="sg-single" class="sg-single">
+            <label class="field"><span>画面の名前（例：玄関ホールの右壁）</span><input id="sg-name" maxlength="40" autocomplete="off"></label>
+            <div class="sg-url-row">
+              <label class="field"><span>この画面のURL（モニターのブラウザで開きます）</span><input id="sg-url" readonly></label>
+              <input id="sg-id" type="hidden">
+              <button type="button" class="btn btn-ghost btn-sm" id="sg-copy">コピー</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="sg-open">開く</button>
+            </div>
+          </div>
+          <section class="sg-grp sg-grp-where" data-grp="where"><header><h3>設置する場所と、見る人の向き</h3><button type="button" class="btn btn-ghost btn-sm" id="sg-to-map">下の地図で決める ↓</button></header>
+            <p class="muted small">板の位置と向きは、いちばん下の「校内の地図」で動かして、「保存する」を押します。</p></section>
+          <section class="sg-grp" data-grp="orient"><header><h3>画面の向き</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <select id="sg-orient"><option value="auto">自動（画面に合わせる）</option><option value="landscape">横</option><option value="portrait">縦</option></select></section>
+          <section class="sg-grp" data-grp="slides"><header><h3>出すページ（全部にチェック＝すべて出す）</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <div id="sg-slides" class="sg-slides"></div></section>
+          <section class="sg-grp" data-grp="only"><header><h3>いまだけ、1つのページを出し続ける</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <div class="sg-grid"><label class="field"><span>出すページ</span><select id="sg-only"></select></label><label class="field"><span>何分間</span><input id="sg-only-min" type="number" min="1" max="600" inputmode="numeric"></label></div></section>
+          <section class="sg-grp" data-grp="banner"><header><h3>画面の上に、お知らせの帯を出す（空欄で消す）</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <div class="sg-grid"><label class="field sg-wide"><span>帯の文</span><input id="sg-banner" maxlength="120" placeholder="例：この画面は、まもなく、ステージ前に移動します"></label><label class="field"><span>何分間</span><input id="sg-banner-min" type="number" min="1" max="600" inputmode="numeric"></label></div></section>
+          <section class="sg-grp" data-grp="note"><header><h3>メモ（本部だけに見えます）</h3><label class="sg-use"><input type="checkbox"> 変更する</label></header>
+            <input id="sg-note" maxlength="200" autocomplete="off"></section>
+          <div class="ai-save"><button class="btn btn-primary" type="submit">保存する</button><button type="button" class="btn btn-ghost" id="sg-reload">いま、再読み込みさせる</button><button type="button" class="btn btn-ghost btn-danger" id="sg-del">登録をやめる</button></div>
+        </form>
+        <article class="card" id="sg-overview">
+          <header class="card-head"><h2>校内の地図（画面を置いている場所）</h2><button type="button" class="btn btn-primary btn-sm" id="sg-where-save" disabled>この場所を保存</button></header>
+          <div id="sg-where" class="sg-where"><p class="muted small">地図を読み込んでいます…</p></div>
+        </article>
+      </section>
+
       <section class="view" id="view-shops" data-title="模擬店" data-eyebrow="SHOPS" hidden>
         <div class="shops-layout">
           <div class="shops-main">
@@ -383,6 +427,37 @@
           </article>
 
         </div>
+        <article class="card">
+          <header class="card-head"><h2>スタンプの場所（いまサイトで使っているもの）</h2><span class="pill" id="rally-spots-state"></span></header>
+          <p class="muted small">来場者のスタンプカードに出る場所です。QR が破れた・なくなったときは、ここから1枚だけ刷り直せます（刷り直しても、QR は前と同じなので、貼ってある紙もそのまま使えます）。</p>
+          <ul class="pr-list" id="rally-spots"></ul>
+        </article>
+      </section>
+
+      <section class="view" id="view-route" data-title="道案内" data-eyebrow="ROUTE GUIDE" hidden>
+        <div class="rp-layout">
+          <article class="card rp-mapcard">
+            <header class="card-head"><h2>校内マップ（全部）</h2><div class="seg" id="rp-floors" role="radiogroup" aria-label="階"></div></header>
+            <p class="muted small">数字は右の一覧の番号です。番号や WC を押すと、行き先にえらべます。</p>
+            <div class="rp-screen" id="rp-screen"><p class="muted small">地図を読み込んでいます…</p></div>
+          </article>
+          <article class="card rp-panel">
+            <header class="card-head"><h2>道案内の紙（白黒）</h2></header>
+            <p class="muted small">スマホを持っていない人に、行き先までの道を、A4 1枚に印刷して渡せます。</p>
+            <form id="rp-form" class="stack">
+              <label class="field"><span>出発</span><select id="rp-from"></select></label>
+              <label class="field"><span>行き先</span><input id="rp-q" type="search" placeholder="名前・団体・番号で探す" autocomplete="off"></label>
+              <div class="rp-pick" id="rp-pick"></div>
+              <p class="rp-chosen" id="rp-chosen">行き先：まだ選んでいません</p>
+              <label class="switch"><input type="checkbox" id="rp-nostairs"><span class="switch-ui" aria-hidden="true"></span><span>階段を使わない（車いす・ベビーカー）</span></label>
+              <button class="btn btn-primary" type="submit" id="rp-make">道案内を作って確かめる</button>
+            </form>
+            <div class="rp-all-box">
+              <p class="muted small">全部の場所に番号をつけた地図です。本部に貼る・手渡す用に。</p>
+              <button class="btn btn-ghost" type="button" id="rp-all">全体マップを印刷する（階ごとに A4 横1枚）</button>
+            </div>
+          </article>
+        </div>
       </section>
 
       <section class="view" id="view-print" data-title="印刷" data-eyebrow="PRINT" hidden>
@@ -391,7 +466,7 @@
               <header class="card-head"><h2>まとめて印刷</h2></header>
               <div class="stack">
                 <div class="seg seg-col" role="radiogroup" aria-label="印刷するもの">
-                  <label><input type="radio" name="pr-kind" value="stamp" checked><span>スタンプラリーの紙<small>スタンプの場所（6か所）に貼る</small></span></label>
+                  <label><input type="radio" name="pr-kind" value="stamp" checked><span>スタンプラリーの紙<small id="pr-stamp-count">スタンプの場所に貼る</small></span></label>
                   <label><input type="radio" name="pr-kind" value="shopstaff"><span>お店の人に渡す紙<small>待ち時間を変える QR（店頭には貼らない）</small></span></label>
                 </div>
                 <div class="seg seg-col" role="radiogroup" aria-label="どのお店の分" id="pr-target-box">
@@ -407,6 +482,11 @@
                 </div>
                 <button class="btn btn-ghost" type="button" id="pr-make">作って確かめる</button>
               </div>
+            </article>
+
+            <article class="card" id="pr-one-card">
+              <header class="card-head"><h2>ひとつずつ印刷</h2></header>
+              <ul class="pr-list" id="pr-list"></ul>
             </article>
 
         </div>
@@ -442,6 +522,39 @@
             <div class="stack">
               <button class="btn btn-danger" type="button" id="cache-reset">全員のキャッシュを削除</button>
             </div>
+          </article>
+
+          <article class="card mb-card">
+            <header class="card-head"><h2>本部のメンバー</h2><span class="pill" id="mb-state"></span></header>
+            <p class="muted small">ここにのっている人だけが、本部コンソールで変更できます。足すと、ログイン用のアカウントもいっしょに作ります。外しても、アカウントは残りますが、何も変えられなくなります。</p>
+            <ul class="pr-list mb-list" id="mb-list"></ul>
+            <form id="mb-form" class="stack mb-form">
+              <h3>メンバーを足す</h3>
+              <label class="field"><span>名前（例：実行委員 山田）</span><input id="mb-name" maxlength="40" autocomplete="off" required></label>
+              <label class="field"><span>メールアドレス</span><input id="mb-email" type="email" maxlength="120" autocomplete="off" required></label>
+              <div class="field"><span>最初のパスワード（8文字以上。本人に伝えて、あとで変えてもらう）</span>
+                <div class="row"><input id="mb-pw" type="text" minlength="8" maxlength="64" autocomplete="new-password" spellcheck="false" required><button class="btn btn-ghost btn-sm" type="button" id="mb-gen">作る</button></div></div>
+              <div class="row"><button class="btn btn-primary" type="submit" id="mb-submit">足す</button></div>
+            </form>
+            <div class="mb-done" id="mb-done" hidden>
+              <p><b>足しました。</b>次の3つを、本人だけに伝えてください（LINE のグループなどには貼らない）。</p>
+              <pre id="mb-done-text"></pre>
+              <div class="row"><button class="btn btn-ghost btn-sm" type="button" id="mb-copy">コピー</button><button class="btn btn-ghost btn-sm" type="button" id="mb-done-close">閉じる</button></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <header class="card-head"><h2>自分のパスワード</h2><span class="pill" id="mypw-who"></span></header>
+            <form id="mypw-form" class="stack">
+              <p class="muted small">変えると、同じアカウントでログインしているほかの端末は、しばらくしてログインし直しになります。みんなで使っているアカウントなら、変える前に知らせてください。</p>
+              <label class="field"><span>いまのパスワード</span><input id="mypw-cur" type="password" autocomplete="current-password" required></label>
+              <label class="field"><span>新しいパスワード（8文字以上）</span><input id="mypw-new" type="password" autocomplete="new-password" minlength="8" required></label>
+              <label class="field"><span>新しいパスワード（もう一度）</span><input id="mypw-new2" type="password" autocomplete="new-password" minlength="8" required></label>
+              <div class="row row-wrap">
+                <button class="btn btn-primary" type="submit">変える</button>
+                <button class="btn btn-ghost" type="button" id="mypw-mail">決め直すメールを送る</button>
+              </div>
+            </form>
           </article>
 
         </div>

@@ -342,7 +342,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 .k-msg-body .k-num { font-size: 1.25em; line-height: 0; }
 
 :root {
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .34 0 0 0 0 .18 0 0 0 1.5 -.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain: url("/assets/img/grain-s.png");
 }
 .mido {
   container-type: inline-size; --u: calc(100cqi / 402);
@@ -2010,7 +2010,6 @@ a.rv-submit { display: grid; place-items: center; text-decoration: none; }
   :root { --app-w: 100vw; }
   .pc-bg, .pc-rig, .pc-fg { display: none; }
   html { background: linear-gradient(180deg, #2b2a3d, #14121b); }
-  :root[data-theme="light"] { background: #dcd6cb; }
 }
 
 .qa-chat { display: grid; gap: calc(16 * var(--u)); font-family: var(--text-font); font-weight: 700; color: #634A2E; }
@@ -2205,3 +2204,13 @@ input:focus-visible, textarea:focus-visible { box-shadow: none; }
 
 .rally-sorry { background: rgba(120, 28, 36, 0.55); color: #fff; text-shadow: 0 1px 0 rgba(48, 44, 41, 0.35); }
 .rally-sorry b { font-family: var(--hud-font); font-weight: 400; font-size: 1.2rem; letter-spacing: 0.03em; line-height: 1.4; }
+html.lite *, html.lite *::before, html.lite *::after { animation-duration: 0.001s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
+html.lite * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; text-shadow: none !important; }
+html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { display: none !important; }
+@media (min-width: 600px) {
+  html.lite, html.lite[data-theme="light"] { background: linear-gradient(180deg, #2b2a3d, #14121b) !important; }
+}
+@media (min-width: 600px) and (max-width: 999px) {
+  html, html[data-theme="light"] { background: linear-gradient(180deg, #2b2a3d, #14121b) !important; }
+}
+.en-live { background: color-mix(in srgb, var(--c) 72%, #000); color: #fff; border-color: #fff; outline-color: color-mix(in srgb, var(--c) 72%, #000); outline-offset: 0; mix-blend-mode: normal; box-shadow: calc(-2 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, .35); }

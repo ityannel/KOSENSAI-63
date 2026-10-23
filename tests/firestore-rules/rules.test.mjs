@@ -42,6 +42,20 @@ await t("prize_out must be a boolean", assertFails(setDoc(doc(staff, "site_live/
 await t("visitors cannot mark prizes out", assertFails(setDoc(doc(anon, "site_live/current"), { prize_out: true, updated_at: serverTimestamp(), updated_by: null }, { merge: true })));
 await t("anyone can read site_live", assertSucceeds(getDoc(doc(nobody, "site_live/current"))));
 await t("stranger cannot read staff list", assertFails(getDoc(doc(stranger, "staff/honbu@example.com"))));
+const member = (extra = {}) => ({ name: "実行委員", added_by: "honbu@example.com", added_at: serverTimestamp(), ...extra });
+await t("staff can add a member", assertSucceeds(setDoc(doc(staff, "staff/new1@example.com"), member())));
+await t("stranger cannot add themselves as staff", assertFails(setDoc(doc(stranger, "staff/evil@example.com"), member({ added_by: "evil@example.com" }))));
+await t("anonymous cannot add staff", assertFails(setDoc(doc(anon, "staff/anon@example.com"), member({ added_by: null }))));
+await t("added_by must be the adder", assertFails(setDoc(doc(staff, "staff/new2@example.com"), member({ added_by: "someone@else.com" }))));
+await t("member id must be lowercase", assertFails(setDoc(doc(staff, "staff/New3@Example.com"), member())));
+await t("member id must look like an email", assertFails(setDoc(doc(staff, "staff/not-an-email"), member())));
+await t("member doc cannot have extra fields", assertFails(setDoc(doc(staff, "staff/new4@example.com"), member({ admin: true }))));
+await t("member name is required", assertFails(setDoc(doc(staff, "staff/new5@example.com"), member({ name: "" }))));
+await t("added_at must be server time", assertFails(setDoc(doc(staff, "staff/new6@example.com"), member({ added_at: new Date(2020, 0, 1) }))));
+await t("existing member cannot be overwritten", assertFails(setDoc(doc(staff, "staff/new1@example.com"), member({ name: "上書き" }))));
+await t("stranger cannot remove a member", assertFails(deleteDoc(doc(stranger, "staff/new1@example.com"))));
+await t("staff cannot remove themselves", assertFails(deleteDoc(doc(staff, "staff/honbu@example.com"))));
+await t("staff can remove another member", assertSucceeds(deleteDoc(doc(staff, "staff/new1@example.com"))));
 await t("staff can write crowd", assertSucceeds(setDoc(doc(staff, "crowd/gym2"), { level: 2, updated_at: serverTimestamp() })));
 await t("anonymous cannot write crowd", assertFails(setDoc(doc(anon, "crowd/gym2"), { level: 2, updated_at: serverTimestamp() })));
 
@@ -153,6 +167,14 @@ await t("staff reads device counters", assertSucceeds(getDoc(doc(staff, "visit_d
 await t("anyone starts an hour counter at 1", assertSucceeds(setDoc(doc(nobody, "visit_hours/2026-10-24-13-1"), { n: 1 })));
 await t("hour counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "visit_hours/2026-10-24-13-1"), { n: increment(1) }, { merge: true })));
 await t("hour counter cannot jump", assertFails(setDoc(doc(nobody, "visit_hours/2026-10-24-13-1"), { n: 50 }, { merge: true })));
+await t("anyone starts a page-view counter at 1", assertSucceeds(setDoc(doc(nobody, "view_counts/2026-10-24-13-7"), { n: 1 })));
+await t("page-view counter goes up by exactly 1", assertSucceeds(setDoc(doc(nobody, "view_counts/2026-10-24-13-7"), { n: increment(1) }, { merge: true })));
+await t("page-view counter cannot jump", assertFails(setDoc(doc(nobody, "view_counts/2026-10-24-13-7"), { n: 99 }, { merge: true })));
+await t("page-view counter cannot start above 1", assertFails(setDoc(doc(nobody, "view_counts/2026-10-24-14-0"), { n: 5 })));
+await t("page-view counter id must be date-hour-shard", assertFails(setDoc(doc(nobody, "view_counts/2026-10-24-25-0"), { n: 1 })));
+await t("page-view counter has only n", assertFails(setDoc(doc(nobody, "view_counts/2026-10-24-15-0"), { n: 1, x: 1 })));
+await t("visitors cannot read page-view counters", assertFails(getDoc(doc(anon, "view_counts/2026-10-24-13-7"))));
+await t("staff reads page-view counters", assertSucceeds(getDoc(doc(staff, "view_counts/2026-10-24-13-7"))));
 await t("hour counter id must be date-hour-shard", assertFails(setDoc(doc(nobody, "visit_hours/2026-10-24-25-1"), { n: 1 })));
 await t("hour counter shard is 0-2", assertFails(setDoc(doc(nobody, "visit_hours/2026-10-24-13-7"), { n: 1 })));
 await t("visitors cannot read hour counters", assertFails(getDoc(doc(anon, "visit_hours/2026-10-24-13-1"))));
@@ -269,6 +291,21 @@ await t("another visitor cannot set a push endpoint", assertFails(updateDoc(doc(
 await t("staff cannot change the push endpoint", assertFails(updateDoc(doc(staff, "hq_chats/anon1"), { push: "https://fcm.googleapis.com/y" })));
 await t("visitor cannot delete a chat", assertFails(deleteDoc(doc(anon, "hq_chats/anon1"))));
 await t("staff can delete a chat", assertSucceeds(deleteDoc(doc(staff, "hq_chats/anon1"))));
+
+const sgDev = (db, id = "sg-abc123", extra = {}) => setDoc(doc(db, `signage_devices/${id}`), { name: "玄関ホール", spot: "", place: { x: 400, y: 440, floor: "1F" }, heading: 270, orient: "auto", facing: 0, slides: [], only: "", only_until: 0, banner: "", banner_until: 0, note: "", updated_at: serverTimestamp(), updated_by: "honbu@example.com", ...extra });
+await t("anyone can read signage_devices", assertSucceeds(getDoc(doc(nobody, "signage_devices/sg-abc123"))));
+await t("staff can register a signage device", assertSucceeds(sgDev(staff)));
+await t("visitors cannot register a signage device", assertFails(sgDev(anon, "sg-zzz999")));
+await t("signage device with a bad orientation rejected", assertFails(sgDev(staff, "sg-bad001", { orient: "diagonal" })));
+await t("signage device with an unknown key rejected", assertFails(sgDev(staff, "sg-bad002", { admin: true })));
+await t("signage device with a long banner rejected", assertFails(sgDev(staff, "sg-bad003", { banner: "あ".repeat(121) })));
+const sgSeen = (db, id = "sg-abc123", extra = {}) => setDoc(doc(db, `signage_seen/${id}`), { seen: serverTimestamp(), w: 1920, h: 1080, o: "landscape", path: "/signage.html", ...extra });
+await t("a signage screen can report that it is alive", assertSucceeds(sgSeen(anon)));
+await t("a heartbeat with a fake time is rejected", assertFails(sgSeen(anon, "sg-abc123", { seen: new Date(2020, 0, 1) })));
+await t("a heartbeat with an extra field is rejected", assertFails(sgSeen(anon, "sg-abc123", { admin: true })));
+await t("visitors cannot read signage_seen", assertFails(getDoc(doc(anon, "signage_seen/sg-abc123"))));
+await t("staff can read signage_seen", assertSucceeds(getDoc(doc(staff, "signage_seen/sg-abc123"))));
+await t("staff can delete a signage device", assertSucceeds(deleteDoc(doc(staff, "signage_devices/sg-abc123"))));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();

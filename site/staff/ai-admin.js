@@ -1,6 +1,10 @@
 export function initAiAdmin({ fs, db, a, $, esc, toast, write, listen, time }) {
   const form = $("#ai-cfg"), faqBox = $("#ai-faq"), logBox = $("#ai-loglist"), statBox = $("#ai-stats");
   let faq = [], logs = [], filter = "";
+  const UNK = /分からねえ|知らせは出てねえ|担当じゃねえ/;
+  const LIVE_Q = /混ん|混雑|空い|すいて|待ち|待つ|並ぶ|並んで|売り切れ|完売|まだある|やってる|開いてる|営業/;
+  const kindOf = (l) => (LIVE_Q.test(l.q) ? "live" : UNK.test(l.a) ? "unk" : "");
+  const clean = (s) => s.replace(/\[\[[^\]]*\]\]/g, "").replace(/\n{3,}/g, "\n\n").trim();
 
   const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
@@ -65,7 +69,7 @@ export function initAiAdmin({ fs, db, a, $, esc, toast, write, listen, time }) {
     const now = Date.now(), ms = (l) => l.at;
     const day = logs.filter((l) => now - ms(l) < 86400000), hour = logs.filter((l) => now - ms(l) < 3600000);
     const devs = new Set(day.map((l) => l.sid)).size;
-    const unknown = day.filter((l) => /分からねえ|知らせは出てねえ|担当じゃねえ/.test(l.a)).length;
+    const unknown = day.filter((l) => kindOf(l) === "unk").length;
     const byHour = Array.from({ length: 12 }, (_, i) => day.filter((l) => now - ms(l) >= i * 3600000 && now - ms(l) < (i + 1) * 3600000).length).reverse();
     const max = Math.max(1, ...byHour);
     statBox.innerHTML = `
@@ -79,11 +83,11 @@ export function initAiAdmin({ fs, db, a, $, esc, toast, write, listen, time }) {
     const f = filter.trim().toLowerCase();
     const rows = logs.filter((l) => !f || l.q.toLowerCase().includes(f) || l.a.toLowerCase().includes(f)).slice(0, 100);
     logBox.innerHTML = rows.length ? rows.map((l) => {
-      const unk = /分からねえ|知らせは出てねえ|担当じゃねえ/.test(l.a);
-      return `<details class="ai-log-row${unk ? " is-unk" : ""}">
-        <summary><time>${esc(time(l.at))}</time><b>${esc(l.q)}</b>${unk ? '<i class="tag tag-warn">分からない</i>' : ""}<code>${esc(l.sid)}</code></summary>
-        <div class="ai-log-a">${esc(l.a).replace(/\n/g, "<br>")}</div>
-        <div class="ai-log-acts"><button type="button" class="btn btn-ghost btn-sm" data-faq-from="${esc(l.id)}">この質問を、よくある質問に足す</button><button type="button" class="btn btn-ghost btn-sm" data-log-del="${esc(l.id)}">この記録を消す</button></div>
+      const k = kindOf(l);
+      return `<details class="ai-log-row${k === "unk" ? " is-unk" : ""}">
+        <summary><time>${esc(time(l.at))}</time><b>${esc(l.q)}</b>${k === "unk" ? '<i class="tag tag-warn">分からない</i>' : k === "live" ? '<i class="tag">いまの状況（現地で確認）</i>' : ""}<code>${esc(l.sid)}</code></summary>
+        <div class="ai-log-a">${esc(clean(l.a)).replace(/\n/g, "<br>")}</div>
+        <div class="ai-log-acts">${k === "live" ? "" : `<button type="button" class="btn btn-ghost btn-sm" data-faq-from="${esc(l.id)}">この質問を、よくある質問に足す</button>`}<button type="button" class="btn btn-ghost btn-sm" data-log-del="${esc(l.id)}">この記録を消す</button></div>
       </details>`;
     }).join("") : '<p class="muted small">記録はまだありません。</p>';
   }

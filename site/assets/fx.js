@@ -1,4 +1,4 @@
-const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
 
 const COLORS = [

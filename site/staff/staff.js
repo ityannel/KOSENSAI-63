@@ -4,6 +4,9 @@ import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
 import { noticeOf, paintNotice, FONTS as NT_FONTS, SIZES as NT_SIZES, COLORS as NT_COLORS, ICONS as NT_ICONS, WHERES as NT_WHERES, DEFAULT_WHERE as NT_DEFAULT_WHERE } from "../assets/notice.js";
 import { initAiAdmin } from "./ai-admin.js";
 import { initHq } from "./hq-admin.js";
+import { initSgAdmin } from "./sg-admin.js";
+import { initMembers } from "./members.js";
+import { catalog as rpCatalog, planRoute, routeSheetHtml, overviewSheetsHtml, overviewSvg, whereOf as rpWhere, GROUPS as RP_GROUPS } from "./route-print.js";
 import { renderStats, wireStats, dayKey as statDay, WIN as STAT_WIN } from "./stats.js";
 
 const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
@@ -14,6 +17,7 @@ const [appMod, auth, fs] = await Promise.all([
 ]);
 const app = appMod.getApps().find((a) => a.name === "[DEFAULT]") ?? appMod.initializeApp(firebaseConfig);
 const a = auth.getAuth(app);
+a.languageCode = "ja";
 const db = fs.getFirestore(app);
 connectEmulators({ fs, db, auth, a });
 
@@ -88,7 +92,7 @@ async function write(label, fn) {
 }
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
-const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "hq", "ai", "shops", "schedule", "rally", "print", "settings"];
+const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "hq", "ai", "signage", "shops", "schedule", "rally", "route", "print", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
@@ -99,6 +103,7 @@ function route() {
   document.title = `${view.dataset.title}｜本部コンソール`;
   scrollTo({ top: 0 });
   if (name === "stats") openStats();
+  if (name === "route") rpOpen();
 }
 addEventListener("hashchange", route);
 
@@ -140,12 +145,12 @@ function drawStats() {
   if (!statsListening || $("#view-stats").hidden) return;
   const today = statDay(Date.now());
   watchHours(today);
-  renderStats($("#stats"), { visits: state.visits, devices: state.devices, hours: state.hours, presence: state.presence, day: state.statsDay ?? today, now: Date.now() });
+  renderStats($("#stats"), { views: state.views, visits: state.visits, devices: state.devices, hours: state.hours, presence: state.presence, day: state.statsDay ?? today, now: Date.now() });
 }
 
 setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo" }); }, 1000);
 
-const state = { schedule: {}, myLikes: new Set(), visits: {}, devices: {}, hours: {}, presence: {}, statsDay: null, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
+const state = { schedule: {}, myLikes: new Set(), views: {}, visits: {}, devices: {}, hours: {}, presence: {}, statsDay: null, live: {}, crowd: {}, chatter: {}, posts: [], shops: [], codes: [], rally: null, rallyKeys: {}, siteConfig: null, rallyControl: null };
 const unsubs = [];
 function listen(q, fn) {
   unsubs.push(fs.onSnapshot(q, fn, (err) => console.warn("[staff] 読めませんでした:", err.code)));
@@ -158,10 +163,17 @@ function startListening() {
     const kit = { fs, db, a, $, $$, esc, toast, write, listen, time };
     initAiAdmin(kit);
     initHq(kit);
+    initSgAdmin(kit);
+    initMembers({ ...kit, auth, appMod, firebaseConfig, connectEmulators });
   }
   listen(fs.collection(db, "visit_counts"), (snap) => {
     state.visits = {};
     snap.forEach((d) => { const day = d.id.slice(0, 10); state.visits[day] = (state.visits[day] ?? 0) + (d.data().n ?? 0); });
+    renderOverview(); drawStats();
+  });
+  listen(fs.collection(db, "view_counts"), (snap) => {
+    state.views = {};
+    snap.forEach((d) => { const day = d.id.slice(0, 10), h = d.id.slice(11, 13); (state.views[day] ??= {})[h] = (state.views[day][h] ?? 0) + (d.data().n ?? 0); });
     renderOverview(); drawStats();
   });
   listen(fs.collection(db, "secret_counts"), (snap) => {
@@ -178,7 +190,7 @@ function startListening() {
   listen(fs.doc(db, "site_schedule", "current"), (snap) => { state.schedule = snap.exists() ? (snap.data().changes ?? {}) : {}; renderSchedule(); });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
-    snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: v.level, updated_at: toMs(v.updated_at) }; });
+    snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: Math.min(v.level, 2), updated_at: toMs(v.updated_at) }; });
     renderCrowd(); renderOverview();
   });
   listen(fs.doc(db, "chatter", "current"), (snap) => { state.chatter = snap.data() ?? {}; renderChatter(); renderOverview(); });
@@ -214,7 +226,7 @@ function startListening() {
     snap.forEach((d) => state.shops.push({ id: d.id, ...d.data() }));
     renderShops(); renderRally(); renderOverview();
   });
-  listen(fs.doc(db, "rally", "current"), (snap) => { state.rally = snap.data() ?? null; renderShops(); renderRally(); });
+  listen(fs.doc(db, "rally", "current"), (snap) => { state.rally = snap.data() ?? null; state.rallyLoaded = true; renderShops(); renderRally(); });
   listen(fs.collection(db, "rally_keys"), (snap) => {
     state.rallyKeys = {};
     snap.forEach((d) => { state.rallyKeys[d.id] = d.data(); });
@@ -233,28 +245,31 @@ function renderOverview() {
   const pending = state.posts.filter((p) => p.photo_status === "pending" && !p.hidden).length;
   const reported = state.posts.filter((p) => p.reports > 0 && !p.hidden).length;
   const soldout = allShops().filter((s) => s.status === "soldout").length;
-  const limited = CROWD.venues.filter((v) => state.crowd[v]?.level === 3).length;
+  const limited = CROWD.venues.filter((v) => state.crowd[v]?.level === 2).length;
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
   const visitsToday = state.visits[today] ?? 0;
   const visitsAll = Object.values(state.visits).reduce((a, b) => a + b, 0);
+  const daySum = (h) => Object.values(h ?? {}).reduce((a, b) => a + b, 0);
+  const viewsToday = daySum(state.views[today]), viewsAll = Object.values(state.views).reduce((a, h) => a + daySum(h), 0);
   const dev = { phone: 0, tablet: 0, pc: 0 };
   for (const d of Object.values(state.devices ?? {})) for (const k of Object.keys(dev)) dev[k] += d[k] ?? 0;
   const devAll = dev.phone + dev.tablet + dev.pc;
   const devPct = (n) => Math.round((n / devAll) * 100);
   const deviceShare = devAll ? `${devPct(dev.phone)}% / ${devPct(dev.pc)}%` : "—";
   const deviceSub = `スマホ ${dev.phone}・PC ${dev.pc}・タブレット ${dev.tablet}（計 ${devAll} 台）`;
-  const kpi = (label, value, sub, color, href) => `<a class="kpi" href="${href}" style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
+  const kpi = (label, value, sub, color, href, pf = "") => `<a class="kpi" href="${href}"${pf ? ` data-pf="${pf}"` : ""} style="--k:${color}"><small>${label}</small><b>${value}</b><span>${sub}</span></a>`;
   const SECRET_NAMES = { window: "窓の猫", cover: "黄色いカバー", dhouse: "Dの家", antenna: "アンテナ", sun: "夕焼け" };
   const sc = state.secret ?? {};
   const secretSub = Object.entries(SECRET_NAMES).map(([k, n]) => `${n} ${sc[k] ?? 0}`).join("・");
   $("#kpis").innerHTML = [
+    kpi("きょう開かれた回数", viewsToday, `回（これまで ${viewsAll}回）`, "var(--teal)", "#stats"),
     kpi("きょうの閲覧者", visitsToday, "台（1日1回まで）", "var(--teal)", "#overview"),
     kpi("これまでの閲覧者", visitsAll, "のべ", "var(--sun)", "#overview"),
     kpi("スマホ／PC の割合", deviceShare, deviceSub, "var(--teal)", "#overview"),
     kpi("隠し縁 ぜんぶ見つけた人", sc.all ?? 0, secretSub, "var(--rose)", "#overview"),
-    kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts"),
-    kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts"),
-    kpi("入場制限中の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),
+    kpi("写真の確認待ち", pending, pending ? "確認してください" : "ありません", pending ? "var(--sun)" : "var(--teal)", "#posts", "pending"),
+    kpi("報告された投稿", reported, `${REPORT_HIDE}件で自動で隠れる`, reported ? "var(--rose)" : "var(--teal)", "#posts", "reported"),
+    kpi("入場制限の会場", limited, `${CROWD.venues.length}会場のうち`, limited ? "var(--rose)" : "var(--teal)", "#crowd"),
     kpi("完売の模擬店", soldout, `${allShops().length}店のうち`, "var(--amber)", "#shops"),
   ].join("");
   const badge = $("#nav-posts-badge");
@@ -696,13 +711,18 @@ async function aiCheck(id) {
 function renderPosts() {
   if (document.activeElement?.closest?.(".post-reply")) return;
   const reportedIds = new Set(state.posts.filter((p) => p.reports > 0 && !p.hidden).map((p) => p.id));
+  const pendingIds = new Set(state.posts.filter((p) => p.photo_status === "pending" && !p.hidden).map((p) => p.id));
+  const hiddenIds = new Set(state.posts.filter(isOff).map((p) => p.id));
   $("#count-all-posts").textContent = state.posts.length;
   $("#count-reported").textContent = reportedIds.size;
+  $("#count-pending").textContent = pendingIds.size;
+  $("#count-hidden").textContent = hiddenIds.size;
   const ids = new Set(state.posts.map((p) => p.id));
   const kids = new Map();
   state.posts.filter((p) => p.reply_to && ids.has(p.reply_to)).forEach((p) => kids.set(p.reply_to, [...(kids.get(p.reply_to) ?? []), p]));
   let threads = state.posts.filter((p) => !p.reply_to || !ids.has(p.reply_to)).sort((x, y) => y.created_at - x.created_at);
-  if (postFilter === "reported") threads = threads.filter((p) => reportedIds.has(p.id) || (kids.get(p.id) ?? []).some((c) => reportedIds.has(c.id)));
+  const want = { reported: reportedIds, pending: pendingIds, hidden: hiddenIds }[postFilter];
+  if (want) threads = threads.filter((p) => want.has(p.id) || (kids.get(p.id) ?? []).some((c) => want.has(c.id)));
   $("#post-list").innerHTML = threads.length ? threads.map((p) => {
     const comments = (kids.get(p.id) ?? []).sort((x, y) => x.created_at - y.created_at);
     const photo = p.has_photo ? `<div class="tl-photo"><img data-photo="${esc(p.id)}" alt="投稿の写真"${photos.get(p.id) ? ` src="${photos.get(p.id)}"` : ""}>${PHOTO_FLAG[p.photo_status] ?? ""}</div>` : "";
@@ -727,7 +747,7 @@ function renderPosts() {
           <div class="tl-replybar">${avatarHtml({ official: true }, true)}<textarea rows="1" maxlength="140" placeholder="公式（enishi）として返信…" aria-label="公式の返信"></textarea><button class="btn btn-primary btn-sm" type="submit">送る</button></div>
         </form>
       </article>`;
-  }).join("") : `<p class="empty">${{ reported: "報告された投稿はありません", all: "投稿はまだありません" }[postFilter]}</p>`;
+  }).join("") : `<p class="empty">${{ reported: "報告された投稿はありません", pending: "確認待ちの写真はありません", hidden: "非表示の投稿はありません", all: "投稿はまだありません" }[postFilter]}</p>`;
   $$("#post-list img[data-photo]:not([src])").forEach(async (img) => {
     try {
       const snap = await fs.getDoc(fs.doc(db, "post_photos", img.dataset.photo));
@@ -737,12 +757,18 @@ function renderPosts() {
     } catch { img.remove(); }
   });
 }
+function setPostFilter(f) {
+  postFilter = f;
+  $$("#post-tabs [data-f]").forEach((x) => x.setAttribute("aria-selected", String(x.dataset.f === f)));
+  renderPosts();
+}
 $("#post-tabs").addEventListener("click", (e) => {
   const b = e.target.closest("[data-f]");
-  if (!b) return;
-  postFilter = b.dataset.f;
-  $$("#post-tabs [data-f]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
-  renderPosts();
+  if (b) setPostFilter(b.dataset.f);
+});
+$("#kpis").addEventListener("click", (e) => {
+  const k = e.target.closest("[data-pf]");
+  if (k) setPostFilter(k.dataset.pf);
 });
 $("#post-list").addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]");
@@ -951,6 +977,7 @@ function renderShops() {
   const shopsOnly = shops.filter((s) => s.kind === "shop");
   $("#pr-target-todo").textContent = `${shopsOnly.filter((s) => !handedAt(s)).length}店`;
   $("#pr-target-all").textContent = `${shopsOnly.length}店`;
+  renderPrintList();
   const q = $("#shop-q").value.trim();
   const list = visibleShops();
   $("#shop-hint").textContent = q ? `すべてのお店から「${q}」を探しています（${list.length}件）` : "";
@@ -1069,17 +1096,20 @@ const isRallyShop = (id) => rallyShopIds().includes(id);
 const keysOf = (id) => state.rallyKeys[id]?.keys ?? {};
 
 const rallySpots = () => allSpots().filter((x) => STAMP_PLACES.some((p) => p.id === x.id));
-function rallyMissing() {
-  const cur = new Map((state.rally?.shops ?? []).map((s) => [s.id, s]));
-  const spots = rallySpots();
-  const extra = [...cur.keys()].filter((id) => !spots.some((s) => s.id === id));
-  return [...spots.filter((s) => !cur.has(s.id) || !keysOf(s.id)[FEST]), ...extra.map((id) => ({ id }))];
+const spotWhere = (s) => (s.place ? MAP.places.find((p) => p.id === s.place)?.name ?? MAP.spots.find((p) => p.id === s.place)?.name ?? s.place : s.room ?? "");
+function liveSpots() {
+  const cfg = new Map(rallySpots().map((s) => [s.id, s]));
+  return (state.rally?.shops ?? []).map((r) => ({ kind: "venue", group: "", ...(cfg.get(r.id) ?? {}), id: r.id, name: r.name ?? r.id, place: r.place, room: r.room, live: true }));
 }
-async function ensureRally() {
-  if (!rallyMissing().length) return false;
+const rallyMissing = () => (state.rallyLoaded ? rallySpots().filter((s) => !isRallyShop(s.id)) : []);
+async function ensureRally(only = rallySpots()) {
+  if (!state.rallyLoaded) throw new Error("スタンプの情報を読みこんでいます。少し待ってから、もう一度");
+  const cur = state.rally?.shops ?? [];
+  const add = only.filter((s) => !cur.some((r) => r.id === s.id));
+  if (!add.length) return false;
   const batch = fs.writeBatch(db);
-  const shops = [];
-  for (const shop of rallySpots()) {
+  const shops = [...cur];
+  for (const shop of add) {
     const keys = { ...keysOf(shop.id) };
     if (!keys[FEST]) {
       keys[FEST] = randomKey();
@@ -1097,15 +1127,31 @@ async function ensureRally() {
   return true;
 }
 function renderRally() {
-  const total = rallySpots().length;
-  const missing = rallyMissing().length;
+  const live = liveSpots(), missing = rallyMissing().length;
+  const ready = live.filter((s) => keysOf(s.id)[FEST]).length;
   const st = $("#rally-state");
-  st.className = `pill ${!missing ? "is-on" : ""}`;
-  st.textContent = `QR ${total - missing}/${total}`;
+  st.className = `pill ${live.length && ready === live.length ? "is-on" : ""}`;
+  st.textContent = `${live.length}か所・QR ${ready}/${live.length}`;
   $("#rally-all").disabled = !missing;
-  $("#rally-all").textContent = missing ? `${missing}か所の QR を整える` : "全部のお店の QR を用意済み";
+  $("#rally-all").textContent = missing ? `まだ入っていない ${missing}か所を足す` : "場所は、すべてそろっています";
+  renderRallySpots();
+  renderPrintList();
 }
-$("#rally-all").addEventListener("click", () => write("全部の場所のスタンプの QR を用意しました", ensureRally));
+function renderRallySpots() {
+  const live = liveSpots();
+  $("#rally-spots-state").textContent = state.rallyLoaded ? `${live.length}か所・${rallyGoal()}個で達成` : "読みこみ中";
+  $("#rally-spots").innerHTML = live.length ? live.map((s) => {
+    const key = !!keysOf(s.id)[FEST], where = spotWhere(s);
+    const note = [where ? `地図：${where}` : "地図に場所がありません（来場者の地図で、この場所を押せません）", key ? "" : "QR の鍵がないので、ここからは刷れません"].filter(Boolean).join("・");
+    return `<li><div><b>${esc(s.name)}</b><small>${esc(note)}</small></div>${key ? `<button class="btn btn-primary btn-sm" type="button" data-pr-one="stamp:${esc(s.id)}">印刷する</button>` : '<span class="tag tag-warn">刷れない</span>'}</li>`;
+  }).join("") : `<li><div><b>${state.rallyLoaded ? "まだ、スタンプの場所がありません" : "読みこんでいます…"}</b></div></li>`;
+}
+$("#rally-all").addEventListener("click", () => {
+  const missing = rallyMissing();
+  if (!missing.length) return;
+  if (!confirm(`次の${missing.length}か所を、スタンプの場所に足しますか？\n${missing.map((s) => `・${s.name}`).join("\n")}\n（いまある場所と QR は、そのまま残ります）`)) return;
+  write(`${missing.length}か所を、スタンプの場所に足しました`, () => ensureRally(missing));
+});
 $("#prize-out").addEventListener("change", (e) => {
   const on = e.target.checked;
   if (!confirm(on ? "「景品はすべてなくなりました」と、スタンプカードのページにおわびを出しますか？" : "景品の受け付けを再開しますか？（おわびを消します）")) { e.target.checked = !on; return; }
@@ -1118,7 +1164,7 @@ $("#cache-reset").addEventListener("click", () => {
   if (!confirm("全員のキャッシュを削除しますか？（いま開いている人の画面は、読みこみなおされます）")) return;
   saveLive("全員のキャッシュ削除を指示しました", { cache_reset_at: fs.serverTimestamp() });
 });
-const rallyGoal = () => { return Math.min(RALLY.goal, rallySpots().length || RALLY.goal); };
+const rallyGoal = () => { return Math.min(RALLY.goal, state.rally?.shops?.length || rallySpots().length || RALLY.goal); };
 
 const siteUrl = (path = "") => new URL(`../${path}`, location.href).href;
 function qrDataUrl(text, size = 480) {
@@ -1130,19 +1176,19 @@ function qrDataUrl(text, size = 480) {
 function stampQrDataUrl(text, size = 480) {
   if (!window.QRCode) throw new Error("QR を作る部品を読みこめませんでした");
   const box = document.createElement("div");
-  new window.QRCode(box, { text, width: size, height: size, correctLevel: window.QRCode.CorrectLevel.H });
+  new window.QRCode(box, { text, width: size, height: size, colorDark: "#3b2a16", correctLevel: window.QRCode.CorrectLevel.H });
   const c = document.createElement("canvas");
   c.width = c.height = size;
   const g = c.getContext("2d");
   g.drawImage(box.querySelector("canvas"), 0, 0);
   const m = size / 2;
-  g.fillStyle = "#fff";
+  g.fillStyle = "#fffbf2";
   g.beginPath(); g.arc(m, m, size * 0.15, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = "#000";
+  g.strokeStyle = "#C8323A";
   g.lineWidth = size * 0.02;
   g.beginPath(); g.arc(m, m, size * 0.122, 0, Math.PI * 2); g.stroke();
-  g.fillStyle = "#000";
-  g.font = `900 ${Math.round(size * 0.15)}px "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif`;
+  g.fillStyle = "#C8323A";
+  g.font = `400 ${Math.round(size * 0.17)}px "WDXL Lubrifont JP N", "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif`;
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.fillText("縁", m, m + size * 0.008);
@@ -1214,26 +1260,35 @@ const kanjiNum = (n) => {
   return `${tens > 1 ? d[tens] : ""}十${ones ? d[ones] : ""}`;
 };
 function rallyBody(s) {
-  if (s.kind === "shop") {
-    return `
-          <div class="pt-v pt-rally-text">
-            <h3>高専祭の<br>サイトも、<br>どうぞ。</h3>
-            <p class="pt-rally-lead">待ち時間や、<br><b>校内マップ</b>も<br>見られます。</p>
-          </div>
-          <figure class="pt-rally-qr"><img src="${qrDataUrl(siteUrl(""))}" alt=""><figcaption>↑読み込んで、サイトを見る</figcaption></figure>`;
-  }
-  const rally = isRallyShop(s.id) && keysOf(s.id)[FEST];
-  const qr = rally
-    ? stampQrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
+  const shop = s.kind === "shop";
+  const rally = !shop && isRallyShop(s.id) && keysOf(s.id)[FEST];
+  const qr = shop ? qrDataUrl(siteUrl(""))
+    : rally ? stampQrDataUrl(siteUrl(`rally.html?s=${encodeURIComponent(s.id)}&c=${encodeURIComponent(keysOf(s.id)[FEST])}`))
     : qrDataUrl(siteUrl("rally.html"));
+  const wide = (str) => [...str].reduce((n, ch) => n + (ch.charCodeAt(0) < 128 ? 0.58 : 1), 0);
+  const len = wide(s.name).toFixed(1);
+  const ribbon = esc(s.name);
+  const head = shop ? "高専祭の<br>サイトも、どうぞ。" : "スタンプ<br>ラリー";
+  const lead = shop ? "待ち時間や、<b>校内マップ</b>も<br>スマホで見られます。"
+    : s.kind === "info" ? "まずはここで、<br><b>一個目</b>のスタンプ！"
+    : rally ? "カメラでスキャンして、<br><b>ゲット</b>！" : "校内の数か所で、<br>実施中！";
+  const cap = shop ? "読み込んで、サイトへ" : rally ? "" : "読み込んで、スタンプカードを見る";
+  const goal = rallyGoal();
+  const badge = shop ? "" : `<div class="rl-badge"><b>${goal}<small>コ</small></b><small>で景品！</small></div>`;
+  const hanko = shop ? "" : `<i class="rl-hanko">縁</i><span class="rl-pon">ポンッ！</span>`;
   return `
-          <div class="pt-v pt-rally-text">
-            <h3>スタンプラリー、<br>はじめました。</h3>
-            ${s.kind === "info"
-              ? `<p class="pt-rally-lead">まずはここで<b>一個目</b>！<br>スタンプ${kanjiNum(rallyGoal())}個で、景品と交換！</p>`
-              : rally ? `<p class="pt-rally-lead">スタンプ<b>${kanjiNum(rallyGoal())}個</b>で、景品と交換！</p>` : `<p class="pt-rally-lead">校内の数か所で、<br>実施中！</p>`}
-          </div>
-          <figure class="pt-rally-qr"><img src="${qr}" alt=""><figcaption>${rally ? "↑読み込んでスタンプを押す" : "↑読み込んでスタンプカードを見る"}</figcaption></figure>`;
+          <div class="rl">
+            <div class="rl-txt">
+              <p class="rl-ribbon" style="--len:${len}"><i>★</i><span>${ribbon}</span><i>★</i></p>
+              <h3 class="rl-head">${head}</h3>
+              <p class="rl-lead">${lead}</p>
+            </div>
+            <div class="rl-qr">
+              <div class="rl-burst"><span class="rl-star"></span><img src="${qr}" alt="">${hanko}</div>
+              ${cap ? `<p class="rl-cap">${cap}</p>` : ""}
+              ${badge}
+            </div>
+          </div>`;
 }
 const SITE_LINK = { shop: ["#ennichi", "で待ち時間をチェック"], exhibit: ["map.html?list=exhibit", "で学科展示を見る"], info: ["map.html", "で校内マップを見る"], venue: ["map.html", "で校内マップを見る"] };
 function linksHtml(s) {
@@ -1247,13 +1302,7 @@ function linksHtml(s) {
 function buildWall(s) {
   return `
       <section class="sheet pw">
-        <div class="pw-name">
-          <img class="pw-logo" src="${LOGO}" alt="">
-          <div><h2 class="pw-shop">${esc(s.name)}</h2>${s.group ? `<p class="pw-group">${esc(s.group)}</p>` : ""}</div>
-        </div>
         <div class="pw-rally">${rallyBody(s)}</div>
-        <div class="pw-links">${linksHtml(s)}</div>
-        <p class="pw-foot">第${FESTIVAL.edition}回 函館高専祭「${esc(FESTIVAL.theme)}」</p>
       </section>`;
 }
 function buildTents(shops) {
@@ -1261,18 +1310,16 @@ function buildTents(shops) {
     return `
       <section class="sheet pt">
         <div class="pt-panel"><div class="pt-face pt-name">
-          <img class="pt-logo" src="${LOGO}" alt="">
           <div class="pt-v pt-name-v">
             <h2 class="pt-shop">${esc(s.name)}</h2>
             ${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}
           </div>
         </div></div>
-        <div class="pt-panel pt-rally"><div class="pt-face">
+        <div class="pt-panel pt-rally"><div class="pt-face"><div class="rl-rot">
 ${rallyBody(s)}
-        </div></div>
+        </div></div></div>
         <div class="pt-panel"><div class="pt-face pt-links">
           <div class="pt-v pt-links-name"><h2 class="pt-shop">${esc(s.name)}</h2>${s.group ? `<p class="pt-group">${esc(s.group)}</p>` : ""}</div>
-          ${linksHtml(s)}
         </div></div>
         <div class="pt-glue">の り し ろ</div>
       </section>`;
@@ -1318,14 +1365,27 @@ function printFormat() {
 $$('[name="pr-format"]').forEach((r) => { r.checked = r.value === printFormat(); });
 let current = null;
 let deskShop = null;
+async function ensureQrFont() {
+  let link = document.getElementById("qr-font");
+  if (!link) {
+    link = document.createElement("link");
+    link.id = "qr-font";
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap&text=${encodeURIComponent("縁")}`;
+    document.head.append(link);
+  }
+  try { await document.fonts.load('400 40px "WDXL Lubrifont JP N"', "縁"); } catch {  }
+}
 async function showPrint() {
   const c = current;
   deskShop = c.shop ?? null;
   $("#pr-kind-label").textContent = c.kindLabel;
   $("#pr-title").textContent = c.title;
   $("#pr-format-box").hidden = !c.set;
+  await ensureQrFont();
   $("#print-area").innerHTML = await c.build();
   loadPrintFont($("#print-area").textContent);
+  await Promise.all([...$$("#print-area img")].map((i) => i.decode?.().catch(() => {})));
   const n = $$("#print-area .sheet").length;
   const staff = $$("#print-area .ps-staff").length;
   $("#pr-note").textContent = [c.sub, c.set ? `${FORMAT_LABEL[printFormat()]}${staff ? "・お店の人用の紙" : ""}` : "", `${n}枚`].filter(Boolean).join("　");
@@ -1349,13 +1409,63 @@ function closePrint() {
 $("#pr-close").addEventListener("click", closePrint);
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#print-overlay").hidden) closePrint(); });
 const KIND_NAME = { shop: "模擬店", exhibit: "学科展示", info: "インフォメーション" };
+const PRINT_IMAGES = [
+  { id: "web", name: "ウェブサイトのQRポスター", note: "A4・たて・カラー（QRとURL）", src: "print/poster-web.jpg", land: false },
+  { id: "sign", name: "アオカン（案内の看板）", note: "A4・よこ・カラー（高専祭／春潮寮）", src: "print/sign-aokan.png", land: true },
+];
+function renderPrintList() {
+  const box = $("#pr-list");
+  if (!box) return;
+  const row = (id, name, note) => `<li><div><b>${esc(name)}</b><small>${esc(note)}</small></div><button class="btn btn-primary btn-sm" type="button" data-pr-one="${esc(id)}">印刷する</button></li>`;
+  const ready = liveSpots().filter((s) => keysOf(s.id)[FEST]);
+  $("#pr-stamp-count").textContent = `スタンプの場所（${ready.length}か所）に貼る`;
+  box.innerHTML = [
+    ...ready.map((s) => row(`stamp:${s.id}`, s.name, `スタンプラリーの紙${spotWhere(s) ? `・${spotWhere(s)}` : ""}`)),
+    ...rallyMissing().map((s) => row(`stamp:${s.id}`, s.name, "スタンプラリーの紙・まだスタンプの場所に入っていない（刷ると、足します）")),
+    ...PRINT_IMAGES.map((x) => row(`img:${x.id}`, x.name, x.note)),
+  ].join("");
+}
+async function stampSpotForPrint(id) {
+  const live = liveSpots().find((v) => v.id === id);
+  if (live) return live;
+  const cfg = rallySpots().find((v) => v.id === id);
+  if (!cfg || !confirm(`「${cfg.name}」は、まだスタンプの場所に入っていません。足してから印刷しますか？`)) return null;
+  await ensureRally([cfg]);
+  return liveSpots().find((v) => v.id === id) ?? cfg;
+}
+async function printOne(e) {
+  const b = e.target.closest("[data-pr-one]");
+  if (!b) return;
+  const [kind, id] = b.dataset.prOne.split(":");
+  b.disabled = true;
+  try {
+    if (kind === "img") {
+      const x = PRINT_IMAGES.find((v) => v.id === id);
+      current = { kindLabel: "ひとつずつ", title: x.name, sub: x.note, set: false,
+        build: () => `<section class="sheet pi ${x.land ? "pi-land" : "pi-port"}"><img src="${x.src}" alt=""></section>` };
+    } else {
+      const spot = await stampSpotForPrint(id);
+      if (!spot) return;
+      current = { kindLabel: "ひとつずつ：スタンプラリーの紙", title: spot.name, sub: spotWhere(spot), set: true, build: () => buildShopSet([spot]) };
+    }
+    await showPrint();
+  } catch (err) {
+    console.warn(err);
+    toast(`作れませんでした（${err.message}）`, true);
+  } finally {
+    b.disabled = false;
+  }
+}
+$("#pr-list").addEventListener("click", printOne);
+$("#rally-spots").addEventListener("click", printOne);
 async function printForDesk(shop) {
   toast(`${shop.name}の紙を作っています…`);
   try {
     const stamp = STAMP_PLACES.some((p) => p.id === shop.id);
-    if (stamp) await ensureRally();
-    current = { kindLabel: `受付：${KIND_NAME[shop.kind] ?? "模擬店"}`, title: shop.name, sub: [shop.group, shop.where].filter(Boolean).join("・"),
-      build: stamp ? () => buildShopSet([shop]) : () => buildStaffPapers([shop]), shop, set: stamp };
+    const spot = stamp ? await stampSpotForPrint(shop.id) : shop;
+    if (!spot) return;
+    current = { kindLabel: `受付：${KIND_NAME[shop.kind] ?? "模擬店"}`, title: spot.name, sub: [shop.group, shop.where].filter(Boolean).join("・"),
+      build: stamp ? () => buildShopSet([spot]) : () => buildStaffPapers([shop]), shop, set: stamp };
     await showPrint();
   } catch (err) {
     console.warn(err);
@@ -1385,11 +1495,10 @@ $("#pr-given").addEventListener("click", async () => {
 $("#pr-make").addEventListener("click", async () => {
   const kind = printKind();
   const target = $('[name="pr-target"]:checked').value;
-  const list = kind === "stamp" ? rallySpots() : allShops().filter((x) => target === "all" || !handedAt(x));
+  const list = kind === "stamp" ? liveSpots().filter((s) => keysOf(s.id)[FEST]) : allShops().filter((x) => target === "all" || !handedAt(x));
   if (!list.length) return toast("刷る場所がありません", true);
   $("#pr-make").disabled = true;
   try {
-    if (kind === "stamp") await ensureRally();
     current = {
       kindLabel: kind === "stamp" ? "まとめて：スタンプラリーの紙" : "まとめて：お店の人に渡す紙（待ち時間の変更）",
       title: kind === "stamp" ? `スタンプの場所（${list.length}か所）` : `${target === "all" ? "すべてのお店" : "まだ渡していないお店"}（${list.length}店）`,
@@ -1403,6 +1512,74 @@ $("#pr-make").addEventListener("click", async () => {
     toast(`作れませんでした（${err.message}）`, true);
   } finally {
     $("#pr-make").disabled = false;
+  }
+});
+const rp = { floor: "1F", to: null, list: null };
+async function rpOpen() {
+  if (rp.list) return;
+  try { rp.list = (await rpCatalog()).list; } catch (err) { console.warn(err); $("#rp-screen").innerHTML = '<p class="muted small">地図を読み込めませんでした。開き直してください。</p>'; return; }
+  const hq = rp.list.find((p) => p.id === "hq");
+  const starts = [hq, ...rp.list.filter((p) => p.kind === "spot"), ...rp.list.filter((p) => p.no && p !== hq)].filter(Boolean);
+  $("#rp-from").innerHTML = starts.map((p) => `<option value="${esc(p.id)}">${p.no ? `${p.no} ` : ""}${esc(p.name)}${p === hq ? "（インフォメーション）" : ""}</option>`).join("");
+  rpFloors();
+  rpList();
+  rpMap();
+}
+function rpFloors() {
+  $("#rp-floors").innerHTML = ["1F", "2F", "3F", "4F"].map((f) => `<label><input type="radio" name="rp-floor" value="${f}"${f === rp.floor ? " checked" : ""}><span>${parseInt(f)}階</span></label>`).join("");
+}
+async function rpMap() {
+  $("#rp-screen").innerHTML = await overviewSvg(rp.floor, rp.to);
+}
+function rpList() {
+  const q = kana($("#rp-q").value);
+  const items = rp.list.filter((p) => (p.no || p.virtual || p.group === "出入口・屋外") && (!q || kana(`${p.no ?? ""} ${p.name} ${p.sub ?? ""}`).includes(q)));
+  $("#rp-pick").innerHTML = RP_GROUPS.map((g) => {
+    const xs = items.filter((p) => p.group === g).sort((x, y) => (x.no ?? 1e4) - (y.no ?? 1e4));
+    return xs.length ? `<p class="rp-pick-h">${esc(g)}</p>${xs.map((p) => `<button type="button" data-rp-pick="${esc(p.id)}" aria-pressed="${p.id === rp.to}">${p.no ? `<i>${p.no}</i>` : ""}<b>${esc(p.name)}</b><small>${esc(p.virtual ? "出発の場所から、いちばん近いところ" : [p.group === "模擬店" ? p.sub : "", rpWhere(p)].filter(Boolean).join("・"))}</small></button>`).join("")}` : "";
+  }).join("") || '<p class="muted small">見つかりません</p>';
+}
+function rpPick(id) {
+  const p = rp.list.find((x) => x.id === id);
+  if (!p) return;
+  rp.to = id;
+  if (p.floor && p.floor !== rp.floor) { rp.floor = p.floor; rpFloors(); }
+  $("#rp-chosen").innerHTML = `行き先：<b>${p.no ? `${p.no} ` : ""}${esc(p.name)}</b>${p.virtual ? "" : `（${esc(rpWhere(p))}）`}`;
+  rpList();
+  rpMap();
+}
+$("#rp-floors").addEventListener("change", (e) => { if (e.target.name === "rp-floor") { rp.floor = e.target.value; rpMap(); } });
+$("#rp-q").addEventListener("input", rpList);
+$("#rp-pick").addEventListener("click", (e) => { const b = e.target.closest("[data-rp-pick]"); if (b) rpPick(b.dataset.rpPick); });
+$("#rp-screen").addEventListener("click", (e) => { const b = e.target.closest("[data-rp-pick]"); if (b) rpPick(b.dataset.rpPick); });
+$("#rp-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!rp.to) return toast("行き先を選んでください", true);
+  const noStairs = $("#rp-nostairs").checked;
+  $("#rp-make").disabled = true;
+  try {
+    const plan = await planRoute($("#rp-from").value, rp.to, { noStairs });
+    if (!plan) return toast(noStairs ? "階段を使わない道が見つかりませんでした" : "道が見つかりませんでした（入れない場所かもしれません）", true);
+    if (plan.from.id === plan.to.id) return toast("出発と行き先が同じです", true);
+    current = { kindLabel: "道案内（白黒）", title: `${plan.to.name}への行き方`, sub: `出発：${plan.from.name}・歩いて約${plan.route.minutes}分`, set: false, build: () => routeSheetHtml(plan, { noStairs }) };
+    await showPrint();
+  } catch (err) {
+    console.warn(err);
+    toast(`作れませんでした（${err.message}）`, true);
+  } finally {
+    $("#rp-make").disabled = false;
+  }
+});
+$("#rp-all").addEventListener("click", async () => {
+  $("#rp-all").disabled = true;
+  try {
+    current = { kindLabel: "全体マップ（白黒）", title: "校内マップ（階ごと）", sub: "A4 横", set: false, build: overviewSheetsHtml };
+    await showPrint();
+  } catch (err) {
+    console.warn(err);
+    toast(`作れませんでした（${err.message}）`, true);
+  } finally {
+    $("#rp-all").disabled = false;
   }
 });
 function loadPrintFont(text) {
@@ -1615,6 +1792,7 @@ $("#rally-all-reset").addEventListener("click", async () => {
 $("#login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("#login-msg").textContent = "";
+  $("#login-msg").classList.remove("is-ok");
   try {
     await auth.signInWithEmailAndPassword(a, $("#email").value, $("#password").value);
   } catch {
@@ -1625,6 +1803,56 @@ const logout = async () => { await auth.signOut(a); location.reload(); };
 $("#logout").addEventListener("click", logout);
 $("#logout-top").addEventListener("click", logout);
 
+const AUTH_MSG = {
+  "auth/invalid-email": "メールアドレスの形が、ちがいます",
+  "auth/wrong-password": "いまのパスワードが、ちがいます",
+  "auth/invalid-credential": "いまのパスワードが、ちがいます",
+  "auth/weak-password": "新しいパスワードが、短すぎます",
+  "auth/too-many-requests": "回数が多すぎます。少し待ってから、もう一度",
+  "auth/network-request-failed": "つながりませんでした。電波のよい所で、もう一度",
+};
+const authMsg = (err, fallback) => AUTH_MSG[err?.code] ?? `${fallback}（${err?.code ?? err?.message}）`;
+$("#forgot").addEventListener("click", async () => {
+  const msg = $("#login-msg"), email = $("#email").value.trim();
+  msg.classList.remove("is-ok");
+  if (!email) { msg.textContent = "上の欄にメールアドレスを入れてから、押してください。"; $("#email").focus(); return; }
+  try {
+    await auth.sendPasswordResetEmail(a, email);
+    msg.classList.add("is-ok");
+    msg.textContent = `${email} に、パスワードを決め直すメールを送りました。届かないときは、迷惑メールのフォルダも見てください。`;
+  } catch (err) {
+    msg.textContent = authMsg(err, "メールを送れませんでした");
+  }
+});
+$("#mypw-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const user = a.currentUser, cur = $("#mypw-cur").value, next = $("#mypw-new").value;
+  if (!user?.email) return;
+  if (next.length < 8) return toast("新しいパスワードは、8文字以上にしてください", true);
+  if (next !== $("#mypw-new2").value) return toast("新しいパスワードが、1回目と2回目でちがいます", true);
+  if (next === cur) return toast("いまと同じパスワードです", true);
+  if (!confirm(`${user.email} のパスワードを変えますか？\n同じアカウントでログインしているほかの端末は、ログインし直しになります。`)) return;
+  try {
+    await auth.reauthenticateWithCredential(user, auth.EmailAuthProvider.credential(user.email, cur));
+    await auth.updatePassword(user, next);
+    e.target.reset();
+    toast("パスワードを変えました");
+  } catch (err) {
+    console.warn(err);
+    toast(authMsg(err, "変えられませんでした"), true);
+  }
+});
+$("#mypw-mail").addEventListener("click", async () => {
+  const email = a.currentUser?.email;
+  if (!email || !confirm(`${email} に、パスワードを決め直すメールを送りますか？`)) return;
+  try {
+    await auth.sendPasswordResetEmail(a, email);
+    toast("メールを送りました。メールのリンクから、新しいパスワードを決めてください");
+  } catch (err) {
+    toast(authMsg(err, "メールを送れませんでした"), true);
+  }
+});
+
 auth.onAuthStateChanged(a, async (user) => {
   unsubs.splice(0).forEach((u) => u());
   const staffUser = user && !user.isAnonymous ? user : null;
@@ -1633,7 +1861,7 @@ auth.onAuthStateChanged(a, async (user) => {
       const me = await fs.getDoc(fs.doc(db, "staff", staffUser.email));
       if (!me.exists()) throw new Error("not staff");
     } catch {
-      $("#login-msg").textContent = `${staffUser.email} は本部の名簿にありません。Firebase コンソールの Firestore の staff に、このメールアドレスを名前にしたドキュメントを足してください。`;
+      $("#login-msg").textContent = `${staffUser.email} は本部の名簿にありません。本部の人に、コンソールの「サイトの設定」→「本部のメンバー」で足してもらってください。`;
       await auth.signOut(a);
       return;
     }
@@ -1642,6 +1870,7 @@ auth.onAuthStateChanged(a, async (user) => {
   $("#shell").hidden = !staffUser;
   if (!staffUser) return;
   $("#who").textContent = staffUser.email;
+  $("#mypw-who").textContent = staffUser.email;
   broadcastFilled = false;
   chatterFilled = false;
   route();
