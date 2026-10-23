@@ -2213,3 +2213,4 @@ html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { d
 @media (min-width: 600px) and (max-width: 999px) {
   html, html[data-theme="light"] { background: linear-gradient(180deg, #2b2a3d, #14121b) !important; }
 }
+.en-live { background: color-mix(in srgb, var(--c) 72%, #000); color: #fff; border-color: #fff; outline-color: color-mix(in srgb, var(--c) 72%, #000); outline-offset: 0; mix-blend-mode: normal; box-shadow: calc(-2 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, .35); }
