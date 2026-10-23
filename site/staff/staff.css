@@ -1124,3 +1124,9 @@ h1, h2, h3 { font-weight: 400; }
 .rp-route .rp-fig { display: flex; flex: 1 1 0; flex-direction: column; min-height: 0; }
 .rp-route .rp-box { flex: 1 1 0; min-height: 0; height: auto !important; }
 .rp-route .rp-steps, .rp-route .rp-head, .rp-route .rp-foot { flex: none; }
+@page a3land { size: A3 landscape; margin: 0; }
+.sheet.pi-a3 { width: 420mm; height: 297mm; page: a3land; }
+.sheet.pi-a3 img { position: absolute; left: 0; top: 0; width: 840mm; height: 594mm; max-width: none; }
+.sheet.pi-t1 img { left: -420mm; }
+.sheet.pi-t2 img { top: -297mm; }
+.sheet.pi-t3 img { left: -420mm; top: -297mm; }

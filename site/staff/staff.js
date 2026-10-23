@@ -1423,6 +1423,7 @@ const KIND_NAME = { shop: "模擬店", exhibit: "学科展示", info: "インフ
 const PRINT_IMAGES = [
   { id: "web", name: "ウェブサイトのQRポスター", note: "A4・たて・カラー（QRとURL）", src: "print/poster-web.jpg", land: false },
   { id: "sign", name: "アオカン（案内の看板）", note: "A4・よこ・カラー（高専祭／春潮寮）", src: "print/sign-aokan.png", land: true },
+  { id: "sign4", name: "アオカン（大きい看板）", note: "A3・よこ・4枚をつなげる（2×2・A1の大きさ）。順番は、左上→右上→左下→右下", src: "print/sign-aokan-a1.png", tiles: true },
 ];
 function renderPrintList() {
   const box = $("#pr-list");
@@ -1453,7 +1454,9 @@ async function printOne(e) {
     if (kind === "img") {
       const x = PRINT_IMAGES.find((v) => v.id === id);
       current = { kindLabel: "ひとつずつ", title: x.name, sub: x.note, set: false,
-        build: () => `<section class="sheet pi ${x.land ? "pi-land" : "pi-port"}"><img src="${x.src}" alt=""></section>` };
+        build: () => (x.tiles
+          ? [0, 1, 2, 3].map((i) => `<section class="sheet pi pi-a3 pi-t${i}"><img src="${x.src}" alt=""></section>`).join("")
+          : `<section class="sheet pi ${x.land ? "pi-land" : "pi-port"}"><img src="${x.src}" alt=""></section>`) };
     } else {
       const spot = await stampSpotForPrint(id);
       if (!spot) return;
