@@ -18,7 +18,9 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 .lh-hero { padding: 24px 0 8px; text-align: center; }
 .lh-eyebrow { margin: 0 0 8px; color: var(--fg2); font-size: 14px; font-weight: 600; letter-spacing: .02em; }
-.lh-title { margin: 0; font-size: clamp(52px, 17vw, 80px); line-height: 1; font-weight: 800; letter-spacing: -.04em; background: linear-gradient(180deg, var(--fg) 30%, var(--fg2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lh-logo { display: block; margin: 0 auto 14px; width: clamp(104px, 32vw, 140px); }
+.lh-logo img { display: block; width: 100%; height: auto; }
+.lh-title { margin: 0; font-size: clamp(40px, 13vw, 60px); line-height: 1; font-weight: 800; letter-spacing: -.04em; background: linear-gradient(180deg, var(--fg) 30%, var(--fg2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .lh-tagline { margin: 14px 0 0; font-size: clamp(19px, 5.4vw, 24px); font-weight: 600; letter-spacing: -.01em; }
 .lh-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
 .lh-acts li { padding: 6px 14px; border-radius: 999px; background: var(--fill); font-size: 14px; font-weight: 600; }
