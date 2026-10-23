@@ -152,6 +152,8 @@ python tools/serve.py
 `http://localhost:5173/staff/?emulator=1` などのように、URL に `?emulator=1` を付けて開く（テスト用パネルからも切りかえられる）。
 本部のアカウントは、エミュレーターの Authentication に作り、Firestore の `staff` にメールアドレスのドキュメントを足す。
 
+まとめて入れるなら、2つを動かしたまま、もう1つの画面で `node tools/emulator-seed.mjs`。テスト用の本部アカウント（`honbu@example.com` / `testpass123`）・名簿・お知らせ・投稿が入る。エミュレーターを止めると消える。
+
 ## 手元で確認
 
 ```
