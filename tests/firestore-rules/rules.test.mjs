@@ -314,6 +314,24 @@ await t("lhako: visitor cannot list all reservations", assertFails(getDocs(colle
 await t("lhako: staff cancels a visitor's reservation", assertSucceeds(lhCancel(staff, "anon2", 1, "d1-1400", [0, 1])));
 await t("lhako: unsigned visitor cannot book", assertFails(lhBook(nobody, "anon3", 0, "d1-1440", [0])));
 
+const newMember = (db, id, extra = {}) => setDoc(doc(db, `staff/${id}`), { name: "新人", added_by: "honbu@example.com", added_at: serverTimestamp(), ...extra });
+await t("staff: a listed staff can add a member", assertSucceeds(newMember(staff, "new@example.com")));
+await t("staff: stranger cannot add themselves", assertFails(setDoc(doc(stranger, "staff/evil@example.com"), { name: "x", added_by: "evil@example.com", added_at: serverTimestamp() })));
+await t("staff: visitor cannot add a member", assertFails(newMember(anon, "anon@example.com")));
+await t("staff: logged-out user cannot add a member", assertFails(newMember(nobody, "nobody@example.com")));
+await t("staff: member id must be lowercase", assertFails(newMember(staff, "Upper@example.com")));
+await t("staff: member id must look like an email", assertFails(newMember(staff, "not-an-email")));
+await t("staff: added_by cannot be forged", assertFails(newMember(staff, "forge@example.com", { added_by: "someone@else" })));
+await t("staff: added_at must be the server time", assertFails(newMember(staff, "late@example.com", { added_at: new Date(2030, 0, 1) })));
+await t("staff: extra fields rejected", assertFails(newMember(staff, "extra@example.com", { admin: true })));
+await t("staff: empty name rejected", assertFails(newMember(staff, "noname@example.com", { name: "" })));
+await t("staff: name over 40 chars rejected", assertFails(newMember(staff, "long@example.com", { name: "あ".repeat(41) })));
+await t("staff: an existing member cannot be overwritten", assertFails(newMember(staff, "new@example.com", { name: "のっとり" })));
+await t("staff: members cannot be edited", assertFails(updateDoc(doc(staff, "staff/new@example.com"), { name: "べつ" })));
+await t("staff: a member can be removed by another staff", assertSucceeds(deleteDoc(doc(staff, "staff/new@example.com"))));
+await t("staff: staff cannot remove themselves", assertFails(deleteDoc(doc(staff, "staff/honbu@example.com"))));
+await t("staff: stranger cannot remove a member", assertFails(deleteDoc(doc(stranger, "staff/honbu@example.com"))));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

@@ -2205,3 +2205,5 @@ input:focus-visible, textarea:focus-visible { box-shadow: none; }
 
 .rally-sorry { background: rgba(120, 28, 36, 0.55); color: #fff; text-shadow: 0 1px 0 rgba(48, 44, 41, 0.35); }
 .rally-sorry b { font-family: var(--hud-font); font-weight: 400; font-size: 1.2rem; letter-spacing: 0.03em; line-height: 1.4; }
+
+.en-live { background: color-mix(in srgb, var(--c) 72%, #000); color: #fff; border-color: #fff; mix-blend-mode: normal; box-shadow: 0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.35); }

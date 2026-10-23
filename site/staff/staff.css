@@ -871,3 +871,14 @@ h1, h2, h3 { font-weight: 400; }
 .lhako-res { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .lhako-res li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 @media (max-width: 640px) { .lhako-row { grid-template-columns: 1fr; } }
+
+.gate-link { display: block; margin: 14px auto 0; padding: 4px 8px; border: 0; background: none; color: var(--ink-2, inherit); font: inherit; font-size: .85rem; text-decoration: underline; cursor: pointer; }
+.gate-msg.is-ok { color: #1e7a4a; }
+.form-msg { min-height: 1.4em; margin: 0; color: var(--red); font-weight: 700; font-size: .9rem; }
+.form-msg.is-ok { color: #1e7a4a; }
+.member-list { display: grid; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
+.member-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2, rgba(128, 128, 128, .08)); }
+.member-row > div { display: grid; min-width: 0; }
+.member-row small { overflow-wrap: anywhere; opacity: .75; }
+.member-result { margin-top: 14px; display: grid; gap: 8px; }
+.member-pre { margin: 0; padding: 10px; border-radius: 10px; background: rgba(128, 128, 128, .12); white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; user-select: all; }

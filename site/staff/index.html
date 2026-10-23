@@ -24,6 +24,7 @@
         <label class="field"><span>パスワード</span><input id="password" type="password" autocomplete="current-password" required></label>
         <button class="btn btn-primary btn-block" type="submit">ログイン</button>
       </form>
+      <button class="gate-link" type="button" id="forgot">パスワードを忘れたとき</button>
       <p class="gate-msg" id="login-msg" role="status"></p>
     </div>
   </section>
@@ -444,6 +445,35 @@
                 <button class="btn btn-primary" type="submit">保存して公開</button>
               </div>
             </form>
+          </article>
+
+          <article class="card">
+            <header class="card-head"><h2>自分のパスワード</h2></header>
+            <form id="mypw-form" class="stack">
+              <label class="field"><span>いまのパスワード</span><input id="mypw-now" type="password" autocomplete="current-password" required></label>
+              <label class="field"><span>新しいパスワード（8文字以上）</span><input id="mypw-new" type="password" autocomplete="new-password" minlength="8" required></label>
+              <label class="field"><span>新しいパスワード（もう一度）</span><input id="mypw-again" type="password" autocomplete="new-password" minlength="8" required></label>
+              <div class="row row-wrap">
+                <button class="btn btn-primary" type="submit">パスワードを変える</button>
+                <button class="btn btn-ghost" type="button" id="mypw-mail">再設定のメールを送る</button>
+              </div>
+              <p class="muted small">いまのパスワードを忘れたときは、「再設定のメールを送る」を押してください。変えると、ほかの端末は、ログインし直しになります。</p>
+              <p class="form-msg" id="mypw-msg" role="status"></p>
+            </form>
+          </article>
+
+          <article class="card">
+            <header class="card-head"><h2>本部のメンバー</h2></header>
+            <ul class="member-list" id="members-list"></ul>
+            <form id="member-form" class="stack" autocomplete="off">
+              <h3 class="ai-sub">メンバーを足す</h3>
+              <label class="field"><span>名前</span><input id="member-name" maxlength="40" required></label>
+              <label class="field"><span>メールアドレス</span><input id="member-email" type="email" required></label>
+              <label class="field"><span>最初のパスワード（8文字以上）</span><span class="row"><input id="member-pw" type="password" autocomplete="new-password" minlength="8" required><button class="btn btn-ghost btn-sm" type="button" id="member-gen">作る</button></span></label>
+              <button class="btn btn-primary" type="submit">足す</button>
+              <p class="form-msg" id="member-msg" role="status"></p>
+            </form>
+            <div class="member-result" id="member-result" hidden></div>
           </article>
 
           <article class="card">
