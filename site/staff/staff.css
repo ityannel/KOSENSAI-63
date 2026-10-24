@@ -1128,3 +1128,9 @@ h1, h2, h3 { font-weight: 400; }
 @page a3land { size: A3 landscape; margin: 0; }
 .sheet.pi-a3 { width: 420mm; height: 297mm; page: a3land; }
 .sheet.pi-a3 img { position: absolute; max-width: none; width: calc(var(--cols) * 420mm); height: calc(var(--rows) * 297mm); left: calc(var(--c) * -420mm); top: calc(var(--r) * -297mm); }
+.sg-bp textarea { width: 100%; min-height: 110px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg, transparent); color: inherit; font: inherit; line-height: 1.6; resize: vertical; }
+.sg-bp-result { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 4px; font-size: .9rem; }
+.sg-bp-result .is-ok { color: var(--teal, #3F9F99); }
+.sg-bp-result .is-ng { color: var(--rose, #d9334f); }
+.sg-bp-names { margin-top: 12px; }
+.sg-bp-names summary { cursor: pointer; font-size: .85rem; }

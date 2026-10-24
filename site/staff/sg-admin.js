@@ -1,4 +1,6 @@
 import { createPicker } from "./sg-map.js";
+import { MAP } from "../assets/config.js";
+import { loadMiniMap, locatePoint } from "../assets/ai-minimap.js";
 
 const SLIDES = [["stage", "ステージ"], ["posts", "みんなの投稿"], ["popular", "人気の投稿"], ["shop", "模擬店"], ["crowd", "混雑"], ["stamp", "スタンプ"], ["share", "シェア"]];
 const GROUPS = ["where", "orient", "slides", "only", "banner", "note"];
@@ -169,6 +171,63 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
       toast("登録をやめました");
     } catch { toast("消せませんでした", true); }
   });
+
+  const norm = (t) => String(t ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase();
+  const candidates = () => [
+    ...MAP.spots.filter((s) => s.at && s.name).map((s) => ({ key: s.id, name: s.name, at: s.at, floor: s.floor ?? "1F" })),
+    ...MAP.places.filter((p) => p.name).map((p) => ({ key: p.id, name: p.name, floor: p.floor ?? "1F", alt: [p.short, p.sub, ...[].concat(p.room ?? [])].filter(Boolean) })),
+  ];
+  const namesOf = (c) => [c.name, c.key, ...(c.alt ?? [])].map(norm);
+  function resolvePlace(query) {
+    const n = norm(query);
+    if (!n) return { err: "場所の名前がありません" };
+    const cs = candidates();
+    let hit = cs.filter((c) => namesOf(c).includes(n));
+    if (!hit.length) hit = cs.filter((c) => namesOf(c).some((x) => x.includes(n) || (x.length >= 3 && n.includes(x))));
+    const uniq = [...new Map(hit.map((c) => [c.key, c])).values()];
+    if (!uniq.length) return { err: `「${query}」という場所が見つかりません` };
+    if (uniq.length > 1) return { err: `「${query}」は、複数あります（${uniq.slice(0, 4).map((c) => c.name).join("・")}）` };
+    const c = uniq[0];
+    const pt = c.at ?? locatePoint(c.key);
+    if (!pt) return { err: `「${c.name}」は、地図の位置が分かりません` };
+    return { name: c.name, place: { x: Math.round(pt[0]), y: Math.round(pt[1]), floor: c.floor } };
+  }
+  const parseLine = (line) => {
+    const m = line.match(/^\s*([A-Za-z0-9_-]{3,40})[\s:：=＝,，]+(.+?)\s*$/);
+    return m ? { id: m[1], q: m[2] } : null;
+  };
+  $("#sg-bp-fill").addEventListener("click", () => {
+    const ids = allIds();
+    $("#sg-bp-text").value = ids.length ? ids.map((id) => `${id} `).join("\n") : "";
+    if (!ids.length) toast("いま開かれている画面は、ありません");
+    $("#sg-bp-text").focus();
+  });
+  $("#sg-bp-go").addEventListener("click", async () => {
+    const out = $("#sg-bp-result"), lines = $("#sg-bp-text").value.split(/\r?\n/).filter((l) => l.trim());
+    if (!lines.length) { toast("IDと場所を、書いてください", true); return; }
+    await loadMiniMap();
+    const rows = [];
+    const btn = $("#sg-bp-go");
+    btn.disabled = true;
+    for (const line of lines) {
+      const p = parseLine(line);
+      if (!p) { rows.push([false, `${line.trim()}（IDと場所の名前を、空白で分けて書いてください）`]); continue; }
+      const r = resolvePlace(p.q);
+      if (r.err) { rows.push([false, `${p.id}：${r.err}`]); continue; }
+      try {
+        await fs.setDoc(fs.doc(db, "signage_devices", p.id), docFor(p.id, { place: r.place, spot: "", name: devices.get(p.id)?.name || r.name }));
+        rows.push([true, `${p.id} → ${r.name}`]);
+      } catch (err) {
+        rows.push([false, `${p.id}：保存できませんでした`]);
+        console.warn("[staff] サイネージの場所:", err.code);
+      }
+    }
+    btn.disabled = false;
+    out.innerHTML = rows.map(([ok, t]) => `<li class="${ok ? "is-ok" : "is-ng"}">${ok ? "✓" : "✕"} ${esc(t)}</li>`).join("");
+    const okN = rows.filter((r) => r[0]).length;
+    toast(okN ? `${okN}台の場所を、反映しました` : "反映できた画面は、ありません", !okN);
+  });
+  $("#sg-bp-names").textContent = [...new Set(candidates().map((c) => c.name))].join("、");
 
   listen(fs.collection(db, "signage_devices"), (snap) => {
     devices = new Map(snap.docs.map((d) => [d.id, d.data()]));
