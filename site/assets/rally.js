@@ -107,7 +107,7 @@ async function stamp(code, shopId) {
     return message("スタンプは開催日（" + FESTIVAL.days.map((d) => d.label).join("・") + "）に押せます。", "warn");
   }
   const shop = await findShop(code, shopId);
-  if (!shop && !rallyLoaded()) return message("お店の情報を読みこめていません。電波のよい所で、もう一度 QR を読んでください。", "warn");
+  if (!shop && !rallyLoaded()) return message("お店の情報を読みこめていません。電波のよい所で、もう一度 QR をスキャンしてください。", "warn");
   if (!shop) return message("この QR ではスタンプを押せませんでした。近くのスタッフに聞いてみてください。", "warn");
   if (state.stamps[shop.id]) return message(`「${shop.name}」のスタンプはもう押してあります。`, "info");
   state.stamps[shop.id] = nowMs();
@@ -269,6 +269,13 @@ function render() {
   const count = stampCount();
   const done = count >= stampGoal();
   const canClaim = done && !state.claimedAt && !prizeOut;
+  const steps = $("#rally-steps");
+  if (steps) {
+    const cond = RALLY.prize?.match(/（(.+?)）/)?.[1];
+    steps.innerHTML = `<li><span>校内の<b>スタンプラリーの貼り紙</b>の QR を、<b>カメラでスキャン</b>する</span></li>
+      <li><span>スタンプを<b>${stampGoal()}個</b>ゲットする</span></li>
+      <li><span>${esc(RALLY.claimPlace ?? "本部")}で、<b>景品</b>と交換する${cond ? `<small>${esc(cond)}</small>` : ""}</span></li>`;
+  }
   const sorry = $("#rally-sorry");
   if (sorry) sorry.hidden = !prizeOut;
   const flipped = $(".rc")?.getAttribute("aria-pressed") === "true";
@@ -292,10 +299,10 @@ function render() {
       <span class="rc-face rc-back">
         <b class="rc-back-title">あそびかた</b>
         <ol class="rc-rules">
-          <li>校内の数か所に置いてある QR を読む</li>
-          <li>スタンプが<em>${stampGoal()}個</em>たまったら達成</li>
-          ${RALLY.claimPlace ? `<li>${esc(RALLY.claimPlace)}で、景品と交換できます</li>` : ""}
-          <li>QRの場所は、地図の「スタンプ」でさがせます</li>
+          <li>校内のスタンプラリーの貼り紙の QR を、カメラでスキャンする</li>
+          <li>スタンプが<em>${stampGoal()}個</em>ゲットできたら達成</li>
+          ${RALLY.claimPlace ? `<li>${esc(RALLY.claimPlace)}で、景品と交換する</li>` : ""}
+          <li>貼り紙の場所は、地図の「スタンプ」でさがせます</li>
         </ol>
       </span>
     </button>
@@ -343,10 +350,10 @@ export function initRallyPage(getNow = () => Date.now()) {
 }
 
 const openScan = async () => (await import("./qr-scan.js")).openQrScanner({
-  title: "QR を読む",
-  hint: "校内に置いてある QR を枠に入れてください",
+  title: "QR をスキャン",
+  hint: "スタンプラリーの貼り紙の QR を、枠に入れてください",
   wrong: "スタンプラリーの QR ではないようです",
-  noCamera: "スマホのカメラアプリで QR を読んでも、スタンプは押せます",
+  noCamera: "スマホのカメラアプリでスキャンしても、スタンプはゲットできます",
   accept: (text) => {
     try {
       const q = new URL(text, location.href).searchParams;

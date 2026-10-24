@@ -2211,3 +2211,8 @@ html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { d
 .tl-row.is-cancelled .tl-main, .tl-row.is-cancelled time { text-decoration: line-through; text-decoration-thickness: 0.1em; }
 .tl-badge.is-cancel { padding: calc(2 * var(--u)) calc(10 * var(--u)); border-radius: calc(8 * var(--u)); background: #5b5b5b; color: #fff; }
 .en-live { background: color-mix(in srgb, var(--c) 72%, #000); color: #fff; border-color: #fff; outline-color: color-mix(in srgb, var(--c) 72%, #000); outline-offset: 0; mix-blend-mode: normal; box-shadow: calc(-2 * var(--u)) calc(2 * var(--u)) 0 rgba(48, 44, 41, .35); }
+.rally-steps { counter-reset: st; list-style: none; margin: calc(6 * var(--u)) 0 calc(14 * var(--u)); padding: 0; display: grid; gap: calc(8 * var(--u)); }
+.rally-steps li { counter-increment: st; display: grid; grid-template-columns: calc(30 * var(--u)) 1fr; gap: calc(10 * var(--u)); align-items: center; padding: calc(8 * var(--u)) calc(12 * var(--u)); border-radius: calc(12 * var(--u)); background: rgba(255, 251, 242, 0.16); color: #FFFBF2; font-family: var(--text-font); font-weight: 700; font-size: calc(14 * var(--u)); line-height: 1.5; }
+.rally-steps li::before { content: counter(st); display: grid; place-items: center; width: calc(30 * var(--u)); aspect-ratio: 1; border-radius: 50%; background: #FFF1A8; color: #634A2E; font-family: var(--hud-font); font-weight: 400; font-size: calc(18 * var(--u)); }
+.rally-steps b { color: #FFF1A8; }
+.rally-steps small { display: block; margin-top: calc(2 * var(--u)); font-size: calc(12 * var(--u)); opacity: 0.9; }
