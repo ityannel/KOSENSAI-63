@@ -221,7 +221,7 @@ function evenToilets() {
 function attachRally() {
   for (const p of places.values()) delete p.shops;
   for (const x of RALLY.shops) {
-    const p = x.place ? places.get(x.place) : x.room ? place(x.room) : null;
+    const p = places.get(`st-${x.id}`) ?? (x.place ? places.get(x.place) : x.room ? place(x.room) : null);
     if (p && !(p.shops ?? []).includes(x.id)) p.shops = [...(p.shops ?? []), x.id];
   }
 }
