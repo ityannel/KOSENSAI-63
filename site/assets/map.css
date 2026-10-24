@@ -1271,3 +1271,4 @@ html.lite #map-svg * { filter: none !important; }
 .sh-points li { display: list-item; margin: 0 0 3px; }
 .sh-pnote { flex: 1 0 100%; margin: 2px 0 0; font-size: 0.78rem; line-height: 1.5; color: var(--m-ink-2); }
 .sh-flyer { display: block; width: min(100%, 240px); height: auto; margin: 8px 0 2px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); cursor: zoom-in; }
+#map-svg .ic-pin text { font-size: 12px; font-weight: 800; }

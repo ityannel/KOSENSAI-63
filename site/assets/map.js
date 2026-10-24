@@ -1111,7 +1111,7 @@ function drawFloor() {
   const overs = (PATHS[floor] ?? []).filter((p) => p.over).map(outLine);
   const rooms = [...places.values()].filter((p) => p.floor === floor && p.rect && !p.fest && !p.outdoor && p.kind !== "spot" && p.kind !== "aed" && p.kind !== "vending" && !byRoom.has(p.id))
     .sort((a, b) => b.rect[2] * b.rect[3] - a.rect[2] * a.rect[3]);
-  const fest = [...places.values()].filter((p) => p.floor === floor && p.fest);
+  const fest = [...places.values()].filter((p) => p.floor === floor && p.fest && !p.pin);
   const roomEls = rooms.map((p) => shapeEl(p.rects ?? [p.rect], `room k-${p.kind}`, ` data-id="${p.id}"`));
   const festEls = fest.flatMap((p) => p.poly ? [`<polygon class="room k-${p.kind}" points="${p.poly.join(" ")}" data-id="${p.id}"${deptStyle(p)}/>`] : (p.zone ? p.rects.map((r) => [r]) : [p.rects ?? [p.rect]]).map((rs) => shapeEl(rs, `room k-${p.kind}${p.zone ? " is-zone" : ""}`, ` data-id="${p.id}"${deptStyle(p)}`)));
   const roomLabels = [...rooms.map((p) => roomLabel(p)), ...fest.flatMap(festLabels)];
@@ -1255,6 +1255,11 @@ export function renderMap() {
   const rowIds = new Set();
   for (const p of places.values()) {
     if (!p.fest || p.floor !== floor) continue;
+    if (p.pin) {
+      const done = (p.shops ?? []).some((id) => s.stamps?.includes(id));
+      if (p.shops?.length) live.push(icon(p.rect[0], p.rect[1], "ic-pin ic-stamp", `<g data-id="${esc(p.id)}" style="cursor:pointer"><circle class="bg" r="11"/><text>${done ? "縁" : "印"}</text></g>`));
+      continue;
+    }
     const items = [];
     if (s.phase === "during" && s.running?.some((e) => e.venue === p.id)) items.push([32, '<rect class="bg" x="-16" y="-8" width="32" height="16" rx="8"/><text>NOW</text>', "ic-now"]);
     const wt = worstWait(p, s);
