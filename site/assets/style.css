@@ -2217,3 +2217,5 @@ html.lite .weather-fx, html.lite .pc-bg, html.lite .pc-rig, html.lite .pc-fg { d
 .rally-steps b { color: #FFF1A8; }
 .rally-steps small { display: block; margin-top: calc(2 * var(--u)); font-size: calc(12 * var(--u)); opacity: 0.9; }
 .rally-full .rally-where { margin-top: calc(12 * var(--u)); text-decoration: none; background: var(--grain), #FEEBC4; color: #634A2E; }
+.rally-steps li.is-note { grid-template-columns: 1fr; background: rgba(255, 241, 168, 0.22); color: #FFF1A8; font-size: calc(13 * var(--u)); }
+.rally-steps li.is-note::before { display: none; }

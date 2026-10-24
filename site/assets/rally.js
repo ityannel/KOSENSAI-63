@@ -274,7 +274,7 @@ function render() {
     const cond = RALLY.prize?.match(/（(.+?)）/)?.[1];
     steps.innerHTML = `<li><span>校内の<b>スタンプラリーの貼り紙</b>の QR を、<b>カメラでスキャン</b>する</span></li>
       <li><span>スタンプを<b>${stampGoal()}個</b>ゲットする</span></li>
-      <li><span>${esc(RALLY.claimPlace ?? "本部")}で、<b>景品</b>と交換する${cond ? `<small>${esc(cond)}</small>` : ""}</span></li>`;
+      <li><span>${esc(RALLY.claimPlace ?? "本部")}で、<b>景品</b>と交換する${cond ? `<small>${esc(cond)}</small>` : ""}</span></li>${RALLY.paperNote ? `<li class="is-note"><span>${esc(RALLY.paperNote)}</span></li>` : ""}`;
   }
   const sorry = $("#rally-sorry");
   if (sorry) sorry.hidden = !prizeOut;
