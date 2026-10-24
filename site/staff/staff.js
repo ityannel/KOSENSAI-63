@@ -188,6 +188,21 @@ function startListening() {
   });
   listen(fs.doc(db, "site_live", "current"), (snap) => { state.live = snap.data() ?? {}; renderBroadcast(); renderOverview(); $("#prize-out").checked = !!state.live.prize_out; $("#stats-live-off").checked = !!state.live.presence_off; $("#photo-review").checked = !!state.live.photo_review; $("#cache-state").textContent = state.live.cache_reset_at ? `${time(toMs(state.live.cache_reset_at))} に指示` : ""; });
   listen(fs.doc(db, "site_schedule", "current"), (snap) => { state.schedule = snap.exists() ? (snap.data().changes ?? {}) : {}; renderSchedule(); });
+  listen(fs.collection(db, "rally_logs"), (snap) => {
+    const goal = rallyGoal();
+    let people = 0, done = 0, claimed = 0;
+    snap.forEach((d) => {
+      const v = d.data(), n = Object.keys(v.stamps ?? {}).length;
+      if (n > 0) people++;
+      if (n >= goal) done++;
+      if (v.claimed_at) claimed++;
+    });
+    $("#rl-done").textContent = done;
+    $("#rl-people").textContent = people;
+    $("#rl-claimed").textContent = claimed;
+    $("#rl-left").textContent = RALLY.prizeLimit ? Math.max(0, RALLY.prizeLimit - claimed) : "–";
+    $("#rl-state").textContent = `${time(Date.now())} 更新`;
+  });
   listen(fs.collection(db, "crowd"), (snap) => {
     state.crowd = {};
     snap.forEach((d) => { const v = d.data(); state.crowd[d.id] = { level: Math.min(v.level, 2), updated_at: toMs(v.updated_at) }; });
@@ -1175,7 +1190,7 @@ $("#cache-reset").addEventListener("click", () => {
   if (!confirm("全員のキャッシュを削除しますか？（いま開いている人の画面は、読みこみなおされます）")) return;
   saveLive("全員のキャッシュ削除を指示しました", { cache_reset_at: fs.serverTimestamp() });
 });
-const rallyGoal = () => { return Math.min(RALLY.goal, state.rally?.shops?.length || rallySpots().length || RALLY.goal); };
+const rallyGoal = () => Math.max(1, RALLY.goal);
 
 const siteUrl = (path = "") => new URL(`../${path}`, location.href).href;
 function qrDataUrl(text, size = 480) {

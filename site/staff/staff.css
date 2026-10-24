@@ -1147,3 +1147,8 @@ h1, h2, h3 { font-weight: 400; }
 @media (max-width: 760px) { .sg-live-row { grid-template-columns: 1fr; } }
 .sg-live-q { max-width: 22em; margin: 10px 0 0; }
 .sg-live-id b em { font-style: normal; padding: 1px 6px; border-radius: 6px; background: var(--teal, #3F9F99); color: #fff; letter-spacing: .04em; }
+.rally-live .rl-big { display: flex; align-items: baseline; justify-content: center; gap: .15em; padding: 8px 0 0; line-height: 1; }
+.rally-live .rl-big b { font-family: "WDXL Lubrifont JP N", sans-serif; font-weight: 400; font-size: clamp(140px, 24vw, 360px); letter-spacing: -.02em; color: var(--teal, #3F9F99); font-variant-numeric: tabular-nums; }
+.rally-live .rl-big span { font-size: clamp(36px, 6vw, 96px); font-weight: 700; }
+.rally-live .rl-sub { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 36px; padding: 6px 0 4px; font-size: clamp(16px, 2.2vw, 28px); font-weight: 700; }
+.rally-live .rl-sub b { font-size: 1.5em; font-variant-numeric: tabular-nums; }

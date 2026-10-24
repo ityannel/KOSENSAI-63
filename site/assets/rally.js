@@ -82,7 +82,7 @@ let state = load();
 const DEMO = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSearchParams(location.search).has("demo");
 const DEMO_SHOPS = [{ id: "d1", name: "5SE", vote: true }, { id: "d2", name: "麺屋 つちよし", vote: true }, { id: "d3", name: "クッキングミオ♡", vote: true }, { id: "d4", name: "やきとり処清", vote: true }];
 const shops = () => (DEMO ? DEMO_SHOPS : RALLY.shops);
-export const stampGoal = () => Math.max(1, Math.min(RALLY.goal, shops().length || RALLY.goal));
+export const stampGoal = () => Math.max(1, RALLY.goal);
 if (DEMO) state = { ...state, stamps: { d1: Date.parse("2026-10-24T11:20:00+09:00"), d2: Date.parse("2026-10-24T13:05:00+09:00") } };
 export const stampCount = () => Object.keys(state.stamps).length;
 export const stampIds = () => Object.keys(state.stamps);

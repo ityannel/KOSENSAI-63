@@ -344,6 +344,7 @@ export const LEGAL = { takedownForm: "https://forms.gle/LadtgNhjrLi9XKZH9" };
 
 export const RALLY = {
   goal: 5,
+  prizeLimit: 70,
   prize: "本部でお菓子と交換できます（今日は70人限定。なくなりしだい終了）",
   claimPlace: "玄関ホールの本部",
   shops: [
