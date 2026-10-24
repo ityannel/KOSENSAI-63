@@ -48,7 +48,7 @@ const ANSWERS = {
     const rows = CROWD.venues.map((id) => ({ id, c: s.crowd?.[id], lv: CROWD.levels[s.crowd?.[id]?.level] }));
     const known = rows.filter((r) => r.lv);
     if (!known.length) {
-      return { line: "当日、ここで混み具合が見られるよ", html: `<p>体育館・玄関ホール・${esc(venueName("zacros"))}の混雑を、本部がリアルタイムで更新します。</p>`, actions: [link("#crowd", "くわしく")] };
+      return { line: "当日、ここで混み具合が見られるよ", html: `<p>体育館・玄関ホールの混雑を、本部がリアルタイムで更新します。</p>`, actions: [link("#crowd", "くわしく")] };
     }
     const calm = [...known].sort((a, b) => a.c.level - b.c.level)[0];
     return {

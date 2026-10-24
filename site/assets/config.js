@@ -124,8 +124,8 @@ export const MAP = {
 };
 
 export const CROWD = {
-  venues: ["gym2", "entrance", "zacros"],
-  short: { gym2: "体育館", entrance: "玄関", zacros: "講義室" },
+  venues: ["gym2", "entrance"],
+  short: { gym2: "体育館", entrance: "玄関" },
   levels: [
     { label: "空いてる", color: "#6CBAB5" },
     { label: "混んでる", color: "#F2A96A" },

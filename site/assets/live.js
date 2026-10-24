@@ -42,7 +42,6 @@ const demoNow = params.get("now") ? Date.parse(params.get("now") + (params.get("
 const DEMO_CROWD = {
   gym2: { level: 2, updated_at: demoNow - 3 * 60 * 1000 },
   entrance: { level: 0, updated_at: demoNow - 12 * 60 * 1000 },
-  zacros: { level: 1, updated_at: demoNow - 45 * 60 * 1000 },
 };
 let dbPromise = null;
 let fs = null;
