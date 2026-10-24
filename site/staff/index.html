@@ -349,12 +349,17 @@
           <div class="sg-list" id="sg-list"></div>
         </article>
         <article class="card sg-bp" id="sg-bp">
-          <header class="card-head"><h2>IDから、場所をまとめて登録</h2></header>
-          <p class="muted small">1行に、「ID　場所の名前」を書いて、「場所を反映する」を押します。画面は、数秒で、その場所の設定になります。見る人の向きは、いまの設定のまま（まだなら、北向き）です。</p>
+          <header class="card-head"><h2>いま起動している画面の、場所を決める</h2></header>
+          <p class="muted small">いま開かれている画面（5分以内に反応があったもの）が、IDつきで並びます。IDが分からなくても、どのテレビか確かめて、場所を決められます。</p>
+          <div class="sg-live" id="sg-live"></div>
+          <p class="muted small sg-live-note">「画面にIDを出す」を押すと、そのテレビの画面の上に、IDが1分間、出ます。見る人の向きは、いまの設定のまま（まだなら、北向き）です。向きを変えるときは、「地図で動かす」を使ってください。</p>
+          <details class="sg-bp-more"><summary>IDを書いて、まとめて登録する</summary>
+          <p class="muted small">1行に、「ID　場所の名前」を書いて、「場所を反映する」を押します。</p>
           <textarea id="sg-bp-text" rows="5" spellcheck="false" placeholder="sg-a1b2c3 学生玄関&#10;sg-d4e5f6 体育館 北玄関&#10;sg-g7h8i9 TSKEライブラリー"></textarea>
           <div class="ai-save"><button type="button" class="btn btn-primary" id="sg-bp-go">場所を反映する</button><button type="button" class="btn btn-ghost" id="sg-bp-fill">いま開いている画面のIDを入れる</button></div>
           <ul class="sg-bp-result" id="sg-bp-result"></ul>
           <details class="sg-bp-names"><summary>使える場所の名前</summary><p class="muted small" id="sg-bp-names"></p></details>
+          </details>
         </article>
         <form class="card sg-form" id="sg-form" hidden>
           <header class="card-head"><h2 id="sg-form-title">画面の設定</h2><button type="button" class="btn btn-ghost btn-sm" id="sg-close">閉じる</button></header>

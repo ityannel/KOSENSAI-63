@@ -38,7 +38,60 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     $("#sg-bulk").disabled = selected.size < 2;
     picker?.setDevices(ids.map((id) => { const d = devices.get(id), l = ms(seen.get(id)?.seen); return { id, name: d?.name, place: d?.place && typeof d.place.x === "number" ? d.place : null, heading: Number.isFinite(Number(d?.heading)) ? Number(d.heading) : 270, live: l && now - l < 150000 }; }));
     $("#sg-all").checked = ids.length > 0 && ids.every((id) => selected.has(id));
+    paintLive();
   }
+
+  const chosen = new Map();
+  const placeOptions = () => `<option value="">（場所を選ぶ）</option>${[...new Set(candidates().map((c) => c.name))].map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join("")}`;
+  function paintLive() {
+    const box = $("#sg-live");
+    if (!box || box.contains(document.activeElement) && document.activeElement.matches("select")) return;
+    const now = Date.now();
+    const ids = [...seen].filter(([, s]) => now - ms(s?.seen) < 300000).sort((a, b) => ms(b[1]?.seen) - ms(a[1]?.seen)).map(([id]) => id);
+    const opts = placeOptions();
+    box.innerHTML = ids.length ? ids.map((id) => {
+      const d = devices.get(id), s = seen.get(id);
+      return `<div class="sg-live-row" data-id="${esc(id)}">
+        <div class="sg-live-id"><i class="sg-dot is-live"></i><b>${esc(id)}</b><small>${esc(d?.name || "（名前なし）")}・${esc(`${s.w ?? "?"}×${s.h ?? "?"}`)}・${esc(time(ms(s.seen)))}・${d?.place ? "場所：設定ずみ" : "場所：まだ"}</small></div>
+        <div class="sg-live-act"><select data-pl aria-label="場所の名前">${opts}</select><button type="button" class="btn btn-primary btn-sm" data-apply>反映</button><button type="button" class="btn btn-ghost btn-sm" data-map>地図で動かす</button><button type="button" class="btn btn-ghost btn-sm" data-flash>画面にIDを出す</button></div>
+      </div>`;
+    }).join("") : '<p class="muted small">いま開かれている画面は、ありません。サイネージのページを開くと、ここに出ます。</p>';
+    box.querySelectorAll(".sg-live-row").forEach((row) => { const v = chosen.get(row.dataset.id); if (v) row.querySelector("select").value = v; });
+  }
+  $("#sg-live").addEventListener("change", (e) => {
+    const sel = e.target.closest("select[data-pl]");
+    if (sel) chosen.set(sel.closest(".sg-live-row").dataset.id, sel.value);
+  });
+  $("#sg-live").addEventListener("click", async (e) => {
+    const row = e.target.closest(".sg-live-row");
+    if (!row) return;
+    const id = row.dataset.id;
+    if (e.target.closest("[data-map]")) {
+      selected.clear();
+      await openForm([id], !devices.has(id), false);
+      picker?.placeCenter();
+      $("#sg-overview").scrollIntoView({ block: "start", behavior: "smooth" });
+      return;
+    }
+    if (e.target.closest("[data-flash]")) {
+      try {
+        await fs.setDoc(fs.doc(db, "signage_devices", id), docFor(id, { banner: `この画面のID：${id}`, banner_until: Date.now() + 60000 }));
+        toast("その画面に、IDを1分間、出しました");
+      } catch (err) { toast("出せませんでした", true); console.warn("[staff] サイネージのID表示:", err.code); }
+      return;
+    }
+    if (e.target.closest("[data-apply]")) {
+      const q = row.querySelector("select").value;
+      if (!q) { toast("場所を選んでください", true); return; }
+      await loadMiniMap();
+      const r = resolvePlace(q);
+      if (r.err) { toast(r.err, true); return; }
+      try {
+        await fs.setDoc(fs.doc(db, "signage_devices", id), docFor(id, { place: r.place, spot: "", name: devices.get(id)?.name || r.name }));
+        toast(`${id} を「${r.name}」にしました`);
+      } catch (err) { toast("保存できませんでした", true); console.warn("[staff] サイネージの場所:", err.code); }
+    }
+  });
 
   async function ensurePicker() {
     pickerP ??= createPicker($("#sg-where"), { onSelect: (id, put) => { selected.clear(); openForm([id], !devices.has(id), false).then(() => { if (put) picker?.placeCenter(); }); } }).then((p) => { picker = p; paintList(); return p; }).catch((err) => { console.warn("[staff] 地図:", err); $("#sg-where").innerHTML = '<p class="muted small">地図を読み込めませんでした。</p>'; return null; });

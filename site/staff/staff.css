@@ -1134,3 +1134,14 @@ h1, h2, h3 { font-weight: 400; }
 .sg-bp-result .is-ng { color: var(--rose, #d9334f); }
 .sg-bp-names { margin-top: 12px; }
 .sg-bp-names summary { cursor: pointer; font-size: .85rem; }
+.sg-live { display: grid; gap: 10px; margin: 12px 0 8px; }
+.sg-live-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: center; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; }
+.sg-live-id { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; min-width: 0; }
+.sg-live-id b { font-size: 1.05rem; word-break: break-all; }
+.sg-live-id small { grid-column: 2; color: var(--muted, #9aa0a6); }
+.sg-live-act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sg-live-act select { max-width: 15em; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg, transparent); color: inherit; font: inherit; }
+.sg-live-note { margin-bottom: 8px; }
+.sg-bp-more { margin-top: 10px; }
+.sg-bp-more > summary { cursor: pointer; font-size: .9rem; }
+@media (max-width: 760px) { .sg-live-row { grid-template-columns: 1fr; } }
