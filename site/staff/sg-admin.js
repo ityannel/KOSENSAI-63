@@ -47,17 +47,21 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     const box = $("#sg-live");
     if (!box || box.contains(document.activeElement) && document.activeElement.matches("select")) return;
     const now = Date.now();
-    const ids = [...seen].filter(([, s]) => now - ms(s?.seen) < 300000).sort((a, b) => ms(b[1]?.seen) - ms(a[1]?.seen)).map(([id]) => id);
+    const q = ($("#sg-live-q")?.value ?? "").trim().toLowerCase();
+    const live = [...seen].filter(([, s]) => now - ms(s?.seen) < 300000).sort((a, b) => ms(b[1]?.seen) - ms(a[1]?.seen)).map(([id]) => id);
+    const ids = q ? live.filter((id) => id.toLowerCase().includes(q)) : live;
     const opts = placeOptions();
+    const idHtml = (id) => (id.length > 4 ? `${esc(id.slice(0, -4))}<em>${esc(id.slice(-4))}</em>` : `<em>${esc(id)}</em>`);
     box.innerHTML = ids.length ? ids.map((id) => {
       const d = devices.get(id), s = seen.get(id);
       return `<div class="sg-live-row" data-id="${esc(id)}">
-        <div class="sg-live-id"><i class="sg-dot is-live"></i><b>${esc(id)}</b><small>${esc(d?.name || "（名前なし）")}・${esc(`${s.w ?? "?"}×${s.h ?? "?"}`)}・${esc(time(ms(s.seen)))}・${d?.place ? "場所：設定ずみ" : "場所：まだ"}</small></div>
+        <div class="sg-live-id"><i class="sg-dot is-live"></i><b>${idHtml(id)}</b><small>${esc(d?.name || "（名前なし）")}・${esc(`${s.w ?? "?"}×${s.h ?? "?"}`)}・${esc(time(ms(s.seen)))}・${d?.place ? "場所：設定ずみ" : "場所：まだ"}</small></div>
         <div class="sg-live-act"><select data-pl aria-label="場所の名前">${opts}</select><button type="button" class="btn btn-primary btn-sm" data-apply>反映</button><button type="button" class="btn btn-ghost btn-sm" data-map>地図で動かす</button><button type="button" class="btn btn-ghost btn-sm" data-flash>画面にIDを出す</button></div>
       </div>`;
-    }).join("") : '<p class="muted small">いま開かれている画面は、ありません。サイネージのページを開くと、ここに出ます。</p>';
+    }).join("") : `<p class="muted small">${q ? `末尾が「${esc(q)}」の画面は、いま開かれていません。` : "いま開かれている画面は、ありません。サイネージのページを開くと、ここに出ます。"}</p>`;
     box.querySelectorAll(".sg-live-row").forEach((row) => { const v = chosen.get(row.dataset.id); if (v) row.querySelector("select").value = v; });
   }
+  $("#sg-live-q").addEventListener("input", paintLive);
   $("#sg-live").addEventListener("change", (e) => {
     const sel = e.target.closest("select[data-pl]");
     if (sel) chosen.set(sel.closest(".sg-live-row").dataset.id, sel.value);
@@ -245,8 +249,17 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     if (!pt) return { err: `「${c.name}」は、地図の位置が分かりません` };
     return { name: c.name, place: { x: Math.round(pt[0]), y: Math.round(pt[1]), floor: c.floor } };
   }
+  function resolveId(token) {
+    const t = token.toLowerCase();
+    const known = [...new Set([...devices.keys(), ...seen.keys()])];
+    if (known.includes(token)) return { id: token };
+    const hit = known.filter((id) => id.toLowerCase().endsWith(t));
+    if (hit.length === 1) return { id: hit[0] };
+    if (hit.length > 1) return { err: `「${token}」で終わるIDが、複数あります（${hit.slice(0, 4).join("・")}）` };
+    return { err: `「${token}」で終わるIDは、いま開かれている画面に、ありません` };
+  }
   const parseLine = (line) => {
-    const m = line.match(/^\s*([A-Za-z0-9_-]{3,40})[\s:：=＝,，]+(.+?)\s*$/);
+    const m = line.match(/^\s*([A-Za-z0-9_-]{2,40})[\s:：=＝,，]+(.+?)\s*$/);
     return m ? { id: m[1], q: m[2] } : null;
   };
   $("#sg-bp-fill").addEventListener("click", () => {
@@ -265,6 +278,9 @@ export function initSgAdmin({ fs, db, a, $, esc, toast, listen, time }) {
     for (const line of lines) {
       const p = parseLine(line);
       if (!p) { rows.push([false, `${line.trim()}（IDと場所の名前を、空白で分けて書いてください）`]); continue; }
+      const idr = resolveId(p.id);
+      if (idr.err) { rows.push([false, idr.err]); continue; }
+      p.id = idr.id;
       const r = resolvePlace(p.q);
       if (r.err) { rows.push([false, `${p.id}：${r.err}`]); continue; }
       try {

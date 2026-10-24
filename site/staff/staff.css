@@ -1145,3 +1145,5 @@ h1, h2, h3 { font-weight: 400; }
 .sg-bp-more { margin-top: 10px; }
 .sg-bp-more > summary { cursor: pointer; font-size: .9rem; }
 @media (max-width: 760px) { .sg-live-row { grid-template-columns: 1fr; } }
+.sg-live-q { max-width: 22em; margin: 10px 0 0; }
+.sg-live-id b em { font-style: normal; padding: 1px 6px; border-radius: 6px; background: var(--teal, #3F9F99); color: #fff; letter-spacing: .04em; }
