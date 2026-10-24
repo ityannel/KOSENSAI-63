@@ -622,8 +622,7 @@ const slideStamp = {
           <h1>${chars("スタンプを" + "\n" + "集めよう！")}</h1>
           <div class="how">
             <div class="rise" style="--i:6"><i>1</i><span>校内の QR を読むと、<wbr>スタンプが押される</span></div>
-            <div class="rise" style="--i:7"><i>2</i><span>はじめの1個は、<wbr>玄関のインフォメーションで</span></div>
-            <div class="rise" style="--i:8"><i>3</i><span>${goal}個そろえたら、<wbr>${esc(RALLY.claimPlace)}へ</span></div>
+            <div class="rise" style="--i:7"><i>2</i><span>${goal}個そろえたら、<wbr>${esc(RALLY.claimPlace)}へ</span></div>
           </div>
           <div class="goqr rise" style="--i:9"><img src="${qr(url, 200)}" alt=""><span class="cap">スマホで<br>スタンプカードを開く</span></div>
         </div>
