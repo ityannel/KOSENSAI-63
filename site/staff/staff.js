@@ -1785,7 +1785,6 @@ async function showRallyAll() {
   }
 }
 $("#rally-all-show").addEventListener("click", async () => {
-  if (!(await askPassword("全員の状況を見る", "スタンプラリーの全員の状況を見るには、パスワードを入れてください。"))) return;
   showRallyAll();
 });
 
