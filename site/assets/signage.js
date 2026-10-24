@@ -60,9 +60,17 @@ let posts = [], crowd = {}, shopDocs = [];
 const visibleTop = () => posts.filter((p) => p.visible && !p.reply_to && (p.text.trim() || p.has_photo));
 let gotPosts = () => {};
 const firstPosts = new Promise((r) => { gotPosts = r; });
+let knownPostAt = null, freshUntil = 0, wantNewest = false;
 subscribePosts((list) => {
   if (!list) return;
   posts = list; gotPosts();
+  const newest = Math.max(0, ...visibleTop().map((p) => p.created_at));
+  if (knownPostAt != null && newest > knownPostAt) {
+    wantNewest = true;
+    freshUntil = Date.now() + 3 * 60000;
+    if (order.length && order[idx] !== "posts" && !["closing", "fireworks"].includes(order[idx])) order.splice(idx + 1, 0, "posts");
+  }
+  knownPostAt = Math.max(knownPostAt ?? 0, newest);
   const top = visibleTop().filter((p) => p.has_photo);
   [...top.sort((a, b) => b.created_at - a.created_at).slice(0, 24), ...top.sort((a, b) => b.likes - a.likes).slice(0, 12)].forEach((p) => loadPhoto(p.id).catch(() => {}));
 });
@@ -290,6 +298,7 @@ function postCard(p, i, got, crown) {
   const photo = p.has_photo && got[p.id];
   const place = placeName(p.place || p.shop || "");
   return `<article class="pc" style="--i:${i}">
+    ${Date.now() < freshUntil && Date.now() - p.created_at < 3 * 60000 ? '<span class="pc-new">NEW</span>' : ""}
     ${crown ? `<span class="crown" style="--i:${i}"><b>${crown}</b><small>位</small></span>` : ""}
     ${photo ? `<div class="pc-ph"><img src="${photo}" alt=""></div>` : `<div class="pc-ph txt" style="--h:${hue}"><q>${esc(p.text)}</q></div>`}
     <div class="pc-b">
@@ -310,6 +319,7 @@ const slidePosts = {
   async build() {
     const all = visibleTop().sort((a, b) => b.created_at - a.created_at).slice(0, 12);
     if (!all.length) return null;
+    if (wantNewest) { newOffset = 0; wantNewest = false; }
     const rot = all.map((_, k) => all[(newOffset + k) % all.length]);
     newOffset += 3;
     const got = await photos(rot.slice(0, 6));
