@@ -23,12 +23,12 @@ service cloud.firestore {
     match /staff/{email} {
       allow read: if isStaff();
       allow create: if isStaff()
-        && email == email.lower() && email.size() <= 120 && email.matches('^[^@\\s/]+@[^@\\s/]+[.][^@\\s/]+$')
-        && data().keys().hasOnly(['name', 'added_by', 'added_at'])
+        && email == email.lower() && email.size() <= 120 && email.matches('^[^@ /]+@[^@ /]+\\.[^@ /]+$')
+        && data().keys().hasOnly(['name', 'added_by', 'added_at']) && data().keys().hasAll(['name', 'added_by', 'added_at'])
         && data().name is string && data().name.size() >= 1 && data().name.size() <= 40
         && data().added_by == request.auth.token.email && data().added_at == request.time;
-      allow delete: if isStaff() && email != request.auth.token.email;
       allow update: if false;
+      allow delete: if isStaff() && email != request.auth.token.email.lower();
     }
 
     function noticeStyleOk(s) {
@@ -81,8 +81,8 @@ service cloud.firestore {
     }
     match /visit_counts/{id} {
       allow read: if isStaff();
-      allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]$') && data().keys().hasOnly(['n']) && data().n == 1;
-      allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
+      allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]$') && data().keys().hasOnly(['n']) && data().n is int && data().n >= 1 && data().n <= 500;
+      allow update: if data().keys().hasOnly(['n']) && data().n is int && data().n > resource.data.n && data().n <= resource.data.n + 500;
     }
     match /signage_devices/{id} {
       allow read: if true;
@@ -174,8 +174,8 @@ service cloud.firestore {
     }
     match /visit_devices/{id} {
       allow read: if isStaff();
-      allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-(phone|tablet|pc)-[0-9]$') && data().keys().hasOnly(['n']) && data().n == 1;
-      allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
+      allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-(phone|tablet|pc)-[0-9]$') && data().keys().hasOnly(['n']) && data().n is int && data().n >= 1 && data().n <= 500;
+      allow update: if data().keys().hasOnly(['n']) && data().n is int && data().n > resource.data.n && data().n <= resource.data.n + 500;
     }
     match /visit_hours/{id} {
       allow read: if isStaff();
@@ -184,8 +184,8 @@ service cloud.firestore {
     }
     match /view_counts/{id} {
       allow read: if isStaff();
-      allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-([01][0-9]|2[0-3])-[0-9]$') && data().keys().hasOnly(['n']) && data().n == 1;
-      allow update: if data().keys().hasOnly(['n']) && data().n == resource.data.n + 1;
+      allow create: if id.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}-([01][0-9]|2[0-3])-[0-9]$') && data().keys().hasOnly(['n']) && data().n is int && data().n >= 1 && data().n <= 500;
+      allow update: if data().keys().hasOnly(['n']) && data().n is int && data().n > resource.data.n && data().n <= resource.data.n + 500;
     }
     match /presence/{w} {
       allow read: if true;
@@ -323,6 +323,49 @@ service cloud.firestore {
     match /users_meta/{uid} {
       allow read: if isVisitor() && request.auth.uid == uid;
       allow write: if isVisitor() && request.auth.uid == uid && data().keys().hasOnly(['last_post']) && data().last_post == request.time;
+    }
+
+    function lhakoSlot(id) {
+      return id.matches('^(d1-(14|15)|d2-(1[0-5]))(00|20|40)$');
+    }
+    function lhakoSeatId(slot, n) {
+      return /databases/$(database)/documents/lhako_seats/$(slot + '-' + string(n));
+    }
+    function lhakoSeatMade(slot, seats, i) {
+      return seats.size() <= i || existsAfter(lhakoSeatId(slot, seats[i]));
+    }
+    function lhakoSeatGone(slot, seats, i) {
+      return seats.size() <= i || !existsAfter(lhakoSeatId(slot, seats[i]));
+    }
+    match /lhako_res/{rid} {
+      allow read: if isStaff() || (isVisitor() && resource.data.uid == request.auth.uid);
+      allow create: if isVisitor() && data().keys().hasOnly(['uid', 'slot', 'seats', 'name', 'at'])
+        && data().uid == request.auth.uid
+        && rid in [request.auth.uid + '-0', request.auth.uid + '-1', request.auth.uid + '-2']
+        && data().slot is string && lhakoSlot(data().slot)
+        && data().seats is list && data().seats.size() >= 1 && data().seats.size() <= 3
+        && data().seats.hasOnly([0, 1, 2]) && data().seats.toSet().size() == data().seats.size()
+        && data().name is string && data().name.size() >= 1 && data().name.size() <= 20
+        && data().at == request.time
+        && lhakoSeatMade(data().slot, data().seats, 0) && lhakoSeatMade(data().slot, data().seats, 1) && lhakoSeatMade(data().slot, data().seats, 2);
+      allow update: if false;
+      allow delete: if isStaff()
+        || (isVisitor() && resource.data.uid == request.auth.uid
+            && lhakoSeatGone(resource.data.slot, resource.data.seats, 0) && lhakoSeatGone(resource.data.slot, resource.data.seats, 1) && lhakoSeatGone(resource.data.slot, resource.data.seats, 2));
+    }
+    match /lhako_seats/{sid} {
+      allow read: if true;
+      allow create: if isVisitor() && sid.matches('^(d1-(14|15)|d2-(1[0-5]))(00|20|40)-[0-2]$')
+        && data().keys().hasOnly(['res', 'at'])
+        && data().res is string && data().at == request.time
+        && getAfter(/databases/$(database)/documents/lhako_res/$(data().res)).data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/lhako_res/$(data().res)).data.at == request.time
+        && getAfter(/databases/$(database)/documents/lhako_res/$(data().res)).data.slot == sid.split('-')[0] + '-' + sid.split('-')[1]
+        && int(sid.split('-')[2]) in getAfter(/databases/$(database)/documents/lhako_res/$(data().res)).data.seats;
+      allow update: if false;
+      allow delete: if isStaff()
+        || (isVisitor() && get(/databases/$(database)/documents/lhako_res/$(resource.data.res)).data.uid == request.auth.uid
+            && !existsAfter(/databases/$(database)/documents/lhako_res/$(resource.data.res)));
     }
 
     match /quiz_control/{id} {
