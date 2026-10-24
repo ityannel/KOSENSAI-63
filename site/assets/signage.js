@@ -778,7 +778,8 @@ function applyDevice(c) {
 }
 watchDevice(applyDevice);
 if (at && !spot) {
-  const ms = MAP.spots.find((x) => x.id === at && x.at);
+  const key = at === "zacros" || at === "zacross" ? "zacros-side" : at;
+  const ms = MAP.spots.find((x) => x.id === key && x.at);
   const hd = Number(params.get("h"));
   if (ms) dynSpot({ x: ms.at[0], y: ms.at[1], floor: ms.floor ?? "1F" }, Number.isFinite(hd) && params.get("h") !== null ? hd : 270, params.get("n") || ms.name).then((r) => { if (r) spot = r; });
 }

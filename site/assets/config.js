@@ -124,6 +124,7 @@ export const MAP = {
     { id: "court-gate", floor: "1F", at: [484.7, 317], name: "中庭の入口" },
     { id: "lib-exit", floor: "1F", at: [175, 342.5], name: "TSKEライブラリー 出口" },
     { id: "g-east", floor: "1F", at: [215.5, 174], name: "二十一食堂 東口" },
+    { id: "zacros-side", floor: "1F", at: [392, 540], name: "ZACROS Hall の横" },
   ],
 };
 
