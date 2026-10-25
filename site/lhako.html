@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#0b3fa6">
+  <title>L'HAKO 予約｜第63回 函館高専祭「縁」</title>
+  <meta name="description" content="第63回 函館高専祭「縁」の L'HAKO（VR研究室）の体験予約。Apple Vision Pro・Treadmill・Haptic Suits。">
+  <meta property="og:title" content="L'HAKO 予約｜第63回 函館高専祭「縁」">
+  <meta property="og:description" content="第63回 函館高専祭「縁」の L'HAKO（VR研究室）の体験予約。Apple Vision Pro・Treadmill・Haptic Suits。">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="函館高専祭">
+  <meta property="og:url" content="https://hakodate-kosensai.pages.dev/lhako.html">
+  <meta property="og:image" content="https://hakodate-kosensai.pages.dev/assets/img/ogp.jpg?v=2">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@hnct_gakuseikai">
+  <meta name="twitter:title" content="L'HAKO 予約｜第63回 函館高専祭「縁」">
+  <meta name="twitter:description" content="第63回 函館高専祭「縁」の L'HAKO（VR研究室）の体験予約。Apple Vision Pro・Treadmill・Haptic Suits。">
+  <meta name="twitter:image" content="https://hakodate-kosensai.pages.dev/assets/img/ogp.jpg?v=2">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/lhako.css">
+</head>
+<body data-page="lhako">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="lh-refract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.010 0.014" numOctaves="2" seed="7" result="n"/><feGaussianBlur in="n" stdDeviation="3" result="nb"/><feDisplacementMap in="SourceGraphic" in2="nb" scale="34" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+  <main class="lh" id="lh">
+    <header class="lh-hero">
+      <p class="lh-eyebrow">第63回 函館高専祭「縁」</p>
+      <h1 class="lh-title" id="lhako-title"><img src="assets/img/lhako-logo-dark.webp" width="1200" height="547" alt="L'HAKO VR LAB"></h1>
+      <p class="lh-tagline">VR研究室の体験を、予約しよう。</p>
+      <ul class="lh-acts" id="lh-acts"></ul>
+      <p class="lh-lead" id="lhako-lead"></p>
+    </header>
+
+    <p class="lh-msg" id="lh-msg" role="status"></p>
+    <section class="lh-mine" id="lh-mine" hidden></section>
+
+    <div class="lh-tabs" id="lh-days" role="tablist" aria-label="日にち"></div>
+    <ul class="lh-list" id="lh-list"></ul>
+
+    <form class="lh-form" id="lh-form" hidden>
+      <h2 class="lh-form-title" id="lh-form-title"></h2>
+      <label class="lh-field"><span>お名前（ニックネームでOK）</span><input id="lh-name" name="name" maxlength="20" autocomplete="off" required></label>
+      <fieldset class="lh-field"><legend>人数</legend><div class="lh-count" id="lh-count"></div></fieldset>
+      <div class="lh-actions"><button type="button" class="lh-btn lh-btn-ghost" id="lh-cancel">やめる</button><button type="submit" class="lh-btn" id="lh-submit">予約する</button></div>
+    </form>
+
+    <footer class="lh-foot"><a href="./">函館高専祭 公式サイト</a></footer>
+  </main>
+
+  <script type="module" src="assets/lhako-page.js"></script>
+</body>
+</html>

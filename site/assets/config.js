@@ -347,6 +347,21 @@ export const FAQ = [
 
 export const LEGAL = { takedownForm: "https://forms.gle/LadtgNhjrLi9XKZH9" };
 
+export const LHAKO = {
+  place: "VR研究室 L'HAKO（L401）",
+  minutes: 20,
+  seats: 3,
+  acts: [
+    "Apple Vision Pro 体験",
+    "Treadmill",
+    "Haptic Suits",
+  ],
+  days: [
+    { id: "d1", label: "10月24日(土)", date: "2026-10-24", start: "14:00", end: "16:00" },
+    { id: "d2", label: "10月25日(日)", date: "2026-10-25", start: "10:00", end: "16:00" },
+  ],
+};
+
 export const RALLY = {
   goal: 3,
   paperNote: "貼り紙には「5コ」と書いてありますが、10/25は3個で景品です。",

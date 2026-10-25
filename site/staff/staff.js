@@ -4,6 +4,7 @@ import { REPORT_HIDE, handleOf, shrink } from "../assets/posts.js";
 import { noticeOf, paintNotice, FONTS as NT_FONTS, SIZES as NT_SIZES, COLORS as NT_COLORS, ICONS as NT_ICONS, WHERES as NT_WHERES, DEFAULT_WHERE as NT_DEFAULT_WHERE } from "../assets/notice.js";
 import { initAiAdmin } from "./ai-admin.js";
 import { initHq } from "./hq-admin.js";
+import { initLhakoAdmin } from "./lhako-admin.js";
 import { initSgAdmin } from "./sg-admin.js";
 import { initMembers } from "./members.js";
 import { catalog as rpCatalog, planRoute, routeSheetHtml, overviewSheetsHtml, overviewSvg, whereOf as rpWhere, GROUPS as RP_GROUPS } from "./route-print.js";
@@ -92,7 +93,7 @@ async function write(label, fn) {
 }
 const stamp = () => ({ updated_at: fs.serverTimestamp(), updated_by: a.currentUser.email });
 
-const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "hq", "ai", "signage", "shops", "schedule", "rally", "route", "print", "settings"];
+const VIEWS = ["overview", "stats", "broadcast", "crowd", "posts", "hq", "ai", "signage", "shops", "schedule", "rally", "lhako", "route", "print", "settings"];
 function route() {
   const name = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== name;
@@ -163,6 +164,7 @@ function startListening() {
     const kit = { fs, db, a, $, $$, esc, toast, write, listen, time };
     initAiAdmin(kit);
     initHq(kit);
+    initLhakoAdmin(kit);
     initSgAdmin(kit);
     initMembers({ ...kit, auth, appMod, firebaseConfig, connectEmulators });
   }
