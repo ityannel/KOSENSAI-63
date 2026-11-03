@@ -9,12 +9,15 @@ const now = () => (nowParam ? Date.parse(nowParam.includes("+") ? nowParam : `${
 const CLOSE = Date.parse(FESTIVAL.days.at(-1).close);
 const TILTS = [-2.4, 1.6, -1, 2.2, -1.8, 1.2];
 
+const dice = new Map();
+const roll = (id) => { if (!dice.has(id)) dice.set(id, Math.random()); return dice.get(id); };
+const byDice = (a, b) => roll(a.id) - roll(b.id);
+
 function render(list) {
   const top = (list ?? []).filter((p) => p.visible && !p.reply_to);
-  const byLikes = (a, b) => b.likes - a.likes || b.created_at - a.created_at;
-  let picks = top.filter((p) => p.has_photo).sort(byLikes).slice(0, 6);
+  let picks = top.filter((p) => p.has_photo).sort(byDice).slice(0, 6);
   const photos = picks.length > 0;
-  if (!photos) picks = top.filter((p) => p.text.trim()).sort(byLikes).slice(0, 3);
+  if (!photos) picks = top.filter((p) => p.text.trim()).sort(byDice).slice(0, 3);
   if (!picks.length) { sec.hidden = true; return; }
   grid.className = `mm-grid${photos ? "" : " is-text"}`;
   grid.innerHTML = picks.map((p, i) => `
