@@ -46,3 +46,9 @@
   addEventListener("DOMContentLoaded", apply);
   addEventListener("dragstart", (e) => { const el = e.target instanceof Element ? e.target : e.target?.parentElement; if (el?.closest("img, a:has(img)")) e.preventDefault(); });
 })();
+addEventListener('message', (e) => {
+  if (e.origin !== 'https://itya.site' || e.data?.type !== 'itya-mock-safe') return;
+  const s = document.documentElement.style;
+  s.setProperty('--sat', e.data.top + 'px');
+  s.setProperty('--sab', e.data.bottom + 'px');
+});
